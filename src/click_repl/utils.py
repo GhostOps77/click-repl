@@ -109,14 +109,18 @@ def _help_internal() -> str:
     return val
 
 
-_register_internal_command(["q", "quit", "exit"], _exit_internal, "exits the repl")
+_register_internal_command(
+    ["q", "quit", "exit"], _exit_internal, "exits the repl"
+)
 _register_internal_command(
     ["?", "h", "help"], _help_internal, "displays general help information"
 )
 
 
 class ClickCompleter(Completer):
-    def __init__(self, cli: click.Command, ctx: Optional[click.Context] = None) -> None:
+    def __init__(
+            self, cli: click.Command, ctx: Optional[click.Context] = None
+    ) -> None:
         self.cli = cli
         self.ctx = ctx
 
@@ -130,7 +134,9 @@ class ClickCompleter(Completer):
         param_choices = []
 
         if HAS_C8:
-            autocompletions = param.shell_complete(autocomplete_ctx, incomplete)
+            autocompletions = param.shell_complete(
+                autocomplete_ctx, incomplete
+            )
         else:
             autocompletions = param.autocompletion(  # type: ignore[attr-defined]
                 autocomplete_ctx, args, incomplete
@@ -193,7 +199,7 @@ class ClickCompleter(Completer):
                         )
 
                         # We want to make sure if this parameter was called
-                        if option in args[param.nargs * -1 :]:
+                        if option in args[param.nargs * -1:]:
                             param_called = True
 
                 if (
@@ -216,7 +222,9 @@ class ClickCompleter(Completer):
 
             elif isinstance(param, click.Argument):
                 if isinstance(param.type, click.Choice):
-                    choices.extend(self._get_completion_from_choices(param, incomplete))
+                    choices.extend(
+                        self._get_completion_from_choices(param, incomplete)
+                    )
 
                 elif (
                     not HAS_C8
