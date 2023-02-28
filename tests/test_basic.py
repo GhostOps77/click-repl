@@ -24,7 +24,9 @@ def test_arg_completion():
 
 def test_option_completion():
     @root_command.command()
-    @click.option("--handler", "-h", type=click.Choice(("foo", "bar")))
+    @click.option(
+        "--handler", "-h", type=click.Choice(("foo", "bar")), help="Demo option"
+    )
     def option_cmd(handler):
         pass
 
@@ -83,7 +85,8 @@ def test_completion_multilevel_command():
 
     completions = list(c.get_completions(Document("first-level-command ")))
     assert set(x.text for x in completions) == {
-        "second-level-command-one", "second-level-command-two"
+        "second-level-command-one",
+        "second-level-command-two",
     }
 
     completions = list(c.get_completions(Document(" ")))
