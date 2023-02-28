@@ -316,12 +316,14 @@ def bootstrap_prompt(
         "message": "> ",
     }
 
-    for key in defaults:
-        default_value = defaults[key]
-        if key not in prompt_kwargs:
-            prompt_kwargs[key] = default_value
+    defaults.update(prompt_kwargs)
 
-    return prompt_kwargs
+    # for key in defaults:
+    #     default_value = defaults[key]
+    #     if key not in prompt_kwargs:
+    #         prompt_kwargs[key] = default_value
+
+    return defaults
 
 
 def _exec_internal_and_sys_commands(
