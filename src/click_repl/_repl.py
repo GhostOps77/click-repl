@@ -1,16 +1,16 @@
 import sys
 from typing import Any, Callable, Optional
-import click
 
+import click
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 
-from .exceptions import CommandLineParserError, ExitReplException, ClickExit  # type: ignore[attr-defined]
-from .utils import _execute_command
 from ._completer import ClickCompleter
+from .exceptions import (ClickExit,  # type: ignore[attr-defined]
+                         CommandLineParserError, ExitReplException)
+from .utils import _execute_command
 
-
-__all__ = ['bootstrap_prompt', 'register_repl', 'repl']
+__all__ = ["bootstrap_prompt", "register_repl", "repl"]
 
 
 def bootstrap_prompt(
@@ -35,11 +35,13 @@ def bootstrap_prompt(
     #     if key not in prompt_kwargs:
     #         prompt_kwargs[key] = default_value
 
-    prompt_kwargs.update({
-        "history": InMemoryHistory(),
-        "completer": ClickCompleter(group, ctx=ctx),
-        "message": "> ",
-    })
+    prompt_kwargs.update(
+        {
+            "history": InMemoryHistory(),
+            "completer": ClickCompleter(group, ctx=ctx),
+            "message": "> ",
+        }
+    )
 
     return prompt_kwargs
 
