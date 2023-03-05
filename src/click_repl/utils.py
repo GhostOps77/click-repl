@@ -9,16 +9,15 @@ import click.parser
 
 from .exceptions import CommandLineParserError, ExitReplException
 
-
 __all__ = [
-    '_register_internal_command',
-    '_get_registered_target',
-    '_execute_command',
-    '_help_internal',
-    '_exit_internal',
-    'dispatch_repl_commands',
-    'handle_internal_commands',
-    'exit'
+    "_register_internal_command",
+    "_get_registered_target",
+    "_execute_command",
+    "_help_internal",
+    "_exit_internal",
+    "dispatch_repl_commands",
+    "handle_internal_commands",
+    "exit",
 ]
 
 _internal_commands = {}
@@ -49,7 +48,6 @@ def _register_internal_command(
 def _get_registered_target(
     name: str, default: Optional[Any] = None
 ) -> Union[Callable[[], Any], Any]:
-
     target_info = _internal_commands.get(name)
     if target_info:
         return target_info[0]

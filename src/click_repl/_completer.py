@@ -1,15 +1,14 @@
 from __future__ import annotations, unicode_literals
 
 import shlex
-import click
 import sys
-
-from prompt_toolkit.completion import CompleteEvent, Completer, Completion
-from prompt_toolkit.document import Document
 from typing import Generator, Optional, Union
 
+import click
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
 
-__all__ = ['ClickCompleter']
+__all__ = ["ClickCompleter"]
 
 # Handle backwards compatibility between Click<=7.0 and >=8.0
 try:
@@ -37,7 +36,7 @@ else:
 
 
 class ClickCompleter(Completer):
-    __slots__ = ('cli', 'ctx')
+    __slots__ = ("cli", "ctx")
 
     def __init__(self, cli: click.Command, ctx: Optional[click.Context] = None) -> None:
         self.cli = cli
@@ -118,7 +117,7 @@ class ClickCompleter(Completer):
                         )
 
                         # We want to make sure if this parameter was called
-                        if option in args[param.nargs * -1:]:  # noqa: E203
+                        if option in args[param.nargs * -1 :]:  # noqa: E203
                             param_called = True
 
                 if (
@@ -209,7 +208,7 @@ class ClickCompleter(Completer):
                     Completion(
                         text_type(name),
                         -len(incomplete),
-                        display_meta=getattr(command, 'short_help', ''),
+                        display_meta=getattr(command, "short_help", ""),
                     )
                 )
 
