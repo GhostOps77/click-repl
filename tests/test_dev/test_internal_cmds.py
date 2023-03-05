@@ -4,9 +4,7 @@ import pytest
 
 @pytest.mark.parametrize("test_input", [":help", ":h", ":?"])
 def test_internal_help_commands(capsys, test_input):
-    click_repl.utils._exec_internal_and_sys_commands(
-        test_input, allow_internal_commands=True
-    )
+    click_repl.utils._execute_command(test_input, allow_internal_commands=True)
 
     captured_stdout = capsys.readouterr().out
 
@@ -29,14 +27,12 @@ def test_internal_help_commands(capsys, test_input):
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_internal_exit_commands(test_input):
     with pytest.raises(click_repl.exceptions.ExitReplException):
-        click_repl.utils._exec_internal_and_sys_commands(test_input)
+        click_repl.utils._execute_command(test_input)
 
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_no_internal_commands(capfd, test_input):
-    click_repl.utils._exec_internal_and_sys_commands(
-        test_input, allow_internal_commands=False
-    )
+    click_repl.utils._execute_command(test_input, allow_internal_commands=False)
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
 
