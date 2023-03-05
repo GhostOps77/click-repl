@@ -8,11 +8,8 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
-from .exceptions import (  # type: ignore[attr-defined]
-    ClickExit,
-    CommandLineParserError,
-    ExitReplException,
-)
+from .exceptions import (ClickExit,  # type: ignore[attr-defined]
+                         CommandLineParserError, ExitReplException)
 from .utils import _execute_command
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]

@@ -3,15 +3,8 @@ from __future__ import annotations
 import os
 import shlex
 from collections import defaultdict
-from typing import (  # noqa: F401
-    Any,
-    Callable,
-    Iterable,
-    Mapping,
-    NoReturn,
-    Optional,
-    Union,
-)
+from typing import (Any, Callable, Iterable, Mapping, NoReturn,  # noqa: F401
+                    Optional, Union)
 
 import click.parser
 

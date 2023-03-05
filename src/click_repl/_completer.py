@@ -5,7 +5,8 @@ import sys
 from typing import Generator, Optional, Union  # noqa: F401
 
 import click
-from prompt_toolkit.completion import CompleteEvent, Completer, Completion  # noqa: F401
+from prompt_toolkit.completion import (CompleteEvent, Completer,  # noqa: F401
+                                       Completion)
 from prompt_toolkit.document import Document  # noqa: F401
 
 __all__ = ["ClickCompleter"]
