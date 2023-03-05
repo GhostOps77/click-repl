@@ -3,7 +3,15 @@ from __future__ import annotations
 import os
 import shlex
 from collections import defaultdict
-from typing import Any, Callable, Iterable, Mapping, NoReturn, Optional, Union
+from typing import (  # noqa: F401
+    Any,
+    Callable,
+    Iterable,
+    Mapping,
+    NoReturn,
+    Optional,
+    Union,
+)
 
 import click.parser
 
@@ -23,11 +31,9 @@ __all__ = [
 _internal_commands = {}
 
 
-def _register_internal_command(
-    names: Iterable[str],
-    target: Callable[[], Any],
-    description: Optional[str] = None,
-) -> None:
+def _register_internal_command(names, target, description=None):
+    # type: (Iterable[str], Callable[[], Any], Optional[str]) -> None
+
     if not hasattr(target, "__call__"):
         raise ValueError("Internal command must be a callable")
 
@@ -45,20 +51,22 @@ def _register_internal_command(
         _internal_commands[name] = (target, description)
 
 
-def _get_registered_target(
-    name: str, default: Optional[Any] = None
-) -> Union[Callable[[], Any], Any]:
+def _get_registered_target(name, default=None):
+    # type: (str, Optional[Any]) -> Union[Callable[[], Any], Any]
+
     target_info = _internal_commands.get(name)
     if target_info:
         return target_info[0]
     return default
 
 
-def _exit_internal() -> NoReturn:
+def _exit_internal():
+    # type: () -> NoReturn
     raise ExitReplException()
 
 
-def _help_internal() -> str:
+def _help_internal():
+    # type: () -> str
     formatter = click.HelpFormatter()
     formatter.write_heading("REPL help")
     formatter.indent()
@@ -81,8 +89,7 @@ def _help_internal() -> str:
             for description, mnemonics in info_table.items()
         )
 
-    val: str = formatter.getvalue()
-
+    val = formatter.getvalue()  # type: str
     return val
 
 
@@ -93,10 +100,11 @@ _register_internal_command(
 
 
 def _execute_command(
-    command: str,
-    allow_internal_commands: bool = True,
-    allow_system_commands: bool = True,
-) -> Union[list[str], None, NoReturn]:
+    command,
+    allow_internal_commands=True,
+    allow_system_commands=True,
+):
+    # type: (str, bool, bool) -> Union[list[str], None, NoReturn]
     """
     Executes internal, system, and all the other registered click commands from the input
     """
@@ -116,12 +124,14 @@ def _execute_command(
         raise CommandLineParserError(f"{e}")
 
 
-def exit() -> NoReturn:
+def exit():
+    # type: () -> NoReturn
     """Exit the repl"""
     _exit_internal()
 
 
-def dispatch_repl_commands(command: str) -> bool:
+def dispatch_repl_commands(command):
+    # type: (str) -> bool
     """
     Execute system commands entered in the repl.
 
@@ -134,7 +144,8 @@ def dispatch_repl_commands(command: str) -> bool:
     return False
 
 
-def handle_internal_commands(command: str) -> Any:
+def handle_internal_commands(command):
+    # type: (str) -> Any
     """
     Run repl-internal commands.
 

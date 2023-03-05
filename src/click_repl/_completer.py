@@ -2,11 +2,11 @@ from __future__ import annotations, unicode_literals
 
 import shlex
 import sys
-from typing import Generator, Optional, Union
+from typing import Generator, Optional, Union  # noqa: F401
 
 import click
-from prompt_toolkit.completion import CompleteEvent, Completer, Completion
-from prompt_toolkit.document import Document
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion  # noqa: F401
+from prompt_toolkit.document import Document  # noqa: F401
 
 __all__ = ["ClickCompleter"]
 
@@ -24,10 +24,6 @@ except (ImportError, ModuleNotFoundError):
     AUTO_COMPLETION_PARAM = "autocompletion"
 
 
-# def text_type(text: typing.Text) -> typing.Text:
-#     return u"{0}".format(text)
-
-
 PY2 = sys.version_info[0] == 2
 if PY2:
     text_type = unicode  # noqa: F821
@@ -38,17 +34,21 @@ else:
 class ClickCompleter(Completer):
     __slots__ = ("cli", "ctx")
 
-    def __init__(self, cli: click.Command, ctx: Optional[click.Context] = None) -> None:
+    def __init__(self, cli, ctx=None):
+        # type: (click.Command, Optional[click.Context]) -> None
+
         self.cli = cli
         self.ctx = ctx
 
     def _get_completion_from_autocompletion_functions(
         self,
-        param: click.Parameter,
-        autocomplete_ctx: click.Context,
-        args: list[str],
-        incomplete: str,
-    ) -> list[Completion]:
+        param,
+        autocomplete_ctx,
+        args,
+        incomplete,
+    ):
+        # type: (click.Parameter, click.Context, list[str], str) -> list[Completion]
+
         param_choices = []
 
         if HAS_CLICK_V8:
@@ -82,9 +82,9 @@ class ClickCompleter(Completer):
 
         return param_choices
 
-    def _get_completion_from_choices(
-        self, param: Union[click.Argument, click.Option], incomplete: str
-    ) -> list[Completion]:
+    def _get_completion_from_choices(self, param, incomplete):
+        # type: (Union[click.Argument, click.Option], str) -> list[Completion]
+
         return [
             Completion(text_type(choice), -len(incomplete))
             for choice in param.type.choices  # type: ignore[attr-defined]
@@ -92,11 +92,13 @@ class ClickCompleter(Completer):
 
     def _get_completion_from_params(
         self,
-        ctx_command: click.Command,
-        incomplete: str,
-        autocomplete_ctx: click.Context,
-        args: list[str],
-    ) -> tuple[list[Completion], list[Completion], bool]:
+        ctx_command,  # type: click.Command
+        incomplete,  # type: str
+        autocomplete_ctx,  # type: click.Context
+        args,  # type: list[str]
+    ):
+        # type: (...) -> tuple[list[Completion], list[Completion], bool]
+
         choices = []
         param_choices = []
         param_called = False
@@ -155,9 +157,9 @@ class ClickCompleter(Completer):
 
         return choices, param_choices, param_called
 
-    def get_completions(
-        self, document: Document, complete_event: Optional[CompleteEvent] = None
-    ) -> Generator[Completion, None, None]:
+    def get_completions(self, document, complete_event=None):
+        # type: (Document, Optional[CompleteEvent]) -> Generator[Completion, None, None]
+
         # Code analogous to click._bashcomplete.do_complete
 
         try:

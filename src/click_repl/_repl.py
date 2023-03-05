@@ -1,68 +1,50 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional  # noqa: F401
 
 import click
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
-from .exceptions import (ClickExit,  # type: ignore[attr-defined]
-                         CommandLineParserError, ExitReplException)
+from .exceptions import (  # type: ignore[attr-defined]
+    ClickExit,
+    CommandLineParserError,
+    ExitReplException,
+)
 from .utils import _execute_command
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]
 
 
-def bootstrap_prompt(
-    group: click.Command,
-    prompt_kwargs: dict[str, Any],
-    ctx: Optional[click.Context] = None,
-) -> dict[str, Any]:
+def bootstrap_prompt(group, prompt_kwargs, ctx=None):
+    # type: (click.Command, dict[str, Any], Optional[click.Context]) -> dict[str, Any]
+
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
     :param prompt_kwargs: The user specified prompt kwargs.
     """
 
-    # defaults = {
-    #     "history": InMemoryHistory(),
-    #     "completer": ClickCompleter(group, ctx=ctx),
-    #     "message": "> ",
-    # }
+    defaults = {
+        "history": InMemoryHistory(),
+        "completer": ClickCompleter(group, ctx=ctx),
+        "message": "> ",
+    }
 
-    # for key in defaults:
-    #     default_value = defaults[key]
-    #     if key not in prompt_kwargs:
-    #         prompt_kwargs[key] = default_value
-
-    prompt_kwargs.update(
-        {
-            "history": InMemoryHistory(),
-            "completer": ClickCompleter(group, ctx=ctx),
-            "message": "> ",
-        }
-    )
-
-    return prompt_kwargs
-
-
-# def _get_command_func(
-#     isatty: bool, session: PromptSession[Mapping[str, Any]]
-# ) -> Callable[[], str]:
-#     if isatty:
-#         return lambda: str(session.prompt())
-#     else:
-#         return sys.stdin.readline
+    defaults.update(prompt_kwargs)
+    return defaults
 
 
 def repl(
-    old_ctx: click.Context,
-    prompt_kwargs: dict[str, Any] = {},
-    allow_system_commands: bool = True,
-    allow_internal_commands: bool = True,
-) -> None:
+    old_ctx,
+    prompt_kwargs={},
+    allow_system_commands=True,
+    allow_internal_commands=True,
+):
+    # type: (click.Context, dict[str, Any], bool, bool) -> None
+
     """
     Start an interactive shell. All subcommands are available in it.
 
@@ -74,8 +56,8 @@ def repl(
     from stdin.
     """
     # parent should be available, but we're not going to bother if not
-    group_ctx: click.Context = old_ctx.parent or old_ctx
-    group: click.Command = group_ctx.command
+    group_ctx = old_ctx.parent or old_ctx  # type: click.Context
+    group = group_ctx.command  # type: click.Command
     isatty = sys.stdin.isatty()
 
     # Delete the REPL command from those available, as we don't want to allow
@@ -95,8 +77,15 @@ def repl(
     prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx)
 
     if isatty:
-        # session: PromptSession[Mapping[str, Any]] = PromptSession(**prompt_kwargs)
-        get_command: Callable[[], str] = lambda: PromptSession(**prompt_kwargs).prompt()
+        # session = PromptSession(
+        #   **prompt_kwargs
+        # )  # type: PromptSession[Mapping[str, Any]]
+
+        def prompt_input():
+            # type: () -> str
+            return PromptSession(**prompt_kwargs).prompt()
+
+        get_command = prompt_input  # type: Callable[[], str]
     else:
         get_command = sys.stdin.readline
 
@@ -149,6 +138,8 @@ def repl(
         available_commands[repl_command_name] = original_command
 
 
-def register_repl(group: click.Group, name: str = "repl") -> None:
+def register_repl(group, name="repl"):
+    # type: (click.Group, str) -> None
+
     """Register :func:`repl()` as sub-command *name* of *group*."""
     group.command(name=name)(click.pass_context(repl))
