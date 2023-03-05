@@ -1,8 +1,7 @@
 import os
+import sys
 import shlex
 from collections import defaultdict
-from typing import NoReturn  # noqa: F401
-from typing import Iterable, Mapping
 
 import click.parser
 
@@ -20,6 +19,11 @@ __all__ = [
 ]
 
 _internal_commands = {}
+
+if sys.version_info[0] == 3:
+    from typing import (  # noqa: F401
+        NoReturn, Iterable, Mapping, Callable, Any, Optional, Union
+    )
 
 
 def _register_internal_command(names, target, description=None):

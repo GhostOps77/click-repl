@@ -1,7 +1,5 @@
-import sys
-from typing import Any, Callable, Optional  # noqa: F401
-
 import click
+import sys
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 
@@ -11,6 +9,9 @@ from .exceptions import CommandLineParserError, ExitReplException
 from .utils import _execute_command
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]
+
+if sys.version_info[0] == 3:
+    from typing import Any, Callable, Optional  # noqa: F401
 
 
 def bootstrap_prompt(group, prompt_kwargs, ctx=None):

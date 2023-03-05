@@ -2,11 +2,13 @@ from __future__ import unicode_literals
 
 import shlex
 import sys
-from typing import Generator, Optional, Union  # noqa: F401
 
 import click
-from prompt_toolkit.completion import (CompleteEvent, Completer,  # noqa: F401
-                                       Completion)
+from prompt_toolkit.completion import (  # noqa: F401
+    CompleteEvent,
+    Completer,
+    Completion
+)
 from prompt_toolkit.document import Document  # noqa: F401
 
 __all__ = ["ClickCompleter"]
@@ -29,6 +31,7 @@ PY2 = sys.version_info[0] == 2
 if PY2:
     text_type = unicode  # noqa: F821
 else:
+    from typing import Generator, Optional, Union  # noqa: F401
     text_type = str  # noqa
 
 
