@@ -1,3 +1,5 @@
+from __future__ import annotations, unicode_literals
+
 import shlex
 import click
 import sys
