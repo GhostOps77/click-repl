@@ -1,15 +1,12 @@
 from __future__ import unicode_literals
 
+import click
 import shlex
 import sys
 
-import click
-from prompt_toolkit.completion import (  # noqa: F401
-    CompleteEvent,
-    Completer,
-    Completion
-)
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion  # noqa: F401
 from prompt_toolkit.document import Document  # noqa: F401
+
 
 __all__ = ["ClickCompleter"]
 
@@ -21,18 +18,22 @@ try:
     AUTO_COMPLETION_PARAM = "shell_complete"
 
 except (ImportError, ModuleNotFoundError):
-    import click._bashcomplete
+    import click._bashcomplete  # type: ignore[import]
 
     HAS_CLICK_V8 = False
     AUTO_COMPLETION_PARAM = "autocompletion"
 
 
-PY2 = sys.version_info[0] == 2
-if PY2:
-    text_type = unicode  # noqa: F821
-else:
-    from typing import Generator, Optional, Union  # noqa: F401
-    text_type = str  # noqa
+if sys.version_info[0] >= 3:
+    import typing
+
+    if typing.TYPE_CHECKING:
+        from typing import Any, Generator, Optional, Union  # noqa: F401
+
+
+def text_type(text):
+    # type: (Any) -> str
+    return "{}".format(text)
 
 
 class ClickCompleter(Completer):
@@ -41,8 +42,8 @@ class ClickCompleter(Completer):
     def __init__(self, cli, ctx=None):
         # type: (click.Command, Optional[click.Context]) -> None
 
-        self.cli = cli
-        self.ctx = ctx
+        self.cli = cli  # type: click.Command
+        self.ctx = ctx  # type: Optional[click.Context]
 
     def _get_completion_from_autocompletion_functions(
         self,

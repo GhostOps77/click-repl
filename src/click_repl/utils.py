@@ -1,6 +1,6 @@
 import os
-import sys
 import shlex
+import sys
 from collections import defaultdict
 
 import click.parser
@@ -20,10 +20,32 @@ __all__ = [
 
 _internal_commands = {}
 
-if sys.version_info[0] == 3:
-    from typing import (  # noqa: F401
-        NoReturn, Iterable, Mapping, Callable, Any, Optional, Union
-    )
+if sys.version_info >= (3, 5):
+    import typing
+
+    if typing.TYPE_CHECKING:
+        from typing import (  # noqa: F401
+            Any, Callable, Iterable, Mapping, NoReturn, Optional, Union,
+        )
+
+if sys.version_info >= (3, 3):
+    from collections.abc import Mapping, Iterable  # noqa: F811
+else:
+    from collections import Mapping, Iterable  # noqa: F811
+
+# class ClickReplContext:
+#     def __init__(self, click_ctx, prompt_kwargs):
+#         # type: (click.Context, dict[str, Any]) -> None
+#         self.click_ctx = click_ctx  # type: click.Context
+#         self.prompt_kwargs = prompt_kwargs  # type: dict[str, Any]
+#         self.__history = []
+
+#     @property
+#     def history(self) -> Generator[str, None, None]:
+#         yield reversed(list(self.prompt_kwargs['history'].history))
+
+#     def __repr__(self) -> str:
+#         return f'<ClickReplContext click_ctx={self.click_ctx}>'
 
 
 def _register_internal_command(names, target, description=None):
