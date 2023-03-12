@@ -206,13 +206,13 @@ class ClickCompleter(Completer):
                 elif isinstance(param.type, click.File):
                     choices.extend(self._get_completion_for_File_types(param, args, incomplete))
 
-            elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
-                choices = self._get_completion_from_autocompletion_functions(
-                    param,
-                    autocomplete_ctx,
-                    args,
-                    incomplete,
-                )
+                elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
+                    choices = self._get_completion_from_autocompletion_functions(
+                        param,
+                        autocomplete_ctx,
+                        args,
+                        incomplete,
+                    )
 
         # print(f'{choices = }\n{param_choices = }\n{param_called = }')
         return choices, param_choices, param_called

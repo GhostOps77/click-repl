@@ -185,9 +185,9 @@ def test_boolean_type():
     completions = list(
         c.get_completions(Document("bool-cmd "))
     )
-    assert set(x.text for x in completions) == {'True', 'False'}
+    assert set(x.text for x in completions) == {'true', 'false'}
 
     completions = list(
         c.get_completions(Document("bool-cmd t"))
     )
-    assert set(x.text for x in completions) == {'True'}
+    assert set(x.text for x in completions) == {'true'}
