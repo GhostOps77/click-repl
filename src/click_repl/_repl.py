@@ -88,7 +88,7 @@ def repl(
 
         def get_command():
             # type: () -> str
-            return session.prompt()
+            return str(session.prompt())
 
     else:
         get_command = sys.stdin.readline
@@ -125,11 +125,11 @@ def repl(
                 # default_map passes the top-level params to the new group to
                 # support top-level required params that would reject the
                 # invocation if missing.
-                    with group.make_context(
-                        None, args, parent=group_ctx, default_map=old_ctx.params
-                    ) as ctx:
-                        group.invoke(ctx)
-                        ctx.exit()
+                with group.make_context(
+                    None, args, parent=group_ctx, default_map=old_ctx.params
+                ) as ctx:
+                    group.invoke(ctx)
+                    ctx.exit()
 
             except click.ClickException as e:
                 e.show()

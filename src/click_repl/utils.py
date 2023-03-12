@@ -27,10 +27,16 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from prompt_toolkit.history import History
-        from prompt_toolkit.completion import Completer
+        from prompt_toolkit.history import History  # noqa: F401
         from typing import (  # noqa: F401
-            Any, Callable, Iterable, Mapping, NoReturn, Optional, Union, Generator
+            Any,
+            Callable,
+            Iterable,
+            Mapping,
+            NoReturn,
+            Optional,
+            Union,
+            Generator,
         )
 
 # Abstract datatypes in collections module are moved to collections.abc
@@ -44,17 +50,18 @@ else:
 _internal_commands = {}  # type: dict[str, tuple[Callable[[], Any], Optional[str]]]
 _locals = local()
 
+
 class ClickReplContext:
-    __slots__ = ("_get_command", "isatty", "prompt_kwargs", "_history", "message")
+    __slots__ = ("get_command", "isatty", "prompt_kwargs", "_history", "message")
 
     def __init__(self, get_command, isatty, prompt_kwargs):
-        # type: (Callable[[Any], str], bool, dict[str, Any]) -> None
-        self._get_command = get_command  # type: Callable[[Any], str]
+        # type: (Callable[[], str], bool, dict[str, Any]) -> None
+        self.get_command = get_command  # type: Callable[[], str]
         self.isatty = isatty  # type: bool
         self.prompt_kwargs = prompt_kwargs  # type: dict[str, Any]
-        self._history = self.prompt_kwargs.pop('history')  # type: History
-        self.message = self.prompt_kwargs.pop('message')  # type: str
-        prompt_kwargs.pop('completer', None)
+        self._history = self.prompt_kwargs.pop("history")  # type: History
+        self.message = self.prompt_kwargs.pop("message")  # type: str
+        prompt_kwargs.pop("completer", None)
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -70,19 +77,20 @@ class ClickReplContext:
         # type: () -> Generator[str, None, None]
         yield from self._history.load_history_strings()
 
-    def get_command(self, **kwargs):
-        if not self.isatty:
-            return self.get_command()
+    # def get_command(self, **kwargs):
+    #     # type: (...) -> str
+    #     if not self.isatty:
+    #         return self.get_command()
 
-        temp_prompt_kwargs = self.prompt_kwargs.copy()
-        temp_prompt_kwargs.update(kwargs)
-        return self._get_command(**temp_prompt_kwargs)
+    #     temp_prompt_kwargs = self.prompt_kwargs.copy()
+    #     temp_prompt_kwargs.update(kwargs)
+    #     return self._get_command(**temp_prompt_kwargs)
 
 
 def get_current_click_repl_context(silent=False):
     # type: (bool) -> Union[ClickReplContext, None, NoReturn]
     try:
-        return _locals.stack[-1]
+        return ClickReplContext(**_locals.stack[-1].__dict__)  # type: ignore[call-arg]
     except (AttributeError, IndexError) as e:
         if not silent:
             raise RuntimeError("There is no active click context.") from e
@@ -105,11 +113,13 @@ def pop_context():
 def pass_context(func):
     # type: (Callable[..., Any]) -> Callable[..., Any]
     ctx = get_current_click_repl_context()
-    command = ctx.command
+    # command = ctx.command
+
     @wraps(func)
     def decorator(*args, **kwargs):  # type: ignore[no-untyped-def]
         # type: (...) -> Any
         return func(ctx, *args, **kwargs)
+
     return decorator
 
 
