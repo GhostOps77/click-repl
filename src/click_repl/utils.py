@@ -1,9 +1,13 @@
+from __future__ import with_statement
+
+import click
 import os
 import shlex
 import sys
-from collections import defaultdict
 
-import click.parser
+from collections import defaultdict
+from functools import wraps
+from threading import local
 
 from .exceptions import CommandLineParserError, ExitReplException
 
@@ -18,34 +22,95 @@ __all__ = [
     "exit",
 ]
 
-_internal_commands = {}
-
+# typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
-    import typing
+    import typing as t
 
-    if typing.TYPE_CHECKING:
+    if t.TYPE_CHECKING:
+        from prompt_toolkit.history import History
+        from prompt_toolkit.completion import Completer
         from typing import (  # noqa: F401
-            Any, Callable, Iterable, Mapping, NoReturn, Optional, Union,
+            Any, Callable, Iterable, Mapping, NoReturn, Optional, Union, Generator
         )
 
+# Abstract datatypes in collections module are moved to collections.abc
+# module in Python 3.3
 if sys.version_info >= (3, 3):
     from collections.abc import Mapping, Iterable  # noqa: F811
 else:
-    from collections import Mapping, Iterable  # noqa: F811
+    from collections import Mapping, Iterable
 
-# class ClickReplContext:
-#     def __init__(self, click_ctx, prompt_kwargs):
-#         # type: (click.Context, dict[str, Any]) -> None
-#         self.click_ctx = click_ctx  # type: click.Context
-#         self.prompt_kwargs = prompt_kwargs  # type: dict[str, Any]
-#         self.__history = []
 
-#     @property
-#     def history(self) -> Generator[str, None, None]:
-#         yield reversed(list(self.prompt_kwargs['history'].history))
+_internal_commands = {}  # type: dict[str, tuple[Callable[[], Any], Optional[str]]]
+_locals = local()
 
-#     def __repr__(self) -> str:
-#         return f'<ClickReplContext click_ctx={self.click_ctx}>'
+class ClickReplContext:
+    __slots__ = ("_get_command", "isatty", "prompt_kwargs", "_history", "message")
+
+    def __init__(self, get_command, isatty, prompt_kwargs):
+        # type: (Callable[[Any], str], bool, dict[str, Any]) -> None
+        self._get_command = get_command  # type: Callable[[Any], str]
+        self.isatty = isatty  # type: bool
+        self.prompt_kwargs = prompt_kwargs  # type: dict[str, Any]
+        self._history = self.prompt_kwargs.pop('history')  # type: History
+        self.message = self.prompt_kwargs.pop('message')  # type: str
+        prompt_kwargs.pop('completer', None)
+
+    def __enter__(self):
+        # type: () -> ClickReplContext
+        push_context(self)
+        return self
+
+    def __exit__(self, *_):
+        # type: (Any) -> None
+        pop_context()
+
+    @property
+    def history(self):
+        # type: () -> Generator[str, None, None]
+        yield from self._history.load_history_strings()
+
+    def get_command(self, **kwargs):
+        if not self.isatty:
+            return self.get_command()
+
+        temp_prompt_kwargs = self.prompt_kwargs.copy()
+        temp_prompt_kwargs.update(kwargs)
+        return self._get_command(**temp_prompt_kwargs)
+
+
+def get_current_click_repl_context(silent=False):
+    # type: (bool) -> Union[ClickReplContext, None, NoReturn]
+    try:
+        return _locals.stack[-1]
+    except (AttributeError, IndexError) as e:
+        if not silent:
+            raise RuntimeError("There is no active click context.") from e
+
+    return None
+
+
+def push_context(ctx):
+    # type: (ClickReplContext) -> None
+    """Pushes a new context to the current stack."""
+    _locals.__dict__.setdefault("stack", []).append(ctx)
+
+
+def pop_context():
+    # type: () -> None
+    """Removes the top level from the stack."""
+    _locals.stack.pop()
+
+
+def pass_context(func):
+    # type: (Callable[..., Any]) -> Callable[..., Any]
+    ctx = get_current_click_repl_context()
+    command = ctx.command
+    @wraps(func)
+    def decorator(*args, **kwargs):  # type: ignore[no-untyped-def]
+        # type: (...) -> Any
+        return func(ctx, *args, **kwargs)
+    return decorator
 
 
 def _register_internal_command(names, target, description=None):

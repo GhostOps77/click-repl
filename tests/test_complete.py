@@ -174,3 +174,20 @@ def test_hidden_command_completions():
         c.get_completions(Document("option-choices-hidden-cmd --handler "))
     )
     assert set(x.text for x in completions) == set()
+
+
+def test_boolean_type():
+    @root_command.command()
+    @click.argument("foo", type=click.BOOL)
+    def bool_cmd(foo):
+        pass
+
+    completions = list(
+        c.get_completions(Document("bool-cmd "))
+    )
+    assert set(x.text for x in completions) == {'True', 'False'}
+
+    completions = list(
+        c.get_completions(Document("bool-cmd t"))
+    )
+    assert set(x.text for x in completions) == {'True'}

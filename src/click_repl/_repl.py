@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import click
 import sys
 from prompt_toolkit import PromptSession
@@ -6,24 +8,26 @@ from prompt_toolkit.history import InMemoryHistory
 from ._completer import ClickCompleter
 from .exceptions import ClickExit  # type: ignore[attr-defined]
 from .exceptions import CommandLineParserError, ExitReplException
-from .utils import _execute_command
+from .utils import ClickReplContext, _execute_command
 
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]
 
+# typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
-    import typing
+    import typing as t
 
-    if typing.TYPE_CHECKING:
-        from typing import Any, Callable, Optional  # noqa: F401
+    if t.TYPE_CHECKING:
+        from click import Command, Context, Group  # noqa: F401
+        from typing import Any, Optional  # noqa: F401
 
 
 def bootstrap_prompt(group, prompt_kwargs, ctx=None):
-    # type: (click.Command, dict[str, Any], Optional[click.Context]) -> dict[str, Any]
-
+    # type: (Command, dict[str, Any], Optional[Context]) -> dict[str, Any]
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
+    :param group: click Command/Group
     :param prompt_kwargs: The user specified prompt kwargs.
     """
 
@@ -56,8 +60,8 @@ def repl(
     from stdin.
     """
     # parent should be available, but we're not going to bother if not
-    group_ctx = old_ctx.parent or old_ctx  # type: click.Context
-    group = group_ctx.command  # type: click.Command
+    group_ctx = old_ctx.parent or old_ctx  # type: Context
+    group = group_ctx.command  # type: Command
     isatty = sys.stdin.isatty()
 
     # Delete the REPL command from those available, as we don't want to allow
@@ -74,71 +78,72 @@ def repl(
         available_commands = group_ctx.command.commands  # type: ignore[attr-defined]
 
     original_command = available_commands.pop(repl_command_name, None)
-    prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx)
 
     if isatty:
         # session = PromptSession(
         #   **prompt_kwargs
         # )  # type: PromptSession[Mapping[str, Any]]
+        prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx)
+        session = PromptSession(**prompt_kwargs)  # type: PromptSession[dict[str, Any]]
 
-        def prompt_input():
+        def get_command():
             # type: () -> str
-            return PromptSession(**prompt_kwargs).prompt()
+            return session.prompt()
 
-        get_command = prompt_input  # type: Callable[[], str]
     else:
         get_command = sys.stdin.readline
 
-    while True:
-        try:
-            command = get_command()
-        except KeyboardInterrupt:
-            continue
-        except EOFError:
-            break
-
-        if not command:
-            if isatty:
+    with ClickReplContext(get_command, isatty, prompt_kwargs) as repl_ctx:
+        while True:
+            try:
+                command = repl_ctx.get_command()
+            except KeyboardInterrupt:
                 continue
-            else:
+            except EOFError:
                 break
 
-        try:
-            args = _execute_command(
-                command, allow_internal_commands, allow_system_commands
-            )
-            if args is None:
+            if not command:
+                if isatty:
+                    continue
+                else:
+                    break
+
+            try:
+                args = _execute_command(
+                    command, allow_internal_commands, allow_system_commands
+                )
+                if args is None:
+                    continue
+
+            except CommandLineParserError:
                 continue
 
-        except CommandLineParserError:
-            continue
+            except ExitReplException:
+                break
 
-        except ExitReplException:
-            break
+            try:
+                # default_map passes the top-level params to the new group to
+                # support top-level required params that would reject the
+                # invocation if missing.
+                    with group.make_context(
+                        None, args, parent=group_ctx, default_map=old_ctx.params
+                    ) as ctx:
+                        group.invoke(ctx)
+                        ctx.exit()
 
-        try:
-            # default_map passes the top-level params to the new group to
-            # support top-level required params that would reject the
-            # invocation if missing.
-            with group.make_context(
-                None, args, parent=group_ctx, default_map=old_ctx.params
-            ) as ctx:
-                group.invoke(ctx)
-                ctx.exit()
+            except click.ClickException as e:
+                e.show()
+            except (ClickExit, SystemExit):
+                pass
 
-        except click.ClickException as e:
-            e.show()
-        except (ClickExit, SystemExit):
-            pass
+            except ExitReplException:
+                break
 
-        except ExitReplException:
-            break
-
-    if original_command is not None:
-        available_commands[repl_command_name] = original_command
+        if original_command is not None:
+            available_commands[repl_command_name] = original_command
 
 
 def register_repl(group, name="repl"):
-    # type: (click.Group, str) -> None
+    # type: (Group, str) -> None
     """Register :func:`repl()` as sub-command *name* of *group*."""
     group.command(name=name)(click.pass_context(repl))
