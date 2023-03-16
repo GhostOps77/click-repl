@@ -1,13 +1,14 @@
 from __future__ import with_statement
 
-import click
 import os
 import shlex
 import sys
-
 from collections import defaultdict
 from functools import wraps
 from threading import local
+
+import click
+from prompt_toolkit import PromptSession
 
 from .exceptions import CommandLineParserError, ExitReplException
 
@@ -27,25 +28,17 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from prompt_toolkit import PromptSession  # noqa: F401
+        from typing import (Any, Callable, Generator, Iterable,  # noqa: F401
+                            Mapping, NoReturn, Optional, Union)
+
         from prompt_toolkit.history import History  # noqa: F401
-        from typing import (  # noqa: F401
-            Any,
-            Callable,
-            Iterable,
-            Mapping,
-            NoReturn,
-            Optional,
-            Union,
-            Generator,
-        )
 
 # Abstract datatypes in collections module are moved to collections.abc
 # module in Python 3.3
 if sys.version_info >= (3, 3):
-    from collections.abc import Mapping, Iterable  # noqa: F811
+    from collections.abc import Iterable, Mapping  # noqa: F811
 else:
-    from collections import Mapping, Iterable
+    from collections import Iterable, Mapping
 
 
 _internal_commands = {}  # type: dict[str, tuple[Callable[[], Any], Optional[str]]]
