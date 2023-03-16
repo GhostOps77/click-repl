@@ -2,7 +2,6 @@ from __future__ import with_statement
 
 import click
 import sys
-from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
@@ -18,12 +17,18 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
+        from prompt_toolkit import PromptSession  # noqa: F401
         from click import Command, Context, Group  # noqa: F401
         from typing import Any, Optional  # noqa: F401
 
 
-def bootstrap_prompt(group, prompt_kwargs, ctx=None, style=None):
-    # type: (Command, dict[str, Any], Optional[Context], Optional[dict[str, str]]) -> dict[str, Any]
+def bootstrap_prompt(
+    group,  # type: Command
+    prompt_kwargs,  # type: dict[str, Any]
+    ctx=None,  # type: Optional[Context]
+    style=None  # type: Optional[dict[str, Any]]
+):
+    # type: (...) -> dict[str, Any]
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
@@ -93,20 +98,11 @@ def repl(
         #   **prompt_kwargs
         # )  # type: PromptSession[Mapping[str, Any]]
         prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
-        session = PromptSession(**prompt_kwargs)  # type: PromptSession[dict[str, Any]]
 
-        def get_command():
-            # type: (...) -> str
-            return str(session.prompt())
-
-    else:
-        get_command = sys.stdin.readline
-        session = None
-
-    with ClickReplContext(session):
+    with ClickReplContext(isatty, prompt_kwargs) as repl_ctx:
         while True:
             try:
-                command = get_command()
+                command = repl_ctx.get_command()
             except KeyboardInterrupt:
                 continue
             except EOFError:

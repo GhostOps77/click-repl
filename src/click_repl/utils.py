@@ -24,10 +24,10 @@ __all__ = [
 
 # typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
-    from prompt_toolkit import PromptSession  # noqa: F481
     import typing as t
 
     if t.TYPE_CHECKING:
+        from prompt_toolkit import PromptSession  # noqa: F401
         from prompt_toolkit.history import History  # noqa: F401
         from typing import (  # noqa: F401
             Any,
@@ -53,21 +53,37 @@ _locals = local()
 
 
 class ClickReplContext:
-    __slots__ = ("session", "_history")
+    __slots__ = ("prompt_kwargs", "session", "_history", "get_command")
 
-    def __init__(self, session):
-        # type: (PromptSession[dict[str, Any]]) -> None
-        self.session = session  # type: PromptSession[dict[str, Any]]
+    def __init__(self, isatty, prompt_kwargs):
+        # type: (bool, dict[str, Any]) -> None
+        self.prompt_kwargs = prompt_kwargs
+        self.session = PromptSession(
+            **prompt_kwargs
+        )  # type: PromptSession[dict[str, Any]]
         self._history = self.session.history  # type: History
+
+        if isatty:
+            def get_command():
+                # type: () -> str
+                return str(self.session.prompt())
+            self.get_command = get_command  # type: Callable[..., str]
+
+        else:
+            self.get_command = sys.stdin.readline
 
     def __enter__(self):
         # type: () -> ClickReplContext
         push_context(self)
         return self
 
-    def __exit__(self, *_):
+    def __exit__(self, *args):
         # type: (Any) -> None
         pop_context()
+
+    def prompt_reset(self):
+        # type: () -> None
+        self.session = PromptSession(**self.prompt_kwargs)
 
     @property
     def history(self):
