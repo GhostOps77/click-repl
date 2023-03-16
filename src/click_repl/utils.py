@@ -24,6 +24,7 @@ __all__ = [
 
 # typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
+    from prompt_toolkit import PromptSession  # noqa: F481
     import typing as t
 
     if t.TYPE_CHECKING:
@@ -52,16 +53,12 @@ _locals = local()
 
 
 class ClickReplContext:
-    __slots__ = ("get_command", "isatty", "prompt_kwargs", "_history", "message")
+    __slots__ = ("session", "_history")
 
-    def __init__(self, get_command, isatty, prompt_kwargs):
-        # type: (Callable[[], str], bool, dict[str, Any]) -> None
-        self.get_command = get_command  # type: Callable[[], str]
-        self.isatty = isatty  # type: bool
-        self.prompt_kwargs = prompt_kwargs  # type: dict[str, Any]
-        self._history = self.prompt_kwargs.pop("history")  # type: History
-        self.message = self.prompt_kwargs.pop("message")  # type: str
-        prompt_kwargs.pop("completer", None)
+    def __init__(self, session):
+        # type: (PromptSession[dict[str, Any]]) -> None
+        self.session = session  # type: PromptSession[dict[str, Any]]
+        self._history = self.session.history  # type: History
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -76,15 +73,6 @@ class ClickReplContext:
     def history(self):
         # type: () -> Generator[str, None, None]
         yield from self._history.load_history_strings()
-
-    # def get_command(self, **kwargs):
-    #     # type: (...) -> str
-    #     if not self.isatty:
-    #         return self.get_command()
-
-    #     temp_prompt_kwargs = self.prompt_kwargs.copy()
-    #     temp_prompt_kwargs.update(kwargs)
-    #     return self._get_command(**temp_prompt_kwargs)
 
 
 def get_current_click_repl_context(silent=False):

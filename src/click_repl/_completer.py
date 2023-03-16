@@ -44,13 +44,18 @@ def text_type(text):
 
 
 class ClickCompleter(Completer):
-    __slots__ = ("cli", "ctx")
+    __slots__ = ("cli", "ctx", "styles")
 
-    def __init__(self, cli, ctx=None):
-        # type: (Command, Optional[Context]) -> None
+    def __init__(self, cli, ctx=None, styles=None):
+        # type: (Command, Optional[Context], Optional[dict[str, str]]) -> None
 
         self.cli = cli  # type: Command
         self.ctx = ctx  # type: Optional[Context]
+        self.styles = styles if styles is not None else {
+            'command': '',
+            'argument': '',
+            'option': ''
+        }  # type: dict[str, str]
 
     def _get_completion_from_autocompletion_functions(
         self,
@@ -98,7 +103,7 @@ class ClickCompleter(Completer):
         # type: (Union[Parameter, click.Option], str) -> list[Completion]
 
         return list(
-            Completion(text_type(choice), -len(incomplete))
+            Completion(text_type(choice), -len(incomplete), style=self.styles['argument'])
             for choice in param.type.choices  # type: ignore[attr-defined]
         )
 
@@ -112,17 +117,17 @@ class ClickCompleter(Completer):
             for i in Path().glob("{}*".format(incomplete))
         )
 
-    def _get_completion_for_File_types(self, param, args, incomplete):
-        # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
+    # def _get_completion_for_File_types(self, param, args, incomplete):
+    #     # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
 
-        # attrs = vars(param)
+    #     # attrs = vars(param)
 
-        return list(
-            Completion(text_type(i), display=text_type(i.name))
-            for i in filter(
-                lambda item: item.is_file(), Path().glob("{}*".format(incomplete))
-            )
-        )
+    #     return list(
+    #         Completion(text_type(i), display=text_type(i.name))
+    #         for i in filter(
+    #             lambda item: item.is_file(), Path().glob("{}*".format(incomplete))
+    #         )
+    #     )
 
     def _get_completion_for_Boolean_type(self, param, incomplete):
         # type: (Union[Parameter, click.Option], str) -> list[Completion]
@@ -159,6 +164,7 @@ class ClickCompleter(Completer):
                             text_type(option),
                             -len(incomplete),
                             display_meta=text_type(param.help or ""),
+                            style=self.styles['option']
                         )
                     )
 
@@ -189,18 +195,17 @@ class ClickCompleter(Completer):
                         self._get_completion_for_Boolean_type(param, incomplete)
                     )
 
-                elif isinstance(param.type, click.Path):
+                elif isinstance(param.type, (click.Path, click.File)):
                     choices.extend(
                         self._get_completion_for_Path_types(param, args, incomplete)
                     )
 
-                elif isinstance(param.type, click.File):
-                    choices.extend(
-                        self._get_completion_for_File_types(param, args, incomplete)
-                    )
+                # elif isinstance(param.type, click.File):
+                #     choices.extend(
+                #         self._get_completion_for_File_types(param, args, incomplete)
+                #     )
 
             elif isinstance(param, click.Argument):
-                # print(f'{param.name = }')
                 if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
                     choices.extend(self._get_completion_from_choices(param, incomplete))
 
@@ -209,15 +214,15 @@ class ClickCompleter(Completer):
                         self._get_completion_for_Boolean_type(param, incomplete)
                     )
 
-                elif isinstance(param.type, click.Path):
+                elif isinstance(param.type, (click.Path, click.File)):
                     choices.extend(
                         self._get_completion_for_Path_types(param, args, incomplete)
                     )
 
-                elif isinstance(param.type, click.File):
-                    choices.extend(
-                        self._get_completion_for_File_types(param, args, incomplete)
-                    )
+                # elif isinstance(param.type, click.File):
+                #     choices.extend(
+                #         self._get_completion_for_File_types(param, args, incomplete)
+                #     )
 
                 elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
                     choices = self._get_completion_from_autocompletion_functions(

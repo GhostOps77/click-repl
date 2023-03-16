@@ -22,8 +22,8 @@ if sys.version_info >= (3, 5):
         from typing import Any, Optional  # noqa: F401
 
 
-def bootstrap_prompt(group, prompt_kwargs, ctx=None):
-    # type: (Command, dict[str, Any], Optional[Context]) -> dict[str, Any]
+def bootstrap_prompt(group, prompt_kwargs, ctx=None, style=None):
+    # type: (Command, dict[str, Any], Optional[Context], Optional[dict[str, str]]) -> dict[str, Any]
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
@@ -33,8 +33,8 @@ def bootstrap_prompt(group, prompt_kwargs, ctx=None):
 
     defaults = {
         "history": InMemoryHistory(),
-        "completer": ClickCompleter(group, ctx=ctx),
-        "message": "> ",
+        "completer": ClickCompleter(group, ctx=ctx, styles=style),
+        "message": u"> ",
     }
 
     defaults.update(prompt_kwargs)
@@ -46,12 +46,14 @@ def repl(
     prompt_kwargs={},
     allow_system_commands=True,
     allow_internal_commands=True,
+    styles=None
 ):
-    # type: (click.Context, dict[str, Any], bool, bool) -> None
+    # type: (click.Context, dict[str, Any], bool, bool, Optional[dict[str, str]]) -> None
 
     """
     Start an interactive shell. All subcommands are available in it.
 
+    :param styles: Optional dictionary with 'command', 'argument' and 'option' style names
     :param old_ctx: The current Click context.
     :param prompt_kwargs: Parameters passed to
         :py:func:`prompt_toolkit.PromptSession`.
@@ -63,6 +65,13 @@ def repl(
     group_ctx = old_ctx.parent or old_ctx  # type: Context
     group = group_ctx.command  # type: Command
     isatty = sys.stdin.isatty()
+
+    if styles is None:
+        styles = {
+            'command': 'ansiblack',
+            'option': 'ansiblack',
+            'argument': 'ansiblack'
+        }
 
     # Delete the REPL command from those available, as we don't want to allow
     # nesting REPLs (note: pass `None` to `pop` as we don't want to error if
@@ -83,20 +92,21 @@ def repl(
         # session = PromptSession(
         #   **prompt_kwargs
         # )  # type: PromptSession[Mapping[str, Any]]
-        prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx)
+        prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
         session = PromptSession(**prompt_kwargs)  # type: PromptSession[dict[str, Any]]
 
         def get_command():
-            # type: () -> str
+            # type: (...) -> str
             return str(session.prompt())
 
     else:
         get_command = sys.stdin.readline
+        session = None
 
-    with ClickReplContext(get_command, isatty, prompt_kwargs) as repl_ctx:
+    with ClickReplContext(session):
         while True:
             try:
-                command = repl_ctx.get_command()
+                command = get_command()
             except KeyboardInterrupt:
                 continue
             except EOFError:
