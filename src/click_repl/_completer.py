@@ -99,19 +99,25 @@ class ClickCompleter(Completer):
 
         return param_choices
 
-    # def _get_completion_from_choices(self, ctx, param, args, incomplete):
-    #     # type: (Context, Union[Parameter, click.Option], list[str], str) -> list[Completion]
+    def _get_completion_from_choices(
+        self,
+        ctx,  # type: Context
+        param,  # type: Parameter
+        args,  # type: list[str]
+        incomplete  # type: str
+    ):
+        # type: (...) -> list[Completion]
 
-    #     choices_lst = list(
-    #         self._get_completion_from_autocompletion_functions(
-    #             param, ctx, args, incomplete
-    #         )
-    #     )
+        choices_lst = list(
+            self._get_completion_from_autocompletion_functions(
+                param, ctx, args, incomplete
+            )
+        )
 
-    #     return [
-    #         Completion(text_type(choice), -len(incomplete), style=self.styles['argument'])
-    #         for choice in choices_lst
-    #     ]
+        return [
+            Completion(text_type(choice), -len(incomplete), style=self.styles['argument'])
+            for choice in choices_lst
+        ]
 
     def _get_completion_for_Path_types(self, param, args, incomplete):
         # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
@@ -185,7 +191,9 @@ class ClickCompleter(Completer):
                 if param_called:
                     # if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
                     #     param_choices.extend(
-                    #         self._get_completion_from_choices(autocomplete_ctx, param, args, incomplete)
+                    #         self._get_completion_from_choices(
+                    #             autocomplete_ctx, param, args, incomplete
+                    #         )
                     #     )
 
                     if isinstance(param.type, click.types.BoolParamType):
@@ -208,7 +216,6 @@ class ClickCompleter(Completer):
                             )
                         )
 
-
                     # elif isinstance(param.type, click.File):
                     #     param_choices.extend(
                     #         self._get_completion_for_File_types(param, args, incomplete)
@@ -216,7 +223,11 @@ class ClickCompleter(Completer):
 
             elif isinstance(param, click.Argument):
                 # if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
-                #     choices.extend(self._get_completion_from_choices(autocomplete_ctx, param, args, incomplete))
+                #     choices.extend(
+                #         self._get_completion_from_choices(
+                #             autocomplete_ctx, param, args, incomplete
+                #         )
+                #     )
 
                 if isinstance(param.type, click.types.BoolParamType):
                     choices.extend(

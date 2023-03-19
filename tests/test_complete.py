@@ -219,7 +219,6 @@ def test_tuple_return_type_shell_complete_func():
             ('Aye', 'aye')
         ]
 
-
     @root_command.command()
     @click.argument("foo", shell_complete=return_type_tuple_shell_complete)
     def tuple_type_autocompletion_cmd(foo):
@@ -248,7 +247,6 @@ def test_tuple_return_type_shell_complete_func_click7():
             ("Hey", "hey"),
             ('Aye', 'aye')
         ]
-
 
     @root_command.command()
     @click.argument("foo", autocompletion=return_type_tuple_shell_complete)

@@ -12,6 +12,7 @@ from prompt_toolkit import PromptSession
 
 from .exceptions import CommandLineParserError, ExitReplException
 
+
 __all__ = [
     "_execute_command",
     "_exit_internal",
@@ -56,12 +57,12 @@ class ClickReplContext:
         if isatty:
             self.session = PromptSession(
                 **prompt_kwargs
-            )  # type: PromptSession[dict[str, Any]]
-            self._history = self.session.history  # type: History
+            )  # type: Optional[PromptSession[dict[str, Any]]]
+            self._history = self.session.history  # type: Union[History, list[str]]
 
             def get_command():
                 # type: () -> str
-                return self.session.prompt()  # type: ignore[return-value]
+                return self.session.prompt()  # type: ignore[return-value, union-attr]
             self.get_command = get_command  # type: Callable[..., str]
 
         else:
@@ -85,7 +86,8 @@ class ClickReplContext:
 
     def history(self):
         # type: () -> Generator[str, None, None]
-        yield from self._history.load_history_strings()
+        if self._history is not None:
+            yield from self._history.load_history_strings()  # type: ignore[union-attr]
 
 
 def get_current_click_repl_context(silent=False):
