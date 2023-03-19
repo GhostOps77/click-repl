@@ -316,7 +316,7 @@ class ClickCompleter(Completer):
         if param_called:
             choices = param_choices
 
-        # for item in choices:
-        #     # if item.text.startswith(incomplete):
-        #         yield item
-        yield from choices
+        for item in choices:
+            # if item.text.startswith(incomplete):
+            yield item
+        # yield from choices
