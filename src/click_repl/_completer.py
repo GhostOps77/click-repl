@@ -153,10 +153,10 @@ class ClickCompleter(Completer):
         autocomplete_ctx,  # type: Context
         args,  # type: list[str]
     ):
-        # type: (...) -> tuple[list[Completion], list[Completion], bool]
+        # type: (...) -> list[Completion]
 
         choices = []
-        param_choices = []
+        # param_choices = []
         param_called = False
 
         for param in ctx_command.params:
@@ -182,24 +182,24 @@ class ClickCompleter(Completer):
 
                 if param_called:
                     if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
-                        param_choices.extend(
+                        choices = list(
                             self._get_completion_from_choices_click7(
                                 param, incomplete
                             )
                         )
 
                     elif isinstance(param.type, click.types.BoolParamType):
-                        param_choices.extend(
+                        choices = list(
                             self._get_completion_for_Boolean_type(param, incomplete)
                         )
 
                     elif isinstance(param.type, (click.Path, click.File)):
-                        param_choices.extend(
+                        choices = list(
                             self._get_completion_for_Path_types(param, args, incomplete)
                         )
 
                     elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
-                        param_choices.extend(
+                        choices = list(
                             self._get_completion_from_autocompletion_functions(
                                 param,
                                 autocomplete_ctx,
@@ -244,7 +244,7 @@ class ClickCompleter(Completer):
                         )
                     )
 
-        return choices, param_choices, param_called
+        return choices
 
     def get_completions(self, document, complete_event=None):
         # type: (Document, Optional[CompleteEvent]) -> Generator[Completion, None, None]
@@ -258,7 +258,7 @@ class ClickCompleter(Completer):
             return
 
         choices = []  # type: list[Completion]
-        param_choices = []  # type: list[Completion]
+        # param_choices = []  # type: list[Completion]
         param_called = False
         cursor_within_command = (
             document.text_before_cursor.rstrip() == document.text_before_cursor
@@ -289,7 +289,7 @@ class ClickCompleter(Completer):
             return
 
         try:
-            choices, param_choices, param_called = self._get_completion_from_params(
+            choices = self._get_completion_from_params(
                 ctx_command, incomplete, autocomplete_ctx, args
             )
 
@@ -313,8 +313,8 @@ class ClickCompleter(Completer):
 
         # If we are inside a parameter that was called, we want to show only
         # relevant choices
-        if param_called:
-            choices = param_choices
+        # if param_called:
+        #     choices = param_choices
 
         for item in choices:
             # if item.text.startswith(incomplete):
