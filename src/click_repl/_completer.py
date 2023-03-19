@@ -259,7 +259,7 @@ class ClickCompleter(Completer):
 
         choices = []  # type: list[Completion]
         # param_choices = []  # type: list[Completion]
-        param_called = False
+        # param_called = False
         cursor_within_command = (
             document.text_before_cursor.rstrip() == document.text_before_cursor
         )
@@ -289,8 +289,10 @@ class ClickCompleter(Completer):
             return
 
         try:
-            choices = self._get_completion_from_params(
-                ctx_command, incomplete, autocomplete_ctx, args
+            choices.extend(
+                self._get_completion_from_params(
+                    ctx_command, incomplete, autocomplete_ctx, args
+                )
             )
 
             if isinstance(ctx_command, click.MultiCommand):
