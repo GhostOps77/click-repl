@@ -1,6 +1,7 @@
-import pytest
 from click_repl import CommandLineParserError
 from click_repl.utils import _execute_command
+from prompt_toolkit.document import Document
+import pytest
 
 
 @pytest.mark.parametrize(

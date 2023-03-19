@@ -35,5 +35,4 @@ def test_no_internal_commands(capfd, test_input):
     click_repl.utils._execute_command(test_input, allow_internal_commands=False)
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
-
     assert captured_stdout == ""

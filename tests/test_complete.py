@@ -35,7 +35,7 @@ def test_shell_complete_arg_v8_class_type():
             pass
 
         completions = list(c.get_completions(Document("autocompletion-cmd ")))
-        assert set(x.text for x in completions) == {"foo", "bar"}
+        assert {x.text for x in completions} == {"foo", "bar"}
 
 
 def test_shell_complete_option_v8_class_type():
@@ -61,7 +61,7 @@ def test_shell_complete_option_v8_class_type():
             pass
 
         completions = list(c.get_completions(Document("autocompletion-opt-cmd ")))
-        assert set(x.text for x in completions) == {"--handler", "bar"}
+        assert {x.text for x in completions} == {"--handler", "bar"}
 
 
 def test_shell_complete_arg_v8_func_type():
@@ -71,7 +71,7 @@ def test_shell_complete_arg_v8_func_type():
         reason="click-v8 built-in shell complete is not available, so skipped",
     ) as CompletionItem:
 
-        def shell_complete_func(self, ctx, param, incomplete):
+        def shell_complete_func(ctx, param, incomplete):
             return [
                 CompletionItem(name)
                 for name in ("foo", "bar")
@@ -84,7 +84,7 @@ def test_shell_complete_arg_v8_func_type():
             pass
 
         completions = list(c.get_completions(Document("autocompletion-cmd2 ")))
-        assert set(x.text for x in completions) == {"foo", "bar"}
+        assert {x.text for x in completions} == {"foo", "bar"}
 
 
 def test_shell_complete_option_v8_func_type():
@@ -94,7 +94,7 @@ def test_shell_complete_option_v8_func_type():
         reason="click-v8 built-in shell complete is not available, so skipped",
     ):
 
-        def shell_complete_func(self, ctx, param, incomplete):
+        def shell_complete_func(ctx, param, incomplete):
             return [name for name in ("foo", "bar") if name.startswith(incomplete)]
 
         @root_command.command()
@@ -105,15 +105,15 @@ def test_shell_complete_option_v8_func_type():
         completions = list(
             c.get_completions(Document("autocompletion-opt-cmd --handler "))
         )
-        assert set(x.text for x in completions) == {"foo", "bar"}
+        assert {x.text for x in completions} == {"foo", "bar"}
 
 
 @pytest.mark.skipif(
-    click.__version__[0] != "7",
+    click.__version__[0] > '7',
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
 def test_click7_autocomplete_arg():
-    def shell_complete_func(self, ctx, incomplete):
+    def shell_complete_func(ctx, args, incomplete):
         return [name for name in ("foo", "bar") if name.startswith(incomplete)]
 
     @root_command.command()
@@ -122,15 +122,15 @@ def test_click7_autocomplete_arg():
         pass
 
     completions = list(c.get_completions(Document("autocompletion-arg-cmd2 ")))
-    assert set(x.text for x in completions) == {"foo", "bar"}
+    assert {x.text for x in completions} == {"foo", "bar"}
 
 
 @pytest.mark.skipif(
-    click.__version__[0] != "7",
+    click.__version__[0] > '7',
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
 def test_click7_autocomplete_option():
-    def shell_complete_func(self, ctx, incomplete):
+    def shell_complete_func(ctx, args, incomplete):
         return [name for name in ("foo", "bar") if name.startswith(incomplete)]
 
     @root_command.command()
@@ -141,7 +141,7 @@ def test_click7_autocomplete_option():
     completions = list(
         c.get_completions(Document("autocompletion-opt-cmd2 --handler "))
     )
-    assert set(x.text for x in completions) == {"foo", "bar"}
+    assert {x.text for x in completions} == {"foo", "bar"}
 
 
 def test_arg_choices():
@@ -151,7 +151,7 @@ def test_arg_choices():
         pass
 
     completions = list(c.get_completions(Document("arg-choices ")))
-    assert set(x.text for x in completions) == {"foo", "bar"}
+    assert {x.text for x in completions} == {"foo", "bar"}
 
 
 def test_option_choices():
@@ -161,7 +161,7 @@ def test_option_choices():
         pass
 
     completions = list(c.get_completions(Document("option-choices --handler ")))
-    assert set(x.text for x in completions) == {"foo", "bar"}
+    assert {x.text for x in completions} == {"foo", "bar"}
 
 
 def test_hidden_command_completions():
@@ -173,21 +173,97 @@ def test_hidden_command_completions():
     completions = list(
         c.get_completions(Document("option-choices-hidden-cmd --handler "))
     )
-    assert set(x.text for x in completions) == set()
+    assert {x.text for x in completions} == set()
 
 
-def test_boolean_type():
+def test_boolean_arg():
     @root_command.command()
     @click.argument("foo", type=click.BOOL)
-    def bool_cmd(foo):
+    def bool_arg(foo):
         pass
 
     completions = list(
-        c.get_completions(Document("bool-cmd "))
+        c.get_completions(Document("bool-arg "))
     )
-    assert set(x.text for x in completions) == {'true', 'false'}
+    assert {x.text for x in completions} == {'true', 'false'}
 
     completions = list(
-        c.get_completions(Document("bool-cmd t"))
+        c.get_completions(Document("bool-arg t"))
     )
-    assert set(x.text for x in completions) == {'true'}
+    assert {x.text for x in completions} == {'true'}
+
+
+def test_boolean_option():
+    @root_command.command()
+    @click.option("--foo", type=click.BOOL)
+    def bool_option(foo):
+        pass
+
+    completions = list(
+        c.get_completions(Document("bool-option --foo "))
+    )
+    assert {x.text for x in completions} == {'true', 'false'}
+
+    completions = list(
+        c.get_completions(Document("bool-option --foo t"))
+    )
+    assert {x.text for x in completions} == {'true'}
+
+
+def test_tuple_return_type_shell_complete_func():
+    def return_type_tuple_shell_complete(ctx, param, incomplete):
+        return [
+            ("Hi", "hi"),
+            ("Please", "please"),
+            ("Hey", "hey"),
+            ('Aye', 'aye')
+        ]
+
+
+    @root_command.command()
+    @click.argument("foo", shell_complete=return_type_tuple_shell_complete)
+    def tuple_type_autocompletion_cmd(foo):
+        pass
+
+    completions = list(
+        c.get_completions(Document("tuple-type-autocompletion-cmd "))
+    )
+    assert {x.text for x in completions} == {'Hi', 'Please', 'Hey', 'Aye'}
+
+    completions = list(
+        c.get_completions(Document("tuple-type-autocompletion-cmd h"))
+    )
+    assert {x.text for x in completions} == {'Hi', 'Please', 'Hey', 'Aye'}
+
+
+@pytest.mark.skipif(
+    click.__version__[0] > '7',
+    reason="click-v7 old autocomplete function is not available, so skipped",
+)
+def test_tuple_return_type_shell_complete_func_click7():
+    def return_type_tuple_shell_complete(ctx, args, incomplete):
+        return [
+            ("Hi", "hi"),
+            ("Please", "please"),
+            ("Hey", "hey"),
+            ('Aye', 'aye')
+        ]
+
+
+    @root_command.command()
+    @click.argument("foo", autocompletion=return_type_tuple_shell_complete)
+    def tuple_type_autocompletion_cmd(foo):
+        pass
+
+    completions = list(
+        c.get_completions(Document("tuple-type-autocompletion-cmd "))
+    )
+    assert (
+        {x.text for x in completions} == {'Hi', 'Please', 'Hey', 'Aye'}
+        and {x.display_meta[0][-1] for x in completions} == {'hi', 'please', 'hey', 'aye'}
+    )
+
+    completions = list(
+        c.get_completions(Document("tuple-type-autocompletion-cmd h"))
+    )
+    assert {x.text for x in completions} == {'Hi', 'Please', 'Hey', 'Aye'}

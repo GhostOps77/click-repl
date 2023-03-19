@@ -99,23 +99,27 @@ class ClickCompleter(Completer):
 
         return param_choices
 
-    def _get_completion_from_choices(self, param, incomplete):
-        # type: (Union[Parameter, click.Option], str) -> list[Completion]
+    # def _get_completion_from_choices(self, ctx, param, args, incomplete):
+    #     # type: (Context, Union[Parameter, click.Option], list[str], str) -> list[Completion]
 
-        return list(
-            Completion(text_type(choice), -len(incomplete), style=self.styles['argument'])
-            for choice in param.type.choices  # type: ignore[attr-defined]
-        )
+    #     choices_lst = list(
+    #         self._get_completion_from_autocompletion_functions(
+    #             param, ctx, args, incomplete
+    #         )
+    #     )
+
+    #     return [
+    #         Completion(text_type(choice), -len(incomplete), style=self.styles['argument'])
+    #         for choice in choices_lst
+    #     ]
 
     def _get_completion_for_Path_types(self, param, args, incomplete):
         # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
 
-        # attrs = vars(param)
-
-        return list(
-            Completion(text_type(i), display=text_type(i.name))
+        return [
+            Completion(text_type(i), -len(incomplete), display=text_type(i.name))
             for i in Path().glob("{}*".format(incomplete))
-        )
+        ]
 
     # def _get_completion_for_File_types(self, param, args, incomplete):
     #     # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
@@ -123,7 +127,7 @@ class ClickCompleter(Completer):
     #     # attrs = vars(param)
 
     #     return list(
-    #         Completion(text_type(i), display=text_type(i.name))
+    #         Completion(text_type(i), -len(incomplete), display=text_type(i.name))
     #         for i in filter(
     #             lambda item: item.is_file(), Path().glob("{}*".format(incomplete))
     #         )
@@ -132,7 +136,11 @@ class ClickCompleter(Completer):
     def _get_completion_for_Boolean_type(self, param, incomplete):
         # type: (Union[Parameter, click.Option], str) -> list[Completion]
         return [
-            Completion(text_type(k), display_meta=text_type("/".join(v)))
+            Completion(
+                text_type(k),
+                -len(incomplete),
+                display_meta=text_type("/".join(v))
+            )
             for k, v in {
                 "true": ("1", "true", "t", "yes", "y", "on"),
                 "false": ("0", "false", "f", "no", "n", "off"),
@@ -157,59 +165,60 @@ class ClickCompleter(Completer):
             if getattr(param, "hidden", False):
                 continue
 
-            if isinstance(param, click.Option):
-                for option in param.opts + param.secondary_opts:
-                    choices.append(
-                        Completion(
-                            text_type(option),
-                            -len(incomplete),
-                            display_meta=text_type(param.help or ""),
-                            style=self.styles['option']
-                        )
-                    )
-
+            elif isinstance(param, click.Option):
+                for option in (param.opts + param.secondary_opts):
                     # We want to make sure if this parameter was called
                     if option in args[param.nargs * -1 :]:  # noqa: E203
                         param_called = True
+                        break
 
-                if (
-                    param_called
-                    and getattr(param, AUTO_COMPLETION_PARAM, None) is not None
-                ):
-                    param_choices.extend(
-                        self._get_completion_from_autocompletion_functions(
-                            param,
-                            autocomplete_ctx,
-                            args,
-                            incomplete,
+                    elif option.startswith(incomplete):
+                        choices.append(
+                            Completion(
+                                text_type(option),
+                                -len(incomplete),
+                                display_meta=text_type(param.help or ""),
+                                style=self.styles['option']
+                            )
                         )
-                    )
 
-                elif not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
-                    param_choices.extend(
-                        self._get_completion_from_choices(param, incomplete)
-                    )
+                if param_called:
+                    # if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
+                    #     param_choices.extend(
+                    #         self._get_completion_from_choices(autocomplete_ctx, param, args, incomplete)
+                    #     )
 
-                elif isinstance(param.type, click.types.BoolParamType):
-                    choices.extend(
-                        self._get_completion_for_Boolean_type(param, incomplete)
-                    )
+                    if isinstance(param.type, click.types.BoolParamType):
+                        param_choices.extend(
+                            self._get_completion_for_Boolean_type(param, incomplete)
+                        )
 
-                elif isinstance(param.type, (click.Path, click.File)):
-                    choices.extend(
-                        self._get_completion_for_Path_types(param, args, incomplete)
-                    )
+                    elif isinstance(param.type, (click.Path, click.File)):
+                        param_choices.extend(
+                            self._get_completion_for_Path_types(param, args, incomplete)
+                        )
 
-                # elif isinstance(param.type, click.File):
-                #     choices.extend(
-                #         self._get_completion_for_File_types(param, args, incomplete)
-                #     )
+                    elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
+                        param_choices.extend(
+                            self._get_completion_from_autocompletion_functions(
+                                param,
+                                autocomplete_ctx,
+                                args,
+                                incomplete,
+                            )
+                        )
+
+
+                    # elif isinstance(param.type, click.File):
+                    #     param_choices.extend(
+                    #         self._get_completion_for_File_types(param, args, incomplete)
+                    #     )
 
             elif isinstance(param, click.Argument):
-                if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
-                    choices.extend(self._get_completion_from_choices(param, incomplete))
+                # if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
+                #     choices.extend(self._get_completion_from_choices(autocomplete_ctx, param, args, incomplete))
 
-                elif isinstance(param.type, click.types.BoolParamType):
+                if isinstance(param.type, click.types.BoolParamType):
                     choices.extend(
                         self._get_completion_for_Boolean_type(param, incomplete)
                     )
@@ -225,14 +234,15 @@ class ClickCompleter(Completer):
                 #     )
 
                 elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
-                    choices = self._get_completion_from_autocompletion_functions(
-                        param,
-                        autocomplete_ctx,
-                        args,
-                        incomplete,
+                    choices.extend(
+                        self._get_completion_from_autocompletion_functions(
+                            param,
+                            autocomplete_ctx,
+                            args,
+                            incomplete,
+                        )
                     )
 
-        # print(f'{choices = }\n{param_choices = }\n{param_called = }')
         return choices, param_choices, param_called
 
     def get_completions(self, document, complete_event=None):
@@ -241,7 +251,7 @@ class ClickCompleter(Completer):
         # Code analogous to click._bashcomplete.do_complete
 
         try:
-            args = shlex.split(document.text_before_cursor)
+            args = shlex.split(document.text_before_cursor, posix=False)
         except ValueError:
             # Invalid command, perhaps caused by missing closing quotation.
             return
@@ -253,6 +263,8 @@ class ClickCompleter(Completer):
             document.text_before_cursor.rstrip() == document.text_before_cursor
         )
 
+        # print(f'{document.text_before_cursor = }\n')
+        # print(f'{args = }\n')
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
             # current word.
@@ -288,13 +300,14 @@ class ClickCompleter(Completer):
                     if getattr(command, "hidden", False):
                         continue
 
-                    choices.append(
-                        Completion(
-                            text_type(name),
-                            -len(incomplete),
-                            display_meta=getattr(command, 'short_help', ""),
+                    elif name.lower().startswith(incomplete.lower()):
+                        choices.append(
+                            Completion(
+                                text_type(name),
+                                -len(incomplete),
+                                display_meta=getattr(command, 'short_help', ""),
+                            )
                         )
-                    )
 
         except Exception as e:
             click.echo("{}: {}".format(type(e).__name__, str(e)))
@@ -304,6 +317,7 @@ class ClickCompleter(Completer):
         if param_called:
             choices = param_choices
 
-        for item in choices:
-            if item.text.startswith(incomplete):
-                yield item
+        # for item in choices:
+        #     # if item.text.startswith(incomplete):
+        #         yield item
+        yield from choices

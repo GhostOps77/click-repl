@@ -17,7 +17,6 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from prompt_toolkit import PromptSession  # noqa: F401
         from click import Command, Context, Group  # noqa: F401
         from typing import Any, Optional  # noqa: F401
 
@@ -39,7 +38,7 @@ def bootstrap_prompt(
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(group, ctx=ctx, styles=style),
-        "message": u"> ",
+        "message": u"> "
     }
 
     defaults.update(prompt_kwargs)
@@ -99,54 +98,54 @@ def repl(
         # )  # type: PromptSession[Mapping[str, Any]]
         prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
 
-    with ClickReplContext(isatty, prompt_kwargs) as repl_ctx:
-        while True:
-            try:
-                command = repl_ctx.get_command()
-            except KeyboardInterrupt:
+    repl_ctx = ClickReplContext(isatty, prompt_kwargs)  # type: ClickReplContext
+    while True:
+        try:
+            command = repl_ctx.get_command()
+        except KeyboardInterrupt:
+            continue
+        except EOFError:
+            break
+
+        if not command:
+            if isatty:
                 continue
-            except EOFError:
+            else:
                 break
 
-            if not command:
-                if isatty:
-                    continue
-                else:
-                    break
-
-            try:
-                args = _execute_command(
-                    command, allow_internal_commands, allow_system_commands
-                )
-                if args is None:
-                    continue
-
-            except CommandLineParserError:
+        try:
+            args = _execute_command(
+                command, allow_internal_commands, allow_system_commands
+            )
+            if args is None:
                 continue
 
-            except ExitReplException:
-                break
+        except CommandLineParserError:
+            continue
 
-            try:
-                # default_map passes the top-level params to the new group to
-                # support top-level required params that would reject the
-                # invocation if missing.
-                with group.make_context(
-                    None, args, parent=group_ctx, default_map=old_ctx.params
-                ) as ctx:
-                    group.invoke(ctx)
-                    ctx.exit()
+        except ExitReplException:
+            break
 
-            except click.ClickException as e:
-                e.show()
-            except (ClickExit, SystemExit):
-                pass
+        try:
+            # default_map passes the top-level params to the new group to
+            # support top-level required params that would reject the
+            # invocation if missing.
+            with group.make_context(
+                None, args, parent=group_ctx, default_map=old_ctx.params
+            ) as ctx:
+                group.invoke(ctx)
+                ctx.exit()
 
-            except ExitReplException:
-                break
+        except click.ClickException as e:
+            e.show()
+        except (ClickExit, SystemExit):
+            pass
 
-        if original_command is not None:
-            available_commands[repl_command_name] = original_command
+        except ExitReplException:
+            break
+
+    if original_command is not None:
+        available_commands[repl_command_name] = original_command
 
 
 def register_repl(group, name="repl"):

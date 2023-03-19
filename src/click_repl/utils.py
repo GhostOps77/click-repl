@@ -13,11 +13,11 @@ from prompt_toolkit import PromptSession
 from .exceptions import CommandLineParserError, ExitReplException
 
 __all__ = [
-    "_register_internal_command",
-    "_get_registered_target",
     "_execute_command",
-    "_help_internal",
     "_exit_internal",
+    "_get_registered_target",
+    "_help_internal",
+    "_register_internal_command",
     "dispatch_repl_commands",
     "handle_internal_commands",
     "exit",
@@ -46,24 +46,28 @@ _locals = local()
 
 
 class ClickReplContext:
-    __slots__ = ("prompt_kwargs", "session", "_history", "get_command")
+    __slots__ = ("isatty", "prompt_kwargs", "session", "_history", "get_command")
 
     def __init__(self, isatty, prompt_kwargs):
         # type: (bool, dict[str, Any]) -> None
         self.prompt_kwargs = prompt_kwargs
-        self.session = PromptSession(
-            **prompt_kwargs
-        )  # type: PromptSession[dict[str, Any]]
-        self._history = self.session.history  # type: History
+        self.isatty = isatty
 
         if isatty:
+            self.session = PromptSession(
+                **prompt_kwargs
+            )  # type: PromptSession[dict[str, Any]]
+            self._history = self.session.history  # type: History
+
             def get_command():
                 # type: () -> str
-                return str(self.session.prompt())
+                return self.session.prompt()  # type: ignore[return-value]
             self.get_command = get_command  # type: Callable[..., str]
 
         else:
             self.get_command = sys.stdin.readline
+            self.session = None
+            self._history = []
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -76,9 +80,9 @@ class ClickReplContext:
 
     def prompt_reset(self):
         # type: () -> None
-        self.session = PromptSession(**self.prompt_kwargs)
+        if self.isatty:
+            self.session = PromptSession(**self.prompt_kwargs)
 
-    @property
     def history(self):
         # type: () -> Generator[str, None, None]
         yield from self._history.load_history_strings()
@@ -109,13 +113,13 @@ def pop_context():
 
 def pass_context(func):
     # type: (Callable[..., Any]) -> Callable[..., Any]
-    ctx = get_current_click_repl_context()
+    repl_ctx = get_current_click_repl_context()
     # command = ctx.command
 
     @wraps(func)
     def decorator(*args, **kwargs):  # type: ignore[no-untyped-def]
         # type: (...) -> Any
-        return func(ctx, *args, **kwargs)
+        return func(repl_ctx, *args, **kwargs)
 
     return decorator
 
@@ -209,8 +213,8 @@ def _execute_command(
     try:
         return shlex.split(command)
     except ValueError as e:
-        click.echo("{}: {}".format(type(e).__name__, e))
-        raise CommandLineParserError(f"{e}")
+        # click.echo("{}: {}".format(type(e).__name__, e))
+        raise CommandLineParserError("{}".format(e))
 
 
 def exit():
