@@ -40,7 +40,7 @@ except (ImportError, ModuleNotFoundError):
 
 def text_type(text):
     # type: (Any) -> str
-    return "{}".format(text)
+    return u"{}".format(text)
 
 
 class ClickCompleter(Completer):
