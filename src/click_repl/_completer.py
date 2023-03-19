@@ -264,8 +264,6 @@ class ClickCompleter(Completer):
             document.text_before_cursor.rstrip() == document.text_before_cursor
         )
 
-        # print(f'{document.text_before_cursor = }\n')
-        # print(f'{args = }\n')
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
             # current word.

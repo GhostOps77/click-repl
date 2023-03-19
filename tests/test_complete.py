@@ -11,14 +11,12 @@ def root_command():
 
 c = ClickCompleter(root_command)
 
-
-def test_shell_complete_arg_v8_class_type():
-    with pytest.importorskip(
-        "click.shell_complete.CompletionItem",
-        minversion="8.0.0",
-        reason="click-v8 built-in shell complete is not available, so skipped",
-    ) as CompletionItem:
-
+with pytest.importorskip(
+    "click.shell_complete.CompletionItem",
+    minversion="8.0.0",
+    reason="click-v8 built-in shell complete is not available, so skipped",
+) as CompletionItem:
+    def test_shell_complete_arg_v8_class_type():
         class MyVar(click.ParamType):
             name = "myvar"
 
@@ -38,13 +36,12 @@ def test_shell_complete_arg_v8_class_type():
         assert {x.text for x in completions} == {"foo", "bar"}
 
 
-def test_shell_complete_option_v8_class_type():
-    with pytest.importorskip(
-        "click.shell_complete.CompletionItem",
-        minversion="8.0.0",
-        reason="click-v8 built-in shell complete is not available, so skipped",
-    ) as CompletionItem:
-
+with pytest.importorskip(
+    "click.shell_complete.CompletionItem",
+    minversion="8.0.0",
+    reason="click-v8 built-in shell complete is not available, so skipped",
+) as CompletionItem:
+    def test_shell_complete_option_v8_class_type():
         class MyVar(click.ParamType):
             name = "myvar"
 
@@ -64,13 +61,12 @@ def test_shell_complete_option_v8_class_type():
         assert {x.text for x in completions} == {"--handler", "bar"}
 
 
-def test_shell_complete_arg_v8_func_type():
-    with pytest.importorskip(
-        "click.shell_complete.CompletionItem",
-        minversion="8.0.0",
-        reason="click-v8 built-in shell complete is not available, so skipped",
-    ) as CompletionItem:
-
+with pytest.importorskip(
+    "click.shell_complete.CompletionItem",
+    minversion="8.0.0",
+    reason="click-v8 built-in shell complete is not available, so skipped",
+) as CompletionItem:
+    def test_shell_complete_arg_v8_func_type():
         def shell_complete_func(ctx, param, incomplete):
             return [
                 CompletionItem(name)
@@ -87,25 +83,23 @@ def test_shell_complete_arg_v8_func_type():
         assert {x.text for x in completions} == {"foo", "bar"}
 
 
+@pytest.mark.skipif(
+    click.__version__[0] < '8',
+    reason="click-v8 built-in shell complete is not available, so skipped",
+)
 def test_shell_complete_option_v8_func_type():
-    with pytest.importorskip(
-        "click.shell_complete.CompletionItem",
-        minversion="8.0.0",
-        reason="click-v8 built-in shell complete is not available, so skipped",
-    ):
+    def shell_complete_func(ctx, param, incomplete):
+        return [name for name in ("foo", "bar") if name.startswith(incomplete)]
 
-        def shell_complete_func(ctx, param, incomplete):
-            return [name for name in ("foo", "bar") if name.startswith(incomplete)]
+    @root_command.command()
+    @click.option("--handler", shell_complete=shell_complete_func)
+    def autocompletion_opt_cmd(handler):
+        pass
 
-        @root_command.command()
-        @click.option("--handler", shell_complete=shell_complete_func)
-        def autocompletion_opt_cmd(handler):
-            pass
-
-        completions = list(
-            c.get_completions(Document("autocompletion-opt-cmd --handler "))
-        )
-        assert {x.text for x in completions} == {"foo", "bar"}
+    completions = list(
+        c.get_completions(Document("autocompletion-opt-cmd --handler "))
+    )
+    assert {x.text for x in completions} == {"foo", "bar"}
 
 
 @pytest.mark.skipif(
@@ -210,6 +204,10 @@ def test_boolean_option():
     assert {x.text for x in completions} == {'true'}
 
 
+@pytest.mark.skipif(
+    click.__version__[0] < '8',
+    reason="click-v8 built-in shell complete is not available, so skipped",
+)
 def test_tuple_return_type_shell_complete_func():
     def return_type_tuple_shell_complete(ctx, param, incomplete):
         return [
