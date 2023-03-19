@@ -3,7 +3,7 @@ import click_repl
 import pytest
 
 
-def test_simple_repl(capfd):
+def test_simple_repl():
     @click.group()
     def cli():
         pass

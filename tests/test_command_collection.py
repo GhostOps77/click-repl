@@ -47,3 +47,4 @@ def test_subcommand_invocation():
 
     completions = list(c.get_completions(Document("c1 ")))
     assert {x.text for x in completions} == {"--user"}
+
