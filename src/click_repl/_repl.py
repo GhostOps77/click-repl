@@ -7,7 +7,7 @@ from prompt_toolkit.history import InMemoryHistory
 from ._completer import ClickCompleter
 from .exceptions import ClickExit  # type: ignore[attr-defined]
 from .exceptions import CommandLineParserError, ExitReplException
-from .utils import ClickReplContext, _execute_command
+from .utils import ClickReplContext, _execute_internal_and_sys_cmds
 
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]
@@ -22,7 +22,7 @@ if sys.version_info >= (3, 5):
 
 
 def bootstrap_prompt(
-    group,  # type: Command
+    group,  # type: Group
     prompt_kwargs,  # type: dict[str, Any]
     ctx=None,  # type: Optional[Context]
     style=None  # type: Optional[dict[str, Any]]
@@ -31,7 +31,7 @@ def bootstrap_prompt(
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
-    :param group: click Command/Group
+    :param group: click Group
     :param prompt_kwargs: The user specified prompt kwargs.
     """
 
@@ -67,7 +67,7 @@ def repl(
     """
     # parent should be available, but we're not going to bother if not
     group_ctx = old_ctx.parent or old_ctx  # type: Context
-    group = group_ctx.command  # type: Command
+    group = group_ctx.command  # type: Group  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
 
     if styles is None:
@@ -114,7 +114,7 @@ def repl(
                 break
 
         try:
-            args = _execute_command(
+            args = _execute_internal_and_sys_cmds(
                 command, allow_internal_commands, allow_system_commands
             )
             if args is None:
@@ -130,9 +130,17 @@ def repl(
             # default_map passes the top-level params to the new group to
             # support top-level required params that would reject the
             # invocation if missing.
+            # print(f'{type(group) = }')
             with group.make_context(
                 None, args, parent=group_ctx, default_map=old_ctx.params
             ) as ctx:
+                # ctx.invoke(
+                #     group.get_command(
+                #         group_ctx, args[0]
+                #     ).callback,
+                #     [i for i in args[1:] if not i.startswith("-")]
+                # )
+                # print(f'{vars(group)}')
                 group.invoke(ctx)
                 ctx.exit()
 

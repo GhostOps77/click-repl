@@ -2,9 +2,11 @@ from __future__ import unicode_literals
 
 import click
 import shlex
+import os
 import sys
+import ntpath
 
-from pathlib import Path
+from glob import iglob
 
 # from prompt_toolkit.shortcuts import CompleteStyle
 from prompt_toolkit.completion import (
@@ -19,7 +21,7 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from click import Context, Command, Parameter  # noqa: F401
+        from click import Context, Command, Group, Parameter  # noqa: F401
         from prompt_toolkit.document import Document  # noqa: F401
         from prompt_toolkit.completion import CompleteEvent  # noqa: F401
         from typing import Any, Generator, Optional, Union  # noqa: F401
@@ -47,7 +49,7 @@ class ClickCompleter(Completer):
     __slots__ = ("cli", "ctx", "styles")
 
     def __init__(self, cli, ctx=None, styles=None):
-        # type: (Command, Optional[Context], Optional[dict[str, str]]) -> None
+        # type: (Group, Optional[Context], Optional[dict[str, str]]) -> None
 
         self.cli = cli  # type: Command
         self.ctx = ctx  # type: Optional[Context]
@@ -99,25 +101,87 @@ class ClickCompleter(Completer):
 
         return param_choices
 
-    def _get_completion_from_choices_click7(
+    def _get_completion_from_choices_click_le_7(
         self,
         param,
         incomplete
     ):
         # type: (Parameter, str) -> list[Completion]
 
-        return [
-            Completion(text_type(choice), -len(incomplete), style=self.styles['argument'])
-            for choice in param.type.choices  # type: ignore[attr-defined]
-        ]
+        if getattr(param.type, 'case_sensitive', None) is not None:
+            incomplete = incomplete.lower()
+            return [
+                Completion(
+                    text_type(choice),
+                    -len(incomplete),
+                    style=self.styles['argument'],
+                    display=text_type(repr(choice) if ' ' in choice else choice),
+                )
+                for choice in param.type.choices  # type: ignore[attr-defined]
+                if choice.lower().startswith(incomplete)
+            ]
+
+        else:
+            return [
+                Completion(
+                    text_type(choice),
+                    -len(incomplete),
+                    style=self.styles['argument'],
+                    display=text_type(repr(choice) if ' ' in choice else choice)
+                )
+                for choice in param.type.choices  # type: ignore[attr-defined]
+                if choice.startswith(incomplete)
+            ]
 
     def _get_completion_for_Path_types(self, param, args, incomplete):
-        # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
+        # type: (Parameter, list[str], str, bool) -> list[Completion]
 
-        return [
-            Completion(text_type(i), -len(incomplete), display=text_type(i.name))
-            for i in Path().glob("{}*".format(incomplete))
-        ]
+        choices = []
+        search_pattern = incomplete
+
+        if not incomplete.endswith('*'):
+            search_pattern += '*'
+
+        for path in iglob(
+            search_pattern,
+            # recursive='**' in incomplete,
+            # include_hidden='.' in incomplete
+        ):
+            if os.name == 'nt':
+                path_str = path.replace('\\', '\\\\')
+
+            if ' ' in path:
+                path_str = path_str.replace(' ', '\\ ')
+
+            if isinstance(param.type, click.Path):
+                if param.type.exists and not ntpath.exists(path_str):
+                    continue
+
+                if param.type.resolve_path:
+                    if sys.version_info >= (3, 4):
+                        import pathlib
+                        path_str = os.fsdecode(pathlib.Path(path_str).resolve())
+
+                    else:
+                        path_str = os.path.realpath(path_str)
+
+                if (not param.type.dir_okay) and os.path.isdir(path_str):
+                    continue
+
+                if (not param.type.file_okay) and os.path.isfile(path_str):
+                    continue
+
+            ntpath.r
+
+            choices.append(
+                Completion(
+                    text_type(path_str),
+                    -len(incomplete),
+                    display=text_type(ntpath.basename(path))
+                )
+            )
+
+        return choices
 
     # def _get_completion_for_File_types(self, param, args, incomplete):
     #     # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
@@ -146,7 +210,40 @@ class ClickCompleter(Completer):
             if any(i.startswith(incomplete) for i in v)
         ]
 
-    def _get_completion_from_params(
+    def _get_completion_from_params(self, autocomplete_ctx, args, param, incomplete):
+        # type: (Context, list[str], Parameter, str) -> list[Completion]
+        choices = []  # type: list[Completion]
+        param_type = param.type  # type: click.ParamType
+
+        # shell_complete method for click.Choice is intorduced in click-v8
+        if not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
+            choices.extend(
+                self._get_completion_from_choices_click_le_7(param, incomplete)
+            )
+
+        elif isinstance(param_type, click.types.BoolParamType):
+            choices.extend(
+                self._get_completion_for_Boolean_type(param, incomplete)
+            )
+
+        elif isinstance(param_type, (click.Path, click.File)):
+            choices.extend(
+                self._get_completion_for_Path_types(param, args, incomplete)
+            )
+
+        elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
+            choices.extend(
+                self._get_completion_from_autocompletion_functions(
+                    param,
+                    autocomplete_ctx,
+                    args,
+                    incomplete,
+                )
+            )
+
+        return choices
+
+    def _get_completion_for_cmd_args(
         self,
         ctx_command,  # type: Command
         incomplete,  # type: str
@@ -159,6 +256,10 @@ class ClickCompleter(Completer):
         # param_choices = []
         param_called = False
 
+        # if HAS_CLICK_V8:
+        #     choices = ctx_command.shell_complete(autocomplete_ctx, incomplete)
+        #     return choices
+
         for param in ctx_command.params:
             if getattr(param, "hidden", False):
                 continue
@@ -166,6 +267,8 @@ class ClickCompleter(Completer):
             elif isinstance(param, click.Option):
                 for option in (param.opts + param.secondary_opts):
                     # We want to make sure if this parameter was called
+                    # If we are inside a parameter that was called, we want to show only
+                    # relevant choices
                     if option in args[param.nargs * -1 :]:  # noqa: E203
                         param_called = True
                         break
@@ -181,68 +284,16 @@ class ClickCompleter(Completer):
                         )
 
                 if param_called:
-                    if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
-                        choices = list(
-                            self._get_completion_from_choices_click7(
-                                param, incomplete
-                            )
-                        )
-
-                    elif isinstance(param.type, click.types.BoolParamType):
-                        choices = list(
-                            self._get_completion_for_Boolean_type(param, incomplete)
-                        )
-
-                    elif isinstance(param.type, (click.Path, click.File)):
-                        choices = list(
-                            self._get_completion_for_Path_types(param, args, incomplete)
-                        )
-
-                    elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
-                        choices = list(
-                            self._get_completion_from_autocompletion_functions(
-                                param,
-                                autocomplete_ctx,
-                                args,
-                                incomplete,
-                            )
-                        )
-
-                    # elif isinstance(param.type, click.File):
-                    #     param_choices.extend(
-                    #         self._get_completion_for_File_types(param, args, incomplete)
-                    #     )
+                    choices = self._get_completion_from_params(
+                        autocomplete_ctx, args, param, incomplete
+                    )
 
             elif isinstance(param, click.Argument):
-                if not HAS_CLICK_V8 and isinstance(param.type, click.Choice):
-                    choices.extend(
-                        self._get_completion_from_choices_click7(param, incomplete)
+                choices.extend(
+                    self._get_completion_from_params(
+                        autocomplete_ctx, args, param, incomplete
                     )
-
-                elif isinstance(param.type, click.types.BoolParamType):
-                    choices.extend(
-                        self._get_completion_for_Boolean_type(param, incomplete)
-                    )
-
-                elif isinstance(param.type, (click.Path, click.File)):
-                    choices.extend(
-                        self._get_completion_for_Path_types(param, args, incomplete)
-                    )
-
-                # elif isinstance(param.type, click.File):
-                #     choices.extend(
-                #         self._get_completion_for_File_types(param, args, incomplete)
-                #     )
-
-                elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
-                    choices.extend(
-                        self._get_completion_from_autocompletion_functions(
-                            param,
-                            autocomplete_ctx,
-                            args,
-                            incomplete,
-                        )
-                    )
+                )
 
         return choices
 
@@ -263,6 +314,10 @@ class ClickCompleter(Completer):
         cursor_within_command = (
             document.text_before_cursor.rstrip() == document.text_before_cursor
         )
+
+        # print(f'{args = }')
+        # print(f'{document.text = }')
+        # print(f'{document.text_before_cursor}')
 
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
@@ -290,7 +345,7 @@ class ClickCompleter(Completer):
 
         try:
             choices.extend(
-                self._get_completion_from_params(
+                self._get_completion_for_cmd_args(
                     ctx_command, incomplete, autocomplete_ctx, args
                 )
             )

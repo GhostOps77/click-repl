@@ -14,7 +14,7 @@ from .exceptions import CommandLineParserError, ExitReplException
 
 
 __all__ = [
-    "_execute_command",
+    "_execute_internal_and_sys_cmds",
     "_exit_internal",
     "_get_registered_target",
     "_help_internal",
@@ -194,7 +194,7 @@ _register_internal_command(
 )
 
 
-def _execute_command(
+def _execute_internal_and_sys_cmds(
     command,
     allow_internal_commands=True,
     allow_system_commands=True,
