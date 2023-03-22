@@ -136,7 +136,7 @@ class ClickCompleter(Completer):
                 if choice.startswith(incomplete)
             ]
 
-    def _get_completion_for_Path_types(self, param, incomplete):
+    def _get_completion_for_Path_types(self, param, args, incomplete):
         # type: (Parameter, list[str], str) -> list[Completion]
 
         choices = []
@@ -163,13 +163,13 @@ class ClickCompleter(Completer):
                     else:
                         path = os.path.realpath(path)
 
-                if (not param.type.dir_okay) and os.path.isdir(path_str):
-                    continue
-
-                if (not param.type.file_okay) and os.path.isfile(path_str):
-                    continue
-
-            ntpath.r
+            if ' ' in path:
+                if quote:
+                    path = quote + path
+                else:
+                    path = repr(path).replace("\\\\", "\\")
+            else:
+                path = path.replace('\\', '\\\\')
 
             choices.append(
                 Completion(
@@ -226,7 +226,7 @@ class ClickCompleter(Completer):
 
         elif isinstance(param_type, (click.Path, click.File)):
             choices.extend(
-                self._get_completion_for_Path_types(param, incomplete)
+                self._get_completion_for_Path_types(param, args, incomplete)
             )
 
         elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
