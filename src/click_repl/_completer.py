@@ -165,14 +165,6 @@ class ClickCompleter(Completer):
                     else:
                         path_str = os.path.realpath(path_str)
 
-                if (not param.type.dir_okay) and os.path.isdir(path_str):
-                    continue
-
-                if (not param.type.file_okay) and os.path.isfile(path_str):
-                    continue
-
-            ntpath.r
-
             choices.append(
                 Completion(
                     text_type(path_str),
