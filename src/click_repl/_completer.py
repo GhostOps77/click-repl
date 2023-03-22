@@ -317,6 +317,9 @@ class ClickCompleter(Completer):
         # print(f'{document.text = }')
         # print(f'{document.text_before_cursor.rstrip() = }')
 
+        if document.text_before_cursor.startswith(('!', ':')):
+            return
+
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
             # current word.
