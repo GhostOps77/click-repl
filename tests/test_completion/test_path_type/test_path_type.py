@@ -2,7 +2,6 @@ import click
 from click_repl import ClickCompleter
 from prompt_toolkit.document import Document
 import glob
-import ntpath
 
 
 @click.group()
