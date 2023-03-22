@@ -104,8 +104,8 @@ def repl(
             command = repl_ctx.get_command()
         except KeyboardInterrupt:
             continue
-        except EOFError:
-            break
+        # except EOFError:
+        #     break
 
         if not command:
             if isatty:

@@ -1,30 +1,33 @@
 from __future__ import unicode_literals
 
-import click
-import shlex
+import ntpath
 import os
 import sys
-import ntpath
-
 from glob import iglob
 
-# from prompt_toolkit.shortcuts import CompleteStyle
-from prompt_toolkit.completion import (
-    Completer,
-    Completion,  # PathCompleter
-)
+import click
+from prompt_toolkit.completion import Completion  # PathCompleter
+from prompt_toolkit.completion import Completer
+
+from .utils import split_arg_string
 
 __all__ = ["ClickCompleter"]
+
+# Path module is introduced in Python 3.4
+PY34 = sys.version_info >= (3, 4)
+if PY34:
+    import pathlib
 
 # typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from click import Context, Command, Group, Parameter  # noqa: F401
-        from prompt_toolkit.document import Document  # noqa: F401
-        from prompt_toolkit.completion import CompleteEvent  # noqa: F401
         from typing import Any, Generator, Optional, Union  # noqa: F401
+
+        from click import Command, Context, Group, Parameter  # noqa: F401
+        from prompt_toolkit.completion import CompleteEvent  # noqa: F401
+        from prompt_toolkit.document import Document  # noqa: F401
 
 
 # Handle backwards compatibility between Click<=7.0 and >=8.0
@@ -134,50 +137,45 @@ class ClickCompleter(Completer):
             ]
 
     def _get_completion_for_Path_types(self, param, args, incomplete):
-        # type: (Parameter, list[str], str, bool) -> list[Completion]
+        # type: (Parameter, list[str], str) -> list[Completion]
 
         choices = []
-        search_pattern = incomplete
+        search_pattern = incomplete.strip('\'"\t\n\r\v ').replace("\\\\", "\\")
 
-        if not incomplete.endswith('*'):
-            search_pattern += '*'
+        if '*' in incomplete:
+            return []
 
-        for path in iglob(
-            search_pattern,
-            # recursive='**' in incomplete,
-            # include_hidden='.' in incomplete
-        ):
-            if os.name == 'nt':
-                path_str = path.replace('\\', '\\\\')
+        search_pattern += '*'
+        quote = ''
 
-            if ' ' in path:
-                path_str = path_str.replace(' ', '\\ ')
+        if ' ' in incomplete:
+            for i in incomplete:
+                if i in ("'", '"'):
+                    quote = i
+                    break
 
+        for path in iglob(search_pattern):
             if isinstance(param.type, click.Path):
-                if param.type.exists and not ntpath.exists(path_str):
-                    continue
-
                 if param.type.resolve_path:
-                    if sys.version_info >= (3, 4):
-                        import pathlib
-                        path_str = os.fsdecode(pathlib.Path(path_str).resolve())
+                    if PY34:
+                        path = os.fsdecode(pathlib.Path(path).resolve())
 
                     else:
-                        path_str = os.path.realpath(path_str)
+                        path = os.path.realpath(path)
 
-                if (not param.type.dir_okay) and os.path.isdir(path_str):
-                    continue
-
-                if (not param.type.file_okay) and os.path.isfile(path_str):
-                    continue
-
-            ntpath.r
+            if ' ' in path:
+                if quote:
+                    path = quote + path
+                else:
+                    path = repr(path).replace("\\\\", "\\")
+            else:
+                path = path.replace('\\', '\\\\')
 
             choices.append(
                 Completion(
-                    text_type(path_str),
+                    text_type(path),
                     -len(incomplete),
-                    display=text_type(ntpath.basename(path))
+                    display=text_type(ntpath.basename(path.strip('\'"')))
                 )
             )
 
@@ -303,7 +301,7 @@ class ClickCompleter(Completer):
         # Code analogous to click._bashcomplete.do_complete
 
         try:
-            args = shlex.split(document.text_before_cursor, posix=False)
+            args = split_arg_string(document.text_before_cursor, posix=False)
         except ValueError:
             # Invalid command, perhaps caused by missing closing quotation.
             return
@@ -317,7 +315,7 @@ class ClickCompleter(Completer):
 
         # print(f'{args = }')
         # print(f'{document.text = }')
-        # print(f'{document.text_before_cursor}')
+        # print(f'{document.text_before_cursor.rstrip() = }')
 
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the

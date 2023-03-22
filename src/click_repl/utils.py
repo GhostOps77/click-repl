@@ -21,6 +21,7 @@ __all__ = [
     "_register_internal_command",
     "dispatch_repl_commands",
     "handle_internal_commands",
+    "split_arg_string",
     "exit",
 ]
 
@@ -88,6 +89,37 @@ class ClickReplContext:
         # type: () -> Generator[str, None, None]
         if self._history is not None:
             yield from self._history.load_history_strings()  # type: ignore[union-attr]
+
+
+def split_arg_string(string, posix=True):
+    # type: (str, bool) -> list[str]
+
+    """Split an argument string as with :func:`shlex.split`, but don't
+    fail if the string is incomplete. Ignores a missing closing quote or
+    incomplete escape sequence and uses the partial token as-is.
+    .. code-block:: python
+        split_arg_string("example 'my file")
+        ["example", "my file"]
+        split_arg_string("example my\\")
+        ["example", "my"]
+    :param string: String to split.
+    """
+
+    lex = shlex.shlex(string, posix=posix)
+    lex.whitespace_split = True
+    lex.commenters = ""
+    out = []
+
+    try:
+        for token in lex:
+            out.append(token)
+    except ValueError:
+        # Raised when end-of-string is reached in an invalid state. Use
+        # the partial token as-is. The quote or escape character is in
+        # lex.state, not lex.token.
+        out.append(lex.token)
+
+    return out
 
 
 def get_current_click_repl_context(silent=False):
