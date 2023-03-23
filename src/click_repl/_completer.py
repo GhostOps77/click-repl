@@ -6,17 +6,14 @@ import sys
 from glob import iglob
 
 import click
-from prompt_toolkit.completion import Completion  # PathCompleter
-from prompt_toolkit.completion import Completer
+from prompt_toolkit.completion import Completion, Completer
 
 from .utils import split_arg_string
 
 __all__ = ["ClickCompleter"]
 
-# Path module is introduced in Python 3.4
-PY34 = sys.version_info >= (3, 4)
-if PY34:
-    import pathlib
+
+IS_WINDOWS = os.name == "nt"
 
 # typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
@@ -153,21 +150,15 @@ class ClickCompleter(Completer):
                     break
 
         for path in iglob(search_pattern):
-            if isinstance(param.type, click.Path):
-                if param.type.resolve_path:
-                    if PY34:
-                        path = os.fsdecode(pathlib.Path(path).resolve())
-
-                    else:
-                        path = os.path.realpath(path)
-
             if ' ' in path:
                 if quote:
                     path = quote + path
                 else:
-                    path = repr(path).replace("\\\\", "\\")
+                    if IS_WINDOWS:
+                        path = repr(path).replace("\\\\", "\\")
             else:
-                path = path.replace('\\', '\\\\')
+                if IS_WINDOWS:
+                    path = path.replace('\\', '\\\\')
 
             choices.append(
                 Completion(
@@ -307,7 +298,6 @@ class ClickCompleter(Completer):
 
         if document.text_before_cursor.startswith(('!', ':')):
             return
-
 
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
