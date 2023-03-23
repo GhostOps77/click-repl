@@ -21,8 +21,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        ls
-        pwd
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox

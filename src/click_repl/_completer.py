@@ -260,7 +260,7 @@ class ClickCompleter(Completer):
 
         for param in ctx_command.params:
             # print(f'{vars(param) = }')
-            if isinstance(param.type, click.UNPROCESSED):
+            if isinstance(param.type, click.types.UnprocessedParamType):
                 return []
 
             elif getattr(param, "hidden", False):
