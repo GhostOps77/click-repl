@@ -67,6 +67,8 @@ def repl(
     """
     # parent should be available, but we're not going to bother if not
     group_ctx = old_ctx.parent or old_ctx  # type: Context
+    # print(f'{vars(old_ctx) = }')
+    # print(f'{vars(group_ctx) = }')
     group = group_ctx.command  # type: Group  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
 
@@ -98,7 +100,7 @@ def repl(
         # )  # type: PromptSession[Mapping[str, Any]]
         prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
 
-    repl_ctx = ClickReplContext(isatty, prompt_kwargs)  # type: ClickReplContext
+    repl_ctx = ClickReplContext(group_ctx, isatty, prompt_kwargs)  # type: ClickReplContext
     while True:
         try:
             command = repl_ctx.get_command()
@@ -135,6 +137,7 @@ def repl(
             with group.make_context(
                 None, args, parent=group_ctx, default_map=old_ctx.params
             ) as ctx:
+                # print(f'{ctx = }')
                 # print(f'{ctx.params = }')
                 # ctx.invoke(
                 #     group.get_command(

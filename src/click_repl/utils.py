@@ -48,10 +48,11 @@ _locals = local()
 
 
 class ClickReplContext:
-    __slots__ = ("isatty", "prompt_kwargs", "session", "_history", "get_command")
+    __slots__ = ("group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command")
 
-    def __init__(self, isatty, prompt_kwargs):
-        # type: (bool, dict[str, Any]) -> None
+    def __init__(self, group_ctx, isatty, prompt_kwargs):
+        # type: (click.Context, bool, dict[str, Any]) -> None
+        self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.isatty = isatty
 

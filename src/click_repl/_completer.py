@@ -259,7 +259,11 @@ class ClickCompleter(Completer):
         #     return choices
 
         for param in ctx_command.params:
-            if getattr(param, "hidden", False):
+            # print(f'{vars(param) = }')
+            if isinstance(param.type, click.UNPROCESSED):
+                return []
+
+            elif getattr(param, "hidden", False):
                 continue
 
             elif isinstance(param, click.Option):
@@ -300,11 +304,11 @@ class ClickCompleter(Completer):
 
         # Code analogous to click._bashcomplete.do_complete
 
-        try:
-            args = split_arg_string(document.text_before_cursor, posix=False)
-        except ValueError:
-            # Invalid command, perhaps caused by missing closing quotation.
-            return
+        # try:
+        args = split_arg_string(document.text_before_cursor, posix=False)
+        # except ValueError:
+        #     # Invalid command, perhaps caused by missing closing quotation.
+        #     return
 
         choices = []  # type: list[Completion]
         # param_choices = []  # type: list[Completion]
