@@ -105,13 +105,11 @@ class ClickCompleter(Completer):
         return param_choices
 
     def _get_completion_from_choices_click_le_7(
-        self,
-        param,
-        incomplete
+        self, param, incomplete
     ):
         # type: (Parameter, str) -> list[Completion]
 
-        if getattr(param.type, 'case_sensitive', None) is not None:
+        if not getattr(param.type, 'case_sensitive'):
             incomplete = incomplete.lower()
             return [
                 Completion(
@@ -181,17 +179,6 @@ class ClickCompleter(Completer):
 
         return choices
 
-    # def _get_completion_for_File_types(self, param, args, incomplete):
-    #     # type: (Union[Parameter, click.Option], list[str], str) -> list[Completion]
-
-    #     # attrs = vars(param)
-
-    #     return list(
-    #         Completion(text_type(i), -len(incomplete), display=text_type(i.name))
-    #         for i in filter(
-    #             lambda item: item.is_file(), Path().glob("{}*".format(incomplete))
-    #         )
-    #     )
 
     def _get_completion_for_Boolean_type(self, param, incomplete):
         # type: (Union[Parameter, click.Option], str) -> list[Completion]
@@ -299,6 +286,7 @@ class ClickCompleter(Completer):
 
         return choices
 
+
     def get_completions(self, document, complete_event=None):
         # type: (Document, Optional[CompleteEvent]) -> Generator[Completion, None, None]
 
@@ -317,12 +305,9 @@ class ClickCompleter(Completer):
             document.text_before_cursor.rstrip() == document.text_before_cursor
         )
 
-        # print(f'{args = }')
-        # print(f'{document.text = }')
-        # print(f'{document.text_before_cursor.rstrip() = }')
-
         if document.text_before_cursor.startswith(('!', ':')):
             return
+
 
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
@@ -345,23 +330,20 @@ class ClickCompleter(Completer):
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
 
+        # print(f'{vars(autocomplete_ctx) = }')
         if getattr(ctx_command, "hidden", False):
             return
 
         try:
-            choices.extend(
-                self._get_completion_for_cmd_args(
-                    ctx_command, incomplete, autocomplete_ctx, args
-                )
-            )
-
             if isinstance(ctx_command, click.MultiCommand):
+                incomplete_lower = incomplete.lower()
+
                 for name in ctx_command.list_commands(ctx):
                     command = ctx_command.get_command(ctx, name)
                     if getattr(command, "hidden", False):
                         continue
 
-                    elif name.lower().startswith(incomplete.lower()):
+                    elif name.lower().startswith(incomplete_lower):
                         choices.append(
                             Completion(
                                 text_type(name),
@@ -369,6 +351,13 @@ class ClickCompleter(Completer):
                                 display_meta=getattr(command, 'short_help', ""),
                             )
                         )
+
+            else:
+                choices.extend(
+                    self._get_completion_for_cmd_args(
+                        ctx_command, incomplete, autocomplete_ctx, args
+                    )
+                )
 
         except Exception as e:
             click.echo("{}: {}".format(type(e).__name__, str(e)))

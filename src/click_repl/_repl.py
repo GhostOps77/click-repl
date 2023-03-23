@@ -100,7 +100,9 @@ def repl(
         # )  # type: PromptSession[Mapping[str, Any]]
         prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
 
-    repl_ctx = ClickReplContext(group_ctx, isatty, prompt_kwargs)  # type: ClickReplContext
+    repl_ctx = ClickReplContext(
+        group_ctx, isatty, prompt_kwargs
+    )  # type: ClickReplContext
     while True:
         try:
             command = repl_ctx.get_command()
@@ -137,8 +139,8 @@ def repl(
             with group.make_context(
                 None, args, parent=group_ctx, default_map=old_ctx.params
             ) as ctx:
-                # print(f'{ctx = }')
-                # print(f'{ctx.params = }')
+                print(f'{ctx = }')
+                print(f'{ctx.params = }')
                 # ctx.invoke(
                 #     group.get_command(
                 #         group_ctx, args[0]
@@ -146,6 +148,19 @@ def repl(
                 #     [i for i in args[1:] if not i.startswith("-")]
                 # )
                 group.invoke(ctx)
+
+                # unprocessed_args = {}
+                # processed_args = []
+                # i = 0
+                # while i <= len(args):
+                #     if unprocessed_args[i].startswith("-"):
+                #         unprocessed_args[
+                #             unprocessed_args[i].replace('--', '').replace('-', '_')
+                #         ] = unprocessed_args[i+1]
+
+                #     processed_args.append()
+
+                # group_ctx.invoke(ctx.command, *args, **unprocessed_args)
                 ctx.exit()
 
         except click.ClickException as e:

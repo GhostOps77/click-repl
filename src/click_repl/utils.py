@@ -48,7 +48,9 @@ _locals = local()
 
 
 class ClickReplContext:
-    __slots__ = ("group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command")
+    __slots__ = (
+        "group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command"
+    )
 
     def __init__(self, group_ctx, isatty, prompt_kwargs):
         # type: (click.Context, bool, dict[str, Any]) -> None
@@ -246,7 +248,7 @@ def _execute_internal_and_sys_cmds(
             return None
 
     try:
-        return shlex.split(command)
+        return split_arg_string(command)
     except ValueError as e:
         # click.echo("{}: {}".format(type(e).__name__, e))
         raise CommandLineParserError("{}".format(e))
