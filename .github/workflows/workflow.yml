@@ -42,6 +42,7 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
+        echo $USER
         python2 -m pip install --upgrade pip
         pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
