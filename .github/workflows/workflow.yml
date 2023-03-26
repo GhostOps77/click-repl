@@ -28,6 +28,9 @@ jobs:
 
   Py2_Tests:
     runs-on: ubuntu-latest
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: 1
+      PIP_NO_PYTHON_VERSION_WARNING: 1
     strategy:
       matrix:
         python-version: ['2.7.18']
@@ -42,7 +45,6 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        echo $USER
         python2 -m pip install --upgrade pip
         pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
