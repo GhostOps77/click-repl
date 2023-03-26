@@ -137,9 +137,8 @@ class ClickCompleter(Completer):
             return []
 
         choices = []
-        # print(f'{incomplete = }')
         _incomplete = os.path.expandvars(incomplete)
-        search_pattern = _incomplete.strip('\'"\t\n\r\v ').replace("\\\\", "\\") + '*'
+        search_pattern = _incomplete.strip('\'"').replace("\\\\", "\\") + '*'
         quote = ''
 
         if ' ' in _incomplete:
@@ -280,8 +279,13 @@ class ClickCompleter(Completer):
 
         # Code analogous to click._bashcomplete.do_complete
 
+        document_text_before_cursor = document.text_before_cursor
+
+        if document_text_before_cursor.startswith(('!', ':')):
+            return
+
         # try:
-        args = split_arg_string(document.text_before_cursor, posix=False)
+        args = split_arg_string(document_text_before_cursor, posix=False)
         # except ValueError:
         #     # Invalid command, perhaps caused by missing closing quotation.
         #     return
@@ -290,11 +294,8 @@ class ClickCompleter(Completer):
         # param_choices = []  # type: list[Completion]
         # param_called = False
         cursor_within_command = (
-            document.text_before_cursor.rstrip() == document.text_before_cursor
+            document_text_before_cursor.rstrip() == document_text_before_cursor
         )
-
-        if document.text_before_cursor.startswith(('!', ':')):
-            return
 
         if args and cursor_within_command:
             # We've entered some text and no space, give completions for the
@@ -306,31 +307,38 @@ class ClickCompleter(Completer):
             incomplete = ""
 
         # Resolve context based on click version
-        if HAS_CLICK_V8:
-            ctx = click.shell_completion._resolve_context(self.cli, {}, "", args)
+        if self.ctx:
+            group_args = [
+                str(i) for i in self.ctx.params.values()  # type: ignore[union-attr]
+            ]  # type: list[str]
         else:
-            ctx = click._bashcomplete.resolve_ctx(self.cli, "", args)
-
-        # if ctx is None:
-        #     return  # type: ignore[unreachable]
+            group_args = []
+        if HAS_CLICK_V8:
+            ctx = click.shell_completion._resolve_context(
+                self.cli, {}, "", group_args + args
+            )
+        else:
+            ctx = click._bashcomplete.resolve_ctx(
+                self.cli, "", group_args + args
+            )
 
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
 
+        # print(f'(from get_completions) {vars(ctx) = }\n')
         # print(f'{vars(autocomplete_ctx) = }')
+
         if getattr(ctx_command, "hidden", False):
             return
 
         try:
             if isinstance(ctx_command, click.MultiCommand):
-                incomplete_lower = incomplete.lower()
-
                 for name in ctx_command.list_commands(ctx):
                     command = ctx_command.get_command(ctx, name)
                     if getattr(command, "hidden", False):
                         continue
 
-                    elif name.lower().startswith(incomplete_lower):
+                    elif name.startswith(incomplete):
                         choices.append(
                             Completion(
                                 text_type(name),

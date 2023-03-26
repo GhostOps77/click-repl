@@ -219,8 +219,7 @@ def _help_internal():
             for description, mnemonics in info_table.items()
         )
 
-    val = formatter.getvalue()  # type: str
-    return val
+    return formatter.getvalue()
 
 
 _register_internal_command(["q", "quit", "exit"], _exit_internal, "exits the repl")

@@ -2,6 +2,9 @@ from __future__ import with_statement
 
 import click
 import sys
+from prompt_toolkit.auto_suggest import (
+    ThreadedAutoSuggest, AutoSuggestFromHistory
+)
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
@@ -38,7 +41,10 @@ def bootstrap_prompt(
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(group, ctx=ctx, styles=style),
-        "message": u"> "
+        "message": u"> ",
+        "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
+        "complete_in_thread": True,
+        "complete_while_typing": True,
     }
 
     defaults.update(prompt_kwargs)
@@ -67,8 +73,6 @@ def repl(
     """
     # parent should be available, but we're not going to bother if not
     group_ctx = old_ctx.parent or old_ctx  # type: Context
-    # print(f'{vars(old_ctx) = }')
-    # print(f'{vars(group_ctx) = }')
     group = group_ctx.command  # type: Group  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
 
@@ -134,42 +138,24 @@ def repl(
             # default_map passes the top-level params to the new group to
             # support top-level required params that would reject the
             # invocation if missing.
-            # print(f"{args = }")
-            with group.make_context(
-                None, args, parent=group_ctx, default_map=old_ctx.params
-            ) as ctx:
-                # print(f'{vars(ctx) = }')
-                # print(f'{vars(ctx.parent) = }')
-                # print(f'{ctx.params = }')
-                group.invoke(ctx)
-                # ctx.invoke(
-                #     group.get_command(
-                #         group_ctx, args[0]
-                #     ).callback,
-                #     [i for i in args[1:] if not i.startswith("-")]
-                # )
-                # cmd = group.get_command(ctx, ctx.protected_args[0])
-                # if cmd is None:
-                #     print('command is None')
+            # with group.make_context(
+            #     None, args, parent=group_ctx, default_map=old_ctx.params
+            # ) as ctx:
+            _, cmd, cmd_args = group.resolve_command(group_ctx, args)
 
-                # group_ctx.invoke(cmd, **ctx.params)
+            if cmd is None:
+                click.echo('Error: No commands have been found from the string.')
+                continue
 
-                # unprocessed_args = {}
-                # processed_args = []
-                # i = 0
-                # while i <= len(args):
-                #     if unprocessed_args[i].startswith("-"):
-                #         unprocessed_args[
-                #             unprocessed_args[i].replace('--', '').replace('-', '_')
-                #         ] = unprocessed_args[i+1]
-
-                #     processed_args.append()
-
-                # group_ctx.invoke(ctx.command, *args, **unprocessed_args)
-                ctx.exit()
+            with cmd.make_context(
+                None, cmd_args, parent=group_ctx,
+            ) as cmd_ctx:
+                group_ctx.invoke(cmd, **cmd_ctx.params)
+                cmd_ctx.exit()
 
         except click.ClickException as e:
             e.show()
+
         except (ClickExit, SystemExit):
             pass
 
