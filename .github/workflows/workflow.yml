@@ -35,9 +35,9 @@ jobs:
       matrix:
         python-version: ['2.7.18']
         click-version: ['6.7', '7.1.2']
-        click-wheel: [
-            'https://files.pythonhosted.org/packages/34/c1/8806f99713ddb993c5366c362b2f908f18269f8d792aff1abfd700775a77/click-6.7-py2.py3-none-any.whl',
-            'https://files.pythonhosted.org/packages/d2/3d/fa76db83bf75c4f8d338c2fd15c8d33fdd7ad23a9b5e57eb6c5de26b430e/click-7.1.2-py2.py3-none-any.whl'
+        click-zip: [
+            'https://files.pythonhosted.org/packages/95/d9/c3336b6b5711c3ab9d1d3a80f1a3e2afeb9d8c02a7166462f6cc96570897/click-6.7.tar.gz',
+            'https://files.pythonhosted.org/packages/27/6f/be940c8b1f1d69daceeb0032fee6c34d7bd70e3e649ccac0951500b4720e/click-7.1.2.tar.gz'
         ]
 
     steps:
@@ -49,10 +49,11 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        wget ${{ matrix.click-wheel }}
+        wget ${{ matrix.click-zip }}
         python2 -m pip install --upgrade pip wheel
         pip install tox tox-gh-actions
-        pip install *.whl
+        pip install *.zip
+        tar -xvzf ${{ matrix.click-zip }}
     - name: Test with tox
       run: tox
 
