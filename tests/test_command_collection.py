@@ -35,10 +35,12 @@ def cli(ctx, user):
         click.echo("Top-level user: {}".format(user))
         repl(ctx)
 
+
 @cli.command()
 @click.option("--user")
 def c1(user):
     click.echo("Executed C1 with {}!".format(user))
+
 
 c = ClickCompleter(cli)
 

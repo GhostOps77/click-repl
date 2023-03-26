@@ -108,7 +108,7 @@ def split_arg_string(string, posix=True):
     :param string: String to split.
     """
 
-    lex = shlex.shlex(string, posix=posix)
+    lex = shlex.shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
     lex.commenters = ""
     out = []

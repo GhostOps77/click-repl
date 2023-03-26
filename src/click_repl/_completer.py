@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import ntpath
 import os
 import sys
 from glob import iglob
@@ -106,7 +105,7 @@ class ClickCompleter(Completer):
     ):
         # type: (Parameter, str) -> list[Completion]
 
-        if not getattr(param.type, 'case_sensitive'):
+        if not getattr(param.type, 'case_sensitive', True):
             incomplete = incomplete.lower()
             return [
                 Completion(
@@ -134,16 +133,16 @@ class ClickCompleter(Completer):
     def _get_completion_for_Path_types(self, param, args, incomplete):
         # type: (Parameter, list[str], str) -> list[Completion]
 
-        choices = []
-        search_pattern = incomplete.strip('\'"\t\n\r\v ').replace("\\\\", "\\")
-
         if '*' in incomplete:
             return []
 
-        search_pattern += '*'
+        choices = []
+        # print(f'{incomplete = }')
+        _incomplete = os.path.expandvars(incomplete)
+        search_pattern = _incomplete.strip('\'"\t\n\r\v ').replace("\\\\", "\\") + '*'
         quote = ''
 
-        if ' ' in incomplete:
+        if ' ' in _incomplete:
             for i in incomplete:
                 if i in ("'", '"'):
                     quote = i
@@ -164,12 +163,11 @@ class ClickCompleter(Completer):
                 Completion(
                     text_type(path),
                     -len(incomplete),
-                    display=text_type(ntpath.basename(path.strip('\'"')))
+                    display=text_type(os.path.basename(path.strip('\'"')))
                 )
             )
 
         return choices
-
 
     def _get_completion_for_Boolean_type(self, param, incomplete):
         # type: (Union[Parameter, click.Option], str) -> list[Completion]
@@ -276,7 +274,6 @@ class ClickCompleter(Completer):
                 )
 
         return choices
-
 
     def get_completions(self, document, complete_event=None):
         # type: (Document, Optional[CompleteEvent]) -> Generator[Completion, None, None]

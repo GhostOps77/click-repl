@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['2.7']
+        python-version: ['2.7.18']
         click-version: ['6.7', '7.1.2']
 
     steps:
@@ -42,11 +42,8 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        sudo add-apt-repository universe
-        sudo apt install python2
-        curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
-        sudo python2 get-pip.py
-        pip2 install tox tox-gh-actions click==${{ matrix.click-version }}
+        python2 -m pip install --upgrade pip
+        pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
       run: tox
 

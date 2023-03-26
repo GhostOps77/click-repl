@@ -1,8 +1,8 @@
 import click
 from click_repl import ClickCompleter
 from prompt_toolkit.document import Document
+import os
 import glob
-import ntpath
 import pytest
 
 
@@ -19,7 +19,10 @@ c = ClickCompleter(root_command)
     ("path-type-arg tests/", glob.glob('tests/*')),
     ("path-type-arg src/*", []),
     ("path-type-arg src/**", []),
-    ("path-type-arg tests/testdir/", ('tests/testdir/test directory', 'tests/testdir/test file.txt'))
+    (
+        "path-type-arg tests/testdir/",
+        glob.glob("tests/testdir/*"),
+    )
 ])
 def test_path_type_arg(test_input, expected):
     @root_command.command()
@@ -29,5 +32,17 @@ def test_path_type_arg(test_input, expected):
 
     completions = list(c.get_completions(Document(test_input)))
     assert {x.display[0][1] for x in completions} == {
-        ntpath.basename(i) for i in expected
+        os.path.basename(i) for i in expected
     }
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='This is a test for Windows OS')
+def test_win_path_env_expanders():
+    completions = list(c.get_completions(Document('path-type-arg %LocalAppData%')))
+    assert {x.display[0][1] for x in completions} == {'Local', 'LocalLow'}
+
+
+@pytest.mark.skipif(os.name != 'posix', reason='This is a test for Linux OS')
+def test_win_path_env_expanders():
+    completions = list(c.get_completions(Document('path-type-arg %LocalAppData%')))
+    assert {x.display[0][1] for x in completions} == os.path.expandvars("$USER")
