@@ -35,10 +35,6 @@ jobs:
       matrix:
         python-version: ['2.7.18']
         click-version: ['6.7', '7.1.2']
-        click-zip: [
-            'https://files.pythonhosted.org/packages/95/d9/c3336b6b5711c3ab9d1d3a80f1a3e2afeb9d8c02a7166462f6cc96570897/click-6.7.tar.gz',
-            'https://files.pythonhosted.org/packages/27/6f/be940c8b1f1d69daceeb0032fee6c34d7bd70e3e649ccac0951500b4720e/click-7.1.2.tar.gz'
-        ]
 
     steps:
     - uses: actions/checkout@v3
@@ -51,9 +47,7 @@ jobs:
       run: |
         wget ${{ matrix.click-zip }}
         python2 -m pip install --upgrade pip wheel
-        pip install tox tox-gh-actions
-        pip install *.tar.gz
-        tar -xvzf ${{ matrix.click-zip }}
+        python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
       run: tox
 

@@ -313,6 +313,7 @@ class ClickCompleter(Completer):
             ]  # type: list[str]
         else:
             group_args = []
+
         if HAS_CLICK_V8:
             ctx = click.shell_completion._resolve_context(
                 self.cli, {}, "", group_args + args
