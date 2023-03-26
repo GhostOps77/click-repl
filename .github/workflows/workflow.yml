@@ -51,7 +51,8 @@ jobs:
       run: |
         wget ${{ matrix.click-wheel }}
         python2 -m pip install --upgrade pip wheel
-        pip install tox tox-gh-actions click==${{ matrix.click-version }}
+        pip install tox tox-gh-action
+        pip install *.whl
     - name: Test with tox
       run: tox
 
