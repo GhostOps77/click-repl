@@ -35,6 +35,10 @@ jobs:
       matrix:
         python-version: ['2.7.18']
         click-version: ['6.7', '7.1.2']
+        click-wheel: [
+            'https://files.pythonhosted.org/packages/34/c1/8806f99713ddb993c5366c362b2f908f18269f8d792aff1abfd700775a77/click-6.7-py2.py3-none-any.whl',
+            'https://files.pythonhosted.org/packages/d2/3d/fa76db83bf75c4f8d338c2fd15c8d33fdd7ad23a9b5e57eb6c5de26b430e/click-7.1.2-py2.py3-none-any.whl'
+        ]
 
     steps:
     - uses: actions/checkout@v3
@@ -45,7 +49,8 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        python2 -m pip install --upgrade pip
+        wget ${{ matrix.click-wheel }}
+        python2 -m pip install --upgrade pip wheel
         pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
       run: tox
