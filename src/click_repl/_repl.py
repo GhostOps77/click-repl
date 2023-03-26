@@ -134,20 +134,25 @@ def repl(
             # default_map passes the top-level params to the new group to
             # support top-level required params that would reject the
             # invocation if missing.
-            # print(f'{dict = }')
             # print(f"{args = }")
             with group.make_context(
                 None, args, parent=group_ctx, default_map=old_ctx.params
             ) as ctx:
-                print(f'{ctx = }')
-                print(f'{ctx.params = }')
+                # print(f'{vars(ctx) = }')
+                # print(f'{vars(ctx.parent) = }')
+                # print(f'{ctx.params = }')
+                group.invoke(ctx)
                 # ctx.invoke(
                 #     group.get_command(
                 #         group_ctx, args[0]
                 #     ).callback,
                 #     [i for i in args[1:] if not i.startswith("-")]
                 # )
-                group.invoke(ctx)
+                # cmd = group.get_command(ctx, ctx.protected_args[0])
+                # if cmd is None:
+                #     print('command is None')
+
+                # group_ctx.invoke(cmd, **ctx.params)
 
                 # unprocessed_args = {}
                 # processed_args = []
