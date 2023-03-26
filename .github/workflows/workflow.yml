@@ -52,7 +52,7 @@ jobs:
         wget ${{ matrix.click-zip }}
         python2 -m pip install --upgrade pip wheel
         pip install tox tox-gh-actions
-        pip install *.zip
+        pip install *.tar.gz
         tar -xvzf ${{ matrix.click-zip }}
     - name: Test with tox
       run: tox
