@@ -45,7 +45,6 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        wget ${{ matrix.click-zip }}
         python2 -m pip install --upgrade pip wheel
         python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
