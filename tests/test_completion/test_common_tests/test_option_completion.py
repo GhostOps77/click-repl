@@ -27,12 +27,8 @@ def test_boolean_option():
     def bool_option(foo):
         pass
 
-    completions = list(
-        c.get_completions(Document("bool-option --foo "))
-    )
-    assert {x.text for x in completions} == {'true', 'false'}
+    completions = list(c.get_completions(Document("bool-option --foo ")))
+    assert {x.text for x in completions} == {"true", "false"}
 
-    completions = list(
-        c.get_completions(Document("bool-option --foo t"))
-    )
-    assert {x.text for x in completions} == {'true'}
+    completions = list(c.get_completions(Document("bool-option --foo t")))
+    assert {x.text for x in completions} == {"true"}

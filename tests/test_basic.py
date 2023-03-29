@@ -23,18 +23,19 @@ def test_arg_completion():
 
 
 @root_command.command()
-@click.option(
-    "--handler", "-h", type=click.Choice(("foo", "bar")), help="Demo option"
-)
+@click.option("--handler", "-h", type=click.Choice(("foo", "bar")), help="Demo option")
 def option_cmd(handler):
     pass
 
 
-@pytest.mark.parametrize("test_input,expected", [
-    ("option-cmd ", {"--handler", "-h"}),
-    ("option-cmd -h", {"-h"}),
-    ("option-cmd --h", {"--handler"})
-])
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        ("option-cmd ", {"--handler", "-h"}),
+        ("option-cmd -h", {"-h"}),
+        ("option-cmd --h", {"--handler"}),
+    ],
+)
 def test_option_completion(test_input, expected):
     completions = list(c.get_completions(Document(test_input)))
     assert {x.text for x in completions} == expected

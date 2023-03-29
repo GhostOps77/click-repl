@@ -38,14 +38,10 @@ def test_args_of_hidden_command():
     def args_choices_hidden_cmd(handler):
         pass
 
-    completions = list(
-        c.get_completions(Document("option-"))
-    )
+    completions = list(c.get_completions(Document("option-")))
     assert {x.text for x in completions} == set()
 
-    completions = list(
-        c.get_completions(Document("args-choices-hidden-cmd foo "))
-    )
+    completions = list(c.get_completions(Document("args-choices-hidden-cmd foo ")))
     assert {x.text for x in completions} == set()
 
     completions = list(

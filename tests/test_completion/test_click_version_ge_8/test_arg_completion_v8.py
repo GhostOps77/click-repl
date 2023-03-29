@@ -16,6 +16,7 @@ with pytest.importorskip(
     minversion="8.0.0",
     reason="click-v8 built-in shell complete is not available, so skipped",
 ) as CompletionItem:
+
     def test_shell_complete_arg_v8_class_type():
         class MyVar(click.ParamType):
             name = "myvar"
@@ -41,6 +42,7 @@ with pytest.importorskip(
     minversion="8.0.0",
     reason="click-v8 built-in shell complete is not available, so skipped",
 ) as CompletionItem:
+
     def test_shell_complete_arg_v8_func_type():
         def shell_complete_func(ctx, param, incomplete):
             return [
@@ -59,18 +61,20 @@ with pytest.importorskip(
 
 
 @pytest.mark.skipif(
-    click.__version__[0] < '8',
+    click.__version__[0] < "8",
     reason="click-v8 built-in shell complete is not available, so skipped",
 )
 def test_tuple_return_type_shell_complete_func():
     def return_type_tuple_shell_complete(ctx, param, incomplete):
         return [
-            i for i in [
+            i
+            for i in [
                 ("Hi", "hi"),
                 ("Please", "please"),
                 ("Hey", "hey"),
-                ('Aye', 'aye')
-            ] if i[1].startswith(incomplete)
+                ("Aye", "aye"),
+            ]
+            if i[1].startswith(incomplete)
         ]
 
     @root_command.command()
@@ -78,15 +82,10 @@ def test_tuple_return_type_shell_complete_func():
     def tuple_type_autocompletion_cmd(foo):
         pass
 
-    completions = list(
-        c.get_completions(Document("tuple-type-autocompletion-cmd "))
-    )
-    assert {x.text for x in completions} == {'Hi', 'Please', 'Hey', 'Aye'}
+    completions = list(c.get_completions(Document("tuple-type-autocompletion-cmd ")))
+    assert {x.text for x in completions} == {"Hi", "Please", "Hey", "Aye"}
 
-    completions = list(
-        c.get_completions(Document("tuple-type-autocompletion-cmd h"))
-    )
-    assert (
-        {x.text for x in completions} == {'Hi', 'Hey'}
-        and {x.display_meta[0][-1] for x in completions} == {"hi", "hey"}
-    )
+    completions = list(c.get_completions(Document("tuple-type-autocompletion-cmd h")))
+    assert {x.text for x in completions} == {"Hi", "Hey"} and {
+        x.display_meta[0][-1] for x in completions
+    } == {"hi", "hey"}

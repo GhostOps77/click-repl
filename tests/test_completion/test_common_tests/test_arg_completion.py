@@ -17,15 +17,11 @@ def test_boolean_arg():
     def bool_arg(foo):
         pass
 
-    completions = list(
-        c.get_completions(Document("bool-arg "))
-    )
-    assert {x.text for x in completions} == {'true', 'false'}
+    completions = list(c.get_completions(Document("bool-arg ")))
+    assert {x.text for x in completions} == {"true", "false"}
 
-    completions = list(
-        c.get_completions(Document("bool-arg t"))
-    )
-    assert {x.text for x in completions} == {'true'}
+    completions = list(c.get_completions(Document("bool-arg t")))
+    assert {x.text for x in completions} == {"true"}
 
 
 def test_arg_choices():

@@ -16,6 +16,7 @@ with pytest.importorskip(
     minversion="8.0.0",
     reason="click-v8 built-in shell complete is not available, so skipped",
 ) as CompletionItem:
+
     def test_shell_complete_option_v8_class_type():
         class MyVar(click.ParamType):
             name = "myvar"
@@ -41,6 +42,7 @@ with pytest.importorskip(
     minversion="8.0.0",
     reason="click-v8 built-in shell complete is not available, so skipped",
 ) as CompletionItem:
+
     def test_shell_complete_arg_v8_func_type():
         def shell_complete_func(ctx, param, incomplete):
             return [
@@ -50,12 +52,16 @@ with pytest.importorskip(
             ]
 
         @root_command.command()
-        @click.option("--handler", '-h', shell_complete=shell_complete_func)
+        @click.option("--handler", "-h", shell_complete=shell_complete_func)
         def autocompletion_cmd2(handler):
             pass
 
-        completions = list(c.get_completions(Document("autocompletion-cmd2 --handler ")))
+        completions = list(
+            c.get_completions(Document("autocompletion-cmd2 --handler "))
+        )
         assert {x.text for x in completions} == {"foo", "bar"}
 
-        completions = list(c.get_completions(Document("autocompletion-cmd2 --handler ")))
+        completions = list(
+            c.get_completions(Document("autocompletion-cmd2 --handler "))
+        )
         assert {x.text for x in completions} == {"foo", "bar"}
