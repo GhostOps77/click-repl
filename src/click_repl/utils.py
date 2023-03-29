@@ -30,15 +30,9 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from typing import (
-            Any,
-            Callable,
-            Generator,
-            Iterable,  # noqa: F401
-            Mapping,
-            NoReturn,
-            Optional,
-            Union,
+        from typing import (  # noqa: F401
+            Any, Callable, Generator, Iterable, Mapping,
+            NoReturn, Optional, Union,
         )
 
         from prompt_toolkit.history import History  # noqa: F401
