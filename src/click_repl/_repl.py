@@ -2,9 +2,7 @@ from __future__ import with_statement
 
 import click
 import sys
-from prompt_toolkit.auto_suggest import (
-    ThreadedAutoSuggest, AutoSuggestFromHistory
-)
+from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
@@ -28,7 +26,7 @@ def bootstrap_prompt(
     group,  # type: Group
     prompt_kwargs,  # type: dict[str, Any]
     ctx=None,  # type: Optional[Context]
-    style=None  # type: Optional[dict[str, Any]]
+    style=None,  # type: Optional[dict[str, Any]]
 ):
     # type: (...) -> dict[str, Any]
     """
@@ -41,7 +39,7 @@ def bootstrap_prompt(
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(group, ctx=ctx, styles=style),
-        "message": u"> ",
+        "message": "> ",
         "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
@@ -56,10 +54,9 @@ def repl(
     prompt_kwargs={},
     allow_system_commands=True,
     allow_internal_commands=True,
-    styles=None
+    styles=None,
 ):
     # type: (click.Context, dict[str, Any], bool, bool, Optional[dict[str, str]]) -> None
-
     """
     Start an interactive shell. All subcommands are available in it.
 
@@ -78,9 +75,9 @@ def repl(
 
     if styles is None:
         styles = {
-            'command': 'ansiblack',
-            'option': 'ansiblack',
-            'argument': 'ansiblack'
+            "command": "ansiblack",
+            "option": "ansiblack",
+            "argument": "ansiblack",
         }
 
     # Delete the REPL command from those available, as we don't want to allow
@@ -144,11 +141,13 @@ def repl(
             _, cmd, cmd_args = group.resolve_command(group_ctx, args)
 
             if cmd is None:
-                click.echo('Error: No commands have been found from the string.')
+                click.echo("Error: No commands have been found from the string.")
                 continue
 
             with cmd.make_context(
-                None, cmd_args, parent=group_ctx,
+                None,
+                cmd_args,
+                parent=group_ctx,
             ) as cmd_ctx:
                 group_ctx.invoke(cmd, **cmd_ctx.params)
                 cmd_ctx.exit()

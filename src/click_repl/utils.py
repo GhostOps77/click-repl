@@ -30,8 +30,16 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from typing import (Any, Callable, Generator, Iterable,  # noqa: F401
-                            Mapping, NoReturn, Optional, Union)
+        from typing import (
+            Any,
+            Callable,
+            Generator,
+            Iterable,  # noqa: F401
+            Mapping,
+            NoReturn,
+            Optional,
+            Union,
+        )
 
         from prompt_toolkit.history import History  # noqa: F401
 
@@ -49,7 +57,12 @@ _locals = local()
 
 class ClickReplContext:
     __slots__ = (
-        "group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command"
+        "group_ctx",
+        "isatty",
+        "prompt_kwargs",
+        "session",
+        "_history",
+        "get_command",
     )
 
     def __init__(self, group_ctx, isatty, prompt_kwargs):
@@ -67,6 +80,7 @@ class ClickReplContext:
             def get_command():
                 # type: () -> str
                 return self.session.prompt()  # type: ignore[return-value, union-attr]
+
             self.get_command = get_command  # type: Callable[..., str]
 
         else:
@@ -96,7 +110,6 @@ class ClickReplContext:
 
 def split_arg_string(string, posix=True):
     # type: (str, bool) -> list[str]
-
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.

@@ -41,7 +41,9 @@ except (ImportError, ModuleNotFoundError):
 
 def text_type(text):
     # type: (Any) -> str
+    # fmt: off
     return u"{}".format(text)
+    # fmt: on
 
 
 class ClickCompleter(Completer):
@@ -52,11 +54,11 @@ class ClickCompleter(Completer):
 
         self.cli = cli  # type: Command
         self.ctx = ctx  # type: Optional[Context]
-        self.styles = styles if styles is not None else {
-            'command': '',
-            'argument': '',
-            'option': ''
-        }  # type: dict[str, str]
+        self.styles = (
+            styles
+            if styles is not None
+            else {"command": "", "argument": "", "option": ""}
+        )  # type: dict[str, str]
 
     def _get_completion_from_autocompletion_functions(
         self,
@@ -100,19 +102,17 @@ class ClickCompleter(Completer):
 
         return param_choices
 
-    def _get_completion_from_choices_click_le_7(
-        self, param, incomplete
-    ):
+    def _get_completion_from_choices_click_le_7(self, param, incomplete):
         # type: (Parameter, str) -> list[Completion]
 
-        if not getattr(param.type, 'case_sensitive', True):
+        if not getattr(param.type, "case_sensitive", True):
             incomplete = incomplete.lower()
             return [
                 Completion(
                     text_type(choice),
                     -len(incomplete),
-                    style=self.styles['argument'],
-                    display=text_type(repr(choice) if ' ' in choice else choice),
+                    style=self.styles["argument"],
+                    display=text_type(repr(choice) if " " in choice else choice),
                 )
                 for choice in param.type.choices  # type: ignore[attr-defined]
                 if choice.lower().startswith(incomplete)
@@ -123,8 +123,8 @@ class ClickCompleter(Completer):
                 Completion(
                     text_type(choice),
                     -len(incomplete),
-                    style=self.styles['argument'],
-                    display=text_type(repr(choice) if ' ' in choice else choice)
+                    style=self.styles["argument"],
+                    display=text_type(repr(choice) if " " in choice else choice),
                 )
                 for choice in param.type.choices  # type: ignore[attr-defined]
                 if choice.startswith(incomplete)
@@ -133,22 +133,22 @@ class ClickCompleter(Completer):
     def _get_completion_for_Path_types(self, param, args, incomplete):
         # type: (Parameter, list[str], str) -> list[Completion]
 
-        if '*' in incomplete:
+        if "*" in incomplete:
             return []
 
         choices = []
         _incomplete = os.path.expandvars(incomplete)
-        search_pattern = _incomplete.strip('\'"').replace("\\\\", "\\") + '*'
-        quote = ''
+        search_pattern = _incomplete.strip("'\"").replace("\\\\", "\\") + "*"
+        quote = ""
 
-        if ' ' in _incomplete:
+        if " " in _incomplete:
             for i in incomplete:
                 if i in ("'", '"'):
                     quote = i
                     break
 
         for path in iglob(search_pattern):
-            if ' ' in path:
+            if " " in path:
                 if quote:
                     path = quote + path
                 else:
@@ -156,13 +156,13 @@ class ClickCompleter(Completer):
                         path = repr(path).replace("\\\\", "\\")
             else:
                 if IS_WINDOWS:
-                    path = path.replace('\\', '\\\\')
+                    path = path.replace("\\", "\\\\")
 
             choices.append(
                 Completion(
                     text_type(path),
                     -len(incomplete),
-                    display=text_type(os.path.basename(path.strip('\'"')))
+                    display=text_type(os.path.basename(path.strip("'\""))),
                 )
             )
 
@@ -172,9 +172,7 @@ class ClickCompleter(Completer):
         # type: (Union[Parameter, click.Option], str) -> list[Completion]
         return [
             Completion(
-                text_type(k),
-                -len(incomplete),
-                display_meta=text_type("/".join(v))
+                text_type(k), -len(incomplete), display_meta=text_type("/".join(v))
             )
             for k, v in {
                 "true": ("1", "true", "t", "yes", "y", "on"),
@@ -195,14 +193,10 @@ class ClickCompleter(Completer):
             )
 
         elif isinstance(param_type, click.types.BoolParamType):
-            choices.extend(
-                self._get_completion_for_Boolean_type(param, incomplete)
-            )
+            choices.extend(self._get_completion_for_Boolean_type(param, incomplete))
 
         elif isinstance(param_type, (click.Path, click.File)):
-            choices.extend(
-                self._get_completion_for_Path_types(param, args, incomplete)
-            )
+            choices.extend(self._get_completion_for_Path_types(param, args, incomplete))
 
         elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
             choices.extend(
@@ -242,7 +236,7 @@ class ClickCompleter(Completer):
                 continue
 
             elif isinstance(param, click.Option):
-                for option in (param.opts + param.secondary_opts):
+                for option in param.opts + param.secondary_opts:
                     # We want to make sure if this parameter was called
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
@@ -256,7 +250,7 @@ class ClickCompleter(Completer):
                                 text_type(option),
                                 -len(incomplete),
                                 display_meta=text_type(param.help or ""),
-                                style=self.styles['option']
+                                style=self.styles["option"],
                             )
                         )
 
@@ -281,7 +275,7 @@ class ClickCompleter(Completer):
 
         document_text_before_cursor = document.text_before_cursor
 
-        if document_text_before_cursor.startswith(('!', ':')):
+        if document_text_before_cursor.startswith(("!", ":")):
             return
 
         # try:
@@ -319,9 +313,7 @@ class ClickCompleter(Completer):
                 self.cli, {}, "", group_args + args
             )
         else:
-            ctx = click._bashcomplete.resolve_ctx(
-                self.cli, "", group_args + args
-            )
+            ctx = click._bashcomplete.resolve_ctx(self.cli, "", group_args + args)
 
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
@@ -344,7 +336,7 @@ class ClickCompleter(Completer):
                             Completion(
                                 text_type(name),
                                 -len(incomplete),
-                                display_meta=getattr(command, 'short_help', ""),
+                                display_meta=getattr(command, "short_help", ""),
                             )
                         )
 
