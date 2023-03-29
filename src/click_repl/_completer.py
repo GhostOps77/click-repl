@@ -54,11 +54,9 @@ class ClickCompleter(Completer):
 
         self.cli = cli  # type: Command
         self.ctx = ctx  # type: Optional[Context]
-        self.styles = (
-            styles
-            if styles is not None
-            else {"command": "", "argument": "", "option": ""}
-        )  # type: dict[str, str]
+        self.styles = styles if styles is not None else {
+            "command": "", "argument": "", "option": ""
+        }  # type: dict[str, str]
 
     def _get_completion_from_autocompletion_functions(
         self,
@@ -301,19 +299,12 @@ class ClickCompleter(Completer):
             incomplete = ""
 
         # Resolve context based on click version
-        if self.ctx:
-            group_args = [
-                str(i) for i in self.ctx.params.values()  # type: ignore[union-attr]
-            ]  # type: list[str]
-        else:
-            group_args = []
-
         if HAS_CLICK_V8:
             ctx = click.shell_completion._resolve_context(
-                self.cli, {}, "", group_args + args
+                self.cli, {}, "", args
             )
         else:
-            ctx = click._bashcomplete.resolve_ctx(self.cli, "", group_args + args)
+            ctx = click._bashcomplete.resolve_ctx(self.cli, "", args)
 
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command

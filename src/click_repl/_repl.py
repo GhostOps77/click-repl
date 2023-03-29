@@ -132,25 +132,13 @@ def repl(
             break
 
         try:
-            # default_map passes the top-level params to the new group to
-            # support top-level required params that would reject the
-            # invocation if missing.
-            # with group.make_context(
-            #     None, args, parent=group_ctx, default_map=old_ctx.params
-            # ) as ctx:
-            _, cmd, cmd_args = group.resolve_command(group_ctx, args)
-
-            if cmd is None:
-                click.echo("Error: No commands have been found from the string.")
-                continue
-
-            with cmd.make_context(
-                None,
-                cmd_args,
-                parent=group_ctx,
-            ) as cmd_ctx:
-                group_ctx.invoke(cmd, **cmd_ctx.params)
-                cmd_ctx.exit()
+            # The group command will dispatch based on args.
+            old_protected_args = group_ctx.protected_args
+            try:
+                group_ctx.protected_args = args
+                group.invoke(group_ctx)
+            finally:
+                group_ctx.protected_args = old_protected_args
 
         except click.ClickException as e:
             e.show()

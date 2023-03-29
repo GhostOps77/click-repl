@@ -51,6 +51,7 @@ def test_repl_dispatches_subcommand(capsys):
     with mock_stdin("foo\n"):
         with pytest.raises(SystemExit):
             cli(args=[], prog_name="test_repl_dispatch_subcommand")
+
     assert capsys.readouterr().out.replace("\r\n", "\n") == "Foo!\n"
 
 
@@ -73,7 +74,8 @@ def test_group_command_called_once(capsys):
     with mock_stdin("foo\nbar\n"):
         with pytest.raises(SystemExit):
             cli(args=[], prog_name="test_group_called_once")
-    assert capsys.readouterr().out.replace("\r\n", "\n") == "cli()\nFoo!\nBar!\n"
+
+    assert capsys.readouterr().out.replace("\r\n", "\n") == "cli()\ncli()\nFoo!\ncli()\nBar!\n"
 
 
 def test_independant_args(capsys):
@@ -81,7 +83,7 @@ def test_independant_args(capsys):
     @click.argument("argument")
     @click.pass_context
     def cli(ctx, argument):
-        print("cli(%s)" % argument)
+        print("cli({})".format(argument))
         if ctx.invoked_subcommand is None:
             click_repl.repl(ctx)
 
@@ -92,7 +94,25 @@ def test_independant_args(capsys):
     with mock_stdin("foo\n"):
         with pytest.raises(SystemExit):
             cli(args=["command-line-argument"], prog_name="test_group_called_once")
-    assert capsys.readouterr().out == "cli(command-line-argument)\nFoo!\n"
+    assert capsys.readouterr().out.replace('\r\n', '\n') == "cli(command-line-argument)\ncli(command-line-argument)\nFoo!\n"
+
+
+    @click.group(invoke_without_command=True)
+    @click.option("--option")
+    @click.pass_context
+    def cli(ctx, option):
+        print("cli({})".format(option))
+        if ctx.invoked_subcommand is None:
+            click_repl.repl(ctx)
+
+    @cli.command()
+    def foo():
+        print("Foo!")
+
+    with mock_stdin("foo\n"):
+        with pytest.raises(SystemExit):
+            cli(args=["--option", "command-line-argument"], prog_name="test_group_called_once")
+    assert capsys.readouterr().out.replace('\r\n', '\n') == "cli(command-line-argument)\ncli(command-line-argument)\nFoo!\n"
 
 
 def test_exit_repl_function():
