@@ -118,42 +118,43 @@ def test_independant_options(capsys):
         with pytest.raises(SystemExit):
             cli(
                 args=["--option", "command-line-argument"],
-                prog_name="test_group_called_once"
+                prog_name="test_independant_options"
             )
     assert capsys.readouterr().out.replace('\r\n', '\n') == (
         "cli(command-line-argument)\ncli(command-line-argument)\nFoo!\n"
     )
 
 
+@click.group(invoke_without_command=True)
+@click.argument("argument")
+@click.option("--option1", default=1, type=click.STRING)
+@click.option("--option2")
+@click.pass_context
+def cli(ctx, argument, option1, option2):
+    print("cli({}, {}, {})".format(argument, option1, option2))
+    if ctx.invoked_subcommand is None:
+        click_repl.repl(ctx)
+
+@cli.command()
+def foo():
+    print("Foo!")
+
+
 @pytest.mark.parametrize("args, expected", [
-    (['hi'], "cli(hi, None, None)\ncli(hi, None, None)\nFoo!\n"),
-    (['hi', '--option1', 'opt1'], "cli(hi, opt1, None)\ncli(hi, opt1, None)\nFoo!\n"),
-    (['hi', '--option2', 'opt2'], "cli(hi, None, opt2)\ncli(hi, None, opt2)\nFoo!\n"),
-    (['hi', '--option1', 'opt1', '--option2', 'opt2'],
+    (['hi'], "cli(hi, 1, None)\ncli(hi, 1, None)\nFoo!\n"),
+    (['--option1', 'opt1', 'hi'], "cli(hi, opt1, None)\ncli(hi, opt1, None)\nFoo!\n"),
+    (['--option2', 'opt2', 'hi'], "cli(hi, 1, opt2)\ncli(hi, 1, opt2)\nFoo!\n"),
+    (['--option1', 'opt1', '--option2', 'opt2', 'hi'],
      "cli(hi, opt1, opt2)\ncli(hi, opt1, opt2)\nFoo!\n"),
 ])
 def test_group_with_multiple_args(capsys, args, expected):
-    @click.group(invoke_without_command=True)
-    @click.argument("argument")
-    @click.option("--option1", default=1)
-    @click.option("--option1")
-    @click.pass_context
-    def cli(ctx, argument, option1, option2):
-        print("cli({}, {}, {})".format(argument, option1, option2))
-        if ctx.invoked_subcommand is None:
-            click_repl.repl(ctx)
-
-    @cli.command()
-    def foo():
-        print("Foo!")
-
-    with mock_stdin("foo\n"):
-        with pytest.raises(SystemExit):
-            cli(
-                args=args,
-                prog_name="test_group_called_once"
-            )
-    assert capsys.readouterr().out.replace('\r\n', '\n') == expected
+  with mock_stdin("foo\n"):
+      with pytest.raises(SystemExit):
+          cli(
+              args=args,
+              prog_name="test_group_with_multiple_args"
+          )
+  assert capsys.readouterr().out.replace('\r\n', '\n') == expected
 
 
 def test_exit_repl_function():

@@ -184,8 +184,11 @@ class ClickCompleter(Completer):
         choices = []  # type: list[Completion]
         param_type = param.type  # type: click.ParamType
 
+        if isinstance(param_type, click.types.UnprocessedParamType):
+            return []
+
         # shell_complete method for click.Choice is intorduced in click-v8
-        if not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
+        elif not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
             choices.extend(
                 self._get_completion_from_choices_click_le_7(param, incomplete)
             )
@@ -218,19 +221,16 @@ class ClickCompleter(Completer):
         # type: (...) -> list[Completion]
 
         choices = []
-        # param_choices = []
         param_called = False
+        params_list = ctx_command.params
+        for index, param in enumerate(params_list):
+            if param.nargs == -1:
+                params_list.append(params_list.pop(index))
 
-        # if HAS_CLICK_V8:
-        #     choices = ctx_command.shell_complete(autocomplete_ctx, incomplete)
-        #     return choices
-
-        for param in ctx_command.params:
-            # print(f'{vars(param) = }')
-            if isinstance(param.type, click.types.UnprocessedParamType):
-                return []
-
-            elif getattr(param, "hidden", False):
+        print("Currently introspecting argument:", autocomplete_ctx.info_name)
+        for param in params_list:
+            print(f'{vars(param) = }')
+            if getattr(param, "hidden", False) or getattr(param, "hide_input", False):
                 continue
 
             elif isinstance(param, click.Option):
@@ -240,9 +240,14 @@ class ClickCompleter(Completer):
                     # relevant choices
                     if option in args[param.nargs * -1 :]:  # noqa: E203
                         param_called = True
+                        print(f"param called by {param.name}")
                         break
 
+                    elif option in args and not (param.multiple or param.count):
+                        continue
+
                     elif option.startswith(incomplete):
+                        print(f'{option = }')
                         choices.append(
                             Completion(
                                 text_type(option),
@@ -252,17 +257,23 @@ class ClickCompleter(Completer):
                             )
                         )
 
+                # If we are inside a parameter that was called, we want to show only
+                # relevant choices
+                print(f'{param.name = } {param_called = }')
                 if param_called:
                     choices = self._get_completion_from_params(
                         autocomplete_ctx, args, param, incomplete
                     )
+                    break
 
             elif isinstance(param, click.Argument):
-                choices.extend(
-                    self._get_completion_from_params(
-                        autocomplete_ctx, args, param, incomplete
+                if autocomplete_ctx.params.get(param.name) is None:
+                    choices.extend(
+                        self._get_completion_from_params(
+                            autocomplete_ctx, args, param, incomplete
+                        )
                     )
-                )
+                    break
 
         return choices
 
@@ -283,8 +294,6 @@ class ClickCompleter(Completer):
         #     return
 
         choices = []  # type: list[Completion]
-        # param_choices = []  # type: list[Completion]
-        # param_called = False
         cursor_within_command = (
             document_text_before_cursor.rstrip() == document_text_before_cursor
         )
@@ -306,16 +315,21 @@ class ClickCompleter(Completer):
         else:
             ctx = click._bashcomplete.resolve_ctx(self.cli, "", args)
 
-        autocomplete_ctx = self.ctx or ctx
+        autocomplete_ctx = ctx or self.ctx
         ctx_command = ctx.command
 
-        # print(f'(from get_completions) {vars(ctx) = }\n')
-        # print(f'{vars(autocomplete_ctx) = }')
+        print(f'(from get_completions) {vars(ctx) = }\n')
+        print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
 
         if getattr(ctx_command, "hidden", False):
             return
 
         try:
+            # choices.extend(
+            #     self._get_completion_for_cmd_args(
+            #         ctx_command, incomplete, autocomplete_ctx, args
+            #     )
+            # )
             if isinstance(ctx_command, click.MultiCommand):
                 for name in ctx_command.list_commands(ctx):
                     command = ctx_command.get_command(ctx, name)
@@ -341,12 +355,5 @@ class ClickCompleter(Completer):
         except Exception as e:
             click.echo("{}: {}".format(type(e).__name__, str(e)))
 
-        # If we are inside a parameter that was called, we want to show only
-        # relevant choices
-        # if param_called:
-        #     choices = param_choices
-
         for item in choices:
-            # if item.text.startswith(incomplete):
             yield item
-        # yield from choices
