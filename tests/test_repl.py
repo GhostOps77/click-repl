@@ -135,6 +135,7 @@ def cli(ctx, argument, option1, option2):
     if ctx.invoked_subcommand is None:
         click_repl.repl(ctx)
 
+
 @cli.command()
 def foo():
     print("Foo!")
@@ -148,13 +149,13 @@ def foo():
      "cli(hi, opt1, opt2)\ncli(hi, opt1, opt2)\nFoo!\n"),
 ])
 def test_group_with_multiple_args(capsys, args, expected):
-  with mock_stdin("foo\n"):
-      with pytest.raises(SystemExit):
-          cli(
-              args=args,
-              prog_name="test_group_with_multiple_args"
-          )
-  assert capsys.readouterr().out.replace('\r\n', '\n') == expected
+    with mock_stdin("foo\n"):
+        with pytest.raises(SystemExit):
+            cli(
+                args=args,
+                prog_name="test_group_with_multiple_args"
+            )
+    assert capsys.readouterr().out.replace('\r\n', '\n') == expected
 
 
 def test_exit_repl_function():

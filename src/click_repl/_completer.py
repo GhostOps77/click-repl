@@ -54,9 +54,10 @@ class ClickCompleter(Completer):
 
         self.cli = cli  # type: Command
         self.ctx = ctx  # type: Optional[Context]
-        self.styles = styles if styles is not None else {
-            "command": "", "argument": "", "option": ""
-        }  # type: dict[str, str]
+        if styles is not None:
+            self.styles = styles  # type: dict[str, str]
+        else:
+            styles = {"command": "", "argument": "", "option": ""}
 
     def _get_completion_from_autocompletion_functions(
         self,
@@ -267,7 +268,9 @@ class ClickCompleter(Completer):
                     break
 
             elif isinstance(param, click.Argument):
-                if autocomplete_ctx.params.get(param.name) is None:
+                if autocomplete_ctx.params.get(
+                    param.name  # type: ignore[arg-type]
+                ) is None:
                     choices.extend(
                         self._get_completion_from_params(
                             autocomplete_ctx, args, param, incomplete
@@ -309,9 +312,7 @@ class ClickCompleter(Completer):
 
         # Resolve context based on click version
         if HAS_CLICK_V8:
-            ctx = click.shell_completion._resolve_context(
-                self.cli, {}, "", args
-            )
+            ctx = click.shell_completion._resolve_context(self.cli, {}, "", args)
         else:
             ctx = click._bashcomplete.resolve_ctx(self.cli, "", args)
 
@@ -348,7 +349,10 @@ class ClickCompleter(Completer):
             else:
                 choices.extend(
                     self._get_completion_for_cmd_args(
-                        ctx_command, incomplete, autocomplete_ctx, args
+                        ctx_command,
+                        incomplete,
+                        autocomplete_ctx,  # type: ignore[arg-type]
+                        args
                     )
                 )
 

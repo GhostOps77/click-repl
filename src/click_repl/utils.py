@@ -31,8 +31,7 @@ if sys.version_info >= (3, 5):
 
     if t.TYPE_CHECKING:
         from typing import (  # noqa: F401
-            Any, Callable, Generator, Iterable, Mapping,
-            NoReturn, Optional, Union,
+            Any, Callable, Generator, Iterable, Mapping, NoReturn, Optional, Union,
         )
 
         from prompt_toolkit.history import History  # noqa: F401
@@ -51,12 +50,7 @@ _locals = local()
 
 class ClickReplContext:
     __slots__ = (
-        "group_ctx",
-        "isatty",
-        "prompt_kwargs",
-        "session",
-        "_history",
-        "get_command",
+        "group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command",
     )
 
     def __init__(self, group_ctx, isatty, prompt_kwargs):
