@@ -184,7 +184,7 @@ class ClickCompleter(Completer):
         if isinstance(param_type, click.types.UnprocessedParamType):
             return []
 
-        elif isinstance(param_type, click.types._NumberRangeBase):
+        elif isinstance(param_type, (click.IntRange, click.FloatRange)):
             left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
             right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
 
