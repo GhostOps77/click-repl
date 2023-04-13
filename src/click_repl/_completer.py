@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: ascii -*-
+
 from __future__ import unicode_literals
 
 import os
