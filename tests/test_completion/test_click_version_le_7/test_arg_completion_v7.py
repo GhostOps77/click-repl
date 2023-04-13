@@ -60,3 +60,7 @@ def test_tuple_return_type_shell_complete_func_click7():
     assert {x.text for x in completions} == {"Hi", "Hey"} and {
         x.display_meta[0][-1] for x in completions
     } == {"hi", "hey"}
+
+
+# test for unprocessed param type
+# test for range type params
