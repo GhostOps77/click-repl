@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: ascii -*-
+# -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
 
@@ -239,9 +239,9 @@ class ClickCompleter(Completer):
             if param.nargs == -1:
                 params_list.append(params_list.pop(index))
 
-        # print("Currently introspecting argument:", autocomplete_ctx.info_name)
+        print("Currently introspecting argument:", autocomplete_ctx.info_name)
         for param in params_list:
-            # print(f'{vars(param) = }')
+            print(f'{vars(param) = }')
             if getattr(param, "hidden", False) or getattr(param, "hide_input", False):
                 continue
 
@@ -252,22 +252,22 @@ class ClickCompleter(Completer):
                     continue
 
                 for option in options_name_list:
-                    # print(f'{option = }')
+                    print(f'{option = }')
                     # We want to make sure if this parameter was called
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
-                    # print(f'{args[param.nargs * -1 :] = } {incomplete = !r}')
+                    print(f'{args[param.nargs * -1 :] = } {incomplete = !r}')
                     if option in args[param.nargs * -1 :]:  # noqa: E203
                         param_called = True
-                        # print(f"param called by {param.name}")
+                        print(f"param called by {param.name}")
                         break
 
                     elif option in args and not (param.multiple or param.count):
-                        # print('option in args and not (param.multiple or param.count)')
+                        print('option in args and not (param.multiple or param.count)')
                         break
 
                     elif option.startswith(incomplete):
-                        # print(f'{option} startswith ({incomplete})')
+                        print(f'{option} startswith ({incomplete})')
                         choices.append(
                             Completion(
                                 text_type(option),
@@ -279,7 +279,7 @@ class ClickCompleter(Completer):
 
                 # If we are inside a parameter that was called, we want to show only
                 # relevant choices
-                # print(f'{param.name = } {param_called = }')
+                print(f'{param.name = } {param_called = }')
                 if param_called and not param.is_bool_flag:
                     choices = self._get_completion_from_params(
                         autocomplete_ctx, args, param, incomplete
@@ -338,8 +338,8 @@ class ClickCompleter(Completer):
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
 
-        # print(f'(from get_completions) {vars(ctx) = }\n')
-        # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
+        print(f'(from get_completions) {vars(ctx) = }\n')
+        print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
 
         if getattr(ctx_command, "hidden", False):
             return
