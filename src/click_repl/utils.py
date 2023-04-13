@@ -32,6 +32,7 @@ if sys.version_info >= (3, 5):
     if t.TYPE_CHECKING:
         from typing import (  # noqa: F401
             Any, Callable, Generator, Iterable, Mapping, NoReturn, Optional, Union,
+            List, Dict, Tuple
         )
 
         from prompt_toolkit.history import History  # noqa: F401
@@ -44,7 +45,7 @@ else:
     from collections import Iterable, Mapping
 
 
-_internal_commands = {}  # type: dict[str, tuple[Callable[[], Any], Optional[str]]]
+_internal_commands = {}  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]
 _locals = local()
 _locals.__dict__['stack'] = []
 
@@ -55,7 +56,7 @@ class ClickReplContext:
     )
 
     def __init__(self, group_ctx, isatty, prompt_kwargs):
-        # type: (click.Context, bool, dict[str, Any]) -> None
+        # type: (click.Context, bool, Dict[str, Any]) -> None
         self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.isatty = isatty
@@ -63,8 +64,8 @@ class ClickReplContext:
         if isatty:
             self.session = PromptSession(
                 **prompt_kwargs
-            )  # type: Optional[PromptSession[dict[str, Any]]]
-            self._history = self.session.history  # type: Union[History, list[str]]
+            )  # type: Optional[PromptSession[Dict[str, Any]]]
+            self._history = self.session.history  # type: Union[History, List[str]]
 
             def get_command():
                 # type: () -> str
@@ -98,7 +99,7 @@ class ClickReplContext:
 
 
 def split_arg_string(string, posix=True):
-    # type: (str, bool) -> list[str]
+    # type: (str, bool) -> List[str]
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.
@@ -235,7 +236,7 @@ def _execute_internal_and_sys_cmds(
     allow_internal_commands=True,
     allow_system_commands=True,
 ):
-    # type: (str, bool, bool) -> Union[list[str], None, NoReturn]
+    # type: (str, bool, bool) -> Union[List[str], None, NoReturn]
     """
     Executes internal, system, and all the other registered click commands from the input
     """

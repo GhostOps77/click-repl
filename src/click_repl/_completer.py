@@ -19,7 +19,7 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from typing import Any, Generator, Optional, Union  # noqa: F401
+        from typing import Any, Generator, Optional, Union, Dict, List  # noqa: F401
 
         from click import Command, Context, Group, Parameter  # noqa: F401
         from prompt_toolkit.completion import CompleteEvent  # noqa: F401
@@ -50,19 +50,19 @@ class ClickCompleter(Completer):
     __slots__ = ("cli", "ctx", "styles")
 
     def __init__(self, cli, ctx=None, styles=None):
-        # type: (Group, Optional[Context], Optional[dict[str, str]]) -> None
+        # type: (Group, Optional[Context], Optional[Dict[str, str]]) -> None
 
         self.cli = cli  # type: Command
         self.ctx = ctx  # type: Optional[Context]
         if styles is not None:
-            self.styles = styles  # type: dict[str, str]
+            self.styles = styles  # type: Dict[str, str]
         else:
             self.styles = dict.fromkeys(["command", "argument", "option"], "")
 
     def _get_completion_from_autocompletion_functions(
         self, param, autocomplete_ctx, args, incomplete,
     ):
-        # type: (Parameter, Context, list[str], str) -> list[Completion]
+        # type: (Parameter, Context, List[str], str) -> List[Completion]
 
         param_choices = []
 
@@ -98,7 +98,7 @@ class ClickCompleter(Completer):
         return param_choices
 
     def _get_completion_from_choices_click_le_7(self, param, incomplete):
-        # type: (Parameter, str) -> list[Completion]
+        # type: (Parameter, str) -> List[Completion]
 
         if not getattr(param.type, "case_sensitive", True):
             incomplete = incomplete.lower()
@@ -126,7 +126,7 @@ class ClickCompleter(Completer):
             ]
 
     def _get_completion_for_Path_types(self, param, args, incomplete):
-        # type: (Parameter, list[str], str) -> list[Completion]
+        # type: (Parameter, List[str], str) -> List[Completion]
 
         if "*" in incomplete:
             return []
@@ -164,7 +164,7 @@ class ClickCompleter(Completer):
         return choices
 
     def _get_completion_for_Boolean_type(self, param, incomplete):
-        # type: (Union[Parameter, click.Option], str) -> list[Completion]
+        # type: (Union[Parameter, click.Option], str) -> List[Completion]
         return [
             Completion(
                 text_type(k), -len(incomplete), display_meta=text_type("/".join(v))
@@ -177,8 +177,8 @@ class ClickCompleter(Completer):
         ]
 
     def _get_completion_from_params(self, autocomplete_ctx, args, param, incomplete):
-        # type: (Context, list[str], Parameter, str) -> list[Completion]
-        choices = []  # type: list[Completion]
+        # type: (Context, List[str], Parameter, str) -> List[Completion]
+        choices = []  # type: List[Completion]
         param_type = param.type  # type: click.ParamType
 
         if isinstance(param_type, click.types.UnprocessedParamType):
@@ -225,9 +225,9 @@ class ClickCompleter(Completer):
         ctx_command,  # type: Command
         incomplete,  # type: str
         autocomplete_ctx,  # type: Context
-        args,  # type: list[str]
+        args,  # type: List[str]
     ):
-        # type: (...) -> list[Completion]
+        # type: (...) -> List[Completion]
 
         choices = []
         param_called = False
@@ -312,7 +312,7 @@ class ClickCompleter(Completer):
         #     # Invalid command, perhaps caused by missing closing quotation.
         #     return
 
-        choices = []  # type: list[Completion]
+        choices = []  # type: List[Completion]
         cursor_within_command = (
             document_text_before_cursor.rstrip() == document_text_before_cursor
         )

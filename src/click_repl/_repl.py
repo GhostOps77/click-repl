@@ -19,16 +19,16 @@ if sys.version_info >= (3, 5):
 
     if t.TYPE_CHECKING:
         from click import Context, Group  # noqa: F401
-        from typing import Any, Optional  # noqa: F401
+        from typing import Any, Optional, Dict  # noqa: F401
 
 
 def bootstrap_prompt(
     group,  # type: Group
-    prompt_kwargs,  # type: dict[str, Any]
+    prompt_kwargs,  # type: Dict[str, Any]
     ctx=None,  # type: Optional[Context]
-    style=None,  # type: Optional[dict[str, Any]]
+    style=None,  # type: Optional[Dict[str, Any]]
 ):
-    # type: (...) -> dict[str, Any]
+    # type: (...) -> Dict[str, Any]
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
@@ -56,7 +56,7 @@ def repl(
     allow_internal_commands=True,
     styles=None,
 ):
-    # type: (click.Context, dict[str, Any], bool, bool, Optional[dict[str, str]]) -> None
+    # type: (click.Context, Dict[str, Any], bool, bool, Optional[Dict[str, str]]) -> None
     """
     Start an interactive shell. All subcommands are available in it.
 
