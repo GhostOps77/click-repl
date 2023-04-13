@@ -46,6 +46,7 @@ else:
 
 _internal_commands = {}  # type: dict[str, tuple[Callable[[], Any], Optional[str]]]
 _locals = local()
+_locals.__dict__['stack'] = []
 
 
 class ClickReplContext:
@@ -140,7 +141,7 @@ def get_current_click_repl_context(silent=False):
 def push_context(ctx):
     # type: (ClickReplContext) -> None
     """Pushes a new context to the current stack."""
-    _locals.__dict__.setdefault("stack", []).append(ctx)
+    _locals.__dict__['stack'].append(ctx)
 
 
 def pop_context():

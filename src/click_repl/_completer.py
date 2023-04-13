@@ -57,14 +57,10 @@ class ClickCompleter(Completer):
         if styles is not None:
             self.styles = styles  # type: dict[str, str]
         else:
-            styles = {"command": "", "argument": "", "option": ""}
+            self.styles = dict.fromkeys(["command", "argument", "option"], "")
 
     def _get_completion_from_autocompletion_functions(
-        self,
-        param,
-        autocomplete_ctx,
-        args,
-        incomplete,
+        self, param, autocomplete_ctx, args, incomplete,
     ):
         # type: (Parameter, Context, list[str], str) -> list[Completion]
 
@@ -188,6 +184,18 @@ class ClickCompleter(Completer):
         if isinstance(param_type, click.types.UnprocessedParamType):
             return []
 
+        elif isinstance(param_type, click.types._NumberRangeBase):
+            left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
+            right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
+
+            min_val = param_type.min if param_type.min is not None else '-∞'
+            max_val = param_type.max if param_type.max is not None else '∞'
+            display_meta = '{} <{} x <{} {}'.format(
+                min_val, left_exclusive, right_exclusive, max_val
+            )
+
+            return [Completion('-', display='clamps input', display_meta=display_meta)]
+
         # shell_complete method for click.Choice is intorduced in click-v8
         elif not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
             choices.extend(
@@ -235,20 +243,28 @@ class ClickCompleter(Completer):
                 continue
 
             elif isinstance(param, click.Option):
-                for option in param.opts + param.secondary_opts:
+                options_name_list = param.opts + param.secondary_opts
+
+                if param.is_bool_flag and any(i in args for i in options_name_list):
+                    continue
+
+                for option in options_name_list:
+                    # print(f'{option = }')
                     # We want to make sure if this parameter was called
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
+                    # print(f'{args[param.nargs * -1 :] = } {incomplete = !r}')
                     if option in args[param.nargs * -1 :]:  # noqa: E203
                         param_called = True
                         # print(f"param called by {param.name}")
                         break
 
                     elif option in args and not (param.multiple or param.count):
-                        continue
+                        # print('option in args and not (param.multiple or param.count)')
+                        break
 
                     elif option.startswith(incomplete):
-                        # print(f'{option = }')
+                        # print(f'{option} startswith ({incomplete})')
                         choices.append(
                             Completion(
                                 text_type(option),
@@ -261,7 +277,7 @@ class ClickCompleter(Completer):
                 # If we are inside a parameter that was called, we want to show only
                 # relevant choices
                 # print(f'{param.name = } {param_called = }')
-                if param_called:
+                if param_called and not param.is_bool_flag:
                     choices = self._get_completion_from_params(
                         autocomplete_ctx, args, param, incomplete
                     )
@@ -316,11 +332,11 @@ class ClickCompleter(Completer):
         else:
             ctx = click._bashcomplete.resolve_ctx(self.cli, "", args)
 
-        autocomplete_ctx = ctx or self.ctx
+        autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
 
-        # print(f'(from get_completions) {vars(ctx) = }\n')
-        # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
+        print(f'(from get_completions) {vars(ctx) = }\n')
+        print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
 
         if getattr(ctx_command, "hidden", False):
             return
