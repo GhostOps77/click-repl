@@ -22,7 +22,7 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from typing import Any, Generator, Optional, Union, Dict, List  # noqa: F401
+        from typing import Any, Dict, Generator, Optional, Union, List  # noqa: F401
 
         from click import Command, Context, Group, Parameter  # noqa: F401
         from prompt_toolkit.completion import CompleteEvent  # noqa: F401
@@ -50,13 +50,22 @@ def text_type(text):
 
 
 class ClickCompleter(Completer):
-    __slots__ = ("cli", "ctx", "styles")
+    __slots__ = ("cli", "ctx", "ctx_args", "styles")
 
-    def __init__(self, cli, ctx=None, styles=None):
-        # type: (Group, Optional[Context], Optional[Dict[str, str]]) -> None
+    def __init__(self, cli, ctx, styles=None):
+        # type: (Group, Context, Optional[Dict[str, str]]) -> None
 
-        self.cli = cli  # type: Command
-        self.ctx = ctx  # type: Optional[Context]
+        self.cli = cli  # type: Group
+        self.ctx = ctx  # type: Context
+        self.ctx_args = sys.argv[1:]  # type: List[str]
+        self.group_argument_values = []  # type: List[str]
+
+        for param in self.ctx.command.params:
+            if isinstance(param, click.Argument) and param.name in self.ctx.params:
+                # self.group_argument_values[param.name] = self.ctx.params[param.name]
+                self.group_argument_values.append((self.ctx.params[param.name]))
+
+        print(f'{self.group_argument_values = }')
 
         if styles is not None:
             self.styles = styles  # type: Dict[str, str]
@@ -180,6 +189,20 @@ class ClickCompleter(Completer):
             if any(i.startswith(incomplete) for i in v)
         ]
 
+    def _get_completion_for_Range_types(self, param_type, incomplete):
+        left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
+        right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
+
+        min_val = param_type.min if param_type.min is not None else '-∞'
+        max_val = param_type.max if param_type.max is not None else '∞'
+        display_meta = '{} <{} x <{} {}'.format(
+            min_val, left_exclusive, right_exclusive, max_val
+        )
+
+        display_text = 'clamps input' if param_type.clamp else '-'
+
+        return [Completion('-', display=display_text, display_meta=display_meta)]
+
     def _get_completion_from_params(self, autocomplete_ctx, args, param, incomplete):
         # type: (Context, List[str], Parameter, str) -> List[Completion]
         choices = []  # type: List[Completion]
@@ -189,16 +212,7 @@ class ClickCompleter(Completer):
             return []
 
         elif isinstance(param_type, (click.IntRange, click.FloatRange)):
-            left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
-            right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
-
-            min_val = param_type.min if param_type.min is not None else '-∞'
-            max_val = param_type.max if param_type.max is not None else '∞'
-            display_meta = '{} <{} x <{} {}'.format(
-                min_val, left_exclusive, right_exclusive, max_val
-            )
-
-            return [Completion('-', display='clamps input', display_meta=display_meta)]
+            return self._get_completion_for_Range_types(param_type, incomplete)
 
         # shell_complete method for click.Choice is intorduced in click-v8
         elif not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
@@ -332,15 +346,23 @@ class ClickCompleter(Completer):
 
         # Resolve context based on click version
         if HAS_CLICK_V8:
-            ctx = click.shell_completion._resolve_context(self.cli, {}, "", args)
+            ctx = click.shell_completion._resolve_context(self.cli, {}, "", self.ctx_args + args)
         else:
-            ctx = click._bashcomplete.resolve_ctx(self.cli, "", args)
+            ctx = click._bashcomplete.resolve_ctx(self.cli, "", self.ctx_args + args)
+
+        # print(f'{self.ctx_args = }')
+        # parser = click.parser.OptionParser(self.ctx).parse_args(self.ctx_args)
+        # print(f'{parser = }')
 
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
 
-        # print(f'(from get_completions) {vars(ctx) = }\n')
-        # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
+        print(f'\n(from get_completions) {vars(ctx) = }\n')
+        print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
+        # print(f'{self.ctx_args = }\n')
+
+        # parsed = self.cli.resolve_command(self.ctx, self.ctx_args + args)
+        # print(f'{parsed = }')
 
         if getattr(ctx_command, "hidden", False):
             return

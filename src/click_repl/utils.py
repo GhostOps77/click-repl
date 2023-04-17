@@ -164,6 +164,12 @@ def pass_context(func):
     return decorator
 
 
+def group(func, *args, **kwargs):
+    def decorator(*args, **kwargs):
+        pass
+    return decorator
+
+
 def _register_internal_command(names, target, description=None):
     # type: (Iterable[str], Callable[[], Any], Optional[str]) -> None
 
