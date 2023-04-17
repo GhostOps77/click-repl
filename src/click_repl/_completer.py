@@ -192,18 +192,18 @@ class ClickCompleter(Completer):
     def _get_completion_for_Range_types(self, param_type, incomplete):
         # type: (Union[click.IntRange, click.FloatRange], str) -> List[Completion]
         
-        left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
-        right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
+        # left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
+        # right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
 
-        min_val = param_type.min if param_type.min is not None else '-∞'
-        max_val = param_type.max if param_type.max is not None else '∞'
-        display_meta = '{} <{} x <{} {}'.format(
-            min_val, left_exclusive, right_exclusive, max_val
-        )
+        # min_val = param_type.min if param_type.min is not None else '-∞'
+        # max_val = param_type.max if param_type.max is not None else '∞'
+        # display_meta = '{} <{} x <{} {}'.format(
+        #     min_val, left_exclusive, right_exclusive, max_val
+        # )
+        clamp = " clamped" if param_type.clamp else ""
+        display_meta = "{}{}".format(param_type._describe_range(), clamp)
 
-        display_text = 'clamps input' if param_type.clamp else '-'
-
-        return [Completion('-', display=display_text, display_meta=display_meta)]
+        return [Completion('-', display_meta=display_meta)]
 
     def _get_completion_from_params(self, autocomplete_ctx, args, param, incomplete):
         # type: (Context, List[str], Parameter, str) -> List[Completion]
@@ -213,6 +213,9 @@ class ClickCompleter(Completer):
 
         if isinstance(param_type, click.types.UnprocessedParamType):
             return []
+
+        elif getattr(param, 'count', False):
+            return [Completion("-", display_meta='counter')]
 
         elif isinstance(param_type, (click.IntRange, click.FloatRange)):
             return self._get_completion_for_Range_types(param_type, incomplete)
@@ -259,7 +262,7 @@ class ClickCompleter(Completer):
 
         # print("Currently introspecting argument:", autocomplete_ctx.info_name)
         for param in params_list:
-            # print(f'{vars(param) = }')
+            print(f'{vars(param) = }')
             if getattr(param, "hidden", False) or getattr(param, "hide_input", False):
                 continue
 
