@@ -164,12 +164,6 @@ def pass_context(func):
     return decorator
 
 
-def group(func, *args, **kwargs):
-    def decorator(*args, **kwargs):
-        pass
-    return decorator
-
-
 def _register_internal_command(names, target, description=None):
     # type: (Iterable[str], Callable[[], Any], Optional[str]) -> None
 
@@ -228,7 +222,7 @@ def _help_internal():
             for description, mnemonics in info_table.items()
         )
 
-    return formatter.getvalue()
+    return formatter.getvalue()  # type: ignore[no-any-return]
 
 
 _register_internal_command(["q", "quit", "exit"], _exit_internal, "exits the repl")

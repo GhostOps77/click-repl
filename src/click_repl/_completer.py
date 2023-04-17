@@ -65,7 +65,7 @@ class ClickCompleter(Completer):
                 # self.group_argument_values[param.name] = self.ctx.params[param.name]
                 self.group_argument_values.append((self.ctx.params[param.name]))
 
-        print(f'{self.group_argument_values = }')
+        # print(f'{self.group_argument_values = }')
 
         if styles is not None:
             self.styles = styles  # type: Dict[str, str]
@@ -190,6 +190,8 @@ class ClickCompleter(Completer):
         ]
 
     def _get_completion_for_Range_types(self, param_type, incomplete):
+        # type: (Union[click.IntRange, click.FloatRange], str) -> List[Completion]
+        
         left_exclusive = '='*(not param_type.min_open or not param_type.clamp)
         right_exclusive = '='*(not param_type.max_open or not param_type.clamp)
 
@@ -205,6 +207,7 @@ class ClickCompleter(Completer):
 
     def _get_completion_from_params(self, autocomplete_ctx, args, param, incomplete):
         # type: (Context, List[str], Parameter, str) -> List[Completion]
+
         choices = []  # type: List[Completion]
         param_type = param.type  # type: click.ParamType
 
@@ -346,7 +349,9 @@ class ClickCompleter(Completer):
 
         # Resolve context based on click version
         if HAS_CLICK_V8:
-            ctx = click.shell_completion._resolve_context(self.cli, {}, "", self.ctx_args + args)
+            ctx = click.shell_completion._resolve_context(
+                self.cli, {}, "", self.ctx_args + args
+            )
         else:
             ctx = click._bashcomplete.resolve_ctx(self.cli, "", self.ctx_args + args)
 
@@ -357,8 +362,8 @@ class ClickCompleter(Completer):
         autocomplete_ctx = self.ctx or ctx
         ctx_command = ctx.command
 
-        print(f'\n(from get_completions) {vars(ctx) = }\n')
-        print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
+        # print(f'\n(from get_completions) {vars(ctx) = }\n')
+        # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
         # print(f'{self.ctx_args = }\n')
 
         # parsed = self.cli.resolve_command(self.ctx, self.ctx_args + args)
