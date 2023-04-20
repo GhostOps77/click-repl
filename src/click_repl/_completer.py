@@ -3,8 +3,7 @@ import os
 import sys
 from prompt_toolkit.completion import Completion, Completer
 
-from ._parser import get_ctx_for_args, split_arg_string
-from ._completions_parser import CompletionParser, text_type
+from ._parser import CompletionParser, get_ctx_for_args, split_arg_string, text_type
 
 
 __all__ = ["ClickCompleter"]
