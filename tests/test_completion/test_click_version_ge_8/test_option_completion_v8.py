@@ -33,7 +33,7 @@ with pytest.importorskip(
         def autocompletion_opt_cmd(handler):
             pass
 
-        completions = list(c.get_completions(Document("autocompletion-opt-cmd ")))
+        completions = c.get_completions(Document("autocompletion-opt-cmd "))
         assert {x.text for x in completions} == {"--handler", "bar"}
 
 
@@ -55,11 +55,6 @@ with pytest.importorskip(
         @click.option("--handler", "-h", shell_complete=shell_complete_func)
         def autocompletion_cmd2(handler):
             pass
-
-        completions = list(
-            c.get_completions(Document("autocompletion-cmd2 --handler "))
-        )
-        assert {x.text for x in completions} == {"foo", "bar"}
 
         completions = list(
             c.get_completions(Document("autocompletion-cmd2 --handler "))

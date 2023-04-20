@@ -24,6 +24,8 @@ if sys.version_info >= (3, 5):
 
 
 class ClickCompleter(Completer):
+    """Custom prompt Completion provider"""
+
     __slots__ = (
         "cli", "ctx", "ctx_args", "parsed_ctx", "parsed_args",
         "ctx_command", "completion_parser", "opt_parser"
@@ -43,7 +45,7 @@ class ClickCompleter(Completer):
 
         if styles is None:
             styles = dict.fromkeys(
-                ["command", "argument", "option"], ""
+                ("command", "argument", "option"), ""
             )
 
         self.completion_parser = CompletionParser(styles)

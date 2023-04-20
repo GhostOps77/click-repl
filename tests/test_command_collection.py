@@ -23,7 +23,7 @@ def test_command_collection():
 
     cmd = click.CommandCollection(sources=(foo_group, foobar_group))
     c = ClickCompleter(cmd, click.Context(cmd))
-    completions = list(c.get_completions(Document("foo")))
+    completions = c.get_completions(Document("foo"))
 
     assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
 
@@ -43,10 +43,10 @@ def c1(user):
     click.echo("Executed C1 with {}!".format(user))
 
 
-c = ClickCompleter(cmd, click.Context(cmd))
+c2 = ClickCompleter(cmd, click.Context(cmd))
 
 
 @pytest.mark.parametrize("test_input,expected", [(" ", {"c1"}), ("c1 ", {"--user"})])
 def test_subcommand_invocation_from_group(test_input, expected):
-    completions = list(c.get_completions(Document(test_input)))
+    completions = c2.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

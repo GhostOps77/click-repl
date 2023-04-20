@@ -33,7 +33,7 @@ def test_path_type_arg(test_input, expected):
     def path_type_arg(path):
         pass
 
-    completions = list(c.get_completions(Document(test_input)))
+    completions = c.get_completions(Document(test_input))
     assert {x.display[0][1] for x in completions} == {
         os.path.basename(i) for i in expected
     }
@@ -41,11 +41,11 @@ def test_path_type_arg(test_input, expected):
 
 # @pytest.mark.skipif(os.name != 'nt', reason='This is a test for Windows OS')
 # def test_win_path_env_expanders():
-#     completions = list(c.get_completions(Document('path-type-arg %LocalAppData%')))
+#     completions = c.get_completions(Document('path-type-arg %LocalAppData%'))
 #     assert {x.display[0][1] for x in completions} == {'Local', 'LocalLow'}
 
 
 # @pytest.mark.skipif(os.name != 'posix', reason='This is a test for Linux OS')
 # def test_posix_path_env_expanders():
-#     completions = list(c.get_completions(Document('path-type-arg $USER')))
+#     completions = c.get_completions(Document('path-type-arg $USER'))
 #     assert {x.display[0][1] for x in completions} == {os.path.expandvars("$USER")}

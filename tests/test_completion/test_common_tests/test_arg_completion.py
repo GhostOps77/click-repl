@@ -1,6 +1,7 @@
 import click
 from click_repl import ClickCompleter
 from prompt_toolkit.document import Document
+import pytest
 
 
 @click.group()
@@ -8,33 +9,35 @@ def root_command():
     pass
 
 
+@root_command.command()
+@click.argument("foo", type=click.BOOL)
+def bool_arg(foo):
+    pass
+
+
+@root_command.command()
+@click.argument("handler", type=click.Choice(("foo", "bar")))
+def arg_choices(handler):
+    pass
+
+
 c = ClickCompleter(root_command, click.Context(root_command))
 
 
-def test_boolean_arg():
-    @root_command.command()
-    @click.argument("foo", type=click.BOOL)
-    def bool_arg(foo):
-        pass
-
-    completions = list(c.get_completions(Document("bool-arg ")))
-    assert {x.text for x in completions} == {"true", "false"}
-
-    completions = list(c.get_completions(Document("bool-arg t")))
-    assert {x.text for x in completions} == {"true"}
-
-    completions = list(c.get_completions(Document("bool-arg true ")))
-    assert {x.text for x in completions} == set()
+@pytest.mark.parametrize("test_input, expected", [
+    ("bool-arg ", {"true", "false"}),
+    ("bool-arg t", {"true"}),
+    ("bool-arg true ", set()),
+])
+def test_boolean_arg(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
 
 
-def test_arg_choices():
-    @root_command.command()
-    @click.argument("handler", type=click.Choice(("foo", "bar")))
-    def arg_choices(handler):
-        pass
-
-    completions = list(c.get_completions(Document("arg-choices ")))
-    assert {x.text for x in completions} == {"foo", "bar"}
-
-    completions = list(c.get_completions(Document("arg-choices foo ")))
-    assert {x.text for x in completions} == set()
+@pytest.mark.parametrize("test_input, expected", [
+    ("arg-choices ", {"foo", "bar"}),
+    ("arg-choices foo ", set())
+])
+def test_arg_choices(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected

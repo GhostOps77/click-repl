@@ -18,21 +18,23 @@ def test_option_choices():
     def option_choices(handler):
         pass
 
-    completions = list(c.get_completions(Document("option-choices --handler ")))
+    completions = c.get_completions(Document("option-choices --handler "))
     assert {x.text for x in completions} == {"foo", "bar"}
 
 
-def test_boolean_option():
-    @root_command.command()
-    @click.option("--foo", type=click.BOOL)
-    def bool_option(foo):
-        pass
+@root_command.command()
+@click.option("--foo", type=click.BOOL)
+def bool_option(foo):
+    pass
 
-    completions = list(c.get_completions(Document("bool-option --foo ")))
-    assert {x.text for x in completions} == {"true", "false"}
 
-    completions = list(c.get_completions(Document("bool-option --foo t")))
-    assert {x.text for x in completions} == {"true"}
+@pytest.mark.parametrize("test_input, expected", [
+    ("bool-option --foo ", {"true", "false"}),
+    ("bool-option --foo t", {"true"}),
+])
+def test_boolean_option(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
 
 
 @root_command.command()
@@ -42,13 +44,12 @@ def option_cmd(handler):
 
 
 @pytest.mark.parametrize(
-    "test_input,expected",
-    [
+    "test_input,expected", [
         ("option-cmd ", {"--handler", "-h"}),
         ("option-cmd -h", {"-h"}),
         ("option-cmd --h", {"--handler"}),
     ],
 )
 def test_option_completion(test_input, expected):
-    completions = list(c.get_completions(Document(test_input)))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

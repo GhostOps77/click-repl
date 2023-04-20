@@ -25,42 +25,38 @@ def test_click7_autocomplete_arg():
     def autocompletion_arg_cmd2(handler):
         pass
 
-    completions = list(c.get_completions(Document("autocompletion-arg-cmd2 ")))
+    completions = c.get_completions(Document("autocompletion-arg-cmd2 "))
     assert {x.text for x in completions} == {"foo", "bar"}
+
+
+def return_type_tuple_shell_complete(ctx, args, incomplete):
+    return [
+        i
+        for i in [
+            ("Hi", "hi"),
+            ("Please", "please"),
+            ("Hey", "hey"),
+            ("Aye", "aye"),
+        ]
+        if i[1].startswith(incomplete)
+    ]
 
 
 @pytest.mark.skipif(
     int(click.__version__[0]) > 7,
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
-def test_tuple_return_type_shell_complete_func_click7():
-    def return_type_tuple_shell_complete(ctx, args, incomplete):
-        return [
-            i
-            for i in [
-                ("Hi", "hi"),
-                ("Please", "please"),
-                ("Hey", "hey"),
-                ("Aye", "aye"),
-            ]
-            if i[1].startswith(incomplete)
-        ]
-
+@pytest.mark.parametrize("test_input, expected", [
+    ("tuple-type-autocompletion-cmd ", {"Hi", "Please", "Hey", "Aye"}),
+    ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"})
+])
+def test_tuple_return_type_shell_complete_func_click7(test_input, expected):
     @root_command.command()
     @click.argument("foo", autocompletion=return_type_tuple_shell_complete)
     def tuple_type_autocompletion_cmd(foo):
         pass
 
-    completions = list(c.get_completions(Document("tuple-type-autocompletion-cmd ")))
-    assert {x.text for x in completions} == {"Hi", "Please", "Hey", "Aye"} and {
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected and {
         x.display_meta[0][-1] for x in completions
-    } == {"hi", "please", "hey", "aye"}
-
-    completions = list(c.get_completions(Document("tuple-type-autocompletion-cmd h")))
-    assert {x.text for x in completions} == {"Hi", "Hey"} and {
-        x.display_meta[0][-1] for x in completions
-    } == {"hi", "hey"}
-
-
-# test for unprocessed param type
-# test for range type params
+    } == {i.lower() for i in expected}
