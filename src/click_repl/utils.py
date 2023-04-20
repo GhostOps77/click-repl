@@ -109,12 +109,10 @@ def _help_internal():
         for mnemonic, target_info in _internal_commands.items():
             info_table[target_info[1]].append(mnemonic)
 
-        formatter.write_dl(  # type: ignore[arg-type]
-            (  # type: ignore[arg-type]
+        formatter.write_dl((  # type: ignore[arg-type]
                 ", ".join(map(":{}".format, sorted(mnemonics))),
                 description,
-            )
-            for description, mnemonics in info_table.items()
+            ) for description, mnemonics in info_table.items()
         )
 
     return formatter.getvalue()  # type: ignore[no-any-return]

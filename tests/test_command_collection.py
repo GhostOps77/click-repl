@@ -43,7 +43,7 @@ def c1(user):
     click.echo("Executed C1 with {}!".format(user))
 
 
-c = ClickCompleter(cmd, cmd.make_context('', args=['--user', 'hi']))
+c = ClickCompleter(cmd, click.Context(cmd))
 
 
 @pytest.mark.parametrize("test_input,expected", [(" ", {"c1"}), ("c1 ", {"--user"})])

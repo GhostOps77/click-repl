@@ -86,10 +86,10 @@ class CompletionParser:
 
         return param_choices
 
-    def _get_completion_from_choices_click_le_7(self, param, incomplete):
-        # type: (Parameter, str) -> List[Completion]
+    def _get_completion_from_choices_click_le_7(self, param_type, incomplete):
+        # type: (click.Choice, str) -> List[Completion]
 
-        if not getattr(param.type, "case_sensitive", True):
+        if not getattr(param_type, "case_sensitive", True):
             incomplete = incomplete.lower()
             return [
                 Completion(
@@ -98,7 +98,7 @@ class CompletionParser:
                     style=self.styles["argument"],
                     display=text_type(repr(choice) if " " in choice else choice),
                 )
-                for choice in param.type.choices  # type: ignore[attr-defined]
+                for choice in param_type.choices
                 if choice.lower().startswith(incomplete)
             ]
 
@@ -110,7 +110,7 @@ class CompletionParser:
                     style=self.styles["argument"],
                     display=text_type(repr(choice) if " " in choice else choice),
                 )
-                for choice in param.type.choices  # type: ignore[attr-defined]
+                for choice in param_type.choices
                 if choice.startswith(incomplete)
             ]
 
@@ -190,7 +190,7 @@ class CompletionParser:
         # shell_complete method for click.Choice is intorduced in click-v8
         elif not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
             choices.extend(
-                self._get_completion_from_choices_click_le_7(param, incomplete)
+                self._get_completion_from_choices_click_le_7(param_type, incomplete)
             )
 
         elif isinstance(param_type, click.types.BoolParamType):

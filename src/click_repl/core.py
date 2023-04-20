@@ -7,7 +7,7 @@ from ._globals import get_current_click_repl_context, push_context, pop_context
 
 if t.TYPE_CHECKING:
     from click import Context  # noqa: F401
-    from typing import Any, Dict, List, Optional, Union, Callable, Generator  # noqa: F401
+    from typing import Any, Dict, List, Optional, Callable, Generator  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
 
 
@@ -26,7 +26,7 @@ class ClickReplContext:
             self.session = PromptSession(
                 **prompt_kwargs
             )  # type: Optional[PromptSession[Dict[str, Any]]]
-            self._history = self.session.history  # type: Union[History, List[str]]
+            self._history = self.session.history  # type: Optional[History]
 
             def get_command():
                 # type: () -> str
@@ -37,7 +37,7 @@ class ClickReplContext:
         else:
             self.get_command = sys.stdin.readline
             self.session = None
-            self._history = []
+            self._history = None
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -77,14 +77,14 @@ class ClickReplContext:
     def history(self):
         # type: () -> Generator[str, None, None]
         if self._history is not None:
-            yield from self._history.load_history_strings()  # type: ignore[union-attr]
+            yield from self._history.load_history_strings()
 
 
 def pass_context(func):
     # type: (Callable[..., Any]) -> Callable[..., Any]
     @wraps(func)
-    def decorator(*args, **kwargs):  # type: ignore[no-untyped-def]
-        # type: (...) -> Any
+    def decorator(*args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> Any
         return func(get_current_click_repl_context(), *args, **kwargs)
 
     return decorator
