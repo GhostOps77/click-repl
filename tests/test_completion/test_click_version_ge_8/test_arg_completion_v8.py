@@ -71,6 +71,7 @@ def return_type_tuple_shell_complete(ctx, param, incomplete):
         if i[1].startswith(incomplete)
     ]
 
+
 @root_command.command()
 @click.argument("foo", shell_complete=return_type_tuple_shell_complete)
 def tuple_type_autocompletion_cmd(foo):
