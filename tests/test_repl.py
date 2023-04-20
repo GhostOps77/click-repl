@@ -130,13 +130,13 @@ def test_independant_options(capsys):
 @click.option("--option1", default=1, type=click.STRING)
 @click.option("--option2")
 @click.pass_context
-def cli(ctx, argument, option1, option2):
+def cmd(ctx, argument, option1, option2):
     print("cli({}, {}, {})".format(argument, option1, option2))
     if ctx.invoked_subcommand is None:
         click_repl.repl(ctx)
 
 
-@cli.command()
+@cmd.command()
 def foo():
     print("Foo!")
 
@@ -151,7 +151,7 @@ def foo():
 def test_group_with_multiple_args(capsys, args, expected):
     with mock_stdin("foo\n"):
         with pytest.raises(SystemExit):
-            cli(
+            cmd(
                 args=args,
                 prog_name="test_group_with_multiple_args"
             )

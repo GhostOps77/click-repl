@@ -10,6 +10,10 @@ class CommandLineParserError(Exception):
     pass
 
 
+class InvalidGroupFormatError(Exception):
+    pass
+
+
 # Handle click.exceptions.Exit introduced in Click 7.0
 try:
     from click.exceptions import Exit as ClickExit

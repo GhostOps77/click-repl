@@ -31,19 +31,19 @@ def test_command_collection():
 @click.group(invoke_without_command=True)
 @click.option("--user", required=True)
 @click.pass_context
-def cli(ctx, user):
+def cmd(ctx, user):
     if ctx.invoked_subcommand is None:
         click.echo("Top-level user: {}".format(user))
         repl(ctx)
 
 
-@cli.command()
+@cmd.command()
 @click.option("--user")
 def c1(user):
     click.echo("Executed C1 with {}!".format(user))
 
 
-c = ClickCompleter(cli, cli.make_context('', args=['--user', 'hi']))
+c = ClickCompleter(cmd, cmd.make_context('', args=['--user', 'hi']))
 
 
 @pytest.mark.parametrize("test_input,expected", [(" ", {"c1"}), ("c1 ", {"--user"})])

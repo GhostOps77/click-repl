@@ -7,8 +7,9 @@ from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
 from .exceptions import ClickExit  # type: ignore[attr-defined]
-from .exceptions import CommandLineParserError, ExitReplException
-from .utils import ClickReplContext, _execute_internal_and_sys_cmds
+from .exceptions import CommandLineParserError, ExitReplException, InvalidGroupFormatError
+from .utils import _execute_internal_and_sys_cmds
+from .core import ClickReplContext
 
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]
@@ -18,14 +19,14 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from click import Context, Group  # noqa: F401
+        from click import Context, Group, Command  # noqa: F401
         from typing import Any, Optional, Dict  # noqa: F401
 
 
 def bootstrap_prompt(
     group,  # type: Group
     prompt_kwargs,  # type: Dict[str, Any]
-    ctx=None,  # type: Optional[Context]
+    ctx,  # type: Context
     style=None,  # type: Optional[Dict[str, Any]]
 ):
     # type: (...) -> Dict[str, Any]
@@ -38,11 +39,12 @@ def bootstrap_prompt(
 
     defaults = {
         "history": InMemoryHistory(),
-        "completer": ClickCompleter(group, ctx=ctx, styles=style),
+        "completer": ClickCompleter(group, ctx, styles=style),
         "message": "> ",
         "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
+        "mouse_support": True,
     }
 
     defaults.update(prompt_kwargs)
@@ -101,68 +103,77 @@ def repl(
         # )  # type: PromptSession[Mapping[str, Any]]
         prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
 
-    repl_ctx = ClickReplContext(
-        group_ctx, isatty, prompt_kwargs
-    )  # type: ClickReplContext
-    while True:
-        try:
-            command = repl_ctx.get_command()
-        except KeyboardInterrupt:
-            continue
-        except EOFError:
-            break
-
-        if not command:
-            if isatty:
+    with ClickReplContext(group_ctx, isatty, prompt_kwargs) as repl_ctx:
+        while True:
+            try:
+                command = repl_ctx.get_command()
+            except KeyboardInterrupt:
                 continue
-            else:
+            except EOFError:
                 break
 
-        try:
-            args = _execute_internal_and_sys_cmds(
-                command, allow_internal_commands, allow_system_commands
-            )
-            if args is None:
+            if not command:
+                if isatty:
+                    continue
+                else:
+                    break
+
+            try:
+                args = _execute_internal_and_sys_cmds(
+                    command, allow_internal_commands, allow_system_commands
+                )
+                if args is None:
+                    continue
+
+            except CommandLineParserError:
                 continue
 
-        except CommandLineParserError:
-            continue
+            except ExitReplException:
+                break
 
-        except ExitReplException:
-            break
-
-        try:
-            # default_map passes the top-level params to the new group to
-            # support top-level required params that would reject the
-            # invocation if missing.
-            # with group.make_context(
-            #     None, args, parent=group_ctx, default_map=old_ctx.params
-            # ) as ctx:
-            #     group.invoke(ctx)
-            #     ctx.exit()
-
-            # The group command will dispatch based on args.
-            old_protected_args = group_ctx.protected_args
             try:
-                group_ctx.protected_args = args
-                group.invoke(group_ctx)
-            finally:
-                group_ctx.protected_args = old_protected_args
+                # default_map passes the top-level params to the new group to
+                # support top-level required params that would reject the
+                # invocation if missing.
+                # with group.make_context(
+                #     None, args, parent=group_ctx, default_map=old_ctx.params
+                # ) as ctx:
+                #     group.invoke(ctx)
+                #     ctx.exit()
 
-        except click.ClickException as e:
-            e.show()
+                # The group command will dispatch based on args.
+                old_protected_args = group_ctx.protected_args
+                try:
+                    group_ctx.protected_args = args
+                    group.invoke(group_ctx)
+                finally:
+                    group_ctx.protected_args = old_protected_args
 
-        except (ClickExit, SystemExit):
-            pass
+            except click.ClickException as e:
+                e.show()
 
-        except ExitReplException:
-            break
+            except (ClickExit, SystemExit):
+                pass
 
-    if original_command is not None:
-        available_commands[repl_command_name] = original_command
+            except ExitReplException:
+                break
+
+        if original_command is not None:
+            available_commands[repl_command_name] = original_command
 
 
-def register_repl(group, name="repl"):
-    # type: (Group, str) -> None
+def register_repl(group, name="repl", pass_group_args_via_repl=False):
+    # type: (Group, str, bool) -> Command
     """Register :func:`repl()` as sub-command *name* of *group*."""
-    group.command(name=name)(click.pass_context(repl))
+
+    if pass_group_args_via_repl:
+        for param in group.params:
+            if param.nargs == -1:
+                raise InvalidGroupFormatError('A Group arg cannot have nargs=-1')
+
+            # elif isinstance(param, click.Argument):
+            #     raise InvalidGroupFormatError(
+            #         "A repl CLI group cannot have Argument type options"
+            #     )
+
+    return group.command(name=name)(click.pass_context(repl))

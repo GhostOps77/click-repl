@@ -23,6 +23,9 @@ def test_boolean_arg():
     completions = list(c.get_completions(Document("bool-arg t")))
     assert {x.text for x in completions} == {"true"}
 
+    completions = list(c.get_completions(Document("bool-arg true ")))
+    assert {x.text for x in completions} == set()
+
 
 def test_arg_choices():
     @root_command.command()
@@ -32,3 +35,6 @@ def test_arg_choices():
 
     completions = list(c.get_completions(Document("arg-choices ")))
     assert {x.text for x in completions} == {"foo", "bar"}
+
+    completions = list(c.get_completions(Document("arg-choices foo ")))
+    assert {x.text for x in completions} == set()

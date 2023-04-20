@@ -1,16 +1,14 @@
 from __future__ import with_statement
 
+import click
 import os
-import shlex
 import sys
 from collections import defaultdict
-from functools import wraps
 from threading import local
 
-import click
-from prompt_toolkit import PromptSession
 
 from .exceptions import CommandLineParserError, ExitReplException
+from ._parser import split_arg_string
 
 
 __all__ = [
@@ -21,7 +19,6 @@ __all__ = [
     "_register_internal_command",
     "dispatch_repl_commands",
     "handle_internal_commands",
-    "split_arg_string",
     "exit",
 ]
 
@@ -35,7 +32,6 @@ if sys.version_info >= (3, 5):
             List, Dict, Tuple
         )
 
-        from prompt_toolkit.history import History  # noqa: F401
 
 # Abstract datatypes in collections module are moved to collections.abc
 # module in Python 3.3
@@ -44,124 +40,23 @@ if sys.version_info >= (3, 3):
 else:
     from collections import Iterable, Mapping
 
+# basestring is removed in Python 3.
+if sys.version_info > (2,):
+    basestring = (str, bytes)
 
-_internal_commands = {}  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]
+
 _locals = local()
-_locals.__dict__['stack'] = []
+_internal_commands = _locals.__dict__  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501
 
 
-class ClickReplContext:
-    __slots__ = (
-        "group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command",
-    )
-
-    def __init__(self, group_ctx, isatty, prompt_kwargs):
-        # type: (click.Context, bool, Dict[str, Any]) -> None
-        self.group_ctx = group_ctx
-        self.prompt_kwargs = prompt_kwargs
-        self.isatty = isatty
-
-        if isatty:
-            self.session = PromptSession(
-                **prompt_kwargs
-            )  # type: Optional[PromptSession[Dict[str, Any]]]
-            self._history = self.session.history  # type: Union[History, List[str]]
-
-            def get_command():
-                # type: () -> str
-                return self.session.prompt()  # type: ignore[return-value, union-attr]
-
-            self.get_command = get_command  # type: Callable[..., str]
-
+def flatten_iterable(tuple_type):
+    # type: (click.Tuple) -> Generator[Any, None, None]
+    for val in tuple_type.types:
+        if isinstance(val, click.Tuple):
+            for item in flatten_iterable(val):
+                yield item
         else:
-            self.get_command = sys.stdin.readline
-            self.session = None
-            self._history = []
-
-    def __enter__(self):
-        # type: () -> ClickReplContext
-        push_context(self)
-        return self
-
-    def __exit__(self, *args):
-        # type: (Any) -> None
-        pop_context()
-
-    def prompt_reset(self):
-        # type: () -> None
-        if self.isatty:
-            self.session = PromptSession(**self.prompt_kwargs)
-
-    def history(self):
-        # type: () -> Generator[str, None, None]
-        if self._history is not None:
-            yield from self._history.load_history_strings()  # type: ignore[union-attr]
-
-
-def split_arg_string(string, posix=True):
-    # type: (str, bool) -> List[str]
-    """Split an argument string as with :func:`shlex.split`, but don't
-    fail if the string is incomplete. Ignores a missing closing quote or
-    incomplete escape sequence and uses the partial token as-is.
-    .. code-block:: python
-        split_arg_string("example 'my file")
-        ["example", "my file"]
-        split_arg_string("example my\\")
-        ["example", "my"]
-    :param string: String to split.
-    """
-
-    lex = shlex.shlex(string, posix=posix, punctuation_chars=True)
-    lex.whitespace_split = True
-    lex.commenters = ""
-    out = []
-
-    try:
-        for token in lex:
-            out.append(token)
-    except ValueError:
-        # Raised when end-of-string is reached in an invalid state. Use
-        # the partial token as-is. The quote or escape character is in
-        # lex.state, not lex.token.
-        out.append(lex.token)
-
-    return out
-
-
-def get_current_click_repl_context(silent=False):
-    # type: (bool) -> Union[ClickReplContext, None, NoReturn]
-    try:
-        return ClickReplContext(**_locals.stack[-1].__dict__)  # type: ignore[call-arg]
-    except (AttributeError, IndexError) as e:
-        if not silent:
-            raise RuntimeError("There is no active click context.") from e
-
-    return None
-
-
-def push_context(ctx):
-    # type: (ClickReplContext) -> None
-    """Pushes a new context to the current stack."""
-    _locals.__dict__['stack'].append(ctx)
-
-
-def pop_context():
-    # type: () -> None
-    """Removes the top level from the stack."""
-    _locals.stack.pop()
-
-
-def pass_context(func):
-    # type: (Callable[..., Any]) -> Callable[..., Any]
-    repl_ctx = get_current_click_repl_context()
-    # command = ctx.command
-
-    @wraps(func)
-    def decorator(*args, **kwargs):  # type: ignore[no-untyped-def]
-        # type: (...) -> Any
-        return func(repl_ctx, *args, **kwargs)
-
-    return decorator
+            yield val
 
 
 def _register_internal_command(names, target, description=None):
