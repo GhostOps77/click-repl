@@ -40,10 +40,6 @@ if sys.version_info >= (3, 3):
 else:
     from collections import Iterable, Mapping
 
-# basestring is removed in Python 3.
-if sys.version_info > (2,):
-    basestring = (str, bytes)
-
 
 _locals = local()
 _internal_commands = _locals.__dict__  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501

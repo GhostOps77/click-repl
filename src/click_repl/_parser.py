@@ -75,17 +75,17 @@ def split_arg_string(string, posix=True):
 
 
 # @lru_cache(maxsize=3)
-def get_ctx_for_args(cmd, parsed_args, cli_args):
+def get_ctx_for_args(cmd, parsed_args, group_args):
     # type: (Command, List[str], List[str]) -> Tuple[Command, Context]
 
     # Resolve context based on click version
     if HAS_CLICK_V8:
         parsed_ctx = click.shell_completion._resolve_context(
-            cmd, {}, "", cli_args + parsed_args
+            cmd, {}, "", group_args + parsed_args
         )
     else:
         parsed_ctx = click._bashcomplete.resolve_ctx(
-            cmd, "", cli_args + parsed_args
+            cmd, "", group_args + parsed_args
         )
 
     ctx_command = parsed_ctx.command
@@ -99,7 +99,7 @@ class CompletionParser:
     along with the styles provided to it.
 
     Keyword arguments:
-    styles -- Dictionary of styles in the way of prompt-toolkit module,
+    :param:`styles` -- Dictionary of styles in the way of prompt-toolkit module,
     for arguments, options, etc.
     """
 
