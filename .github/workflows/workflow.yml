@@ -45,7 +45,7 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        pip install --upgrade pip wheel
+        pip install --upgrade pip wheel setuptools
         pip install click==${{ matrix.click-version }}
         pip install .[testing]
     - name: Test with pytest
