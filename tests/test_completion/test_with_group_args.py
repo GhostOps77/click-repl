@@ -41,9 +41,11 @@ def cmd(cmd_arg):
     pass
 
 
+cli_args = ['--opt', 'hi1', 'hi2', 'hi3', 'hi4', 'hi5', 'hii']
 c2 = ClickCompleter(cli, cli.make_context(
-    '', args=['--opt', 'hi1', 'hi2', 'hi3', 'hi4', 'hi5', 'hii']
+    '', args=cli_args
 ))
+c2.ctx_args = cli_args
 
 
 @pytest.mark.parametrize("test_input, expected", [(" ", {"cmd"}), ("cmd ", {'foo', 'foo2'})])
