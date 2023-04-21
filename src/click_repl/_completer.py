@@ -35,7 +35,10 @@ class ClickCompleter(Completer):
 
         self.cli = cli  # type: Group
         self.ctx = ctx  # type: Context
-        self.ctx_args = sys.argv[1:]  # type: List[str]
+        self.ctx_args = []  # type: List[str]
+
+        if self.cli.params:
+            self.ctx_args.extend(sys.argv[1:])
 
         self.parsed_ctx = self.ctx  # type: Context
         self.parsed_args = []  # type: List[str]
@@ -85,6 +88,8 @@ class ClickCompleter(Completer):
             self.ctx_command, self.parsed_ctx = get_ctx_for_args(
                 self.cli, self.parsed_args, self.ctx_args
             )
+
+        # autocomplete_ctx = self.ctx or self.parsed_ctx
 
         # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
         # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
