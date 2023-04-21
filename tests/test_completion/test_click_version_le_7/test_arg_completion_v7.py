@@ -54,7 +54,7 @@ def test_tuple_return_type_shell_complete_func_click7(test_input, expected):
     @root_command.command()
     @click.argument("foo", autocompletion=return_type_tuple_shell_complete)
     def tuple_type_autocompletion_cmd(foo):
-      pass
+        pass
 
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

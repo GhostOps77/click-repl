@@ -35,6 +35,7 @@ def test_subcommand_invocation_from_group(test_input, expected):
 def cli(ctx, arg, opt):
     pass
 
+
 @cli.command()
 @click.argument('cmd_arg', type=click.Choice(['foo', 'foo2']))
 def cmd(cmd_arg):
@@ -48,7 +49,9 @@ c2 = ClickCompleter(cli, cli.make_context(
 c2.ctx_args = cli_args
 
 
-@pytest.mark.parametrize("test_input, expected", [(" ", {"cmd"}), ("cmd ", {'foo', 'foo2'})])
-def test_subcommand_invocation_from_group(test_input, expected):
+@pytest.mark.parametrize("test_input, expected", [
+    (" ", {"cmd"}), ("cmd ", {'foo', 'foo2'})
+])
+def test_subcommand_invocation_for_group_with_opts(test_input, expected):
     completions = c2.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
