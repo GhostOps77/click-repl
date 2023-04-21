@@ -45,10 +45,10 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        /opt/hostedtoolcache/Python/2.7.18/x64/bin/python2 -m pip install --upgrade pip wheel
-        /opt/hostedtoolcache/Python/2.7.18/x64/bin/python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
+        python2 -m pip install --upgrade pip wheel
+        python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
-      run: /opt/hostedtoolcache/Python/2.7.18/x64/bin/python2 -m tox
+      run: python2 -m tox
 
   Formatter:
     needs: [Test, Py2_Tests]
