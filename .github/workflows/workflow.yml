@@ -27,7 +27,7 @@ jobs:
       run: tox
 
   Py2_Tests:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: 1
       PIP_NO_PYTHON_VERSION_WARNING: 1
@@ -45,7 +45,7 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        pip install --upgrade pip wheel setuptools
+        pip install -U wheel setuptools
         pip install click==${{ matrix.click-version }}
         pip install .[testing]
     - name: Test with pytest
