@@ -45,10 +45,11 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        python2 -m pip install --upgrade pip wheel
-        python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
-    - name: Test with tox
-      run: python2 -m tox
+        pip install --upgrade pip wheel
+        pip install click==${{ matrix.click-version }}
+        pip install .[testing]
+    - name: Test with pytest
+      run: pytest
 
   Formatter:
     needs: [Test, Py2_Tests]
