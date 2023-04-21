@@ -19,7 +19,9 @@ def c1(user):
     click.echo("Executed C1 with {}!".format(user))
 
 
-c = ClickCompleter(cmd, cmd.make_context('', args=['--user', 'hi']))
+cli_args = ['--user', 'hi']
+c = ClickCompleter(cmd, cmd.make_context('', args=cli_args))
+c.ctx_args = cli_args
 
 
 @pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
