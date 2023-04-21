@@ -43,13 +43,13 @@ def c1(user):
     click.echo("Executed C1 with {}!".format(user))
 
 
-c2 = ClickCompleter(cmd, click.Context(cmd))
+c2 = ClickCompleter(cmd, cmd.make_context('', args=['--user', 'hi']))
 
 
-@pytest.mark.parametrize("test_input,expected", [(" ", {"c1"}), ("c1 ", {"--user"})])
+@pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
 def test_subcommand_invocation_from_group(test_input, expected):
     completions = c2.get_completions(Document(test_input))
-    assert {x.text for x in completions} == expected
+    assert {x.text for x in completions} == {expected}
 
 
 @click.group()

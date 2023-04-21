@@ -11,6 +11,12 @@ def root_command():
     pass
 
 
+@root_command.command()
+@click.argument("path", type=click.Path())
+def path_type_arg(path):
+    pass
+
+
 c = ClickCompleter(root_command, click.Context(root_command))
 
 
@@ -28,11 +34,6 @@ c = ClickCompleter(root_command, click.Context(root_command))
     ],
 )
 def test_path_type_arg(test_input, expected):
-    @root_command.command()
-    @click.argument("path", type=click.Path())
-    def path_type_arg(path):
-        pass
-
     completions = c.get_completions(Document(test_input))
     assert {x.display[0][1] for x in completions} == {
         os.path.basename(i) for i in expected
