@@ -46,7 +46,7 @@ def c1(user):
 c2 = ClickCompleter(cmd, click.Context(cmd))
 
 
-@pytest.mark.parametrize("test_input,expected", [(" ", {"c1"}), ("c1 c1 ", {"--user"})])
+@pytest.mark.parametrize("test_input,expected", [(" ", {"c1"}), ("c1 ", {"--user"})])
 def test_subcommand_invocation_from_group(test_input, expected):
     completions = c2.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

@@ -27,10 +27,7 @@ jobs:
       run: tox
 
   Py2_Tests:
-    runs-on: ubuntu-latest
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
-      PIP_NO_PYTHON_VERSION_WARNING: 1
+    runs-on: windows-latest
     strategy:
       matrix:
         python-version: ['2.7.18']
@@ -45,8 +42,8 @@ jobs:
         check-latest: false
     - name: Install dependencies
       run: |
-        python2 -m pip install --upgrade pip wheel
-        python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
+        pip install --upgrade pip wheel
+        pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
       run: tox
 

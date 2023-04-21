@@ -1,2 +1,2 @@
-click==8.1.2
-prompt_toolkit==3.0.36
+click>=6.0
+prompt_toolkit>=2.0.10
