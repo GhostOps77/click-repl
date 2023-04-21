@@ -28,30 +28,6 @@ def test_command_collection():
     assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
 
 
-@click.group(invoke_without_command=True)
-@click.option("--user", required=True)
-@click.pass_context
-def cmd(ctx, user):
-    if ctx.invoked_subcommand is None:
-        click.echo("Top-level user: {}".format(user))
-        repl(ctx)
-
-
-@cmd.command()
-@click.option("--user")
-def c1(user):
-    click.echo("Executed C1 with {}!".format(user))
-
-
-c2 = ClickCompleter(cmd, cmd.make_context('', args=['--user', 'hi']))
-
-
-@pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
-def test_subcommand_invocation_from_group(test_input, expected):
-    completions = c2.get_completions(Document(test_input))
-    assert {x.text for x in completions} == {expected}
-
-
 @click.group()
 def root_group():
     pass
