@@ -46,8 +46,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip wheel
-        pip install click==${{ matrix.click-version }}
-        pip install .[testing]
+        pip install click==${{ matrix.click-version }} pytest pytest-cov
+        pip install -r requirements/requirements.txt
     - name: Test with pytest
       run: pytest
 
