@@ -48,7 +48,7 @@ jobs:
         python2 -m pip install --upgrade pip wheel
         python2 -m pip install tox tox-gh-actions click==${{ matrix.click-version }}
     - name: Test with tox
-      run: tox
+      run: python2 -m tox
 
   Formatter:
     needs: [Test, Py2_Tests]
