@@ -11,9 +11,9 @@ with open("src/click_repl/__init__.py", "r") as f:
 with open('README.md', 'r') as f:
     long_description = f.read()
 
-def read_lines_from_file(filename):
-    with open(filename, "r") as f:
-        return f.readlines()
+# def read_lines_from_file(filename):
+#     with open(filename, "r") as f:
+#         return f.readlines()
 
 
 if __name__ == '__main__':
@@ -47,9 +47,18 @@ if __name__ == '__main__':
             '': 'src'
         },
 
-        install_requires=read_lines_from_file("./requirements/requirements.txt"),
+        install_requires=[
+            'click>=6.0',
+            'prompt_toolkit>=2.0.10',
+        ],
         extras_require={
-            'testing': read_lines_from_file("./requirements/requirements_dev.txt")
+            'testing': [
+                'pytest>=7.2.1',
+                'pytest-cov>=4.0.0',
+                'mypy>=0.991',
+                'flake8>=6.0.0',
+                'tox>=4.4.3',
+            ]
         },
         python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
 
