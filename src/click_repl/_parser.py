@@ -8,7 +8,7 @@ import sys
 import click
 # from functools import lru_cache
 from glob import iglob
-from .shlex2 import shlex
+from .shlex2 import shlex  # type: ignore[attr-defined]
 
 from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError

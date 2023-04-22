@@ -1,3 +1,8 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# type: ignore
+
 """
 shlex - A lexical analyzer class for simple shell-like syntaxes.
 """
@@ -9,6 +14,9 @@ shlex - A lexical analyzer class for simple shell-like syntaxes.
 # iterator interface by Gustavo Niemeyer, April 2003.
 # changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
+
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -16,12 +24,15 @@ from collections import deque
 
 from io import StringIO
 
+
 __all__ = ["shlex", "split", "quote", "join"]
+
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
-    def __init__(self, instream=None, infile=None, posix=False,
-                 punctuation_chars=False):
+    def __init__(
+        self, instream=None, infile=None, posix=False, punctuation_chars=False
+    ):
         if isinstance(instream, str):
             instream = StringIO(instream)
         if instream is not None:
@@ -63,7 +74,7 @@ class shlex:
             self._pushback_chars = deque()
             # these chars added because allowed in file names, args, wildcards
             self.wordchars += '~-./*?='
-            #remove any punctuation chars from wordchars
+            # remove any punctuation chars from wordchars
             t = self.wordchars.maketrans(dict.fromkeys(punctuation_chars))
             self.wordchars = self.wordchars.translate(t)
 
@@ -87,17 +98,16 @@ class shlex:
         self.lineno = 1
         if self.debug:
             if newfile is not None:
-                print('shlex: pushing to file %s' % (self.infile,))
+                print('shlex: pushing to file {}'.format(self.infile,))
             else:
-                print('shlex: pushing to stream %s' % (self.instream,))
+                print('shlex: pushing to stream {}'.format(self.instream))
 
     def pop_source(self):
         "Pop the input source stack."
         self.instream.close()
         (self.infile, self.instream, self.lineno) = self.filestack.popleft()
         if self.debug:
-            print('shlex: popping to %s, line %d' \
-                  % (self.instream, self.lineno))
+            print('shlex: popping to {}, line {}'.format(self.instream, self.lineno))
         self.state = ' '
 
     def get_token(self):
@@ -143,8 +153,9 @@ class shlex:
             if nextchar == '\n':
                 self.lineno += 1
             if self.debug >= 3:
-                print("shlex: in state %r I see character: %r" % (self.state,
-                                                                  nextchar))
+                print("shlex: in state {} I see character: {}".format(
+                    self.state, nextchar
+                ))
             if self.state is None:
                 self.token = ''        # past end of file
                 break
@@ -186,7 +197,7 @@ class shlex:
                         continue
             elif self.state in self.quotes:
                 quoted = True
-                if not nextchar:      # end of file
+                if not nextchar:       # end of file
                     if self.debug >= 2:
                         print("shlex: I see EOF in quotes state")
                     # XXX what error should be raised here?
@@ -285,7 +296,7 @@ class shlex:
         # This implements cpp-like semantics for relative-path inclusion.
         if isinstance(self.infile, str) and not os.path.isabs(newfile):
             newfile = os.path.join(os.path.dirname(self.infile), newfile)
-        return (newfile, open(newfile, "r"))
+        return newfile, open(newfile, "r")
 
     def error_leader(self, infile=None, lineno=None):
         "Emit a C-compiler-like, Emacs-friendly error-message leader."
@@ -293,7 +304,7 @@ class shlex:
             infile = self.infile
         if lineno is None:
             lineno = self.lineno
-        return "\"%s\", line %d: " % (infile, lineno)
+        return "\"{}\", line {}: ".format(infile, lineno)
 
     def __iter__(self):
         return self
@@ -303,6 +314,7 @@ class shlex:
         if token == self.eof:
             raise StopIteration
         return token
+
 
 def split(s, comments=False, posix=True):
     """Split the string *s* using shell-like syntax."""
@@ -324,6 +336,7 @@ def join(split_command):
 
 _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
 
+
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
     if not s:
@@ -342,6 +355,7 @@ def _print_tokens(lexer):
         if not tt:
             break
         print("Token: " + repr(tt))
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
