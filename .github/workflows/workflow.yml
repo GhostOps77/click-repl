@@ -49,7 +49,7 @@ jobs:
         pip install pytest click==${{ matrix.click-version }}
         pip install .
     - name: Test with pytest
-      run: python2 -m pytest
+      run: python -m pytest
 
   Formatter:
     needs: [Test, Py2_Tests]
