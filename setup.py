@@ -47,9 +47,9 @@ if __name__ == '__main__':
             '': 'src'
         },
 
-        install_requires=read_lines_from_file("requirements/requirements.txt"),
+        install_requires=read_lines_from_file("./requirements/requirements.txt"),
         extras_require={
-            'testing': read_lines_from_file("requirements/requirements_dev.txt")
+            'testing': read_lines_from_file("./requirements/requirements_dev.txt")
         },
         python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
 
