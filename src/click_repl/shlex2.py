@@ -15,17 +15,29 @@ shlex - A lexical analyzer class for simple shell-like syntaxes.
 # changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
 
-from __future__ import print_function
+from __future__ import print_function, with_statement
 
 import os
 import re
 import sys
-from collections import deque
 
+from collections import deque
 from io import StringIO
+
+from ._globals import text_type
 
 
 __all__ = ["shlex", "split", "quote", "join"]
+
+
+PY2 = sys.version_info[0] == 2
+
+if PY2:
+    def str_maketrans(str1, str2):
+        return dict(zip(str1, str2))
+
+    def str_translate(str1, translate_dict):
+        return ''.join(translate_dict.get(c, c) for c in str1)
 
 
 class shlex:
@@ -34,7 +46,7 @@ class shlex:
         self, instream=None, infile=None, posix=False, punctuation_chars=False
     ):
         if isinstance(instream, str):
-            instream = StringIO(instream)
+            instream = StringIO(text_type(instream))
         if instream is not None:
             self.instream = instream
             self.infile = infile
@@ -75,8 +87,12 @@ class shlex:
             # these chars added because allowed in file names, args, wildcards
             self.wordchars += '~-./*?='
             # remove any punctuation chars from wordchars
-            t = self.wordchars.maketrans(dict.fromkeys(punctuation_chars))
-            self.wordchars = self.wordchars.translate(t)
+            if PY2:
+                t = str_maketrans(self.wordchars, punctuation_chars)
+                self.wordchars = str_translate(self.wordchars, t)
+            else:
+                t = self.wordchars.maketrans(dict.fromkeys(punctuation_chars))
+                self.wordchars = self.wordchars.translate(t)
 
     @property
     def punctuation_chars(self):
@@ -315,6 +331,9 @@ class shlex:
             raise StopIteration
         return token
 
+    def next(self):
+        return self.__next__()
+
 
 def split(s, comments=False, posix=True):
     """Split the string *s* using shell-like syntax."""
@@ -334,7 +353,7 @@ def join(split_command):
     return ' '.join(quote(arg) for arg in split_command)
 
 
-_find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+_find_unsafe = re.compile(r'[^\w@%+=:,./-]', 256).search
 
 
 def quote(s):

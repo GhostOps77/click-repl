@@ -6,7 +6,7 @@ from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHist
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
-from .exceptions import ClickExit  # type: ignore[attr-defined]
+from .exceptions import ClickExit
 from .exceptions import CommandLineParserError, ExitReplException, InvalidGroupFormatError
 from .utils import _execute_internal_and_sys_cmds
 from .core import ClickReplContext

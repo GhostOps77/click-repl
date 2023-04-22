@@ -3,11 +3,18 @@ import typing as t
 
 if t.TYPE_CHECKING:
     from .core import ClickReplContext  # noqa: F401
-    from typing import Union, NoReturn  # noqa: F401
+    from typing import Union, NoReturn, Any  # noqa: F401
 
 
 _locals = local()
 _locals.stack = []
+
+
+def text_type(text):
+    # type: (Any) -> str
+    # fmt: off
+    return u"{}".format(text)
+    # fmt: on
 
 
 def get_current_click_repl_context(silent=False):

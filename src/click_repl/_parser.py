@@ -12,6 +12,7 @@ from .shlex2 import shlex  # type: ignore[attr-defined]
 
 from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError
+from ._globals import text_type
 
 # typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
@@ -38,13 +39,6 @@ except ImportError:
     AUTO_COMPLETION_PARAM = "autocompletion"
 
 
-def text_type(text):
-    # type: (Any) -> str
-    # fmt: off
-    return u"{}".format(text)
-    # fmt: on
-
-
 def split_arg_string(string, posix=True):
     # type: (str, bool) -> "List[str]"
     """Split an argument string as with :func:`shlex.split`, but don't
@@ -64,7 +58,8 @@ def split_arg_string(string, posix=True):
     out = []  # type: List[str]
 
     try:
-        out.extend(lex)
+        for token in lex:
+            out.append(token)
     except ValueError:
         # Raised when end-of-string is reached in an invalid state. Use
         # the partial token as-is. The quote or escape character is in
