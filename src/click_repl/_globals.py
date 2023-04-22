@@ -15,9 +15,9 @@ def get_current_click_repl_context(silent=False):
 
     try:
         return _locals.stack[-1]  # type: ignore[no-any-return, syntax]
-    except (AttributeError, IndexError) as e:
+    except (AttributeError, IndexError):
         if not silent:
-            raise RuntimeError("There is no active click-repl context.") from e
+            raise RuntimeError("There is no active click-repl context.")
 
     return None
 

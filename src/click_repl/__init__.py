@@ -1,3 +1,8 @@
+"""
+Click Repl is a simple Python module that provides REPL support
+inside your click app in just some simple steps.
+"""
+
 from ._completer import ClickCompleter as ClickCompleter  # noqa: F401
 
 from ._repl import register_repl as register_repl  # noqa: F401

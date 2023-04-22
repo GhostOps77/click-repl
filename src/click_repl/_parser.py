@@ -8,7 +8,7 @@ import sys
 import click
 # from functools import lru_cache
 from glob import iglob
-from shlex import shlex
+from .shlex2 import shlex
 
 from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError
@@ -27,11 +27,11 @@ IS_WINDOWS = os.name == "nt"
 
 # Handle backwards compatibility for click<=8
 try:
-    import click.shell_completion
+    from click import shell_completion  # noqa: F401
 
     HAS_CLICK_V8 = True
     AUTO_COMPLETION_PARAM = "shell_complete"
-except (ImportError, ModuleNotFoundError):
+except ImportError:
     import click._bashcomplete  # type: ignore[import]
 
     HAS_CLICK_V8 = False

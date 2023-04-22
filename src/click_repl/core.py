@@ -77,7 +77,8 @@ class ClickReplContext:
     def history(self):
         # type: () -> Generator[str, None, None]
         if self._history is not None:
-            yield from self._history.load_history_strings()
+            for i in self._history.load_history_strings():
+                yield i
 
 
 def pass_context(func):

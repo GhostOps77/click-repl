@@ -17,7 +17,7 @@ class InvalidGroupFormatError(Exception):
 # Handle click.exceptions.Exit introduced in Click 7.0
 try:
     from click.exceptions import Exit as ClickExit
-except (ImportError, ModuleNotFoundError):
+except ImportError:
 
     class ClickExit(RuntimeError):  # type: ignore[no-redef]
         pass
