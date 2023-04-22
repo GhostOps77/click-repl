@@ -46,8 +46,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -U wheel setuptools
-        pip install click==${{ matrix.click-version }}
-        pip install .[testing]
+        pip install pytest click==${{ matrix.click-version }}
+        pip install .
     - name: Test with pytest
       run: python2 -m pytest
 
