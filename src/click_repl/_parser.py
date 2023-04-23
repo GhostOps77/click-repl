@@ -8,7 +8,11 @@ import sys
 import click
 # from functools import lru_cache
 from glob import iglob
-from .shlex2 import shlex  # type: ignore[attr-defined]
+
+if sys.version_info >= (3, 6):
+    from shlex import shlex
+else:
+    from .shlex2 import shlex  # type: ignore[attr-defined]
 
 from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError
