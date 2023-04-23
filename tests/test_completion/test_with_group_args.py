@@ -21,7 +21,7 @@ def c1(user):
 
 cli_args = ['--user', 'hi']
 c = ClickCompleter(cmd, cmd.make_context('', args=cli_args))
-c.ctx_args = cli_args
+c.cli_args = cli_args
 
 
 @pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
@@ -48,7 +48,7 @@ cli_args = ['--opt', 'hi1', 'hi2', 'hi3', 'hi4', 'hi5', 'hii']
 c2 = ClickCompleter(cli, cli.make_context(
     '', args=cli_args
 ))
-c2.ctx_args = cli_args
+c2.cli_args = cli_args
 
 
 @pytest.mark.parametrize("test_input, expected", [

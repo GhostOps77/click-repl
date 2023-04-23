@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import os
 import sys
 import click
-# from functools import lru_cache
+from functools import lru_cache
 from glob import iglob
 
 if sys.version_info >= (3, 6):
@@ -23,7 +23,7 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from typing import Any, Dict, Union, List, Tuple, NoReturn  # noqa: F401
+        from typing import Optional, Dict, Union, List, Tuple, NoReturn  # noqa: F401
         from click import Command, Context, Parameter  # noqa: F401
 
 
@@ -32,7 +32,7 @@ IS_WINDOWS = os.name == "nt"
 
 # Handle backwards compatibility for click<=8
 try:
-    from click import shell_completion  # noqa: F401
+    import click.shell_completion  # noqa: F401
 
     HAS_CLICK_V8 = True
     AUTO_COMPLETION_PARAM = "shell_complete"
@@ -91,6 +91,34 @@ def get_ctx_for_args(cmd, parsed_args, group_args):
     # opt_parser = OptionsParser(ctx_command, parsed_ctx)
 
     return ctx_command, parsed_ctx
+
+
+@lru_cache(maxsize=3)
+def _split_args(document_text):
+    # type: (str) -> Optional[Tuple[List[str], str]]
+    if document_text.startswith(("!", ":")):
+        return None
+
+    # try:
+    args = split_arg_string(document_text, posix=False)
+    # except ValueError:
+    #     # Invalid command, perhaps caused by missing closing quotation.
+    #     return
+
+    cursor_within_command = (
+        document_text.rstrip() == document_text
+    )
+
+    if args and cursor_within_command:
+        # We've entered some text and no space, give completions for the
+        # current word.
+        incomplete = args.pop()
+    else:
+        # We've not entered anything, either at all or for the current
+        # command, so give all relevant completions for this context.
+        incomplete = ""
+
+    return args, incomplete
 
 
 class CompletionParser:
@@ -345,10 +373,10 @@ class CompletionParser:
 
             elif isinstance(param, click.Argument):
                 if (
-                    param.nargs == 1
-                    and autocomplete_ctx.params.get(
-                        param.name) is None  # type: ignore[arg-type]
-                ):
+                    autocomplete_ctx.params.get(
+                        param.name) is None
+                    or param.nargs == -1
+                ):  # type: ignore[arg-type]
                     choices.extend(
                         self._get_completion_from_params(
                             autocomplete_ctx, args, param, incomplete

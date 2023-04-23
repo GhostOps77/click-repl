@@ -4,7 +4,7 @@ import sys
 from prompt_toolkit.completion import Completion, Completer
 
 from ._parser import (  # type: ignore[attr-defined]
-    CompletionParser, get_ctx_for_args, split_arg_string, text_type
+    CompletionParser, get_ctx_for_args, _split_args, text_type
 )
 
 
@@ -37,10 +37,10 @@ class ClickCompleter(Completer):
 
         self.cli = cli  # type: Group
         self.ctx = ctx  # type: Context
-        self.ctx_args = []  # type: List[str]
+        self.cli_args = []  # type: List[str]
 
         if self.cli.params:
-            self.ctx_args.extend(sys.argv[1:])
+            self.cli_args.extend(sys.argv[1:])
 
         self.parsed_ctx = self.ctx  # type: Context
         self.parsed_args = []  # type: List[str]
@@ -59,45 +59,29 @@ class ClickCompleter(Completer):
 
         # Code analogous to click._bashcomplete.do_complete
 
-        document_text_before_cursor = document.text_before_cursor
+        tmp = _split_args(document.text_before_cursor)
 
-        if document_text_before_cursor.startswith(("!", ":")):
+        if tmp is None:
             return
 
-        # try:
-        args = split_arg_string(document_text_before_cursor, posix=False)
-        # except ValueError:
-        #     # Invalid command, perhaps caused by missing closing quotation.
-        #     return
-
-        choices = []  # type: List[Completion]
-        cursor_within_command = (
-            document_text_before_cursor.rstrip() == document_text_before_cursor
-        )
-
-        if args and cursor_within_command:
-            # We've entered some text and no space, give completions for the
-            # current word.
-            incomplete = args.pop()
-        else:
-            # We've not entered anything, either at all or for the current
-            # command, so give all relevant completions for this context.
-            incomplete = ""
+        args, incomplete = tmp
 
         if self.parsed_args != args:
             self.parsed_args = args
 
             self.ctx_command, self.parsed_ctx = get_ctx_for_args(
-                self.cli, self.parsed_args, self.ctx_args
+                self.cli, self.parsed_args, self.cli_args
             )
 
         # autocomplete_ctx = self.ctx or self.parsed_ctx
 
-        # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
+        print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
         # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
 
         if getattr(self.ctx_command, "hidden", False):
             return
+
+        choices = []  # type: List[Completion]
 
         try:
             # choices.extend(
