@@ -7,7 +7,7 @@ from ._globals import get_current_click_repl_context, push_context, pop_context
 
 if t.TYPE_CHECKING:
     from click import Context  # noqa: F401
-    from typing import Any, Dict, List, Optional, Callable, Generator  # noqa: F401
+    from typing import Any, Dict, List, Optional, Callable, Generator, Union  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
 
 
@@ -26,18 +26,24 @@ class ClickReplContext:
             self.session = PromptSession(
                 **prompt_kwargs
             )  # type: Optional[PromptSession[Dict[str, Any]]]
-            self._history = self.session.history  # type: Optional[History]
+            self._history = self.session.history  # type: Union[History, List[str]]
 
             def get_command():
                 # type: () -> str
                 return self.session.prompt()  # type: ignore[return-value, union-attr]
 
-            self.get_command = get_command  # type: Callable[..., str]
-
         else:
-            self.get_command = sys.stdin.readline
+            self._history = []
+
+            def get_command():
+                # type: () -> str
+                inp = sys.stdin.readline()  # type: str
+                self._history.insert(0, inp)  # type: ignore[union-attr]
+                return inp
+
             self.session = None
-            self._history = None
+
+        self.get_command = get_command  # type: Callable[..., str]
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -76,9 +82,13 @@ class ClickReplContext:
 
     def history(self):
         # type: () -> Generator[str, None, None]
-        if self._history is not None:
-            for i in self._history.load_history_strings():
-                yield i
+        if self.session is not None:
+            _history = self._history.load_history_strings()  # type: ignore[union-attr]
+        else:
+            _history = self._history
+
+        for i in _history:
+            yield i
 
 
 def pass_context(func):
