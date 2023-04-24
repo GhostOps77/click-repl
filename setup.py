@@ -50,6 +50,7 @@ if __name__ == '__main__':
         install_requires=[
             'click>=6.0',
             'prompt_toolkit>=2.0.10',
+            "repoze.lru>=0.7;python_version == '2.7'"
         ],
         extras_require={
             'testing': [

@@ -6,8 +6,14 @@ from __future__ import unicode_literals
 import os
 import sys
 import click
-from functools import lru_cache
 from glob import iglob
+
+# lru cache is introduced in Python 3.2
+if sys.version_info >= (3, 2):
+    from functools import lru_cache
+else:
+    from repoze.lru import lru_cache
+
 
 if sys.version_info >= (3, 6):
     from shlex import shlex
