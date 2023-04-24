@@ -2,7 +2,7 @@
 # from ._parser import _split_args
 
 
-# class NumberValidator(Validator):
+# class ClickValidator(Validator):
 #     def validate(self, document):
 #         tmp = _split_args(document.text_before_cursor)
 
