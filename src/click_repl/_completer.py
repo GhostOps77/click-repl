@@ -32,20 +32,23 @@ class ClickCompleter(Completer):
         "ctx_command", "completion_parser", "opt_parser"
     )
 
-    def __init__(self, cli, ctx, styles=None):
-        # type: (Group, Context, Optional[Dict[str, str]]) -> None
+    def __init__(self, cli, ctx, cli_args=None, styles=None):
+        # type: (Group, Context, Optional[List[str]], Optional[Dict[str, str]]) -> None
 
         self.cli = cli  # type: Group
         self.ctx = ctx  # type: Context
-        self.cli_args = []  # type: List[str]
-
-        if self.cli.params:
-            self.cli_args.extend(sys.argv[1:])
 
         self.parsed_ctx = self.ctx  # type: Context
         self.parsed_args = []  # type: List[str]
-
         self.ctx_command = self.cli  # type: Command
+
+        self.cli_args = []  # type: List[str]
+
+        if cli_args is None:
+            if self.cli.params:
+                self.cli_args.extend(sys.argv[1:])
+        else:
+            self.cli_args.extend(cli_args)
 
         if styles is None:
             styles = dict.fromkeys(
