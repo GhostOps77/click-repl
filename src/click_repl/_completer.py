@@ -78,7 +78,7 @@ class ClickCompleter(Completer):
 
         # autocomplete_ctx = self.ctx or self.parsed_ctx
 
-        print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
+        # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
         # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
 
         if getattr(self.ctx_command, "hidden", False):
