@@ -85,7 +85,7 @@ class ClickReplContext:
         if self.session is not None:
             _history = self._history.load_history_strings()  # type: ignore[union-attr]
         else:
-            _history = reversed(self._history)
+            _history = reversed(self._history)  # type: ignore[arg-type]
 
         for i in _history:
             yield i
