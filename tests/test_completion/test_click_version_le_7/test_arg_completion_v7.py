@@ -57,4 +57,6 @@ def test_tuple_return_type_shell_complete_func_click7(test_input, expected):
         pass
 
     completions = c.get_completions(Document(test_input))
-    assert {x.text for x in completions} == expected
+    assert {x.text for x in completions} == expected and {
+            x.display_meta[0][-1] for x in completions
+        } == {i.lower() for i in expected}

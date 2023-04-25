@@ -38,7 +38,7 @@ class ClickReplContext:
             def get_command():
                 # type: () -> str
                 inp = sys.stdin.readline()  # type: str
-                self._history.insert(0, inp)  # type: ignore[union-attr]
+                self._history.append(inp)  # type: ignore[union-attr]
                 return inp
 
             self.session = None
@@ -85,7 +85,7 @@ class ClickReplContext:
         if self.session is not None:
             _history = self._history.load_history_strings()  # type: ignore[union-attr]
         else:
-            _history = self._history
+            _history = reversed(self._history)
 
         for i in _history:
             yield i

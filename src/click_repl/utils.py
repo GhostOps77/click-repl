@@ -95,7 +95,7 @@ def _help_internal():
     formatter.write_heading("REPL help")
     formatter.indent()
 
-    with formatter.section("External Commands"):
+    with formatter.section("External/System Commands"):
         formatter.write_text('prefix external commands with "!"')
 
     with formatter.section("Internal Commands"):

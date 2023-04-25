@@ -72,22 +72,22 @@ def return_type_tuple_shell_complete(ctx, param, incomplete):
     ]
 
 
-@root_command.command()
-@click.argument("foo", shell_complete=return_type_tuple_shell_complete)
-def tuple_type_autocompletion_cmd(foo):
-    pass
-
-
-@pytest.mark.skipif(
-    click.__version__[0] < "8",
+with pytest.importorskip(
+    "click.shell_complete.CompletionItem",
+    minversion="8.0.0",
     reason="click-v8 built-in shell complete is not available, so skipped",
-)
-@pytest.mark.parameterize("test_input, expected", [
-    ("tuple-type-autocompletion-cmd ", {"Hi", "Please", "Hey", "Aye"}),
-    ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"})
-])
-def test_tuple_return_type_shell_complete_func(test_input, expected):
-    completions = c.get_completions(Document(test_input))
-    assert {x.text for x in completions} == expected and {
-        x.display_meta[0][-1] for x in completions
-    } == {i.lower() for i in expected}
+):
+    @root_command.command()
+    @click.argument("foo", shell_complete=return_type_tuple_shell_complete)
+    def tuple_type_autocompletion_cmd(foo):
+        pass
+
+    @pytest.mark.parameterize("test_input, expected", [
+        ("tuple-type-autocompletion-cmd ", {"Hi", "Please", "Hey", "Aye"}),
+        ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"})
+    ])
+    def test_tuple_return_type_shell_complete_func(test_input, expected):
+        completions = c.get_completions(Document(test_input))
+        assert {x.text for x in completions} == expected and {
+            x.display_meta[0][-1] for x in completions
+        } == {i.lower() for i in expected}
