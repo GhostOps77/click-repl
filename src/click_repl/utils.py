@@ -58,7 +58,7 @@ def flatten_iterable(tuple_type):
 def _register_internal_command(names, target, description=None):
     # type: (Iterable[str], Callable[[], Any], Optional[str]) -> None
 
-    if not hasattr(target, "__call__"):
+    if not callable(target):
         raise ValueError("Internal command must be a callable")
 
     if isinstance(names, str):

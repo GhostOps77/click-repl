@@ -17,7 +17,7 @@ def text_type(text):
     # fmt: on
 
 
-def get_current_click_repl_context(silent=False):
+def get_current_repl_ctx(silent=False):
     # type: (bool) -> Union[ClickReplContext, None, NoReturn]
 
     try:

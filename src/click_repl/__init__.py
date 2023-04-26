@@ -19,7 +19,7 @@ from .core import ClickReplContext as ClickReplContext  # noqa: F401
 from .core import pass_context as pass_context  # noqa: F401
 
 from ._globals import (  # noqa: F401
-    get_current_click_repl_context as get_current_click_repl_context
+    get_current_repl_ctx as get_current_repl_ctx
 )
 
 

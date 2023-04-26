@@ -14,7 +14,7 @@ def test_internal_help_commands(capsys, test_input):
         captured_stdout
         == """REPL help:
 
-  External Commands:
+  External/System Commands:
     prefix external commands with "!"
 
   Internal Commands:

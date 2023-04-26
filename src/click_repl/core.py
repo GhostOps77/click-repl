@@ -3,7 +3,7 @@ import typing as t
 from functools import wraps
 from prompt_toolkit import PromptSession
 
-from ._globals import get_current_click_repl_context, push_context, pop_context
+from ._globals import get_current_repl_ctx, push_context, pop_context
 
 if t.TYPE_CHECKING:
     from click import Context  # noqa: F401
@@ -96,6 +96,6 @@ def pass_context(func):
     @wraps(func)
     def decorator(*args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> Any
-        return func(get_current_click_repl_context(), *args, **kwargs)
+        return func(get_current_repl_ctx(), *args, **kwargs)
 
     return decorator
