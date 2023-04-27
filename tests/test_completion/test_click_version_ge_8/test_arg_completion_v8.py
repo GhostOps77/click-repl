@@ -87,7 +87,7 @@ with pytest.importorskip(
         ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"})
     ])
     def test_tuple_return_type_shell_complete_func(test_input, expected):
-        completions = c.get_completions(Document(test_input))
+        completions = list(c.get_completions(Document(test_input)))
         assert {x.text for x in completions} == expected and {
             x.display_meta[0][-1] for x in completions
         } == {i.lower() for i in expected}
