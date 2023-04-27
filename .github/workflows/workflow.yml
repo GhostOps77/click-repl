@@ -27,7 +27,7 @@ jobs:
     - name: Test with tox
       run: tox
 
-  Test_Py36:
+  Py36_Tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -75,7 +75,7 @@ jobs:
       run: python -m pytest
 
   Formatter:
-    needs: [Test, Py2_Tests]
+    needs: [Test, Py2_Tests, Py36_Tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
