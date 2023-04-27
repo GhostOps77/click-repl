@@ -24,7 +24,7 @@ import sys
 from collections import deque
 from io import StringIO
 
-from ._globals import text_type
+# from ._globals import text_type
 
 
 __all__ = ["shlex", "split", "quote", "join"]
@@ -39,14 +39,17 @@ if PY2:
     def str_translate(str1, translate_dict):
         return ''.join(translate_dict.get(c, c) for c in str1)
 
+else:
+    basestring = (str,)
+
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(
         self, instream=None, infile=None, posix=False, punctuation_chars=False
     ):
-        if isinstance(instream, str):
-            instream = StringIO(text_type(instream))
+        if isinstance(instream, basestring):
+            instream = StringIO(instream)
         if instream is not None:
             self.instream = instream
             self.infile = infile

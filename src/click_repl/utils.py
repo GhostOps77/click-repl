@@ -111,12 +111,12 @@ def _help_internal():
             ) for description, mnemonics in info_table.items()
         )
 
-    return formatter.getvalue()  # type: ignore[no-any-return]
+    return formatter.getvalue()
 
 
-_register_internal_command(["q", "quit", "exit"], _exit_internal, "exits the repl")
+_register_internal_command(["q", "quit", "exit"], _exit_internal, "Exits the repl")
 _register_internal_command(
-    ["?", "h", "help"], _help_internal, "displays general help information"
+    ["?", "h", "help"], _help_internal, "Displays general help information"
 )
 
 

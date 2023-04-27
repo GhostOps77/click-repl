@@ -19,8 +19,8 @@ def test_internal_help_commands(capsys, test_input):
 
   Internal Commands:
     prefix internal commands with ":"
-    :exit, :q, :quit  exits the repl
-    :?, :h, :help     displays general help information
+    :exit, :q, :quit  Exits the repl
+    :?, :h, :help     Displays general help information
 
 """
     )
@@ -28,7 +28,7 @@ def test_internal_help_commands(capsys, test_input):
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_internal_exit_commands(test_input):
-    with pytest.raises(click_repl.exceptions.ExitReplException):
+    with pytest.raises(click_repl.ExitReplException):
         click_repl.utils._execute_internal_and_sys_cmds(test_input)
 
 

@@ -18,7 +18,7 @@ else:
 if sys.version_info >= (3, 6):
     from shlex import shlex
 else:
-    from .shlex2 import shlex  # type: ignore[attr-defined]
+    from shlex2 import shlex  # type: ignore[attr-defined]
 
 from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError

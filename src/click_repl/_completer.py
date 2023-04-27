@@ -118,6 +118,7 @@ class ClickCompleter(Completer):
                 )
 
         except Exception as e:
+            print("{}".format((str(e))))
             click.echo("{}: {}".format(type(e).__name__, str(e)))
 
         for item in choices:

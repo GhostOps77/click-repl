@@ -40,7 +40,9 @@ def bootstrap_prompt(
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(group, ctx, styles=style),
-        "message": "> ",
+        # fmt: off
+        "message": u"> ",
+        # fmt: on
         "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
