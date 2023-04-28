@@ -1,13 +1,10 @@
-from __future__ import with_statement
-
 import click
 import sys
 from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
-from .exceptions import ClickExit
-from .exceptions import CommandLineParserError, ExitReplException
+from .exceptions import ClickExit, CommandLineParserError, ExitReplException
 from .utils import _execute_internal_and_sys_cmds
 from .core import ClickReplContext
 

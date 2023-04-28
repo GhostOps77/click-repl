@@ -1,4 +1,5 @@
 from threading import local
+import click
 import typing as t
 
 if t.TYPE_CHECKING:
@@ -6,6 +7,7 @@ if t.TYPE_CHECKING:
     from typing import Union, NoReturn  # noqa: F401
 
 
+HAS_CLICK6 = click.__version__[0] == "6"
 _locals = local()
 _locals.stack = []
 

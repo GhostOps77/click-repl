@@ -1,4 +1,5 @@
 import click
+from click_repl._globals import HAS_CLICK6
 from click_repl import ClickCompleter
 from prompt_toolkit.document import Document
 import pytest
@@ -25,7 +26,11 @@ def test_command_collection():
     c = ClickCompleter(cmd, click.Context(cmd))
     completions = c.get_completions(Document("foo"))
 
-    assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
+    if HAS_CLICK6:
+        assert {x.text for x in completions} == {"foo_cmd", "foobar_cmd"}
+    else:
+        assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
+
 
 
 @click.group()
@@ -60,4 +65,7 @@ c3 = ClickCompleter(root_group, click.Context(root_group))
 ])
 def test_completion_multilevel_command(test_input, expected):
     completions = c3.get_completions(Document(test_input))
-    assert set(x.text for x in completions) == expected
+    if HAS_CLICK6:
+        assert set(x.text for x in completions) == expected.replace('-', '_')
+    else:
+        assert set(x.text for x in completions) == expected
