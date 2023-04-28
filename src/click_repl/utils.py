@@ -7,7 +7,7 @@ from collections import defaultdict
 from threading import local
 
 
-from .exceptions import CommandLineParserError, ExitReplException
+from .exceptions import ExitReplException
 from ._parser import split_arg_string
 
 
@@ -66,9 +66,8 @@ def _register_internal_command(names, target, description=None):
 
     elif isinstance(names, Mapping) or not isinstance(names, Iterable):
         raise ValueError(
-            '"names" must be a string, or an iterable object, but got "{}"'.format(
-                type(names).__name__
-            )
+            '"names" must be a string,'
+            f'or an iterable object, but got "{type(names).__name__}"'
         )
 
     for name in names:
@@ -125,7 +124,7 @@ def _execute_internal_and_sys_cmds(
     allow_internal_commands=True,
     allow_system_commands=True,
 ):
-    # type: (str, bool, bool) -> Union[List[str], None, NoReturn]
+    # type: (str, bool, bool) -> Optional[List[str]]
     """
     Executes internal, system, and all the other registered click commands from the input
     """
@@ -138,11 +137,7 @@ def _execute_internal_and_sys_cmds(
             click.echo(result)
             return None
 
-    try:
-        return split_arg_string(command)
-    except ValueError as e:
-        # click.echo("{}: {}".format(type(e).__name__, e))
-        raise CommandLineParserError("{}".format(e))
+    return split_arg_string(command)
 
 
 def exit():

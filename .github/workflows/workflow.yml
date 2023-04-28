@@ -48,34 +48,8 @@ jobs:
     - name: Test with tox
       run: tox
 
-  Py2_Tests:
-    runs-on: windows-latest
-    env:
-      PIP_DISABLE_PIP_VERSION_CHECK: 1
-      PIP_NO_PYTHON_VERSION_WARNING: 1
-    strategy:
-      fail-fast: true
-      matrix:
-        python-version: ['2.7.18', 'pypy-2.7']
-        click-version: ['6.7', '7.1.2']
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        check-latest: false
-    - name: Install dependencies
-      run: |
-        pip install -U wheel setuptools
-        pip install pytest click==${{ matrix.click-version }}
-        pip install .
-    - name: Test with pytest
-      run: python -m pytest
-
   Formatter:
-    needs: [Test, Py2_Tests, Py36_Tests]
+    needs: [Test, Py36_Tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

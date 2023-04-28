@@ -13,7 +13,6 @@ from prompt_toolkit.completion import Completion
 from shlex import shlex
 
 from .exceptions import CommandLineParserError
-from ._globals import text_type
 
 # typing module introduced in Python 3.5
 if sys.version_info >= (3, 5):
@@ -150,7 +149,7 @@ class CompletionParser:
             if isinstance(autocomplete, tuple):
                 param_choices.append(
                     Completion(
-                        text_type(autocomplete[0]),
+                        autocomplete[0],
                         -len(incomplete),
                         display_meta=autocomplete[1],
                     )
@@ -160,7 +159,7 @@ class CompletionParser:
                 autocomplete, click.shell_completion.CompletionItem
             ):
                 param_choices.append(
-                    Completion(text_type(autocomplete.value), -len(incomplete))
+                    Completion(autocomplete.value, -len(incomplete))
                 )
 
             elif isinstance(autocomplete, Completion):
@@ -168,7 +167,7 @@ class CompletionParser:
 
             else:
                 param_choices.append(
-                    Completion(text_type(autocomplete), -len(incomplete))
+                    Completion(str(autocomplete), -len(incomplete))
                 )
 
         return param_choices
@@ -180,10 +179,10 @@ class CompletionParser:
             incomplete = incomplete.lower()
             return [
                 Completion(
-                    text_type(choice),
+                    choice,
                     -len(incomplete),
                     style=self.styles["argument"],
-                    display=text_type(repr(choice) if " " in choice else choice),
+                    display=repr(choice) if " " in choice else choice,
                 )
                 for choice in param_type.choices
                 if choice.lower().startswith(incomplete)
@@ -192,10 +191,10 @@ class CompletionParser:
         else:
             return [
                 Completion(
-                    text_type(choice),
+                    choice,
                     -len(incomplete),
                     style=self.styles["argument"],
-                    display=text_type(repr(choice) if " " in choice else choice),
+                    display=repr(choice) if " " in choice else choice,
                 )
                 for choice in param_type.choices
                 if choice.startswith(incomplete)
@@ -231,9 +230,9 @@ class CompletionParser:
 
             choices.append(
                 Completion(
-                    text_type(path),
+                    path,
                     -len(incomplete),
-                    display=text_type(os.path.basename(path.strip("'\""))),
+                    display=os.path.basename(path.strip("'\"")),
                 )
             )
 
@@ -243,7 +242,7 @@ class CompletionParser:
         # type: (str) -> List[Completion]
         return [
             Completion(
-                text_type(k), -len(incomplete), display_meta=text_type("/".join(v))
+                k, -len(incomplete), display_meta="/".join(v)
             )
             for k, v in {
                 "true": ("1", "true", "t", "yes", "y", "on"),
@@ -253,9 +252,9 @@ class CompletionParser:
         ]
 
     def _get_completion_for_Range_types(self, param_type, incomplete):
-        # type: (Union[click.IntRange, click.FloatRange], str) -> List[Completion]
+        # type: (Union[click.IntRange, "click.FloatRange"], str) -> List[Completion]
         clamp = " clamped" if param_type.clamp else ""
-        display_meta = "{}{}".format(param_type._describe_range(), clamp)
+        display_meta = f"{param_type._describe_range()}{clamp}"
 
         return [Completion('-', display_meta=display_meta)]
 
@@ -270,7 +269,7 @@ class CompletionParser:
 
         elif isinstance(param_type, click.Tuple):
             return [
-                Completion('', display=text_type(_type.name))
+                Completion('', display=_type.name)
                 for _type in param_type.types
             ]
 
@@ -320,7 +319,7 @@ class CompletionParser:
             for attr in ("hidden", "hide_input"):
                 if getattr(param, attr, False):
                     raise CommandLineParserError(
-                        "Click Repl cannot parse a '{}' parameter".format(attr)
+                        f"Click Repl cannot parse a '{attr}' parameter"
                     )
 
             if isinstance(param, click.Option):
@@ -348,13 +347,15 @@ class CompletionParser:
 
                     elif option.startswith(incomplete):
                         # print(f'{option} startswith ({incomplete})\n')
+                        display_meta = (param.help or "") + (
+                            f'[Default={param.default}]' if param.default else ''
+                        )
+
                         choices.append(
                             Completion(
-                                text_type(option),
+                                option,
                                 -len(incomplete),
-                                display_meta=text_type(
-                                    param.help or "") + '[Default={}]'.format(
-                                    param.default) if param.default else '',
+                                display_meta=display_meta,
                                 style=self.styles["option"],
                             )
                         )

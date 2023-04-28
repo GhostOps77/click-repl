@@ -7,7 +7,7 @@ from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
 from .exceptions import ClickExit
-from .exceptions import CommandLineParserError, ExitReplException, InvalidGroupFormatError
+from .exceptions import CommandLineParserError, ExitReplException
 from .utils import _execute_internal_and_sys_cmds
 from .core import ClickReplContext
 
@@ -27,6 +27,7 @@ def bootstrap_prompt(
     group,  # type: Group
     prompt_kwargs,  # type: Dict[str, Any]
     ctx,  # type: Context
+    enable_validator=False,  # type: bool
     style=None,  # type: Optional[Dict[str, Any]]
 ):
     # type: (...) -> Dict[str, Any]
@@ -40,27 +41,28 @@ def bootstrap_prompt(
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(group, ctx, styles=style),
-        # fmt: off
-        "message": u"> ",
-        # fmt: on
+        "message": "> ",
         "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
         "mouse_support": True,
     }
 
+    if enable_validator:
+        defaults["validator"] = None
+
     defaults.update(prompt_kwargs)
     return defaults
 
 
 def repl(
-    old_ctx,
-    prompt_kwargs={},
-    allow_system_commands=True,
-    allow_internal_commands=True,
-    styles=None,
-):
-    # type: (click.Context, Dict[str, Any], bool, bool, Optional[Dict[str, str]]) -> None
+    old_ctx: click.Context,
+    prompt_kwargs: Dict[str, Any] = {},
+    allow_system_commands: bool = True,
+    allow_internal_commands: bool = True,
+    enable_validator: bool = False,
+    styles: Optional[Dict[str, str]] = None,
+) -> None:
     """
     Start an interactive shell. All subcommands are available in it.
 
@@ -73,8 +75,16 @@ def repl(
     from stdin.
     """
     # parent should be available, but we're not going to bother if not
-    group_ctx = old_ctx.parent or old_ctx  # type: Context
-    group = group_ctx.command  # type: Group  # type: ignore[assignment]
+    # group_ctx = old_ctx.parent or old_ctx  # type: Context
+
+    group_ctx: Context = old_ctx
+    while (
+        group_ctx.parent is not None
+        and not isinstance(group_ctx.command, click.MultiCommand)
+    ):
+        group_ctx = group_ctx.parent
+
+    group: Group = group_ctx.command  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
 
     if styles is None:
@@ -83,6 +93,9 @@ def repl(
             "option": "ansiblack",
             "argument": "ansiblack",
         }
+
+    # print(f'\n{vars(group_ctx) = }')
+    # print(f'\n{vars(old_ctx) = }')
 
     # Delete the REPL command from those available, as we don't want to allow
     # nesting REPLs (note: pass `None` to `pop` as we don't want to error if
@@ -103,7 +116,9 @@ def repl(
         # session = PromptSession(
         #   **prompt_kwargs
         # )  # type: PromptSession[Mapping[str, Any]]
-        prompt_kwargs = bootstrap_prompt(group, prompt_kwargs, group_ctx, styles)
+        prompt_kwargs = bootstrap_prompt(
+            group, prompt_kwargs, group_ctx, enable_validator, styles
+        )
 
     with ClickReplContext(group_ctx, isatty, prompt_kwargs) as repl_ctx:
         while True:
@@ -134,15 +149,6 @@ def repl(
                 break
 
             try:
-                # default_map passes the top-level params to the new group to
-                # support top-level required params that would reject the
-                # invocation if missing.
-                # with group.make_context(
-                #     None, args, parent=group_ctx, default_map=old_ctx.params
-                # ) as ctx:
-                #     group.invoke(ctx)
-                #     ctx.exit()
-
                 # The group command will dispatch based on args.
                 old_protected_args = group_ctx.protected_args
                 try:
@@ -164,18 +170,8 @@ def repl(
             available_commands[repl_command_name] = original_command
 
 
-def register_repl(group, name="repl", pass_group_args_via_repl=False):
-    # type: (Group, str, bool) -> Command
+def register_repl(group, name="repl"):
+    # type: (Group, str) -> None
     """Register :func:`repl()` as sub-command *name* of *group*."""
 
-    if pass_group_args_via_repl:
-        for param in group.params:
-            if param.nargs == -1:
-                raise InvalidGroupFormatError('A Group arg cannot have nargs=-1')
-
-            # elif isinstance(param, click.Argument):
-            #     raise InvalidGroupFormatError(
-            #         "A repl CLI group cannot have Argument type options"
-            #     )
-
-    return group.command(name=name)(click.pass_context(repl))
+    group.command(name=name)(click.pass_context(repl))

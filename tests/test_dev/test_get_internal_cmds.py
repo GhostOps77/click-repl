@@ -33,3 +33,8 @@ def test_get_registered_target(test_input):
     assert (
         click_repl.utils._get_registered_target(test_input, "Not Found") == "Not Found"
     )
+
+
+def test_exit_repl_function():
+    with pytest.raises(click_repl.exceptions.ExitReplException):
+        click_repl.utils.exit()

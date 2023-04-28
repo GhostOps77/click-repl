@@ -85,7 +85,7 @@ def test_independant_args(capsys):
     @click.argument("argument")
     @click.pass_context
     def cli(ctx, argument):
-        print("cli({})".format(argument))
+        print(f"cli({argument})")
         if ctx.invoked_subcommand is None:
             click_repl.repl(ctx)
 
@@ -106,7 +106,7 @@ def test_independant_options(capsys):
     @click.option("--option")
     @click.pass_context
     def cli(ctx, option):
-        print("cli({})".format(option))
+        print(f"cli({option})")
         if ctx.invoked_subcommand is None:
             click_repl.repl(ctx)
 
@@ -131,7 +131,7 @@ def test_independant_options(capsys):
 @click.option("--option2")
 @click.pass_context
 def cmd(ctx, argument, option1, option2):
-    print("cli({}, {}, {})".format(argument, option1, option2))
+    print(f"cli({argument}, {option1}, {option2})")
     if ctx.invoked_subcommand is None:
         click_repl.repl(ctx)
 
@@ -158,11 +158,6 @@ def test_group_with_multiple_args(capsys, args, expected):
     assert capsys.readouterr().out.replace('\r\n', '\n') == expected
 
 
-def test_exit_repl_function():
-    with pytest.raises(click_repl.exceptions.ExitReplException):
-        click_repl.utils.exit()
-
-
 def test_inputs(capfd):
     @click.group(invoke_without_command=True)
     @click.pass_context
@@ -185,3 +180,36 @@ def test_inputs(capfd):
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert captured_stdout == ""
+
+
+def test_subcommand_invocation(capfd):
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def group_level1(ctx):
+        print('from level1')
+        if not ctx.invoked_subcommand:
+            click_repl.repl(ctx)
+
+    @group_level1.group(invoke_without_command=True)
+    @click.pass_context
+    def group_level2(ctx):
+        print('from level2')
+        if not ctx.invoked_subcommand:
+            click_repl.repl(ctx)
+
+    @group_level2.command()
+    def lvl2_command():
+        print('from lvl2 command')
+
+    with mock_stdin("group-level2\nlvl2-command\n"):
+        with pytest.raises(SystemExit):
+            group_level1(
+                args=[],
+                prog_name="test_subcommand_invocation"
+            )
+    assert capfd.readouterr().out.replace('\r\n', '\n') == """from level1
+from level1
+from level2
+from level2
+from lvl2 command
+"""

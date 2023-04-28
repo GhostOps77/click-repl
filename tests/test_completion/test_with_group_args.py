@@ -9,14 +9,14 @@ import pytest
 @click.pass_context
 def cmd(ctx, user):
     if ctx.invoked_subcommand is None:
-        click.echo("Top-level user: {}".format(user))
+        click.echo(f"Top-level user: {user}")
         repl(ctx)
 
 
 @cmd.command()
 @click.option("--user")
 def c1(user):
-    click.echo("Executed C1 with {}!".format(user))
+    click.echo(f"Executed C1 with {user}!")
 
 
 cli_args = ['--user', 'hi']

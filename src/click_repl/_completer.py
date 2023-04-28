@@ -4,7 +4,7 @@ import sys
 from prompt_toolkit.completion import Completion, Completer
 
 from ._parser import (  # type: ignore[attr-defined]
-    CompletionParser, get_ctx_for_args, _split_args, text_type
+    CompletionParser, get_ctx_for_args, _split_args
 )
 
 
@@ -101,7 +101,7 @@ class ClickCompleter(Completer):
                     elif name.startswith(incomplete):
                         choices.append(
                             Completion(
-                                text_type(name),
+                                name,
                                 -len(incomplete),
                                 display_meta=getattr(command, "short_help", ""),
                             )
@@ -118,8 +118,7 @@ class ClickCompleter(Completer):
                 )
 
         except Exception as e:
-            print("{}".format((str(e))))
-            click.echo("{}: {}".format(type(e).__name__, str(e)))
+            click.echo(f"{type(e).__name__}: {e}")
 
         for item in choices:
             yield item
