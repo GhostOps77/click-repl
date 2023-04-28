@@ -32,7 +32,6 @@ def test_command_collection():
         assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
 
 
-
 @click.group()
 def root_group():
     pass
