@@ -13,7 +13,7 @@ c = ClickCompleter(root_command, click.Context(root_command))
 
 
 @pytest.mark.skipif(
-    int(click.__version__[0]) > 7,
+    int(click.__version__[0]) != 7,
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
 def test_click7_autocomplete_arg():
@@ -43,7 +43,7 @@ def return_type_tuple_shell_complete(ctx, args, incomplete):
 
 
 @pytest.mark.skipif(
-    int(click.__version__[0]) > 7,
+    int(click.__version__[0]) != 7,
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
 @pytest.mark.parametrize("test_input, expected", [
