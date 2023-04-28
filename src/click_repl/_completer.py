@@ -1,6 +1,7 @@
 import click
 import os
 import sys
+import typing as t
 from prompt_toolkit.completion import Completion, Completer
 
 from ._parser import (  # type: ignore[attr-defined]
@@ -13,15 +14,12 @@ __all__ = ["ClickCompleter"]
 
 IS_WINDOWS = os.name == "nt"
 
-# typing module introduced in Python 3.5
-if sys.version_info >= (3, 5):
-    import typing as t
 
-    if t.TYPE_CHECKING:
-        from typing import Dict, Generator, Optional, List  # noqa: F401
-        from click import Command, Context, Group  # noqa: F401
-        from prompt_toolkit.completion import CompleteEvent  # noqa: F401
-        from prompt_toolkit.document import Document  # noqa: F401
+if t.TYPE_CHECKING:
+    from typing import Dict, Generator, Optional, List  # noqa: F401
+    from click import Command, Context, Group  # noqa: F401
+    from prompt_toolkit.completion import CompleteEvent  # noqa: F401
+    from prompt_toolkit.document import Document  # noqa: F401
 
 
 class ClickCompleter(Completer):
@@ -32,17 +30,21 @@ class ClickCompleter(Completer):
         "ctx_command", "completion_parser", "opt_parser"
     )
 
-    def __init__(self, cli, ctx, cli_args=None, styles=None):
-        # type: (Group, Context, Optional[List[str]], Optional[Dict[str, str]]) -> None
+    def __init__(
+            self,
+            cli: 'Group',
+            ctx: 'Context',
+            cli_args: 'Optional[List[str]]' = None,
+            styles: 'Optional[Dict[str, str]]' = None
+    ) -> None:
+        self.cli: 'Group' = cli
+        self.ctx: 'Context' = ctx
 
-        self.cli = cli  # type: Group
-        self.ctx = ctx  # type: Context
+        self.parsed_ctx: 'Context' = self.ctx
+        self.parsed_args: 'List[str]' = []
+        self.ctx_command: 'Command' = self.cli
 
-        self.parsed_ctx = self.ctx  # type: Context
-        self.parsed_args = []  # type: List[str]
-        self.ctx_command = self.cli  # type: Command
-
-        self.cli_args = []  # type: List[str]
+        self.cli_args: 'List[str]' = []
 
         if cli_args is None:
             if self.cli.params:

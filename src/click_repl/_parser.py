@@ -1,6 +1,6 @@
 import os
-import sys
 import click
+import typing as t
 
 from functools import lru_cache
 from glob import iglob
@@ -9,13 +9,10 @@ from shlex import shlex
 
 from .exceptions import CommandLineParserError
 
-# typing module introduced in Python 3.5
-if sys.version_info >= (3, 5):
-    import typing as t
 
-    if t.TYPE_CHECKING:
-        from typing import Optional, Dict, Union, List, Tuple, NoReturn  # noqa: F401
-        from click import Command, Context, Parameter  # noqa: F401
+if t.TYPE_CHECKING:
+    from typing import Optional, Dict, Union, List, Tuple, NoReturn  # noqa: F401
+    from click import Command, Context, Parameter  # noqa: F401
 
 
 IS_WINDOWS = os.name == "nt"
@@ -40,8 +37,7 @@ except ImportError:
     AUTO_COMPLETION_PARAM = "autocompletion"
 
 
-def split_arg_string(string, posix=True):
-    # type: (str, bool) -> "List[str]"
+def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.
@@ -56,11 +52,10 @@ def split_arg_string(string, posix=True):
     lex = shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
     lex.commenters = ""
-    out = []  # type: List[str]
+    out: 'List[str]' = []
 
     try:
-        for token in lex:
-            out.append(token)
+        out.extend(lex)
     except ValueError:
         # Raised when end-of-string is reached in an invalid state. Use
         # the partial token as-is. The quote or escape character is in
@@ -71,8 +66,11 @@ def split_arg_string(string, posix=True):
 
 
 # @lru_cache(maxsize=3)
-def get_ctx_for_args(cmd, parsed_args, group_args):
-    # type: (Command, List[str], List[str]) -> Tuple[Command, Context]
+def get_ctx_for_args(
+    cmd: 'Command',
+    parsed_args: 'List[str]',
+    group_args: 'List[str]'
+) -> 'Tuple[Command, Context]':
 
     # Resolve context based on click version
     if HAS_CLICK_V8:
@@ -91,17 +89,11 @@ def get_ctx_for_args(cmd, parsed_args, group_args):
 
 
 @lru_cache(maxsize=3)
-def _split_args(document_text):
-    # type: (str) -> Optional[Tuple[List[str], str]]
+def _split_args(document_text: str) -> 'Optional[Tuple[List[str], str]]':
     if document_text.startswith(("!", ":")):
         return None
 
-    # try:
     args = split_arg_string(document_text, posix=False)
-    # except ValueError:
-    #     # Invalid command, perhaps caused by missing closing quotation.
-    #     return
-
     cursor_within_command = (
         document_text.rstrip() == document_text
     )
@@ -129,8 +121,7 @@ class CompletionParser:
 
     __slots__ = ("styles", )
 
-    def __init__(self, styles):
-        # type: (Dict[str, str]) -> None
+    def __init__(self, styles: 'Dict[str, str]') -> None:
         self.styles = styles
 
     def _get_completion_from_autocompletion_functions(
