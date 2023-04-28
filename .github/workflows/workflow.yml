@@ -27,7 +27,7 @@ jobs:
     - name: Test with tox
       run: tox
 
-  Py36_Tests:
+  Py36_click6_Tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
