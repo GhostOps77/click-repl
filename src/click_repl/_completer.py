@@ -1,6 +1,7 @@
 import click
 import os
 import sys
+import typing as t
 from prompt_toolkit.completion import Completion, Completer
 
 from ._parser import (  # type: ignore[attr-defined]
@@ -13,15 +14,12 @@ __all__ = ["ClickCompleter"]
 
 IS_WINDOWS = os.name == "nt"
 
-# typing module introduced in Python 3.5
-if sys.version_info >= (3, 5):
-    import typing as t
 
-    if t.TYPE_CHECKING:
-        from typing import Dict, Generator, Optional, List  # noqa: F401
-        from click import Command, Context, Group  # noqa: F401
-        from prompt_toolkit.completion import CompleteEvent  # noqa: F401
-        from prompt_toolkit.document import Document  # noqa: F401
+if t.TYPE_CHECKING:
+    from typing import Dict, Generator, Optional, List  # noqa: F401
+    from click import Command, Context, Group  # noqa: F401
+    from prompt_toolkit.completion import CompleteEvent  # noqa: F401
+    from prompt_toolkit.document import Document  # noqa: F401
 
 
 class ClickCompleter(Completer):

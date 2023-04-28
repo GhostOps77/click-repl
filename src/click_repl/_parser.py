@@ -1,6 +1,6 @@
 import os
-import sys
 import click
+import typing as t
 
 from functools import lru_cache
 from glob import iglob
@@ -9,13 +9,10 @@ from shlex import shlex
 
 from .exceptions import CommandLineParserError
 
-# typing module introduced in Python 3.5
-if sys.version_info >= (3, 5):
-    import typing as t
 
-    if t.TYPE_CHECKING:
-        from typing import Optional, Dict, Union, List, Tuple, NoReturn  # noqa: F401
-        from click import Command, Context, Parameter  # noqa: F401
+if t.TYPE_CHECKING:
+    from typing import Optional, Dict, Union, List, Tuple, NoReturn  # noqa: F401
+    from click import Command, Context, Parameter  # noqa: F401
 
 
 IS_WINDOWS = os.name == "nt"

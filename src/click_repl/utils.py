@@ -1,8 +1,8 @@
 import click
 import os
-import sys
 from collections import defaultdict
 from threading import local
+import typing as t
 
 from .exceptions import ExitReplException
 from ._parser import split_arg_string
@@ -19,31 +19,19 @@ __all__ = [
     "exit",
 ]
 
-# typing module introduced in Python 3.5
-if sys.version_info >= (3, 5):
-    import typing as t
 
-    if t.TYPE_CHECKING:
-        from typing import (  # noqa: F401
-            Any, Callable, Generator, Iterable, Mapping, NoReturn, Optional, Union,
-            List, Dict, Tuple
-        )
-
-
-# Abstract datatypes in collections module are moved to collections.abc
-# module in Python 3.3
-if sys.version_info >= (3, 3):
-    from collections.abc import Iterable, Mapping  # noqa: F811
-else:
-    from collections import Iterable, Mapping
+if t.TYPE_CHECKING:
+    from typing import (  # noqa: F401
+        Any, Callable, Generator, Iterable, Mapping, NoReturn, Optional, Union,
+        List, Dict, Tuple
+    )
 
 
 _locals = local()
 _internal_commands = _locals.__dict__  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501
 
 
-def flatten_iterable(tuple_type):
-    # type: (click.Tuple) -> Generator[Any, None, None]
+def flatten_iterable(tuple_type: 'click.Tuple') -> 'Generator[Any, None, None]':
     for val in tuple_type.types:
         if isinstance(val, click.Tuple):
             for item in flatten_iterable(val):
@@ -61,7 +49,7 @@ def _register_internal_command(names, target, description=None):
     if isinstance(names, str):
         names = [names]
 
-    elif isinstance(names, Mapping) or not isinstance(names, Iterable):
+    elif isinstance(names, t.Mapping) or not isinstance(names, t.Iterable):
         raise ValueError(
             '"names" must be a string,'
             f'or an iterable object, but got "{type(names).__name__}"'

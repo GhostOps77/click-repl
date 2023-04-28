@@ -1,5 +1,7 @@
 import click
 import sys
+
+import typing as t
 from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
 from prompt_toolkit.history import InMemoryHistory
 
@@ -11,13 +13,10 @@ from .core import ClickReplContext
 
 __all__ = ["bootstrap_prompt", "register_repl", "repl"]
 
-# typing module introduced in Python 3.5
-if sys.version_info >= (3, 5):
-    import typing as t
 
-    if t.TYPE_CHECKING:
-        from click import Context, Group  # noqa: F401
-        from typing import Any, Optional, Dict  # noqa: F401
+if t.TYPE_CHECKING:
+    from click import Context, Group  # noqa: F401
+    from typing import Any, Optional, Dict  # noqa: F401
 
 
 def bootstrap_prompt(
