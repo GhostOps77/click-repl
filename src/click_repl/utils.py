@@ -4,7 +4,6 @@ import sys
 from collections import defaultdict
 from threading import local
 
-
 from .exceptions import ExitReplException
 from ._parser import split_arg_string
 

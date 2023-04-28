@@ -12,9 +12,9 @@ _locals = local()
 _locals.stack = []
 
 
-def get_current_repl_ctx(silent=False):
-    # type: (bool) -> Union[ClickReplContext, None, NoReturn]
-
+def get_current_repl_ctx(
+    silent: bool = False
+) -> 'Union[ClickReplContext, None, NoReturn]':
     try:
         return _locals.stack[-1]  # type: ignore[no-any-return, syntax]
     except (AttributeError, IndexError):
@@ -24,13 +24,11 @@ def get_current_repl_ctx(silent=False):
     return None
 
 
-def push_context(ctx):
-    # type: (ClickReplContext) -> None
+def push_context(ctx: 'ClickReplContext') -> None:
     """Pushes a new context to the current stack."""
     _locals.stack.append(ctx)
 
 
-def pop_context():
-    # type: () -> None
+def pop_context() -> None:
     """Removes the top level from the stack."""
     _locals.stack.pop()

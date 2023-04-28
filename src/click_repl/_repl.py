@@ -26,8 +26,7 @@ def bootstrap_prompt(
     ctx,  # type: Context
     enable_validator=False,  # type: bool
     style=None,  # type: Optional[Dict[str, Any]]
-):
-    # type: (...) -> Dict[str, Any]
+) -> 'Dict[str, Any]':
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
