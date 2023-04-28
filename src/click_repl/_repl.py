@@ -19,7 +19,7 @@ if sys.version_info >= (3, 5):
     import typing as t
 
     if t.TYPE_CHECKING:
-        from click import Context, Group, Command  # noqa: F401
+        from click import Context, Group  # noqa: F401
         from typing import Any, Optional, Dict  # noqa: F401
 
 
@@ -56,12 +56,12 @@ def bootstrap_prompt(
 
 
 def repl(
-    old_ctx: click.Context,
-    prompt_kwargs: Dict[str, Any] = {},
+    old_ctx: 'Context',
+    prompt_kwargs: 'Dict[str, Any]' = {},
     allow_system_commands: bool = True,
     allow_internal_commands: bool = True,
     enable_validator: bool = False,
-    styles: Optional[Dict[str, str]] = None,
+    styles: 'Optional[Dict[str, str]]' = None,
 ) -> None:
     """
     Start an interactive shell. All subcommands are available in it.
@@ -77,14 +77,14 @@ def repl(
     # parent should be available, but we're not going to bother if not
     # group_ctx = old_ctx.parent or old_ctx  # type: Context
 
-    group_ctx: Context = old_ctx
+    group_ctx: 'Context' = old_ctx
     while (
         group_ctx.parent is not None
         and not isinstance(group_ctx.command, click.MultiCommand)
     ):
         group_ctx = group_ctx.parent
 
-    group: Group = group_ctx.command  # type: ignore[assignment]
+    group: 'Group' = group_ctx.command  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
 
     if styles is None:
