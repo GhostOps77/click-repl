@@ -25,6 +25,12 @@ if sys.version_info >= (3, 5):
 
 IS_WINDOWS = os.name == "nt"
 
+try:
+    from click import FloatRange
+    _Range_types = (click.IntRange, FloatRange)
+except ImportError:
+    _Range_types = (click.IntRange, )  # type: ignore[assignment]
+
 
 # Handle backwards compatibility for click<=8
 try:
@@ -264,7 +270,7 @@ class CompletionParser:
         choices = []  # type: List[Completion]
         param_type = param.type  # type: click.ParamType
 
-        if isinstance(param_type, (click.IntRange, click.FloatRange)):
+        if isinstance(param_type, _Range_types):
             return self._get_completion_for_Range_types(param_type, incomplete)
 
         elif isinstance(param_type, click.Tuple):
