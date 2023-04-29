@@ -1,8 +1,8 @@
 __all__ = [
-    'InternalCommandException',
-    'ExitReplException',
-    'CommandLineParserError',
-    'ClickExit'
+    "InternalCommandException",
+    "ExitReplException",
+    "CommandLineParserError",
+    "ClickExit",
 ]
 
 

@@ -1,19 +1,20 @@
-import click
 import sys
-
 import typing as t
-from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
+
+import click
+from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
+                                         ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
-from .exceptions import ClickExit, CommandLineParserError, ExitReplException
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .core import ClickReplContext
-
+from .exceptions import ClickExit, CommandLineParserError, ExitReplException
 
 if t.TYPE_CHECKING:
+    from typing import Any, Dict, Optional  # noqa: F401
+
     from click import Context, Group  # noqa: F401
-    from typing import Any, Optional, Dict  # noqa: F401
 
 
 def bootstrap_prompt(
@@ -22,7 +23,7 @@ def bootstrap_prompt(
     ctx,  # type: Context
     enable_validator=False,  # type: bool
     style=None,  # type: Optional[Dict[str, Any]]
-) -> 'Dict[str, Any]':
+) -> "Dict[str, Any]":
     """
     Bootstrap prompt_toolkit kwargs or use user defined values.
 
@@ -40,7 +41,7 @@ def bootstrap_prompt(
         "mouse_support": True,
     }
 
-    if enable_validator and prompt_kwargs.get('validator', None) is None:
+    if enable_validator and prompt_kwargs.get("validator", None) is None:
         prompt_kwargs["validator"] = None
 
     defaults.update(prompt_kwargs)
@@ -48,12 +49,12 @@ def bootstrap_prompt(
 
 
 def repl(
-    group_ctx: 'Context',
-    prompt_kwargs: 'Dict[str, Any]' = {},
+    group_ctx: "Context",
+    prompt_kwargs: "Dict[str, Any]" = {},
     allow_system_commands: bool = True,
     allow_internal_commands: bool = True,
     enable_validator: bool = False,
-    styles: 'Optional[Dict[str, str]]' = None,
+    styles: "Optional[Dict[str, str]]" = None,
 ) -> None:
     """
     Start an interactive shell. All subcommands are available in it.
@@ -69,18 +70,16 @@ def repl(
     # parent should be available, but we're not going to bother if not
     # group_ctx = old_ctx.parent or old_ctx  # type: Context
 
-    while (
-        group_ctx.parent is not None
-        and not isinstance(group_ctx.command, click.Group)
+    while group_ctx.parent is not None and not isinstance(
+        group_ctx.command, click.Group
     ):
         group_ctx = group_ctx.parent
 
-    group: 'Group' = group_ctx.command  # type: ignore[assignment]
+    group: "Group" = group_ctx.command  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
 
-    while (
-        group_ctx.parent is not None
-        and not isinstance(group_ctx.command, click.MultiCommand)
+    while group_ctx.parent is not None and not isinstance(
+        group_ctx.command, click.MultiCommand
     ):
         group_ctx = group_ctx.parent
 

@@ -1,11 +1,11 @@
-import click
 import os
 import sys
 import typing as t
-from prompt_toolkit.completion import Completion, Completer
 
-from ._parser import CompletionParser, get_ctx_for_args, _split_args
+import click
+from prompt_toolkit.completion import Completer, Completion
 
+from ._parser import CompletionParser, _split_args, get_ctx_for_args
 
 __all__ = ["ClickCompleter"]
 
@@ -14,7 +14,8 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, Optional, List  # noqa: F401
+    from typing import Dict, Generator, List, Optional  # noqa: F401
+
     from click import Command, Context, Group  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
@@ -24,26 +25,31 @@ class ClickCompleter(Completer):
     """Custom prompt Completion provider"""
 
     __slots__ = (
-        "cli", "ctx", "ctx_args", "parsed_ctx", "parsed_args",
-        "ctx_command", "completion_parser", "opt_parser"
+        "cli",
+        "ctx",
+        "ctx_args",
+        "parsed_ctx",
+        "parsed_args",
+        "ctx_command",
+        "completion_parser",
+        "opt_parser",
     )
 
     def __init__(
         self,
-        cli: 'Group',
-        ctx: 'Context',
-        cli_args: 'Optional[List[str]]' = None,
-        styles: 'Optional[Dict[str, str]]' = None
+        cli: "Group",
+        ctx: "Context",
+        cli_args: "Optional[List[str]]" = None,
+        styles: "Optional[Dict[str, str]]" = None,
     ) -> None:
+        self.cli: "Group" = cli
+        self.ctx: "Context" = ctx
 
-        self.cli: 'Group' = cli
-        self.ctx: 'Context' = ctx
+        self.parsed_ctx: "Context" = self.ctx
+        self.parsed_args: "List[str]" = []
+        self.ctx_command: "Command" = self.cli
 
-        self.parsed_ctx: 'Context' = self.ctx
-        self.parsed_args: 'List[str]' = []
-        self.ctx_command: 'Command' = self.cli
-
-        self.cli_args: 'List[str]' = []
+        self.cli_args: "List[str]" = []
 
         if cli_args is None:
             if self.cli.params:
@@ -52,16 +58,13 @@ class ClickCompleter(Completer):
             self.cli_args.extend(cli_args)
 
         if styles is None:
-            styles = dict.fromkeys(
-                ("command", "argument", "option"), ""
-            )
+            styles = dict.fromkeys(("command", "argument", "option"), "")
 
         self.completion_parser = CompletionParser(styles)
 
     def get_completions(
-        self, document: 'Document', complete_event: 'Optional[CompleteEvent]' = None
-    ) -> 'Generator[Completion, None, None]':
-
+        self, document: "Document", complete_event: "Optional[CompleteEvent]" = None
+    ) -> "Generator[Completion, None, None]":
         # Code analogous to click._bashcomplete.do_complete
 
         tmp = _split_args(document.text_before_cursor)

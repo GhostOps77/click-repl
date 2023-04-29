@@ -1,11 +1,12 @@
-import click
 import typing as t
+
+import click
 
 if t.TYPE_CHECKING:
     from typing import Any, Generator  # noqa: F401
 
 
-def flatten_click_tuple(tuple_type: 'click.Tuple') -> 'Generator[Any, None, None]':
+def flatten_click_tuple(tuple_type: "click.Tuple") -> "Generator[Any, None, None]":
     for val in tuple_type.types:
         if isinstance(val, click.Tuple):
             for item in flatten_click_tuple(val):
