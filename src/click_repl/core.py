@@ -2,7 +2,10 @@ import sys
 import typing as t
 from functools import wraps
 from prompt_toolkit import PromptSession
+from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.auto_suggest import ThreadedAutoSuggest
 
+from ._completer import ClickCompleter
 from ._globals import get_current_repl_ctx, push_context, pop_context
 
 if t.TYPE_CHECKING:
@@ -12,31 +15,50 @@ if t.TYPE_CHECKING:
 
 
 class ClickReplContext:
+    """Context object for REPL
+
+    Keyword arguments:
+    group_ctx -- Click Context object that belong to a Group
+    enable_validator -- Adds a Validator to the PromptSession
+    prompt_kwargs -- Kwargs for PromptToolkit's `PromptSession` class
+    styles -- Dictionary that denote the style schema of the prompt
+    Return: None
+    """
+
     __slots__ = (
-        "group_ctx", "isatty", "prompt_kwargs", "session", "_history", "get_command",
+        "group_ctx", "prompt_kwargs", "session", "_history", "get_command",
     )
 
-    def __init__(self, group_ctx, isatty, prompt_kwargs):
-        # type: (Context, bool, Dict[str, Any]) -> None
-        self.group_ctx = group_ctx
-        self.prompt_kwargs = prompt_kwargs
-        self.isatty = isatty
+    def __init__(self, group_ctx, prompt_kwargs=None, styles=None):
+        # type: (Context, Optional[Dict[str, Any]], Optional[Dict[str, str]]) -> None
 
-        if isatty:
+        group = group_ctx.command
+        default_kwargs = {
+            "history": InMemoryHistory(),
+            "completer": ClickCompleter(group, group_ctx, styles=styles),
+            "message": "> ",
+            # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
+            "complete_in_thread": True,
+            "complete_while_typing": True,
+            "mouse_support": True,
+        }
+
+        if isinstance(prompt_kwargs, dict):
+            default_kwargs.update(prompt_kwargs)
+
+        if sys.stdin.isatty():
             self.session = PromptSession(
-                **prompt_kwargs
+                **default_kwargs
             )  # type: Optional[PromptSession[Dict[str, Any]]]
             self._history = self.session.history  # type: Union[History, List[str]]
 
-            def get_command():
-                # type: () -> str
+            def get_command() -> str:
                 return self.session.prompt()  # type: ignore[return-value, union-attr]
 
         else:
             self._history = []
 
-            def get_command():
-                # type: () -> str
+            def get_command() -> str:
                 inp = sys.stdin.readline()  # type: str
                 self._history.append(inp)  # type: ignore[union-attr]
                 return inp
@@ -44,6 +66,9 @@ class ClickReplContext:
             self.session = None
 
         self.get_command = get_command  # type: Callable[..., str]
+
+        self.group_ctx = group_ctx
+        self.prompt_kwargs = default_kwargs
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -55,14 +80,13 @@ class ClickReplContext:
         pop_context()
 
     @property
-    def prompt_msg(self):
-        # type: () -> Optional[str]
+    def prompt_message(self) -> 'Optional[str]':
         if isinstance(self.session, PromptSession):
             return str(self.session.message)
         return None
 
-    @prompt_msg.setter
-    def prompt_msg(self, value):
+    @prompt_message.setter
+    def prompt_message(self, value):
         # type: (str) -> None
         if isinstance(self.session, PromptSession):
             self.session.message = value
@@ -70,14 +94,13 @@ class ClickReplContext:
     def to_info_dict(self):
         # type: () -> Dict[str, Any]
         return {
-            'group_ctx': self.group_ctx,
-            'isatty': self.isatty,
             'prompt_kwargs': self.prompt_kwargs,
+            'group_ctx': self.group_ctx
         }
 
     def prompt_reset(self):
         # type: () -> None
-        if self.isatty:
+        if self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)
 
     def history(self):
