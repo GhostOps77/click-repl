@@ -2,10 +2,7 @@ import sys
 import typing as t
 from functools import wraps
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import InMemoryHistory
-# from prompt_toolkit.auto_suggest import ThreadedAutoSuggest
 
-from ._completer import ClickCompleter
 from ._globals import get_current_repl_ctx, push_context, pop_context
 
 if t.TYPE_CHECKING:
@@ -29,8 +26,8 @@ class ClickReplContext:
         "group_ctx", "prompt_kwargs", "session", "_history", "get_command",
     )
 
-    def __init__(self, group_ctx, prompt_kwargs=None, styles=None):
-        # type: (Context, Optional[Dict[str, Any]], Optional[Dict[str, str]]) -> None
+    def __init__(self, group_ctx, prompt_kwargs, styles=None):
+        # type: (Context, Dict[str, Any], Optional[Dict[str, str]]) -> None
 
         self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs

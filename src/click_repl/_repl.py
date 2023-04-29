@@ -115,6 +115,8 @@ def repl(
         prompt_kwargs = bootstrap_prompt(
             group, prompt_kwargs, group_ctx, enable_validator, styles
         )
+    else:
+        prompt_kwargs = {}
 
     with ClickReplContext(group_ctx, prompt_kwargs, styles) as repl_ctx:
         while True:

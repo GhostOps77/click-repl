@@ -172,7 +172,7 @@ class CompletionParser:
         self, param_type: 'click.Choice', incomplete: str
     ) -> 'List[Completion]':
 
-        choices = []
+        choices: 'List[Completion]' = []
 
         case_insensitive = not getattr(param_type, "case_sensitive", True)
 
@@ -192,6 +192,8 @@ class CompletionParser:
                         display=repr(choice) if " " in choice else choice,
                     )
                 )
+
+        return choices
 
     def _get_completion_for_Path_types(self, incomplete):
         # type: (str) -> List[Completion]

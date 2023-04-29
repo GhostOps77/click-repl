@@ -59,7 +59,7 @@ class ClickCompleter(Completer):
         self.completion_parser = CompletionParser(styles)
 
     def get_completions(
-        self, document: 'Document', complete_event: 'Optional[CompleteEvent]'=None
+        self, document: 'Document', complete_event: 'Optional[CompleteEvent]' = None
     ) -> 'Generator[Completion, None, None]':
 
         # Code analogous to click._bashcomplete.do_complete

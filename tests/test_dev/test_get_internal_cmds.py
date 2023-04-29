@@ -6,7 +6,7 @@ from click_repl._internal_cmds import (
 )
 
 
-@pytest.mark.parametrize("test_input", ["help","h","?"])
+@pytest.mark.parametrize("test_input", ["help", "h", "?"])
 def test_get_registered_target_help_cmd(test_input):
     assert _get_registered_target(test_input) == _help_internal
 

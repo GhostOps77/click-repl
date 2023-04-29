@@ -50,7 +50,9 @@ def handle_internal_commands(command: str) -> 'Any':
 
 
 def _register_internal_command(
-    names: 'Iterable[str]', target: 'Callable[[], Any]', description: 'Optional[str]' = None
+    names: 'Iterable[str]',
+    target: 'Callable[[], Any]',
+    description: 'Optional[str]' = None
 ) -> None:
 
     if not callable(target):
