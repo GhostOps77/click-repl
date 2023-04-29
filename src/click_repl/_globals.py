@@ -1,6 +1,6 @@
-from threading import local
 import click
 import typing as t
+from threading import local
 
 if t.TYPE_CHECKING:
     from .core import ClickReplContext  # noqa: F401

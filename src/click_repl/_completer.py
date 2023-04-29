@@ -4,9 +4,7 @@ import sys
 import typing as t
 from prompt_toolkit.completion import Completion, Completer
 
-from ._parser import (  # type: ignore[attr-defined]
-    CompletionParser, get_ctx_for_args, _split_args
-)
+from ._parser import CompletionParser, get_ctx_for_args, _split_args
 
 
 __all__ = ["ClickCompleter"]
@@ -31,12 +29,13 @@ class ClickCompleter(Completer):
     )
 
     def __init__(
-            self,
-            cli: 'Group',
-            ctx: 'Context',
-            cli_args: 'Optional[List[str]]' = None,
-            styles: 'Optional[Dict[str, str]]' = None
+        self,
+        cli: 'Group',
+        ctx: 'Context',
+        cli_args: 'Optional[List[str]]' = None,
+        styles: 'Optional[Dict[str, str]]' = None
     ) -> None:
+
         self.cli: 'Group' = cli
         self.ctx: 'Context' = ctx
 
@@ -59,8 +58,9 @@ class ClickCompleter(Completer):
 
         self.completion_parser = CompletionParser(styles)
 
-    def get_completions(self, document, complete_event=None):
-        # type: (Document, Optional[CompleteEvent]) -> Generator[Completion, None, None]
+    def get_completions(
+        self, document: 'Document', complete_event: 'Optional[CompleteEvent]'=None
+    ) -> 'Generator[Completion, None, None]':
 
         # Code analogous to click._bashcomplete.do_complete
 
@@ -122,5 +122,4 @@ class ClickCompleter(Completer):
         except Exception as e:
             click.echo(f"{type(e).__name__}: {e}")
 
-        for item in choices:
-            yield item
+        yield from choices

@@ -125,9 +125,13 @@ class CompletionParser:
         self.styles = styles
 
     def _get_completion_from_autocompletion_functions(
-        self, param, autocomplete_ctx, args, incomplete,
-    ):
-        # type: (Parameter, Context, List[str], str) -> List[Completion]
+        self,
+        param: 'Parameter',
+        autocomplete_ctx: 'Context',
+        args: 'List[str]',
+        incomplete: str,
+    ) -> 'List[Completion]':
+
         param_choices = []
 
         if HAS_CLICK_V8:
@@ -164,33 +168,30 @@ class CompletionParser:
 
         return param_choices
 
-    def _get_completion_from_choices_click_le_7(self, param_type, incomplete):
-        # type: (click.Choice, str) -> List[Completion]
+    def _get_completion_from_choices_click_le_7(
+        self, param_type: 'click.Choice', incomplete: str
+    ) -> 'List[Completion]':
 
-        if not getattr(param_type, "case_sensitive", True):
+        choices = []
+
+        case_insensitive = not getattr(param_type, "case_sensitive", True)
+
+        if case_insensitive:
             incomplete = incomplete.lower()
-            return [
-                Completion(
-                    choice,
-                    -len(incomplete),
-                    style=self.styles["argument"],
-                    display=repr(choice) if " " in choice else choice,
-                )
-                for choice in param_type.choices
-                if choice.lower().startswith(incomplete)
-            ]
 
-        else:
-            return [
-                Completion(
-                    choice,
-                    -len(incomplete),
-                    style=self.styles["argument"],
-                    display=repr(choice) if " " in choice else choice,
+        for choice in param_type.choices:
+            if case_insensitive:
+                choice = choice.lower()
+
+            if choice.startswith(incomplete):
+                choices.append(
+                    Completion(
+                        choice,
+                        -len(incomplete),
+                        style=self.styles["argument"],
+                        display=repr(choice) if " " in choice else choice,
+                    )
                 )
-                for choice in param_type.choices
-                if choice.startswith(incomplete)
-            ]
 
     def _get_completion_for_Path_types(self, incomplete):
         # type: (str) -> List[Completion]

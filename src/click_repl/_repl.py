@@ -7,11 +7,8 @@ from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
 from .exceptions import ClickExit, CommandLineParserError, ExitReplException
-from .utils import _execute_internal_and_sys_cmds
+from ._internal_cmds import _execute_internal_and_sys_cmds
 from .core import ClickReplContext
-
-
-__all__ = ["bootstrap_prompt", "register_repl", "repl"]
 
 
 if t.TYPE_CHECKING:
@@ -43,15 +40,15 @@ def bootstrap_prompt(
         "mouse_support": True,
     }
 
-    if enable_validator:
-        defaults["validator"] = None
+    if enable_validator and prompt_kwargs.get('validator', None) is None:
+        prompt_kwargs["validator"] = None
 
     defaults.update(prompt_kwargs)
     return defaults
 
 
 def repl(
-    old_ctx: 'Context',
+    group_ctx: 'Context',
     prompt_kwargs: 'Dict[str, Any]' = {},
     allow_system_commands: bool = True,
     allow_internal_commands: bool = True,
@@ -72,15 +69,20 @@ def repl(
     # parent should be available, but we're not going to bother if not
     # group_ctx = old_ctx.parent or old_ctx  # type: Context
 
-    group_ctx: 'Context' = old_ctx
     while (
         group_ctx.parent is not None
-        and not isinstance(group_ctx.command, click.MultiCommand)
+        and not isinstance(group_ctx.command, click.Group)
     ):
         group_ctx = group_ctx.parent
 
     group: 'Group' = group_ctx.command  # type: ignore[assignment]
     isatty = sys.stdin.isatty()
+
+    while (
+        group_ctx.parent is not None
+        and not isinstance(group_ctx.command, click.MultiCommand)
+    ):
+        group_ctx = group_ctx.parent
 
     if styles is None:
         styles = {
@@ -95,27 +97,26 @@ def repl(
     # Delete the REPL command from those available, as we don't want to allow
     # nesting REPLs (note: pass `None` to `pop` as we don't want to error if
     # REPL command already not present for some reason).
-    repl_command_name = old_ctx.command.name
+    repl_command_name = group.name
+
     if isinstance(group_ctx.command, click.CommandCollection):
         available_commands = {
             cmd_name: cmd_obj
             for source in group_ctx.command.sources
             for cmd_name, cmd_obj in source.commands.items()  # type: ignore[attr-defined]
         }
+
     else:
         available_commands = group_ctx.command.commands  # type: ignore[attr-defined]
 
     original_command = available_commands.pop(repl_command_name, None)
 
     if isatty:
-        # session = PromptSession(
-        #   **prompt_kwargs
-        # )  # type: PromptSession[Mapping[str, Any]]
         prompt_kwargs = bootstrap_prompt(
             group, prompt_kwargs, group_ctx, enable_validator, styles
         )
 
-    with ClickReplContext(group_ctx, isatty, prompt_kwargs) as repl_ctx:
+    with ClickReplContext(group_ctx, prompt_kwargs, styles) as repl_ctx:
         while True:
             try:
                 command = repl_ctx.get_command()

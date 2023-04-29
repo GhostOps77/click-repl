@@ -19,14 +19,12 @@ _locals = local()
 _internal_commands = _locals.__dict__  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501
 
 
-def exit():
-    # type: () -> NoReturn
+def exit() -> 'NoReturn':
     """Exit the repl"""
     _exit_internal()
 
 
-def dispatch_repl_commands(command):
-    # type: (str) -> bool
+def dispatch_repl_commands(command: str) -> bool:
     """
     Execute system commands entered in the repl.
 
@@ -39,8 +37,7 @@ def dispatch_repl_commands(command):
     return False
 
 
-def handle_internal_commands(command):
-    # type: (str) -> Any
+def handle_internal_commands(command: str) -> 'Any':
     """
     Run repl-internal commands.
 
@@ -52,8 +49,9 @@ def handle_internal_commands(command):
             return target()
 
 
-def _register_internal_command(names, target, description=None):
-    # type: (Iterable[str], Callable[[], Any], Optional[str]) -> None
+def _register_internal_command(
+    names: 'Iterable[str]', target: 'Callable[[], Any]', description: 'Optional[str]' = None
+) -> None:
 
     if not callable(target):
         raise ValueError("Internal command must be a callable")
@@ -71,8 +69,9 @@ def _register_internal_command(names, target, description=None):
         _internal_commands[name] = (target, description)
 
 
-def _get_registered_target(name, default=None):
-    # type: (str, Optional[Any]) -> Union[Callable[[], Any], Any]
+def _get_registered_target(
+    name: str, default: 'Optional[Any]' = None
+) -> 'Union[Callable[[], Any], Any]':
 
     target_info = _internal_commands.get(name)
     if target_info:
@@ -80,13 +79,11 @@ def _get_registered_target(name, default=None):
     return default
 
 
-def _exit_internal():
-    # type: () -> NoReturn
+def _exit_internal() -> 'NoReturn':
     raise ExitReplException()
 
 
-def _help_internal():
-    # type: () -> str
+def _help_internal() -> str:
     formatter = click.HelpFormatter()
     formatter.write_heading("REPL help")
     formatter.indent()
@@ -117,11 +114,10 @@ _register_internal_command(
 
 
 def _execute_internal_and_sys_cmds(
-    command,
-    allow_internal_commands=True,
-    allow_system_commands=True,
-):
-    # type: (str, bool, bool) -> Optional[List[str]]
+    command: str,
+    allow_internal_commands: bool = True,
+    allow_system_commands: bool = True,
+) -> 'Optional[List[str]]':
     """
     Executes internal, system, and all the other registered click commands from the input
     """

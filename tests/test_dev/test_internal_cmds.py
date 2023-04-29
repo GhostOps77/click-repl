@@ -1,10 +1,12 @@
 import click_repl
 import pytest
 
+from click_repl._internal_cmds import _execute_internal_and_sys_cmds
+
 
 @pytest.mark.parametrize("test_input", [":help", ":h", ":?"])
 def test_internal_help_commands(capsys, test_input):
-    click_repl.utils._execute_internal_and_sys_cmds(
+    _execute_internal_and_sys_cmds(
         test_input, allow_internal_commands=True
     )
 
@@ -29,12 +31,12 @@ def test_internal_help_commands(capsys, test_input):
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_internal_exit_commands(test_input):
     with pytest.raises(click_repl.ExitReplException):
-        click_repl.utils._execute_internal_and_sys_cmds(test_input)
+        _execute_internal_and_sys_cmds(test_input)
 
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_no_internal_commands(capfd, test_input):
-    click_repl.utils._execute_internal_and_sys_cmds(
+    _execute_internal_and_sys_cmds(
         test_input, allow_internal_commands=False
     )
 

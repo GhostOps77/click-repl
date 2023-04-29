@@ -3,7 +3,7 @@ import typing as t
 from functools import wraps
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.auto_suggest import ThreadedAutoSuggest
+# from prompt_toolkit.auto_suggest import ThreadedAutoSuggest
 
 from ._completer import ClickCompleter
 from ._globals import get_current_repl_ctx, push_context, pop_context
@@ -32,25 +32,14 @@ class ClickReplContext:
     def __init__(self, group_ctx, prompt_kwargs=None, styles=None):
         # type: (Context, Optional[Dict[str, Any]], Optional[Dict[str, str]]) -> None
 
-        group = group_ctx.command
-        default_kwargs = {
-            "history": InMemoryHistory(),
-            "completer": ClickCompleter(group, group_ctx, styles=styles),
-            "message": "> ",
-            # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
-            "complete_in_thread": True,
-            "complete_while_typing": True,
-            "mouse_support": True,
-        }
-
-        if isinstance(prompt_kwargs, dict):
-            default_kwargs.update(prompt_kwargs)
+        self.group_ctx = group_ctx
+        self.prompt_kwargs = prompt_kwargs
 
         if sys.stdin.isatty():
-            self.session = PromptSession(
-                **default_kwargs
-            )  # type: Optional[PromptSession[Dict[str, Any]]]
-            self._history = self.session.history  # type: Union[History, List[str]]
+            self.session: 'Optional[PromptSession[Dict[str, Any]]]' = PromptSession(
+                **prompt_kwargs
+            )
+            self._history: 'Union[History, List[str]]' = self.session.history
 
             def get_command() -> str:
                 return self.session.prompt()  # type: ignore[return-value, union-attr]
@@ -59,16 +48,13 @@ class ClickReplContext:
             self._history = []
 
             def get_command() -> str:
-                inp = sys.stdin.readline()  # type: str
+                inp = sys.stdin.readline()
                 self._history.append(inp)  # type: ignore[union-attr]
                 return inp
 
             self.session = None
 
         self.get_command = get_command  # type: Callable[..., str]
-
-        self.group_ctx = group_ctx
-        self.prompt_kwargs = default_kwargs
 
     def __enter__(self):
         # type: () -> ClickReplContext
@@ -110,8 +96,7 @@ class ClickReplContext:
         else:
             _history = reversed(self._history)  # type: ignore[arg-type]
 
-        for i in _history:
-            yield i
+        yield from _history
 
 
 def pass_context(func):
