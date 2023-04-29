@@ -346,8 +346,8 @@ class CompletionParser:
 
             elif isinstance(param, click.Argument):
                 if (
-                    autocomplete_ctx.params.get(param.name)
-                    is None  # type: ignore[arg-type]
+                    autocomplete_ctx.params.get(param.name)  # type: ignore[arg-type]
+                    is None
                     or param.nargs == -1
                 ):
                     choices.extend(
