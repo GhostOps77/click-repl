@@ -7,8 +7,8 @@ from prompt_toolkit import PromptSession
 from ._globals import get_current_repl_ctx, pop_context, push_context
 
 if t.TYPE_CHECKING:
-    from typing import (Any, Callable, Dict, Generator, List,  # noqa: F401
-                        Optional, Union)
+    from typing import List  # noqa: F401
+    from typing import Any, Dict, Optional, Union
 
     from click import Context  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401

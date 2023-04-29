@@ -312,7 +312,7 @@ class CompletionParser:
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
                     # print(f'{args[param.nargs * -1 :] = } {incomplete = !r}')
-                    if option in args[param.nargs * -1:] and not param.count:
+                    if option in args[param.nargs * -1 :] and not param.count:
                         param_called = True
                         # print(f"param called by {param.name}")
                         break
