@@ -1,10 +1,12 @@
-import click
 import typing as t
 from threading import local
 
+import click
+
 if t.TYPE_CHECKING:
+    from typing import NoReturn, Union  # noqa: F401
+
     from .core import ClickReplContext  # noqa: F401
-    from typing import Union, NoReturn  # noqa: F401
 
 
 HAS_CLICK6 = click.__version__[0] == "6"
@@ -13,8 +15,8 @@ _locals.stack = []
 
 
 def get_current_repl_ctx(
-    silent: bool = False
-) -> 'Union[ClickReplContext, None, NoReturn]':
+    silent: bool = False,
+) -> "Union[ClickReplContext, None, NoReturn]":
     try:
         return _locals.stack[-1]  # type: ignore[no-any-return, syntax]
     except (AttributeError, IndexError):
@@ -24,7 +26,7 @@ def get_current_repl_ctx(
     return None
 
 
-def push_context(ctx: 'ClickReplContext') -> None:
+def push_context(ctx: "ClickReplContext") -> None:
     """Pushes a new context to the current stack."""
     _locals.stack.append(ctx)
 

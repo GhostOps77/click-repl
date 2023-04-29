@@ -1,13 +1,16 @@
 import sys
 import typing as t
 from functools import wraps
+
 from prompt_toolkit import PromptSession
 
-from ._globals import get_current_repl_ctx, push_context, pop_context
+from ._globals import get_current_repl_ctx, pop_context, push_context
 
 if t.TYPE_CHECKING:
+    from typing import (Any, Callable, Dict, Generator, List,  # noqa: F401
+                        Optional, Union)
+
     from click import Context  # noqa: F401
-    from typing import Any, Dict, List, Optional, Callable, Generator, Union  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
 
 
@@ -23,7 +26,11 @@ class ClickReplContext:
     """
 
     __slots__ = (
-        "group_ctx", "prompt_kwargs", "session", "_history", "get_command",
+        "group_ctx",
+        "prompt_kwargs",
+        "session",
+        "_history",
+        "get_command",
     )
 
     def __init__(self, group_ctx, prompt_kwargs, styles=None):
@@ -33,10 +40,10 @@ class ClickReplContext:
         self.prompt_kwargs = prompt_kwargs
 
         if sys.stdin.isatty():
-            self.session: 'Optional[PromptSession[Dict[str, Any]]]' = PromptSession(
+            self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs
             )
-            self._history: 'Union[History, List[str]]' = self.session.history
+            self._history: "Union[History, List[str]]" = self.session.history
 
             def get_command() -> str:
                 return self.session.prompt()  # type: ignore[return-value, union-attr]
@@ -63,7 +70,7 @@ class ClickReplContext:
         pop_context()
 
     @property
-    def prompt_message(self) -> 'Optional[str]':
+    def prompt_message(self) -> "Optional[str]":
         if isinstance(self.session, PromptSession):
             return str(self.session.message)
         return None
@@ -76,10 +83,7 @@ class ClickReplContext:
 
     def to_info_dict(self):
         # type: () -> Dict[str, Any]
-        return {
-            'prompt_kwargs': self.prompt_kwargs,
-            'group_ctx': self.group_ctx
-        }
+        return {"prompt_kwargs": self.prompt_kwargs, "group_ctx": self.group_ctx}
 
     def prompt_reset(self):
         # type: () -> None

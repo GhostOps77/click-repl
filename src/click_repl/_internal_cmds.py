@@ -1,25 +1,25 @@
-import click
 import os
+import typing as t
 from collections import defaultdict
 from threading import local
-import typing as t
 
-from .exceptions import ExitReplException
+import click
+
 from ._parser import split_arg_string
-
+from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import (  # noqa: F401
-        Any, Callable, Iterable, NoReturn, Optional, Union,
-        List, Dict, Tuple
-    )
+    from typing import (Any, Callable, Dict, Iterable, List,  # noqa: F401
+                        NoReturn, Optional, Tuple, Union)
 
 
 _locals = local()
-_internal_commands = _locals.__dict__  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501
+_internal_commands = (
+    _locals.__dict__
+)  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501
 
 
-def exit() -> 'NoReturn':
+def exit() -> "NoReturn":
     """Exit the repl"""
     _exit_internal()
 
@@ -37,7 +37,7 @@ def dispatch_repl_commands(command: str) -> bool:
     return False
 
 
-def handle_internal_commands(command: str) -> 'Any':
+def handle_internal_commands(command: str) -> "Any":
     """
     Run repl-internal commands.
 
@@ -50,11 +50,10 @@ def handle_internal_commands(command: str) -> 'Any':
 
 
 def _register_internal_command(
-    names: 'Iterable[str]',
-    target: 'Callable[[], Any]',
-    description: 'Optional[str]' = None
+    names: "Iterable[str]",
+    target: "Callable[[], Any]",
+    description: "Optional[str]" = None,
 ) -> None:
-
     if not callable(target):
         raise ValueError("Internal command must be a callable")
 
@@ -72,16 +71,15 @@ def _register_internal_command(
 
 
 def _get_registered_target(
-    name: str, default: 'Optional[Any]' = None
-) -> 'Union[Callable[[], Any], Any]':
-
+    name: str, default: "Optional[Any]" = None
+) -> "Union[Callable[[], Any], Any]":
     target_info = _internal_commands.get(name)
     if target_info:
         return target_info[0]
     return default
 
 
-def _exit_internal() -> 'NoReturn':
+def _exit_internal() -> "NoReturn":
     raise ExitReplException()
 
 
@@ -100,10 +98,12 @@ def _help_internal() -> str:
         for mnemonic, target_info in _internal_commands.items():
             info_table[target_info[1]].append(mnemonic)
 
-        formatter.write_dl((  # type: ignore[arg-type]
+        formatter.write_dl(
+            (  # type: ignore[arg-type]
                 ", ".join(map(":{}".format, sorted(mnemonics))),
                 description,
-            ) for description, mnemonics in info_table.items()
+            )
+            for description, mnemonics in info_table.items()
         )
 
     return formatter.getvalue()
@@ -119,7 +119,7 @@ def _execute_internal_and_sys_cmds(
     command: str,
     allow_internal_commands: bool = True,
     allow_system_commands: bool = True,
-) -> 'Optional[List[str]]':
+) -> "Optional[List[str]]":
     """
     Executes internal, system, and all the other registered click commands from the input
     """
