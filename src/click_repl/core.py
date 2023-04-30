@@ -33,8 +33,11 @@ class ClickReplContext:
         "get_command",
     )
 
-    def __init__(self, group_ctx, prompt_kwargs, styles=None):
-        # type: (Context, Dict[str, Any], Optional[Dict[str, str]]) -> None
+    def __init__(
+        self,
+        group_ctx: 'Context',
+        prompt_kwargs: 'Dict[str, Any]'
+    ) -> None:
 
         self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs
@@ -60,13 +63,11 @@ class ClickReplContext:
 
         self.get_command = get_command  # type: Callable[..., str]
 
-    def __enter__(self):
-        # type: () -> ClickReplContext
+    def __enter__(self) -> 'ClickReplContext':
         push_context(self)
         return self
 
-    def __exit__(self, *args):
-        # type: (Any) -> None
+    def __exit__(self, *args: 'Any') -> None:
         pop_context()
 
     @property
@@ -76,22 +77,18 @@ class ClickReplContext:
         return None
 
     @prompt_message.setter
-    def prompt_message(self, value):
-        # type: (str) -> None
+    def prompt_message(self, value: str) -> None:
         if isinstance(self.session, PromptSession):
             self.session.message = value
 
-    def to_info_dict(self):
-        # type: () -> Dict[str, Any]
+    def to_info_dict(self) -> 'Dict[str, Any]':
         return {"prompt_kwargs": self.prompt_kwargs, "group_ctx": self.group_ctx}
 
-    def prompt_reset(self):
-        # type: () -> None
+    def prompt_reset(self) -> None:
         if self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)
 
-    def history(self):
-        # type: () -> Generator[str, None, None]
+    def history(self) -> 'Generator[str, None, None]':
         if self.session is not None:
             _history = self._history.load_history_strings()  # type: ignore[union-attr]
         else:

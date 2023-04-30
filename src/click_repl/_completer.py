@@ -92,35 +92,11 @@ class ClickCompleter(Completer):
         choices = []  # type: List[Completion]
 
         try:
-            # choices.extend(
-            #     self._get_completion_for_cmd_args(
-            #         ctx_command, incomplete, autocomplete_ctx, args
-            #     )
-            # )
-            if isinstance(self.ctx_command, click.MultiCommand):
-                for name in self.ctx_command.list_commands(self.parsed_ctx):
-                    command = self.ctx_command.get_command(self.parsed_ctx, name)
-                    if getattr(command, "hidden", False):
-                        continue
-
-                    elif name.startswith(incomplete):
-                        choices.append(
-                            Completion(
-                                name,
-                                -len(incomplete),
-                                display_meta=getattr(command, "short_help", ""),
-                            )
-                        )
-
-            else:
-                choices.extend(
-                    self.completion_parser._get_completion_for_cmd_args(
-                        self.ctx_command,
-                        incomplete,
-                        self.parsed_ctx,
-                        args,
-                    )
+            choices.extend(
+                self.completion_parser._get_completions_for_command(
+                    self.ctx_command, self.parsed_ctx, args, incomplete
                 )
+            )
 
         except Exception as e:
             click.echo(f"{type(e).__name__}: {e}")

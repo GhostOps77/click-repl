@@ -53,7 +53,7 @@ def repl(
     prompt_kwargs: "Dict[str, Any]" = {},
     allow_system_commands: bool = True,
     allow_internal_commands: bool = True,
-    enable_validator: bool = False,
+    validator: bool = False,
     styles: "Optional[Dict[str, str]]" = None,
 ) -> None:
     """
@@ -112,12 +112,12 @@ def repl(
 
     if isatty:
         prompt_kwargs = bootstrap_prompt(
-            group, prompt_kwargs, group_ctx, enable_validator, styles
+            group, prompt_kwargs, group_ctx, validator, styles
         )
     else:
         prompt_kwargs = {}
 
-    with ClickReplContext(group_ctx, prompt_kwargs, styles) as repl_ctx:
+    with ClickReplContext(group_ctx, prompt_kwargs) as repl_ctx:
         while True:
             try:
                 command = repl_ctx.get_command()
