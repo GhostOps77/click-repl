@@ -9,8 +9,8 @@ from ._parser import split_arg_string
 from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import (Any, Callable, Dict, Iterable, List,  # noqa: F401
-                        NoReturn, Optional, Tuple, Union)
+    from typing import List  # noqa: F401
+    from typing import (Any, Callable, Iterable, NoReturn, Optional, Union)
 
 
 _locals = local()
