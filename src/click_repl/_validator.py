@@ -4,12 +4,13 @@
 
 # class ClickValidator(Validator):
 #     def validate(self, document):
-#         tmp = _split_args(document.text_before_cursor)
-
-#         if tmp is None:
+#         if document.text.startswith(
+#             (self.internal_cmd_prefix, self.system_cmd_prefix)
+#         ):
 #             return
 
-#         args, incomplete = tmp
+#         args, incomplete = _split_args(document.text_before_cursor)
+
 #         i = 0
 
 #         raise ValidationError(

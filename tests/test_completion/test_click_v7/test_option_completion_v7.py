@@ -1,7 +1,8 @@
 import click
-from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
 import pytest
+from prompt_toolkit.document import Document
+
+from click_repl import ClickCompleter
 
 
 @click.group()

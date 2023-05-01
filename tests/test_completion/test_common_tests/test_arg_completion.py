@@ -1,7 +1,8 @@
 import click
-from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
 import pytest
+from prompt_toolkit.document import Document
+
+from click_repl import ClickCompleter
 
 
 @click.group()
@@ -24,20 +25,23 @@ def arg_choices(handler):
 c = ClickCompleter(root_command, click.Context(root_command))
 
 
-@pytest.mark.parametrize("test_input, expected", [
-    ("bool-arg ", {"true", "false"}),
-    ("bool-arg t", {"true"}),
-    ("bool-arg true ", set()),
-])
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("bool-arg ", {"true", "false"}),
+        ("bool-arg t", {"true"}),
+        ("bool-arg true ", set()),
+    ],
+)
 def test_boolean_arg(test_input, expected):
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
 
 
-@pytest.mark.parametrize("test_input, expected", [
-    ("arg-choices ", {"foo", "bar"}),
-    ("arg-choices foo ", set())
-])
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [("arg-choices ", {"foo", "bar"}), ("arg-choices foo ", set())],
+)
 def test_arg_choices(test_input, expected):
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

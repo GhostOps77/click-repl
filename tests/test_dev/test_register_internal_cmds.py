@@ -1,5 +1,7 @@
-from click_repl._internal_cmds import _register_internal_command, _help_internal
 import pytest
+
+from click_repl._internal_cmds import (_help_internal,
+                                       _register_internal_command)
 
 
 def test_register_cmd_from_str():

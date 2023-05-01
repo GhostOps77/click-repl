@@ -2,7 +2,8 @@ import os
 import typing as t
 from functools import lru_cache
 from glob import iglob
-from pathlib import Path
+
+# from pathlib import Path
 from shlex import shlex
 
 import click
@@ -11,8 +12,8 @@ from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError
 
 if t.TYPE_CHECKING:
-    from typing import (Dict, List, NoReturn, Optional, Tuple,  # noqa: F401
-                        Union, Generator)
+    from typing import Tuple  # noqa: F401
+    from typing import Dict, Generator, List, NoReturn, Optional, Union
 
     from click import Command, Context, Parameter  # noqa: F401
 
@@ -139,9 +140,9 @@ class CompletionParser:
         for autocomplete in autocompletions:
             if isinstance(autocomplete, tuple):
                 yield Completion(
-                        autocomplete[0],
-                        -len(incomplete),
-                        display_meta=autocomplete[1],
+                    autocomplete[0],
+                    -len(incomplete),
+                    display_meta=autocomplete[1],
                 )
 
             elif HAS_CLICK_V8 and isinstance(
@@ -178,13 +179,15 @@ class CompletionParser:
 
     def _get_completion_for_Path_types(
         self, incomplete: str
-    ) -> 'Generator[Completion, None, List]':
+    ) -> "Generator[Completion, None, List[str]]":
 
         if "*" in incomplete:
             return []
 
         _expanded_env_incomplete = os.path.expandvars(incomplete)
-        search_pattern = _expanded_env_incomplete.strip("'\"").replace("\\\\", "\\") + "*"
+        search_pattern = (
+            _expanded_env_incomplete.strip("'\"").replace("\\\\", "\\") + "*"
+        )
         quote = ""  # Quote thats used to surround the path in shell
 
         if " " in _expanded_env_incomplete:
@@ -212,7 +215,7 @@ class CompletionParser:
 
     def _get_completion_for_Boolean_type(
         self, incomplete: str
-    ) -> 'Generator[Completion, None, None]':
+    ) -> "Generator[Completion, None, None]":
 
         boolean_mapping = {
             "true": ("1", "true", "t", "yes", "y", "on"),
@@ -226,8 +229,8 @@ class CompletionParser:
                 )
 
     def _get_completion_for_Range_types(
-        self, param_type: 'Union[click.IntRange, click.FloatRange]'
-    ) -> 'List[Completion]':
+        self, param_type: "Union[click.IntRange, click.FloatRange]"
+    ) -> "List[Completion]":
 
         clamp = " clamped" if param_type.clamp else ""
         display_meta = f"{param_type._describe_range()}{clamp}"
@@ -236,14 +239,14 @@ class CompletionParser:
 
     def _get_completion_from_params(
         self,
-        autocomplete_ctx: 'Context',
-        param: 'Parameter',
-        args: 'List[str]',
-        incomplete: str
-    ) -> 'List[Completion]':
+        autocomplete_ctx: "Context",
+        param: "Parameter",
+        args: "List[str]",
+        incomplete: str,
+    ) -> "List[Completion]":
 
-        choices: 'List[Completion]' = []
-        param_type: 'click.ParamType' = param.type
+        choices: "List[Completion]" = []
+        param_type: "click.ParamType" = param.type
 
         if isinstance(param_type, _Range_types):
             return self._get_completion_for_Range_types(param_type)
@@ -277,11 +280,11 @@ class CompletionParser:
 
     def _get_completion_for_cmd_args(
         self,
-        ctx_command: 'Command',
-        autocomplete_ctx: 'Context',
-        args: 'List[str]',
-        incomplete: 'str',
-    ) -> 'Union[List[Completion], NoReturn]':
+        ctx_command: "Command",
+        autocomplete_ctx: "Context",
+        args: "List[str]",
+        incomplete: "str",
+    ) -> "Union[List[Completion], NoReturn]":
 
         choices = []
         param_called = False
@@ -358,12 +361,8 @@ class CompletionParser:
         return choices
 
     def _get_completions_for_command(
-        self,
-        ctx_cmd: 'Command',
-        ctx: 'Context',
-        args: 'List[str]',
-        incomplete: str
-    ) -> 'Generator[Completion, None, None]':
+        self, ctx_cmd: "Command", ctx: "Context", args: "List[str]", incomplete: str
+    ) -> "Generator[Completion, None, None]":
 
         if isinstance(ctx_cmd, click.MultiCommand):
             for name in ctx_cmd.list_commands(ctx):
@@ -379,6 +378,4 @@ class CompletionParser:
                     )
 
         else:
-            yield from self._get_completion_for_cmd_args(
-                ctx_cmd, ctx, args, incomplete, 
-            )
+            yield from self._get_completion_for_cmd_args(ctx_cmd, ctx, args, incomplete)

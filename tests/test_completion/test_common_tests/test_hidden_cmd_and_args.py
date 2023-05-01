@@ -1,7 +1,8 @@
 import click
-from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
 import pytest
+from prompt_toolkit.document import Document
+
+from click_repl import ClickCompleter
 
 
 @click.group()
@@ -26,12 +27,15 @@ def test_hidden_option():
     click.__version__[0] < "8",
     reason="click-v8 built-in shell complete is not available, so skipped",
 )
-@pytest.mark.parametrize("test_input", [
-    "args-",
-    "args-choices",
-    "args-choices-hidden-cmd foo ",
-    "args-choices-hidden-cmd --handler "
-])
+@pytest.mark.parametrize(
+    "test_input",
+    [
+        "args-",
+        "args-choices",
+        "args-choices-hidden-cmd foo ",
+        "args-choices-hidden-cmd --handler ",
+    ],
+)
 def test_args_of_hidden_command(test_input):
     @root_command.command(hidden=True)
     @click.argument("handler1", type=click.Choice(("foo", "bar")))

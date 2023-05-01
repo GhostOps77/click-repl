@@ -1,7 +1,8 @@
 import click
-from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
 import pytest
+from prompt_toolkit.document import Document
+
+from click_repl import ClickCompleter
 
 
 @click.group()
@@ -46,10 +47,13 @@ def return_type_tuple_shell_complete(ctx, args, incomplete):
     int(click.__version__[0]) != 7,
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
-@pytest.mark.parametrize("test_input, expected", [
-    ("tuple-type-autocompletion-cmd ", {"Hi", "Please", "Hey", "Aye"}),
-    ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"})
-])
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("tuple-type-autocompletion-cmd ", {"Hi", "Please", "Hey", "Aye"}),
+        ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"}),
+    ],
+)
 def test_tuple_return_type_shell_complete_func_click7(test_input, expected):
     @root_command.command()
     @click.argument("foo", autocompletion=return_type_tuple_shell_complete)
@@ -58,5 +62,5 @@ def test_tuple_return_type_shell_complete_func_click7(test_input, expected):
 
     completions = list(c.get_completions(Document(test_input)))
     assert {x.text for x in completions} == expected and {
-            x.display_meta[0][-1] for x in completions
-        } == {i.lower() for i in expected}
+        x.display_meta[0][-1] for x in completions
+    } == {i.lower() for i in expected}

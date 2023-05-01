@@ -1,9 +1,8 @@
-import click_repl
 import pytest
 
-from click_repl._internal_cmds import (
-    _help_internal, _exit_internal, _get_registered_target
-)
+import click_repl
+from click_repl._internal_cmds import (_exit_internal, _get_registered_target,
+                                       _help_internal)
 
 
 @pytest.mark.parametrize("test_input", ["help", "h", "?"])
@@ -18,9 +17,7 @@ def test_get_registered_target_exit_cmd(test_input):
 
 @pytest.mark.parametrize("test_input", ["hi", "hello", "76q358767"])
 def test_get_registered_target_with_default_value(test_input):
-    assert (
-        _get_registered_target(test_input, "Not Found") == "Not Found"
-    )
+    assert _get_registered_target(test_input, "Not Found") == "Not Found"
 
 
 def test_exit_repl_function():

@@ -7,8 +7,15 @@ from prompt_toolkit import PromptSession
 from ._globals import get_current_repl_ctx, pop_context, push_context
 
 if t.TYPE_CHECKING:
-    from typing import List  # noqa: F401
-    from typing import Any, Dict, Optional, Union
+    from typing import (
+        Any,
+        Callable,
+        Dict,
+        Generator,
+        List,  # noqa: F401
+        Optional,
+        Union,
+    )
 
     from click import Context  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
@@ -33,11 +40,7 @@ class ClickReplContext:
         "get_command",
     )
 
-    def __init__(
-        self,
-        group_ctx: 'Context',
-        prompt_kwargs: 'Dict[str, Any]'
-    ) -> None:
+    def __init__(self, group_ctx: "Context", prompt_kwargs: "Dict[str, Any]") -> None:
 
         self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs
@@ -61,13 +64,13 @@ class ClickReplContext:
 
             self.session = None
 
-        self.get_command = get_command  # type: Callable[..., str]
+        self.get_command: "Callable[..., str]" = get_command
 
-    def __enter__(self) -> 'ClickReplContext':
+    def __enter__(self) -> "ClickReplContext":
         push_context(self)
         return self
 
-    def __exit__(self, *args: 'Any') -> None:
+    def __exit__(self, *args: "Any") -> None:
         pop_context()
 
     @property
@@ -81,14 +84,14 @@ class ClickReplContext:
         if isinstance(self.session, PromptSession):
             self.session.message = value
 
-    def to_info_dict(self) -> 'Dict[str, Any]':
+    def to_info_dict(self) -> "Dict[str, Any]":
         return {"prompt_kwargs": self.prompt_kwargs, "group_ctx": self.group_ctx}
 
     def prompt_reset(self) -> None:
         if self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)
 
-    def history(self) -> 'Generator[str, None, None]':
+    def history(self) -> "Generator[str, None, None]":
         if self.session is not None:
             _history = self._history.load_history_strings()  # type: ignore[union-attr]
         else:
@@ -97,8 +100,7 @@ class ClickReplContext:
         yield from _history
 
 
-def pass_context(func):
-    # type: (Callable[..., Any]) -> Callable[..., Any]
+def pass_context(func: "Callable[..., Any]") -> "Callable[..., Any]":
     @wraps(func)
     def decorator(*args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> Any

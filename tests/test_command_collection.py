@@ -1,8 +1,9 @@
 import click
-from click_repl._globals import HAS_CLICK6
-from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
 import pytest
+from prompt_toolkit.document import Document
+
+from click_repl import ClickCompleter
+from click_repl._globals import HAS_CLICK6
 
 
 def test_command_collection():
@@ -55,16 +56,22 @@ def second_level_command_two():
 c3 = ClickCompleter(root_group, click.Context(root_group))
 
 
-@pytest.mark.parametrize("test_input, expected", [
-    (" ", {"first-level-command"}),
-    ("first-level-command ", {
-        "second-level-command-one",
-        "second-level-command-two",
-    })
-])
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (" ", {"first-level-command"}),
+        (
+            "first-level-command ",
+            {
+                "second-level-command-one",
+                "second-level-command-two",
+            },
+        ),
+    ],
+)
 def test_completion_multilevel_command(test_input, expected):
     completions = c3.get_completions(Document(test_input))
     if HAS_CLICK6:
-        assert set(x.text for x in completions) == expected.replace('-', '_')
+        assert set(x.text for x in completions) == expected.replace("-", "_")
     else:
         assert set(x.text for x in completions) == expected

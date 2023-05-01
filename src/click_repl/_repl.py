@@ -2,8 +2,7 @@ import sys
 import typing as t
 
 import click
-from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
-                                         ThreadedAutoSuggest)
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter

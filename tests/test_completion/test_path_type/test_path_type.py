@@ -1,9 +1,11 @@
-import click
-from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
-import os
 import glob
+import os
+
+import click
 import pytest
+from prompt_toolkit.document import Document
+
+from click_repl import ClickCompleter
 
 
 @click.group()

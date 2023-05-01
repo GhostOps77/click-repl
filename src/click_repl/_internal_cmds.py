@@ -9,14 +9,13 @@ from ._parser import split_arg_string
 from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import List  # noqa: F401
-    from typing import (Any, Callable, Iterable, NoReturn, Optional, Union)
+    from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
 
 _locals = local()
-_internal_commands = (
-    _locals.__dict__
-)  # type: Dict[str, Tuple[Callable[[], Any], Optional[str]]]  # noqa: E501
+_internal_commands: """Dict[
+    str, Tuple[Callable[[], Any], Optional[str]]
+]""" = _locals.__dict__
 
 
 def exit() -> "NoReturn":
@@ -50,9 +49,9 @@ def handle_internal_commands(command: str) -> "Any":
 
 
 def _register_internal_command(
-    names: "Iterable[str]",
-    target: "Callable[[], Any]",
-    description: "Optional[str]" = None,
+    names: "t.Iterable[str]",
+    target: "t.Callable[[], Any]",
+    description: "t.Optional[str]" = None,
 ) -> None:
     if not callable(target):
         raise ValueError("Internal command must be a callable")
