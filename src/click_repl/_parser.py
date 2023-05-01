@@ -14,7 +14,7 @@ from .exceptions import CommandLineParserError
 if t.TYPE_CHECKING:
     from typing import Dict, Generator, List, NoReturn, Tuple, Union
 
-    from click import Command, Context, Group, Parameter  # noqa: F401
+    from click import Command, Context, Group, Parameter, MultiCommand  # noqa: F401
 
 
 IS_WINDOWS = os.name == "nt"
@@ -370,14 +370,28 @@ class Completioner:
         return choices
 
     def _get_completions_for_command(
-        self, ctx_cmd: "Command", ctx: "Context", args: "List[str]", incomplete: str
+        self,
+        ctx_cmd: "Union[Command, MultiCommand]",
+        ctx: "Context",
+        args: "List[str]",
+        incomplete: str,
     ) -> "Generator[Completion, None, None]":
 
-        if isinstance(ctx_cmd, click.MultiCommand) and all(
-            value is not None for value in ctx.params.values()
-        ):
-            for name in ctx_cmd.list_commands(ctx):
-                command = ctx_cmd.get_command(ctx, name)
+        parent_group = None
+        if ctx.parent is not None:
+            parent_group = ctx.parent.command
+
+        if all(value is not None for value in ctx.params.values()):
+            if isinstance(ctx_cmd, click.MultiCommand):
+                cmd = ctx_cmd
+
+            # If the current command's parent Group has chain=True
+            # then we suggest the commands of th group again and again
+            elif parent_group is not None and getattr(parent_group, "chain", False):
+                cmd = parent_group  # type: ignore[assignment]
+
+            for name in cmd.list_commands(ctx):
+                command = cmd.get_command(ctx, name)
                 if getattr(command, "hidden", False):
                     continue
 

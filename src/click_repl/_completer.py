@@ -102,13 +102,16 @@ class ClickCompleter(Completer):
         # autocomplete_ctx = self.ctx or self.parsed_ctx
 
         # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
+        # if self.parsed_ctx.parent is not None:
+        #   print(f'\n(parent ctx) {self.parsed_ctx.parent.command = }\n')
+
         # print(f'\n{self.cli_args = }')
         # print(f'(from get_completions) {vars(autocomplete_ctx) = }\n')
 
         if getattr(self.ctx_command, "hidden", False):
             return
 
-        choices = []  # type: List[Completion]
+        choices: "List[Completion]" = []
 
         try:
             choices.extend(
