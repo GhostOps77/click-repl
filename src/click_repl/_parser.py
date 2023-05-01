@@ -12,10 +12,9 @@ from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError
 
 if t.TYPE_CHECKING:
-    from typing import Tuple  # noqa: F401
-    from typing import Dict, Generator, List, NoReturn, Optional, Union
+    from typing import Dict, Generator, List, NoReturn, Tuple, Union
 
-    from click import Command, Context, Parameter  # noqa: F401
+    from click import Command, Context, Group, Parameter  # noqa: F401
 
 
 IS_WINDOWS = os.name == "nt"
@@ -51,7 +50,11 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
         ["example", "my file"]
         split_arg_string("example my\\")
         ["example", "my"]
-    :param string: String to split.
+
+    :param `string`: String to split.
+    :param `posix`: Split string in posix style (default: True)
+
+    Return: A list that contains the splitted string
     """
 
     lex = shlex(string, posix=posix, punctuation_chars=True)
@@ -70,17 +73,30 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     return out
 
 
-# @lru_cache(maxsize=3)
-def get_ctx_for_args(
-    cmd: "Command", parsed_args: "List[str]", group_args: "List[str]"
+@lru_cache(maxsize=3)
+def _get_ctx_for_args(
+    cmd: "Group", cmd_args: "Tuple[str]", group_args: "Tuple[str]"
 ) -> "Tuple[Command, Context]":
+    """Provides the resolved command and its relevant click.Context,
+    by parsing the given args
+
+    Keyword arguments:
+    :param cmd: Group (CLI) object.
+    :param cmd_args: List of args for the given command.
+    :param group_args: List of args, that have to be passed
+        to the given parent/CLI group.
+
+    Return: A tuple that has the resolved command
+        and its relevant click.Context.
+    """
+
     # Resolve context based on click version
     if HAS_CLICK_V8:
         parsed_ctx = click.shell_completion._resolve_context(
-            cmd, {}, "", group_args + parsed_args
+            cmd, {}, "", list(group_args + cmd_args)
         )
     else:
-        parsed_ctx = click._bashcomplete.resolve_ctx(cmd, "", group_args + parsed_args)
+        parsed_ctx = click._bashcomplete.resolve_ctx(cmd, "", list(group_args + cmd_args))
 
     ctx_command = parsed_ctx.command
     # opt_parser = OptionsParser(ctx_command, parsed_ctx)
@@ -89,10 +105,7 @@ def get_ctx_for_args(
 
 
 @lru_cache(maxsize=3)
-def _split_args(document_text: str) -> "Optional[Tuple[List[str], str]]":
-    if document_text.startswith(("!", ":")):
-        return None
-
+def _split_args(document_text: str) -> "Tuple[List[str], str]":
     args = split_arg_string(document_text, posix=False)
     cursor_within_command = document_text.rstrip() == document_text
 
@@ -108,13 +121,13 @@ def _split_args(document_text: str) -> "Optional[Tuple[List[str], str]]":
     return args, incomplete
 
 
-class CompletionParser:
+class Completioner:
     """Provides Completion items based on the given parameters
     along with the styles provided to it.
 
     Keyword arguments:
-    :param:`styles` -- Dictionary of styles in the way of prompt-toolkit module,
-    for arguments, options, etc.
+    :param `styles`: Dictionary of styles in the way of prompt-toolkit module,
+        for arguments, options, etc.
     """
 
     __slots__ = ("styles",)
@@ -179,15 +192,13 @@ class CompletionParser:
 
     def _get_completion_for_Path_types(
         self, incomplete: str
-    ) -> "Generator[Completion, None, List[str]]":
+    ) -> "Generator[Completion, None, None]":
 
         if "*" in incomplete:
-            return []
+            return
 
         _expanded_env_incomplete = os.path.expandvars(incomplete)
-        search_pattern = (
-            _expanded_env_incomplete.strip("'\"").replace("\\\\", "\\") + "*"
-        )
+        search_pattern = _expanded_env_incomplete.strip("'\"").replace("\\\\", "\\") + "*"
         quote = ""  # Quote thats used to surround the path in shell
 
         if " " in _expanded_env_incomplete:
@@ -224,9 +235,7 @@ class CompletionParser:
 
         for value, aliases in boolean_mapping.items():
             if any(alias.startswith(incomplete) for alias in aliases):
-                yield Completion(
-                    value, -len(incomplete), display_meta="/".join(aliases)
-                )
+                yield Completion(value, -len(incomplete), display_meta="/".join(aliases))
 
     def _get_completion_for_Range_types(
         self, param_type: "Union[click.IntRange, click.FloatRange]"
@@ -364,7 +373,9 @@ class CompletionParser:
         self, ctx_cmd: "Command", ctx: "Context", args: "List[str]", incomplete: str
     ) -> "Generator[Completion, None, None]":
 
-        if isinstance(ctx_cmd, click.MultiCommand):
+        if isinstance(ctx_cmd, click.MultiCommand) and all(
+            value is not None for value in ctx.params.values()
+        ):
             for name in ctx_cmd.list_commands(ctx):
                 command = ctx_cmd.get_command(ctx, name)
                 if getattr(command, "hidden", False):

@@ -1,8 +1,11 @@
 import pytest
 
 import click_repl
-from click_repl._internal_cmds import (_exit_internal, _get_registered_target,
-                                       _help_internal)
+from click_repl._internal_cmds import (
+    _exit_internal,
+    _get_registered_target,
+    _help_internal,
+)
 
 
 @pytest.mark.parametrize("test_input", ["help", "h", "?"])

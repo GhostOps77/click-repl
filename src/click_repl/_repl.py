@@ -2,45 +2,80 @@ import sys
 import typing as t
 
 import click
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory, ThreadedAutoSuggest
+
+# from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
+#                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
 from ._completer import ClickCompleter
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .core import ClickReplContext
+from ._globals import ISATTY, get_current_repl_ctx, _get_cli_argv
 from .exceptions import ClickExit, CommandLineParserError, ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional  # noqa: F401
+    from typing import Any, Dict, Optional, List  # noqa: F401
 
     from click import Context, Group  # noqa: F401
+
+
+__all__ = ["register_repl", "repl"]
+
+
+# def get_multicommand_args(self, *args, **kwargs):
+#     print('im getting called')
+#     if isinstance(self, click.MultiCommand):
+#         from ._globals import _push_args
+#         _push_args(self, args, kwargs)
+
+#     self.main(*args, **kwargs)
+
+
+# # if __name__ == "__main__":
+# click.BaseCommand.__call__ = get_multicommand_args
 
 
 def bootstrap_prompt(
     group,  # type: Group
     prompt_kwargs,  # type: Dict[str, Any]
-    ctx,  # type: Context
-    enable_validator=False,  # type: bool
-    style=None,  # type: Optional[Dict[str, Any]]
+    group_ctx,  # type: Context
+    cli_args: "List[str]",
+    validator,  # type: bool
+    internal_cmd_prefix: str,
+    system_cmd_prefix: str,
+    styles=None,  # type: Optional[Dict[str, Any]]
 ) -> "Dict[str, Any]":
-    """
-    Bootstrap prompt_toolkit kwargs or use user defined values.
+    """Bootstrap prompt_toolkit kwargs or use user defined values.
 
-    :param group: click Group
-    :param prompt_kwargs: The user specified prompt kwargs.
+    Keyword arguments:
+    :param:`group` - click Group for CLI
+    :param:`prompt_kwargs` - The user specified prompt kwargs.
+    :param:`group_ctx` - click Context relative to the CLI Group object
+    :param:`cli_args` - command line arguments for the CLI object
+    :param:`validator` - Enable Input Validator for the REPL
+    :param:`styles` - Dictionary of string to string mapping thats
+        used to apply custom coloring to the
+        :class:`~prompt_toolkit.completion.Completion` objects
     """
 
     defaults = {
         "history": InMemoryHistory(),
-        "completer": ClickCompleter(group, ctx, styles=style),
+        "completer": ClickCompleter(
+            group,
+            group_ctx,
+            cli_args,
+            internal_cmd_prefix,
+            system_cmd_prefix,
+            styles=styles,
+        ),
         "message": "> ",
-        "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
+        # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
         "mouse_support": True,
     }
 
-    if enable_validator and prompt_kwargs.get("validator", None) is None:
+    if validator and prompt_kwargs.get("validator", None) is None:
         prompt_kwargs["validator"] = None
 
     defaults.update(prompt_kwargs)
@@ -53,34 +88,35 @@ def repl(
     allow_system_commands: bool = True,
     allow_internal_commands: bool = True,
     validator: bool = False,
+    internal_cmd_prefix: str = ":",
+    system_cmd_prefix: str = "!",
     styles: "Optional[Dict[str, str]]" = None,
 ) -> None:
     """
     Start an interactive shell. All subcommands are available in it.
 
-    :param styles: Optional dictionary with 'command', 'argument' and 'option' style names
-    :param old_ctx: The current Click context.
-    :param prompt_kwargs: Parameters passed to
-        :py:func:`prompt_toolkit.PromptSession`.
-
     If stdin is not a TTY, no prompt will be printed, but only commands read
     from stdin.
+
+    Keyword arguments:
+    :param:`old_ctx` - The current click Context.
+    :param:`prompt_kwargs` - Parameters passed to :func:`prompt_toolkit.PromptSession`.
+    :param:`allow_system_commands` - Allow System Commands to be executed through REPL.
+    :param:`allow_internal_commands` - Allow Internal Commands to be executed
+        through REPL.
+    :param:`validator` - Enable Input Validator for the REPL
+    :param:`internal_cmd_prefix` - Prefix for executing available internal commands
+    :param:`system_cmd_prefix` - Prefix for executing System/Shell commands
+    :param:`styles` - Optional dictionary with 'command', 'argument'
+        and 'option' style names.
     """
     # parent should be available, but we're not going to bother if not
     # group_ctx = old_ctx.parent or old_ctx  # type: Context
 
-    while group_ctx.parent is not None and not isinstance(
-        group_ctx.command, click.Group
-    ):
+    if group_ctx.parent is not None and not isinstance(group_ctx.command, click.Group):
         group_ctx = group_ctx.parent
 
     group: "Group" = group_ctx.command  # type: ignore[assignment]
-    isatty = sys.stdin.isatty()
-
-    while group_ctx.parent is not None and not isinstance(
-        group_ctx.command, click.MultiCommand
-    ):
-        group_ctx = group_ctx.parent
 
     if styles is None:
         styles = {
@@ -109,14 +145,33 @@ def repl(
 
     original_command = available_commands.pop(repl_command_name, None)
 
-    if isatty:
+    # To assign the parent repl context for the next repl context
+    parent_repl_ctx = get_current_repl_ctx(silent=True)
+
+    if parent_repl_ctx is None:
+        cli_args = sys.argv[1:]
+    else:
+        cli_args = parent_repl_ctx.cli_args + _get_cli_argv(group, [])
+
+    # print(f'{cli_args = }')
+
+    if ISATTY:
         prompt_kwargs = bootstrap_prompt(
-            group, prompt_kwargs, group_ctx, validator, styles
+            group,
+            prompt_kwargs,
+            group_ctx,
+            cli_args,
+            validator,
+            internal_cmd_prefix,
+            system_cmd_prefix,
+            styles,
         )
     else:
         prompt_kwargs = {}
 
-    with ClickReplContext(group_ctx, prompt_kwargs) as repl_ctx:
+    with ClickReplContext(
+        group_ctx, prompt_kwargs, cli_args=cli_args, parent=parent_repl_ctx
+    ) as repl_ctx:
         while True:
             try:
                 command = repl_ctx.get_command()
@@ -126,7 +181,7 @@ def repl(
                 break
 
             if not command:
-                if isatty:
+                if ISATTY:
                     continue
                 else:
                     break
@@ -166,8 +221,13 @@ def repl(
             available_commands[repl_command_name] = original_command
 
 
-def register_repl(group, name="repl"):
-    # type: (Group, str) -> None
-    """Register :func:`repl()` as sub-command *name* of *group*."""
+def register_repl(group: "Group", name: str = "repl") -> None:
+    """Register :func:`repl()` as sub-command `name` of `group`.
+
+    Keyword arguments:
+    :param `group`: Group/CLI object to register repl command
+    :param `name`: Name of the repl command in the
+        given Group (default='repl')
+    """
 
     group.command(name=name)(click.pass_context(repl))
