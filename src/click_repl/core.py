@@ -58,7 +58,7 @@ class ClickReplContext:
             self._history: "Union[History, List[str]]" = self.session.history
 
             def get_command() -> str:
-                return self.session.prompt()  # type: ignore[return-value, union-attr]
+                return self.session.prompt()  # type: ignore[no-any-return, return-value, union-attr]  # noqa: E501
 
         else:
             self._history = []

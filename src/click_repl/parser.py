@@ -371,17 +371,15 @@ class ReplParser:
                 self.introspected_group = ctx_cmd
                 cmd = ctx_cmd
 
-            elif isinstance(ctx_cmd, click.Command):
-                return
-
             # If the current command's parent Group has chain=True
             # then we suggest the commands of the group again and again
             # This condition is evaluated only if ctx_cmd is a click.Command
             # and not a click.MultiCommand
-            elif (  # type: ignore[unreachable]
-                parent_group is not None and getattr(parent_group, "chain", False)
-            ):
+            elif parent_group is not None and getattr(parent_group, "chain", False):
                 cmd = parent_group  # type: ignore[assignment]
+
+            elif isinstance(ctx_cmd, click.Command):
+                return
 
             for name in cmd.list_commands(ctx):
                 command = cmd.get_command(ctx, name)
