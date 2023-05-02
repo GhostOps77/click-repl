@@ -2,7 +2,6 @@ import typing as t
 from functools import lru_cache
 import click
 
-# from ._globals import _push_args
 
 if t.TYPE_CHECKING:
     from click import BaseCommand, Context  # noqa: F401
@@ -28,7 +27,9 @@ if t.TYPE_CHECKING:
 
 @lru_cache(maxsize=3)
 def _resolve_context(
-    cli: "BaseCommand", args: "Union[List[str], Tuple[str]]"
+    cli: "BaseCommand",
+    cli_args: "Tuple[str]",
+    cmd_args: "Tuple[str]",
 ) -> "Context":
     """Produce the context hierarchy starting with the command and
     traversing the complete arguments. This only follows the commands,
@@ -38,7 +39,8 @@ def _resolve_context(
     :param args: List of complete args before the incomplete value.
     """
 
-    ctx = cli.make_context("", list(args), resilient_parsing=True)
+    args = list(cli_args + cmd_args)
+    ctx = cli.make_context("", args, resilient_parsing=True)
     args = ctx.protected_args + ctx.args
 
     while args:

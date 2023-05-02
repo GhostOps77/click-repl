@@ -7,11 +7,16 @@ import click
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from ._completer import ClickCompleter
+from .completer import ClickCompleter
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .core import ClickReplContext
 from ._globals import ISATTY, get_current_repl_ctx, _get_cli_argv
-from .exceptions import ClickExit, CommandLineParserError, ExitReplException
+from .exceptions import (
+    ClickExit,
+    CommandLineParserError,
+    ExitReplException,
+    InvalidGroupFormat,
+)
 
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional, List  # noqa: F401
@@ -117,6 +122,13 @@ def repl(
         group_ctx = group_ctx.parent
 
     group: "Group" = group_ctx.command  # type: ignore[assignment]
+
+    for param in group.params:
+        if isinstance(param, click.Argument) and not param.required:
+            raise InvalidGroupFormat(
+                f"Unable to parse args for {type(group).__name__} '{group.name}'"
+                f" has an optional argument '{param.name}'"
+            )
 
     if styles is None:
         styles = {

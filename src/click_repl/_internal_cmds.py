@@ -5,7 +5,7 @@ from threading import local
 
 import click
 
-from ._parser import split_arg_string
+from .parser import split_arg_string
 from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:

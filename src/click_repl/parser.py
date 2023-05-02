@@ -9,10 +9,11 @@ from shlex import shlex
 import click
 from prompt_toolkit.completion import Completion
 
+# from .utils import _resolve_context
 from .exceptions import CommandLineParserError
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, NoReturn, Tuple, Union
+    from typing import Dict, Generator, List, NoReturn, Tuple, Union, Optional
 
     from click import Command, Context, Group, Parameter, MultiCommand  # noqa: F401
 
@@ -74,37 +75,6 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
 
 
 @lru_cache(maxsize=3)
-def _get_ctx_for_args(
-    cmd: "Group", cmd_args: "Tuple[str]", group_args: "Tuple[str]"
-) -> "Tuple[Command, Context]":
-    """Provides the resolved command and its relevant click.Context,
-    by parsing the given args
-
-    Keyword arguments:
-    :param cmd: Group (CLI) object.
-    :param cmd_args: List of args for the given command.
-    :param group_args: List of args, that have to be passed
-        to the given parent/CLI group.
-
-    Return: A tuple that has the resolved command
-        and its relevant click.Context.
-    """
-
-    # Resolve context based on click version
-    if HAS_CLICK_V8:
-        parsed_ctx = click.shell_completion._resolve_context(
-            cmd, {}, "", list(group_args + cmd_args)
-        )
-    else:
-        parsed_ctx = click._bashcomplete.resolve_ctx(cmd, "", list(group_args + cmd_args))
-
-    ctx_command = parsed_ctx.command
-    # opt_parser = OptionsParser(ctx_command, parsed_ctx)
-
-    return ctx_command, parsed_ctx
-
-
-@lru_cache(maxsize=3)
 def _split_args(document_text: str) -> "Tuple[List[str], str]":
     args = split_arg_string(document_text, posix=False)
     cursor_within_command = document_text.rstrip() == document_text
@@ -121,19 +91,30 @@ def _split_args(document_text: str) -> "Tuple[List[str], str]":
     return args, incomplete
 
 
-class Completioner:
+class ReplParser:
     """Provides Completion items based on the given parameters
     along with the styles provided to it.
 
     Keyword arguments:
-    :param `styles`: Dictionary of styles in the way of prompt-toolkit module,
+    :param:`cli` - Group Repl CLI
+    :param:`styles` - Dictionary of styles in the way of prompt-toolkit module,
         for arguments, options, etc.
     """
 
-    __slots__ = ("styles",)
+    __slots__ = (
+        "cli",
+        "styles",
+        "introspected_group",
+        "introspected_cmd",
+        "introspected_param",
+    )
 
-    def __init__(self, styles: "Dict[str, str]") -> None:
+    def __init__(self, cli: "MultiCommand", styles: "Dict[str, str]") -> None:
+        self.cli = cli
         self.styles = styles
+        self.introspected_group: "Optional[MultiCommand]" = None
+        self.introspected_cmd: "Optional[Command]" = None
+        self.introspected_param: "Optional[Parameter]" = None
 
     def _get_completion_from_autocompletion_functions(
         self,
@@ -308,7 +289,7 @@ class Completioner:
             for attr in ("hidden", "hide_input"):
                 if getattr(param, attr, False):
                     raise CommandLineParserError(
-                        f"Click Repl cannot parse a '{attr}' parameter"
+                        f"Click Repl cannot parse option '{param}' with {attr}=True"
                     )
 
             if isinstance(param, click.Option):
@@ -324,6 +305,7 @@ class Completioner:
                     # print(f'{args[param.nargs * -1 :] = } {incomplete = !r}')
                     if option in args[param.nargs * -1 :] and not param.count:
                         param_called = True
+                        self.introspected_param = param
                         # print(f"param called by {param.name}")
                         break
 
@@ -360,6 +342,7 @@ class Completioner:
                     is None
                     or param.nargs == -1
                 ):
+                    self.introspected_param = param
                     choices.extend(
                         self._get_completion_from_params(
                             autocomplete_ctx, param, args, incomplete
@@ -377,17 +360,27 @@ class Completioner:
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
 
+        self.introspected_cmd = ctx_cmd
+
         parent_group = None
         if ctx.parent is not None:
             parent_group = ctx.parent.command
 
-        if all(value is not None for value in ctx.params.values()):
+        if all(value is not None for value in ctx.params.values()) or self.cli == ctx_cmd:
             if isinstance(ctx_cmd, click.MultiCommand):
+                self.introspected_group = ctx_cmd
                 cmd = ctx_cmd
 
+            elif isinstance(ctx_cmd, click.Command):
+                return
+
             # If the current command's parent Group has chain=True
-            # then we suggest the commands of th group again and again
-            elif parent_group is not None and getattr(parent_group, "chain", False):
+            # then we suggest the commands of the group again and again
+            # This condition is evaluated only if ctx_cmd is a click.Command
+            # and not a click.MultiCommand
+            elif (  # type: ignore[unreachable]
+                parent_group is not None and getattr(parent_group, "chain", False)
+            ):
                 cmd = parent_group  # type: ignore[assignment]
 
             for name in cmd.list_commands(ctx):

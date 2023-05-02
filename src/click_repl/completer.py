@@ -4,7 +4,9 @@ import typing as t
 import click
 from prompt_toolkit.completion import Completer, Completion
 
-from ._parser import Completioner, _split_args, _get_ctx_for_args
+# from .exceptions import CommandLineParserError
+from .utils import _resolve_context
+from .parser import ReplParser, _split_args
 
 __all__ = ["ClickCompleter"]
 
@@ -13,7 +15,7 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, Optional, Tuple  # noqa: F401
+    from typing import Dict, Generator, List, Optional, Iterable  # noqa: F401
 
     from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
     from click import Command, Context, Group  # noqa: F401
@@ -48,7 +50,7 @@ class ClickCompleter(Completer):
         self,
         cli: "Group",
         ctx: "Context",
-        cli_args: "List[str]" = [],
+        cli_args: "Iterable[str]" = [],
         internal_cmd_prefix: str = ":",
         system_cmd_prefix: str = "!",
         styles: "Optional[Dict[str, str]]" = None,
@@ -59,7 +61,7 @@ class ClickCompleter(Completer):
         self.parsed_ctx: "Context" = self.ctx
         self.parsed_args: "List[str]" = []
         self.ctx_command: "Command" = self.cli
-        self.cli_args: "List[str]" = cli_args
+        self.cli_args = tuple(cli_args)
 
         self.internal_cmd_prefix = internal_cmd_prefix
         self.system_cmd_prefix = system_cmd_prefix
@@ -67,7 +69,7 @@ class ClickCompleter(Completer):
         if styles is None:
             styles = dict.fromkeys(("command", "argument", "option"), "")
 
-        self.completion_parser = Completioner(styles)
+        self.completion_parser = ReplParser(self.cli, styles)
 
     def get_completions(
         self, document: "Document", complete_event: "Optional[CompleteEvent]" = None
@@ -95,9 +97,15 @@ class ClickCompleter(Completer):
         if self.parsed_args != args:
             self.parsed_args = args
 
-            self.ctx_command, self.parsed_ctx = _get_ctx_for_args(
-                self.cli, tuple(self.parsed_args), tuple(self.cli_args)
+            self.parsed_ctx = _resolve_context(
+                self.cli, self.cli_args, tuple(self.parsed_args)
             )
+
+            self.ctx_command = self.parsed_ctx.command
+
+            # self.ctx_command, self.parsed_ctx = _get_ctx_for_args(
+            #     self.cli, tuple(self.parsed_args), self.cli_args
+            # )
 
         # autocomplete_ctx = self.ctx or self.parsed_ctx
 
@@ -122,6 +130,7 @@ class ClickCompleter(Completer):
 
         except Exception as e:
             click.echo(f"{type(e).__name__}: {e}")
+            # raise CommandLineParserError(f"{type(e).__name__} - {e}")
 
         yield from choices
 

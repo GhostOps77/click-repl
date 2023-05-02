@@ -3,7 +3,7 @@ Click Repl is a simple Python module that provides REPL support
 inside your click app in just some simple steps.
 """
 
-from ._completer import ClickCompleter, ReplCompletion
+from .completer import ClickCompleter, ReplCompletion
 from ._globals import get_current_repl_ctx
 from ._internal_cmds import exit
 from ._repl import register_repl, repl

@@ -70,7 +70,7 @@ class ClickReplContext:
 
             self.session = None
 
-        self.get_command: "Callable[..., str]" = get_command
+        self.get_command: "Callable[[], str]" = get_command
         self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.cli_args = cli_args
