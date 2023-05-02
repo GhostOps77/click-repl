@@ -5,11 +5,12 @@ from threading import local
 
 import click
 
-from .parser import split_arg_string
 from .exceptions import ExitReplException
+from .parser import split_arg_string
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
+    from typing import (Any, Callable, Dict, List, NoReturn, Optional, Tuple,
+                        Union)
 
 
 _locals = local()

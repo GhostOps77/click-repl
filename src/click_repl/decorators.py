@@ -5,6 +5,7 @@ from ._globals import get_current_repl_ctx
 
 if t.TYPE_CHECKING:
     from typing import Callable, Optional
+
     import typing_extensions as te
 
     from .core import ClickReplContext

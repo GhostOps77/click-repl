@@ -2,24 +2,19 @@ import sys
 import typing as t
 
 import click
-
 # from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from .completer import ClickCompleter
+from ._globals import ISATTY, _get_cli_argv, get_current_repl_ctx
 from ._internal_cmds import _execute_internal_and_sys_cmds
+from .completer import ClickCompleter
 from .core import ClickReplContext
-from ._globals import ISATTY, get_current_repl_ctx, _get_cli_argv
-from .exceptions import (
-    ClickExit,
-    CommandLineParserError,
-    ExitReplException,
-    InvalidGroupFormat,
-)
+from .exceptions import (ClickExit, CommandLineParserError, ExitReplException,
+                         InvalidGroupFormat)
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, List  # noqa: F401
+    from typing import Any, Dict, List, Optional  # noqa: F401
 
     from click import Context, Group  # noqa: F401
 

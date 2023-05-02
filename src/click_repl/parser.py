@@ -2,7 +2,6 @@ import os
 import typing as t
 from functools import lru_cache
 from glob import iglob
-
 # from pathlib import Path
 from shlex import shlex
 
@@ -13,9 +12,10 @@ from prompt_toolkit.completion import Completion
 from .exceptions import CommandLineParserError
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, NoReturn, Tuple, Union, Optional
+    from typing import Dict, Generator, List, NoReturn, Optional, Tuple, Union
 
-    from click import Command, Context, Group, Parameter, MultiCommand  # noqa: F401
+    from click import (Command, Context, Group, MultiCommand,  # noqa: F401
+                       Parameter)
 
 
 IS_WINDOWS = os.name == "nt"
@@ -123,7 +123,6 @@ class ReplParser:
         args: "List[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
-
         if HAS_CLICK_V8:
             autocompletions = param.shell_complete(autocomplete_ctx, incomplete)
         else:
@@ -153,7 +152,6 @@ class ReplParser:
     def _get_completion_from_choices_click_le_7(
         self, param_type: "click.Choice", incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         case_insensitive = not getattr(param_type, "case_sensitive", True)
 
         if case_insensitive:
@@ -174,7 +172,6 @@ class ReplParser:
     def _get_completion_for_Path_types(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         if "*" in incomplete:
             return
 
@@ -208,7 +205,6 @@ class ReplParser:
     def _get_completion_for_Boolean_type(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         boolean_mapping = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
@@ -221,7 +217,6 @@ class ReplParser:
     def _get_completion_for_Range_types(
         self, param_type: "Union[click.IntRange, click.FloatRange]"
     ) -> "List[Completion]":
-
         clamp = " clamped" if param_type.clamp else ""
         display_meta = f"{param_type._describe_range()}{clamp}"
 
@@ -234,7 +229,6 @@ class ReplParser:
         args: "List[str]",
         incomplete: str,
     ) -> "List[Completion]":
-
         choices: "List[Completion]" = []
         param_type: "click.ParamType" = param.type
 
@@ -275,7 +269,6 @@ class ReplParser:
         args: "List[str]",
         incomplete: "str",
     ) -> "Union[List[Completion], NoReturn]":
-
         choices = []
         param_called = False
         params_list = ctx_command.params
@@ -359,7 +352,6 @@ class ReplParser:
         args: "List[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
-
         self.introspected_cmd = ctx_cmd
 
         parent_group = None

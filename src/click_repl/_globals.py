@@ -5,8 +5,10 @@ from threading import local
 import click
 
 if t.TYPE_CHECKING:
-    from typing import NoReturn, Union, List, Any, Iterable  # noqa: F401
+    from typing import Any, Iterable, List, NoReturn, Union  # noqa: F401
+
     from click import MultiCommand  # noqa: F401
+
     from .core import ClickReplContext  # noqa: F401
 
 
