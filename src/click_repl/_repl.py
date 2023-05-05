@@ -82,6 +82,7 @@ def bootstrap_prompt(
 
     if validator and prompt_kwargs.get("validator", None) is None:
         prompt_kwargs["validator"] = None
+        prompt_kwargs["validate_while_typing"] = True
 
     defaults.update(prompt_kwargs)
     return defaults
@@ -124,10 +125,14 @@ def repl(
     group: "Group" = group_ctx.command  # type: ignore[assignment]
 
     for param in group.params:
-        if isinstance(param, click.Argument) and not param.required:
+        if (
+            isinstance(param, click.Argument)
+            and not param.required
+            and group_ctx.params[param.name] is None
+        ):
             raise InvalidGroupFormat(
-                f"Unable to parse args for {type(group).__name__} '{group.name}'"
-                f" has an optional argument '{param.name}'"
+                f"{type(group).__name__} '{group.name}' requires value for "
+                f"an optional argument '{param.name}' in REPL mode"
             )
 
     if styles is None:

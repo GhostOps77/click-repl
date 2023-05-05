@@ -1,12 +1,12 @@
 import os
 import typing as t
 
-import click
+# import click
 from prompt_toolkit.completion import Completer, Completion
 
 # from .exceptions import CommandLineParserError
 from .utils import _resolve_context
-from .parser import ReplParser, _split_args
+from .parser import ReplParser, _split_args, currently_introspecting_args
 
 __all__ = ["ClickCompleter"]
 
@@ -15,7 +15,7 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, Optional, Iterable  # noqa: F401
+    from typing import Dict, Generator, Tuple, Optional, Iterable  # noqa: F401
 
     from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
     from click import Command, Context, Group  # noqa: F401
@@ -59,7 +59,7 @@ class ClickCompleter(Completer):
         self.ctx: "Context" = ctx
 
         self.parsed_ctx: "Context" = self.ctx
-        self.parsed_args: "List[str]" = []
+        self.parsed_args: "Tuple[str]" = ()
         self.ctx_command: "Command" = self.cli
         self.cli_args = tuple(cli_args)
 
@@ -97,9 +97,7 @@ class ClickCompleter(Completer):
         if self.parsed_args != args:
             self.parsed_args = args
 
-            self.parsed_ctx = _resolve_context(
-                self.cli, self.cli_args, tuple(self.parsed_args)
-            )
+            self.parsed_ctx = _resolve_context(self.cli, self.cli_args, self.parsed_args)
 
             self.ctx_command = self.parsed_ctx.command
 
@@ -119,20 +117,25 @@ class ClickCompleter(Completer):
         if getattr(self.ctx_command, "hidden", False):
             return
 
-        choices: "List[Completion]" = []
+        # choices: "List[Completion]" = []
 
-        try:
-            choices.extend(
-                self.completion_parser._get_completions_for_command(
-                    self.ctx_command, self.parsed_ctx, args, incomplete
-                )
-            )
+        # try:
+        state = currently_introspecting_args(self.cli, self.parsed_ctx, args)
 
-        except Exception as e:
-            click.echo(f"{type(e).__name__}: {e}")
-            # raise CommandLineParserError(f"{type(e).__name__} - {e}")
+        # choices.extend(
+        #     self.completion_parser._get_completions_for_command(
+        #         self.parsed_ctx, state, args, incomplete
+        #     )
+        # )
 
-        yield from choices
+        # except Exception as e:
+        #     click.echo(f"{type(e).__name__}: {e}")
+        # raise CommandLineParserError(f"{type(e).__name__} - {e}")
+
+        # yield from choices
+        yield from self.completion_parser._get_completions_for_command(
+            self.parsed_ctx, state, args, incomplete
+        )
 
 
 class ReplCompletion(Completion):

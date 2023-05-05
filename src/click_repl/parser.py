@@ -10,12 +10,12 @@ import click
 from prompt_toolkit.completion import Completion
 
 # from .utils import _resolve_context
-from .exceptions import CommandLineParserError
+# from .exceptions import CommandLineParserError
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, NoReturn, Tuple, Union, Optional
+    from typing import Dict, Generator, List, Tuple, Union, Optional, Iterable
 
-    from click import Command, Context, Group, Parameter, MultiCommand  # noqa: F401
+    from click import Command, Context, Parameter, MultiCommand  # noqa: F401
 
 
 IS_WINDOWS = os.name == "nt"
@@ -75,7 +75,7 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
 
 
 @lru_cache(maxsize=3)
-def _split_args(document_text: str) -> "Tuple[List[str], str]":
+def _split_args(document_text: str) -> "Tuple[Tuple[str, ...], str]":
     args = split_arg_string(document_text, posix=False)
     cursor_within_command = document_text.rstrip() == document_text
 
@@ -88,7 +88,117 @@ def _split_args(document_text: str) -> "Tuple[List[str], str]":
         # command, so give all relevant completions for this context.
         incomplete = ""
 
-    return args, incomplete
+    return tuple(args), incomplete
+
+
+class ParsingState:
+    __slots__ = (
+        "cli",
+        "ctx",
+        "args",
+        "current_group",
+        "current_cmd",
+        "current_param",
+        # 'parsed_params',
+        "remaining_params",
+    )
+
+    def __init__(self, cli: "MultiCommand", ctx: "Context", args: "Tuple[str]") -> None:
+        self.cli = cli
+        self.ctx = ctx
+        self.args = args
+
+        self.current_group: "Optional[MultiCommand]" = None
+        self.current_cmd: "Optional[Command]" = None
+        self.current_param: "Optional[Parameter]" = None
+
+        # self.parsed_params: 'List[Parameter]' = []
+        self.remaining_params: "List[Parameter]" = []
+
+        self.parse_ctx(ctx, args)
+
+    def __str__(self) -> str:
+        return (
+            f"{getattr(self.current_group, 'name', None)}"
+            f" > {getattr(self.current_cmd, 'name', None)}"
+            f" > {getattr(self.current_param, 'name', None)}"
+        )
+
+    def _parse_cmd(self, ctx: "Context") -> None:
+        ctx_cmd = ctx.command
+        parent_group = None
+        if ctx.parent is not None:
+            parent_group = ctx.parent.command
+
+        self.current_group = parent_group  # type: ignore[assignment]
+        is_cli = ctx_cmd == self.cli
+
+        if all(value is not None for value in ctx.params.values()) or is_cli:
+            # if is_cli:
+            #     self.current_cmd = None
+
+            if isinstance(ctx_cmd, click.MultiCommand):
+                self.current_group = ctx_cmd
+
+            elif isinstance(ctx_cmd, click.Command):
+                self.current_group = parent_group  # type: ignore[assignment]
+                self.current_cmd = ctx_cmd
+
+        else:
+            self.current_cmd = ctx_cmd
+
+        if self.current_cmd is not None:
+            minus_one_args = []
+            for param in self.current_cmd.params:
+                if ctx.params.get(param.name, None) is None:  # type: ignore[arg-type]
+                    if param.nargs == -1:
+                        minus_one_args.append(param)
+                    else:
+                        self.remaining_params.append(param)
+
+            self.remaining_params += minus_one_args
+
+    def _parse_params(self, ctx: "Context", args: "Tuple[str]") -> None:
+        skip_arguments = False
+
+        for param in ctx.command.params:
+            if isinstance(param, click.Option):
+                options_name_list = param.opts + param.secondary_opts
+
+                if param.is_bool_flag and any(i in args for i in options_name_list):
+                    continue
+
+                for option in options_name_list:
+                    # We want to make sure if this parameter was called
+                    # If we are inside a parameter that was called, we want to show only
+                    # relevant choices
+                    if option in args[param.nargs * -1 :] and not param.count:
+                        self.current_param = param
+                        return
+
+            elif (
+                isinstance(param, click.Argument)
+                and param in self.remaining_params
+                and not skip_arguments
+                and (
+                    ctx.params.get(param.name) is None  # type: ignore[arg-type]
+                    or param.nargs == -1
+                )
+            ):
+                self.current_param = param
+                skip_arguments = True
+
+    def parse_ctx(self, ctx: "Context", args: "Tuple[str]") -> None:
+        # 'Tuple[Optional[MultiCommand], Optional[Command], Optional[Parameter]]'
+        self._parse_cmd(ctx)
+        self._parse_params(ctx, args)
+
+
+@lru_cache(maxsize=3)
+def currently_introspecting_args(
+    cli: "MultiCommand", ctx: "Context", args: "Tuple[str]"
+) -> ParsingState:
+    return ParsingState(cli, ctx, args)
 
 
 class ReplParser:
@@ -104,17 +214,11 @@ class ReplParser:
     __slots__ = (
         "cli",
         "styles",
-        "introspected_group",
-        "introspected_cmd",
-        "introspected_param",
     )
 
     def __init__(self, cli: "MultiCommand", styles: "Dict[str, str]") -> None:
         self.cli = cli
         self.styles = styles
-        self.introspected_group: "Optional[MultiCommand]" = None
-        self.introspected_cmd: "Optional[Command]" = None
-        self.introspected_param: "Optional[Parameter]" = None
 
     def _get_completion_from_autocompletion_functions(
         self,
@@ -229,7 +333,7 @@ class ReplParser:
 
     def _get_completion_from_params(
         self,
-        autocomplete_ctx: "Context",
+        ctx: "Context",
         param: "Parameter",
         args: "List[str]",
         incomplete: str,
@@ -260,7 +364,7 @@ class ReplParser:
             choices.extend(
                 self._get_completion_from_autocompletion_functions(
                     param,
-                    autocomplete_ctx,
+                    ctx,
                     args,
                     incomplete,
                 )
@@ -270,128 +374,86 @@ class ReplParser:
 
     def _get_completion_for_cmd_args(
         self,
-        ctx_command: "Command",
-        autocomplete_ctx: "Context",
+        ctx: "Context",
+        state: "ParsingState",
         args: "List[str]",
         incomplete: "str",
-    ) -> "Union[List[Completion], NoReturn]":
+    ) -> "Generator[Completion, None, None]":
 
-        choices = []
-        param_called = False
-        params_list = ctx_command.params
-        for index, param in enumerate(params_list):
-            if param.nargs == -1:
-                params_list.append(params_list.pop(index))
-
-        # print("Currently introspecting argument:", autocomplete_ctx.info_name)
-        for param in params_list:
-            # print(f'{vars(param) = }')
-            for attr in ("hidden", "hide_input"):
-                if getattr(param, attr, False):
-                    raise CommandLineParserError(
-                        f"Click Repl cannot parse option '{param}' with {attr}=True"
-                    )
-
-            if isinstance(param, click.Option):
+        param_choices = []
+        for param in state.current_cmd.params:  # type: ignore[union-attr]
+            if (
+                isinstance(param, click.Option) and not param.hidden
+            ):  # type: ignore[union-attr]
                 options_name_list = param.opts + param.secondary_opts
+
                 if param.is_bool_flag and any(i in args for i in options_name_list):
                     continue
 
                 for option in options_name_list:
-                    # print(f'{option = }')
-                    # We want to make sure if this parameter was called
-                    # If we are inside a parameter that was called, we want to show only
-                    # relevant choices
-                    # print(f'{args[param.nargs * -1 :] = } {incomplete = !r}')
-                    if option in args[param.nargs * -1 :] and not param.count:
-                        param_called = True
-                        self.introspected_param = param
-                        # print(f"param called by {param.name}")
-                        break
+                    if option.startswith(incomplete):
+                        display_meta = ""
 
-                    # elif option in args and not (param.multiple or param.count):
-                    #     break
+                        if param.help is not None:
+                            display_meta += param.help
 
-                    elif option.startswith(incomplete):
-                        # print(f'{option} startswith ({incomplete})\n')
-                        display_meta = (param.help or "") + (
-                            f"[Default={param.default}]" if param.default else ""
-                        )
+                        if param.default is not None:
+                            display_meta += f" [Default={param.default}]"
 
-                        choices.append(
+                        if param.metavar is not None:
+                            display = param.metavar
+                        else:
+                            display = option
+
+                        param_choices.append(
                             Completion(
                                 option,
                                 -len(incomplete),
+                                display=display,
                                 display_meta=display_meta,
                                 style=self.styles["option"],
                             )
                         )
 
-                # If we are inside a parameter that was called, we want to show only
-                # relevant choices
-                # print(f'{param.name = } {param_called = }')
-                if param_called and not (param.is_bool_flag or param.count):
-                    choices = self._get_completion_from_params(
-                        autocomplete_ctx, param, args, incomplete
-                    )
-                    break
+        curr_param = state.current_param
 
-            elif isinstance(param, click.Argument):
-                if (
-                    autocomplete_ctx.params.get(param.name)  # type: ignore[arg-type]
-                    is None
-                    or param.nargs == -1
-                ):
-                    self.introspected_param = param
-                    choices.extend(
-                        self._get_completion_from_params(
-                            autocomplete_ctx, param, args, incomplete
-                        )
-                    )
-                    break
+        if curr_param is not None:
+            if isinstance(curr_param, click.Argument):
+                yield from param_choices
 
-        return choices
+            if not getattr(curr_param, "hidden", False):
+                yield from self._get_completion_from_params(
+                    ctx, curr_param, args, incomplete
+                )
+
+        else:
+            yield from param_choices
 
     def _get_completions_for_command(
         self,
-        ctx_cmd: "Union[Command, MultiCommand]",
         ctx: "Context",
-        args: "List[str]",
+        state: "ParsingState",
+        args: "Iterable[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
 
-        self.introspected_cmd = ctx_cmd
+        curr_group = state.current_group
+        curr_cmd_exists = state.current_cmd is not None
+        is_chain = getattr(curr_group, "chain", False)
 
-        parent_group = None
-        if ctx.parent is not None:
-            parent_group = ctx.parent.command
+        if curr_group is not None:
+            if curr_cmd_exists:
+                yield from self._get_completion_for_cmd_args(ctx, state, args, incomplete)
 
-        if all(value is not None for value in ctx.params.values()) or self.cli == ctx_cmd:
-            if isinstance(ctx_cmd, click.MultiCommand):
-                self.introspected_group = ctx_cmd
-                cmd = ctx_cmd
+            if (not state.remaining_params and is_chain) or not curr_cmd_exists:
+                for name in curr_group.list_commands(ctx):
+                    command = curr_group.get_command(ctx, name)
+                    if command.hidden:  # type: ignore[union-attr]
+                        continue
 
-            # If the current command's parent Group has chain=True
-            # then we suggest the commands of the group again and again
-            # This condition is evaluated only if ctx_cmd is a click.Command
-            # and not a click.MultiCommand
-            elif parent_group is not None and getattr(parent_group, "chain", False):
-                cmd = parent_group  # type: ignore[assignment]
-
-            elif isinstance(ctx_cmd, click.Command):
-                return
-
-            for name in cmd.list_commands(ctx):
-                command = cmd.get_command(ctx, name)
-                if getattr(command, "hidden", False):
-                    continue
-
-                elif name.startswith(incomplete):
-                    yield Completion(
-                        name,
-                        -len(incomplete),
-                        display_meta=getattr(command, "short_help", ""),
-                    )
-
-        else:
-            yield from self._get_completion_for_cmd_args(ctx_cmd, ctx, args, incomplete)
+                    elif name.startswith(incomplete):
+                        yield Completion(
+                            name,
+                            -len(incomplete),
+                            display_meta=getattr(command, "short_help", ""),
+                        )
