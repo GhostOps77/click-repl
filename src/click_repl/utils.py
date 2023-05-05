@@ -1,11 +1,12 @@
 import typing as t
 from functools import lru_cache
+
 import click
 
-
 if t.TYPE_CHECKING:
-    from click import BaseCommand, Context  # noqa: F401
     from typing import List, Tuple, Union  # noqa: F401
+
+    from click import BaseCommand, Context  # noqa: F401
 
 
 # def flatten_click_tuple(tuple_type: "click.Tuple") -> "Generator[Any, None, None]":

@@ -2,7 +2,6 @@ import os
 import typing as t
 from functools import lru_cache
 from glob import iglob
-
 # from pathlib import Path
 from shlex import shlex
 
@@ -227,7 +226,6 @@ class ReplParser:
         args: "List[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
-
         if HAS_CLICK_V8:
             autocompletions = param.shell_complete(autocomplete_ctx, incomplete)
         else:
@@ -257,7 +255,6 @@ class ReplParser:
     def _get_completion_from_choices_click_le_7(
         self, param_type: "click.Choice", incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         case_insensitive = not getattr(param_type, "case_sensitive", True)
 
         if case_insensitive:
@@ -278,7 +275,6 @@ class ReplParser:
     def _get_completion_for_Path_types(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         if "*" in incomplete:
             return
 
@@ -312,7 +308,6 @@ class ReplParser:
     def _get_completion_for_Boolean_type(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         boolean_mapping = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
@@ -325,7 +320,6 @@ class ReplParser:
     def _get_completion_for_Range_types(
         self, param_type: "Union[click.IntRange, click.FloatRange]"
     ) -> "List[Completion]":
-
         clamp = " clamped" if param_type.clamp else ""
         display_meta = f"{param_type._describe_range()}{clamp}"
 
@@ -338,7 +332,6 @@ class ReplParser:
         args: "List[str]",
         incomplete: str,
     ) -> "List[Completion]":
-
         choices: "List[Completion]" = []
         param_type: "click.ParamType" = param.type
 

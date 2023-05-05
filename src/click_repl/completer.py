@@ -4,6 +4,7 @@ import typing as t
 # import click
 from prompt_toolkit.completion import Completer, Completion
 
+from .parser import ReplParser, _split_args
 # from .exceptions import CommandLineParserError
 from .utils import _resolve_context
 from .parser import ReplParser, _split_args, currently_introspecting_args
@@ -17,10 +18,10 @@ IS_WINDOWS = os.name == "nt"
 if t.TYPE_CHECKING:
     from typing import Dict, Generator, Tuple, Optional, Iterable  # noqa: F401
 
-    from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
     from click import Command, Context, Group  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
+    from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
 
 
 class ClickCompleter(Completer):

@@ -1,5 +1,6 @@
 import sys
 import typing as t
+
 from prompt_toolkit import PromptSession
 
 from ._globals import ISATTY, pop_context, push_context
@@ -50,7 +51,6 @@ class ClickReplContext:
         cli_args: "List[str]",
         parent: "Optional[ClickReplContext]" = None,
     ) -> None:
-
         if ISATTY:
             self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs
