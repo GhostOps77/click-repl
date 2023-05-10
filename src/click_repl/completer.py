@@ -59,7 +59,7 @@ class ClickCompleter(Completer):
         self.ctx: "Context" = ctx
 
         self.parsed_ctx: "Context" = self.ctx
-        self.parsed_args: "Tuple[str]" = ()
+        self.parsed_args: "Tuple[str, ...]" = ()  # type: ignore[assignment]
         self.ctx_command: "Command" = self.cli
         self.cli_args = tuple(cli_args)
 

@@ -2,6 +2,7 @@ import sys
 import typing as t
 
 import click
+
 # from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
@@ -10,8 +11,12 @@ from ._globals import ISATTY, _get_cli_argv, get_current_repl_ctx
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .completer import ClickCompleter
 from .core import ClickReplContext
-from .exceptions import (ClickExit, CommandLineParserError, ExitReplException,
-                         InvalidGroupFormat)
+from .exceptions import (
+    ClickExit,
+    CommandLineParserError,
+    ExitReplException,
+    InvalidGroupFormat,
+)
 
 if t.TYPE_CHECKING:
     from typing import Any, Dict, List, Optional  # noqa: F401
@@ -123,7 +128,7 @@ def repl(
         if (
             isinstance(param, click.Argument)
             and not param.required
-            and group_ctx.params[param.name] is None
+            and group_ctx.params[param.name] is None  # type: ignore[index]
         ):
             raise InvalidGroupFormat(
                 f"{type(group).__name__} '{group.name}' requires value for "
@@ -131,11 +136,7 @@ def repl(
             )
 
     if styles is None:
-        styles = {
-            "command": "ansiblack",
-            "option": "ansiblack",
-            "argument": "ansiblack",
-        }
+        styles = dict.fromkeys(["command", "option", "argument"], "ansiblack")
 
     # print(f'\n{vars(group_ctx) = }')
     # print(f'\n{vars(old_ctx) = }')

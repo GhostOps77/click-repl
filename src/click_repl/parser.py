@@ -2,6 +2,7 @@ import os
 import typing as t
 from functools import lru_cache
 from glob import iglob
+
 # from pathlib import Path
 from shlex import shlex
 
@@ -193,7 +194,7 @@ class ParsingState:
         self._parse_params(ctx, args)
 
 
-@lru_cache(maxsize=3)
+@lru_cache(maxsize=3)  # Make a decorator around this decorator to catch the latest value
 def currently_introspecting_args(
     cli: "MultiCommand", ctx: "Context", args: "Tuple[str]"
 ) -> ParsingState:
@@ -223,7 +224,7 @@ class ReplParser:
         self,
         param: "Parameter",
         autocomplete_ctx: "Context",
-        args: "List[str]",
+        args: "Iterable[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
         if HAS_CLICK_V8:
@@ -329,7 +330,7 @@ class ReplParser:
         self,
         ctx: "Context",
         param: "Parameter",
-        args: "List[str]",
+        args: "Iterable[str]",
         incomplete: str,
     ) -> "List[Completion]":
         choices: "List[Completion]" = []
@@ -369,7 +370,7 @@ class ReplParser:
         self,
         ctx: "Context",
         state: "ParsingState",
-        args: "List[str]",
+        args: "Iterable[str]",
         incomplete: "str",
     ) -> "Generator[Completion, None, None]":
 
@@ -386,9 +387,6 @@ class ReplParser:
                 for option in options_name_list:
                     if option.startswith(incomplete):
                         display_meta = ""
-
-                        if param.help is not None:
-                            display_meta += param.help
 
                         if param.default is not None:
                             display_meta += f" [Default={param.default}]"

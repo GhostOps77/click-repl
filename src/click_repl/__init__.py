@@ -9,8 +9,11 @@ from ._repl import register_repl, repl
 from .completer import ClickCompleter, ReplCompletion
 from .core import ClickReplContext
 from .decorators import pass_context
-from .exceptions import (CommandLineParserError, ExitReplException,
-                         InternalCommandException)
+from .exceptions import (
+    CommandLineParserError,
+    ExitReplException,
+    InternalCommandException,
+)
 
 __all__ = [
     "ClickCompleter",

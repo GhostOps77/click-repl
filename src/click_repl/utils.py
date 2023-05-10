@@ -81,3 +81,12 @@ def _resolve_context(
             break
 
     return ctx
+
+
+# def latest_cache_val():
+#     latets_val = None
+
+#     @lru_cache(maxsize=2)
+#     def func(*args, **kwargs):
+#         latest_val = ParsingState(*args, **kwargs)
+#         return latest_val

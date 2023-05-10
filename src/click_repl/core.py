@@ -1,6 +1,8 @@
 import sys
 import typing as t
 
+# from click_repl.parser import currently_introspecting_args
+
 from prompt_toolkit import PromptSession
 
 from ._globals import ISATTY, pop_context, push_context
@@ -53,7 +55,8 @@ class ClickReplContext:
     ) -> None:
         if ISATTY:
             self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
-                **prompt_kwargs
+                **prompt_kwargs,
+                # bottom_toolbar=currently_introspecting_args()
             )
             self._history: "Union[History, List[str]]" = self.session.history
 
