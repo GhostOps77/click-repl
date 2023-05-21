@@ -218,6 +218,7 @@ def test_internal_commands(capsys):
   Internal Commands:
     prefix internal commands with ":"
     :exit, :q, :quit  Exits the repl
+    :clear, :cls      Clears screen
     :?, :h, :help     Displays general help information
 
 """
