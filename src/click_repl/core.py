@@ -1,4 +1,3 @@
-import sys
 import typing as t
 
 # from click_repl.parser import currently_introspecting_args
@@ -9,7 +8,7 @@ from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
     from typing import List  # noqa: F401
-    from typing import Any, Callable, Dict, Generator, Optional, Union
+    from typing import Any, Dict, Generator, Optional, Union
 
     from click import Context  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
@@ -39,18 +38,15 @@ class ClickReplContext:
     __slots__ = (
         "group_ctx",
         "prompt_kwargs",
-        "cli_args",
         "parent",
         "session",
         "_history",
-        "get_command",
     )
 
     def __init__(
         self,
         group_ctx: "Context",
         prompt_kwargs: "Dict[str, Any]",
-        cli_args: "List[str]",
         parent: "Optional[ClickReplContext]" = None,
     ) -> None:
         if ISATTY:
@@ -60,23 +56,12 @@ class ClickReplContext:
             )
             self._history: "Union[History, List[str]]" = self.session.history
 
-            def get_command() -> str:
-                return self.session.prompt()  # type: ignore[no-any-return, return-value, union-attr]  # noqa: E501
-
         else:
+            self.session = None
             self._history = []
 
-            def get_command() -> str:
-                inp = sys.stdin.readline().strip()
-                self._history.append(inp)  # type: ignore[union-attr]
-                return inp
-
-            self.session = None
-
-        self.get_command: "Callable[[], str]" = get_command
         self.group_ctx = group_ctx
         self.prompt_kwargs = prompt_kwargs
-        self.cli_args = cli_args
         self.parent = parent
 
     def __enter__(self) -> "ClickReplContext":
@@ -110,9 +95,11 @@ class ClickReplContext:
     #     }
 
     def prompt_reset(self) -> None:
-        """Resets values of :class:`prompt_toolkit.session.PromptSession` to
+        """
+        Resets values of :class:`prompt_toolkit.session.PromptSession` to
         the provided `prompt_kwargs`, discarding any changes done to the
-        :class:`prompt_toolkit.session.PromptSession` object"""
+        :class:`prompt_toolkit.session.PromptSession` object
+        """
 
         if self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)

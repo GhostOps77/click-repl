@@ -69,49 +69,35 @@ def test_group_command_called(capsys):
     )
 
 
-def test_independant_args(capsys):
-    @click.group(invoke_without_command=True)
-    @click.argument("argument")
-    @click.pass_context
-    def cli(ctx, argument):
-        print(f"cli({argument})")
-        if ctx.invoked_subcommand is None:
-            click_repl.repl(ctx)
-
-    @cli.command()
-    def foo():
-        print("Foo!")
-
-    with mock_stdin("foo\n"):
-        with pytest.raises(SystemExit):
-            cli(args=["command-line-argument"], prog_name="test_group_called_once")
-    assert capsys.readouterr().out.replace("\r\n", "\n") == (
-        "cli(command-line-argument)\ncli(command-line-argument)\nFoo!\n"
-    )
+@click.group(invoke_without_command=True)
+@click.argument("argument", required=False)
+@click.pass_context
+def cli_arg_required_false(ctx, argument):
+    if ctx.invoked_subcommand is None:
+        click_repl.repl(ctx)
 
 
-def test_independant_options(capsys):
-    @click.group(invoke_without_command=True)
-    @click.option("--option")
-    @click.pass_context
-    def cli(ctx, option):
-        print(f"cli({option})")
-        if ctx.invoked_subcommand is None:
-            click_repl.repl(ctx)
+@cli_arg_required_false.command()
+def foo():
+    print("Foo")
 
-    @cli.command()
-    def foo():
-        print("Foo!")
 
-    with mock_stdin("foo\n"):
-        with pytest.raises(SystemExit):
-            cli(
-                args=["--option", "command-line-argument"],
-                prog_name="test_independant_options",
-            )
-    assert capsys.readouterr().out.replace("\r\n", "\n") == (
-        "cli(command-line-argument)\ncli(command-line-argument)\nFoo!\n"
-    )
+@pytest.mark.parametrize(
+    "args, stdin, expected_err, expected_output",
+    [
+        ([], "foo\n", click_repl.exceptions.InvalidGroupFormat, ""),
+        (["temp_arg"], "", SystemExit, ""),
+        (["temp_arg"], "foo\n", SystemExit, "Foo\n"),
+    ],
+)
+def test_group_argument_with_required_false(
+    capsys, args, stdin, expected_err, expected_output
+):
+    with pytest.raises(expected_err):
+        with mock_stdin(stdin):
+            cli_arg_required_false(args=args, prog_name="cli_arg_required_false")
+
+    assert capsys.readouterr().out.replace("\r\n", "\n") == expected_output
 
 
 @click.group(invoke_without_command=True)
@@ -125,8 +111,8 @@ def cmd(ctx, argument, option1, option2):
         click_repl.repl(ctx)
 
 
-@cmd.command()
-def foo():
+@cmd.command("foo")
+def foo2():
     print("Foo!")
 
 
@@ -160,8 +146,9 @@ def test_inputs(capfd):
             ctx.invoke(repl)
 
     @cli.command()
-    def repl():
-        click_repl.repl(click.get_current_context())
+    @click.pass_context
+    def repl(ctx):
+        click_repl.repl(ctx)
 
     try:
         cli(args=[], prog_name="test_inputs")
@@ -205,5 +192,33 @@ from level1
 from level2
 from level2
 from lvl2 command
+"""
+    )
+
+
+def test_internal_commands(capsys):
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def cli(ctx):
+        if ctx.invoked_subcommand is None:
+            click_repl.repl(ctx)
+
+    with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
+        with mock_stdin(":help\n:exit\n"):
+            cli()
+
+    captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
+    assert (
+        captured_stdout
+        == """REPL help:
+
+  External/System Commands:
+    prefix external commands with "!"
+
+  Internal Commands:
+    prefix internal commands with ":"
+    :exit, :q, :quit  Exits the repl
+    :?, :h, :help     Displays general help information
+
 """
     )

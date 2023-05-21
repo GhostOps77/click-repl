@@ -29,6 +29,7 @@ c = ClickCompleter(root_command, click.Context(root_command))
         ("path-type-arg tests/", glob.glob("tests/*")),
         ("path-type-arg src/*", []),
         ("path-type-arg src/**", []),
+        ('path-type-arg "tests/testdir/test "', {"test file.txt", "test directory"}),
         (
             "path-type-arg tests/testdir/",
             glob.glob("tests/testdir/*"),

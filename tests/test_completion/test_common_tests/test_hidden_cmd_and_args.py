@@ -34,7 +34,7 @@ def test_hidden_option():
         "args-choices",
         "args-choices-hidden-cmd foo ",
         "args-choices-hidden-cmd --handler ",
-        'args-choices-hidden-cmd --handler "',
+        "args-choices-hidden-cmd --handler ",
     ],
 )
 def test_args_of_hidden_command(test_input):

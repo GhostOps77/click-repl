@@ -97,3 +97,27 @@ with pytest.importorskip(
         assert {x.text for x in completions} == expected and {
             x.display_meta[0][-1] for x in completions
         } == {i.lower() for i in expected}
+
+
+@root_command.command()
+@click.argument("choice", type=click.Choice(("FOO", "Bar"), case_sensitive=False))
+def case_insensitive_choices(choice):
+    pass
+
+
+@pytest.mark.skipif(
+    click.__version__[0] != "8",
+    reason="""Test skipped as click v8 is not available
+case_sensitive attribute is introduced in click.Choice in click v8""",
+)
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("case-insensitive-choices ", {"FOO", "Bar"}),
+        ("case-insensitive-choices f", {"FOO"}),
+        ("case-insensitive-choices bA", {"Bar"}),
+    ],
+)
+def test_case_insensitive_choice_type(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected

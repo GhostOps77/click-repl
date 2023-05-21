@@ -7,7 +7,7 @@ import click
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, _get_cli_argv, get_current_repl_ctx
+from ._globals import ISATTY, get_current_repl_ctx
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .completer import ClickCompleter
 from .core import ClickReplContext
@@ -44,7 +44,7 @@ def bootstrap_prompt(
     group,  # type: Group
     prompt_kwargs,  # type: Dict[str, Any]
     group_ctx,  # type: Context
-    cli_args: "List[str]",
+    # cli_args: "List[str]",
     validator,  # type: bool
     internal_cmd_prefix: str,
     system_cmd_prefix: str,
@@ -62,13 +62,14 @@ def bootstrap_prompt(
         used to apply custom coloring to the
         :class:`~prompt_toolkit.completion.Completion` objects
     """
+    if not ISATTY:
+        return {}
 
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(
             group,
             group_ctx,
-            cli_args,
             internal_cmd_prefix,
             system_cmd_prefix,
             styles=styles,
@@ -127,8 +128,8 @@ def repl(
     for param in group.params:
         if (
             isinstance(param, click.Argument)
-            and not param.required
             and group_ctx.params[param.name] is None  # type: ignore[index]
+            and not param.required
         ):
             raise InvalidGroupFormat(
                 f"{type(group).__name__} '{group.name}' requires value for "
@@ -138,56 +139,38 @@ def repl(
     if styles is None:
         styles = dict.fromkeys(["command", "option", "argument"], "ansiblack")
 
-    # print(f'\n{vars(group_ctx) = }')
-    # print(f'\n{vars(old_ctx) = }')
-
-    # Delete the REPL command from those available, as we don't want to allow
-    # nesting REPLs (note: pass `None` to `pop` as we don't want to error if
-    # REPL command already not present for some reason).
-    repl_command_name = group.name
-
-    if isinstance(group_ctx.command, click.CommandCollection):
-        available_commands = {
-            cmd_name: cmd_obj
-            for source in group_ctx.command.sources
-            for cmd_name, cmd_obj in source.commands.items()  # type: ignore[attr-defined]
-        }
-
-    else:
-        available_commands = group_ctx.command.commands  # type: ignore[attr-defined]
-
-    original_command = available_commands.pop(repl_command_name, None)
+    prompt_kwargs = bootstrap_prompt(
+        group,
+        prompt_kwargs,
+        group_ctx,
+        # cli_args,
+        validator,
+        internal_cmd_prefix,
+        system_cmd_prefix,
+        styles,
+    )
 
     # To assign the parent repl context for the next repl context
     parent_repl_ctx = get_current_repl_ctx(silent=True)
 
-    if parent_repl_ctx is None:
-        cli_args = sys.argv[1:]
-    else:
-        cli_args = parent_repl_ctx.cli_args + _get_cli_argv(group, [])
-
-    # print(f'{cli_args = }')
+    repl_ctx = ClickReplContext(group_ctx, prompt_kwargs, parent=parent_repl_ctx)
 
     if ISATTY:
-        prompt_kwargs = bootstrap_prompt(
-            group,
-            prompt_kwargs,
-            group_ctx,
-            cli_args,
-            validator,
-            internal_cmd_prefix,
-            system_cmd_prefix,
-            styles,
-        )
-    else:
-        prompt_kwargs = {}
 
-    with ClickReplContext(
-        group_ctx, prompt_kwargs, cli_args=cli_args, parent=parent_repl_ctx
-    ) as repl_ctx:
+        def get_command() -> str:
+            return repl_ctx.session.prompt()  # type: ignore[return-value, union-attr]
+
+    else:
+
+        def get_command() -> str:
+            inp = sys.stdin.readline().strip()
+            repl_ctx._history.append(inp)  # type: ignore[union-attr]
+            return inp
+
+    with repl_ctx:
         while True:
             try:
-                command = repl_ctx.get_command()
+                command = get_command()
             except KeyboardInterrupt:
                 continue
             except EOFError:
@@ -206,13 +189,6 @@ def repl(
                 if args is None:
                     continue
 
-            except CommandLineParserError:
-                continue
-
-            except ExitReplException:
-                break
-
-            try:
                 # The group command will dispatch based on args.
                 old_protected_args = group_ctx.protected_args
                 try:
@@ -220,6 +196,9 @@ def repl(
                     group.invoke(group_ctx)
                 finally:
                     group_ctx.protected_args = old_protected_args
+
+            except CommandLineParserError:
+                continue
 
             except click.ClickException as e:
                 e.show()
@@ -230,8 +209,8 @@ def repl(
             except ExitReplException:
                 break
 
-        if original_command is not None:
-            available_commands[repl_command_name] = original_command
+        # if original_command is not None:
+        #     available_commands[repl_command_name] = original_command
 
 
 def register_repl(group: "Group", name: str = "repl") -> None:

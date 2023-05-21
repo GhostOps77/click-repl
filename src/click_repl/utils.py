@@ -1,12 +1,10 @@
-import typing as t
-from functools import lru_cache
-
 import click
+import typing as t
 
 if t.TYPE_CHECKING:
-    from typing import List, Tuple, Union  # noqa: F401
+    from typing import List  # noqa: F401
 
-    from click import BaseCommand, Context  # noqa: F401
+    from click import Context  # noqa: F401
 
 
 # def flatten_click_tuple(tuple_type: "click.Tuple") -> "Generator[Any, None, None]":
@@ -26,30 +24,22 @@ if t.TYPE_CHECKING:
 #             yield val
 
 
-@lru_cache(maxsize=3)
 def _resolve_context(
-    cli: "BaseCommand",
-    cli_args: "Tuple[str]",
-    cmd_args: "Tuple[str]",
+    args: "List[str]",
+    ctx: "Context",
 ) -> "Context":
     """Produce the context hierarchy starting with the command and
     traversing the complete arguments. This only follows the commands,
     it doesn't trigger input prompts or callbacks.
 
-    :param cli: Command being called.
     :param args: List of complete args before the incomplete value.
+    :param ctx: `~click.Context` object of the CLI group.
     """
-
-    args = list(cli_args + cmd_args)
-    ctx = cli.make_context("", args, resilient_parsing=True)
-    args = ctx.protected_args + ctx.args
 
     while args:
         command = ctx.command
 
         if isinstance(command, click.MultiCommand):
-            # _push_args(command, args)
-
             if not command.chain:
                 name, cmd, args = command.resolve_command(ctx, args)
 
@@ -81,12 +71,3 @@ def _resolve_context(
             break
 
     return ctx
-
-
-# def latest_cache_val():
-#     latets_val = None
-
-#     @lru_cache(maxsize=2)
-#     def func(*args, **kwargs):
-#         latest_val = ParsingState(*args, **kwargs)
-#         return latest_val

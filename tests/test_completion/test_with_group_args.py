@@ -20,8 +20,7 @@ def c1(user):
     click.echo(f"Executed C1 with {user}!")
 
 
-cli_args = ["--user", "hi"]
-c = ClickCompleter(cmd, cmd.make_context("", args=cli_args), cli_args=cli_args)
+c = ClickCompleter(cmd, cmd.make_context("", args=["--user", "hi"]))
 
 
 @pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
@@ -44,8 +43,9 @@ def cmd(cmd_arg):
     pass
 
 
-cli_args = ["--opt", "hi1", "hi2", "hi3", "hi4", "hi5", "hii"]
-c2 = ClickCompleter(cli, cli.make_context("", args=cli_args), cli_args=cli_args)
+c2 = ClickCompleter(
+    cli, cli.make_context("", args=["--opt", "hi1", "hi2", "hi3", "hi4", "hi5", "hii"])
+)
 
 
 @pytest.mark.parametrize(

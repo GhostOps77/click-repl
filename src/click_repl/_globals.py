@@ -14,6 +14,7 @@ if t.TYPE_CHECKING:
 
 HAS_CLICK6 = click.__version__[0] == "6"
 ISATTY = sys.stdin.isatty()
+
 _locals = local()
 _locals.ctx_stack = []
 _locals.cli_args_stack = {}

@@ -40,7 +40,11 @@ def test_boolean_arg(test_input, expected):
 
 @pytest.mark.parametrize(
     "test_input, expected",
-    [("arg-choices ", {"foo", "bar"}), ("arg-choices foo ", set())],
+    [
+        ("arg-choices ", {"foo", "bar"}),
+        ("arg-choices f", {"foo"}),
+        ("arg-choices foo ", set()),
+    ],
 )
 def test_arg_choices(test_input, expected):
     completions = c.get_completions(Document(test_input))
