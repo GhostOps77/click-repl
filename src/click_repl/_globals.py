@@ -52,28 +52,3 @@ def push_context(ctx: "ClickReplContext") -> None:
 def pop_context() -> None:
     """Removes the top level from the stack."""
     _locals.ctx_stack.pop()
-
-
-def _get_cli_argv(
-    group: "MultiCommand",
-    default: "Any" = None,
-) -> "Union[List[Any], NoReturn]":
-    """Returns args for the current click-repl Group CLI.
-
-    Keyword arguments:
-    ---
-    :param:`group` - The Group object for the respective group args
-    :param:`default` - Default sentinel value, the return value is
-        whatever available in that parameter if no args were
-        available and if its not None. The default behavior is to
-        raise a :exc:`RuntimeError`.
-
-    Return: List of string of the respective group args if available
-    """
-
-    return _locals.cli_args_stack.get(group, default)  # type: ignore[no-any-return]
-
-
-def _push_args(group: "MultiCommand", args: "Iterable[str]" = []) -> None:
-    """Pushes a new context to the current stack."""
-    _locals.cli_args_stack[group] = args

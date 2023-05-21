@@ -27,28 +27,14 @@ if t.TYPE_CHECKING:
 __all__ = ["register_repl", "repl"]
 
 
-# def get_multicommand_args(self, *args, **kwargs):
-#     print('im getting called')
-#     if isinstance(self, click.MultiCommand):
-#         from ._globals import _push_args
-#         _push_args(self, args, kwargs)
-
-#     self.main(*args, **kwargs)
-
-
-# # if __name__ == "__main__":
-# click.BaseCommand.__call__ = get_multicommand_args
-
-
 def bootstrap_prompt(
-    group,  # type: Group
-    prompt_kwargs,  # type: Dict[str, Any]
-    group_ctx,  # type: Context
-    # cli_args: "List[str]",
-    validator,  # type: bool
+    group: "Group",
+    prompt_kwargs: "Dict[str, Any]",
+    group_ctx: "Context",
+    validator: "bool",
     internal_cmd_prefix: str,
     system_cmd_prefix: str,
-    styles=None,  # type: Optional[Dict[str, Any]]
+    styles: "Optional[Dict[str, Any]]" = None,
 ) -> "Dict[str, Any]":
     """Bootstrap prompt_toolkit kwargs or use user defined values.
 
@@ -143,7 +129,6 @@ def repl(
         group,
         prompt_kwargs,
         group_ctx,
-        # cli_args,
         validator,
         internal_cmd_prefix,
         system_cmd_prefix,
@@ -208,9 +193,6 @@ def repl(
 
             except ExitReplException:
                 break
-
-        # if original_command is not None:
-        #     available_commands[repl_command_name] = original_command
 
 
 def register_repl(group: "Group", name: str = "repl") -> None:

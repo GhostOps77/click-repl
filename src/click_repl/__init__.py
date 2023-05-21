@@ -29,22 +29,5 @@ __all__ = [
     "InternalCommandException",
 ]
 
+version_info = (0, 2, 1, 1)
 __version__ = "0.2.1dev1"
-
-
-# def get_multicommand_args(self, *args, **kwargs):
-#     print("im getting called")
-#     if isinstance(self, click.MultiCommand):
-#         from ._globals import _push_args
-
-#         _push_args(self, args, kwargs)
-#     else:
-#         print(self)
-
-
-#     self.main(*args, **kwargs)
-
-
-# # if __name__ == "__main__":
-# click.BaseCommand.__call__ = get_multicommand_args
-# click.core.__globals__['BaseCommand'].__call__ = get_multicommand_args
