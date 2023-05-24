@@ -23,7 +23,7 @@ jobs:
           flake8 src tests
 
   Test:
-    needs: Linter
+    needs: Lint
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -46,7 +46,7 @@ jobs:
       run: tox
 
   Py36_click6_Tests:
-    needs: Linter
+    needs: Lint
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
