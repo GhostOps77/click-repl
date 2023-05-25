@@ -19,12 +19,12 @@ from .exceptions import (
 )
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional  # noqa: F401
+    from typing import Any, Dict, Callable, Optional  # noqa: F401
 
     from click import Context, Group  # noqa: F401
 
 
-__all__ = ["register_repl", "repl"]
+# __all__ = ["register_repl", "repl"]
 
 
 def bootstrap_prompt(

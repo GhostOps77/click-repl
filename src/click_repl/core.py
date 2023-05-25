@@ -1,14 +1,15 @@
+import click
 import typing as t
+from . import _repl
 
 # from click_repl.parser import currently_introspecting_args
 
 from prompt_toolkit import PromptSession
-
 from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
     from typing import List  # noqa: F401
-    from typing import Any, Dict, Generator, Optional, Union
+    from typing import Any, Dict, Generator, Optional, Union, Callable
 
     from click import Context  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
@@ -116,3 +117,45 @@ class ClickReplContext:
             _history = reversed(self._history)  # type: ignore[arg-type]
 
         yield from _history
+
+
+class ReplCli(click.Group):
+    def __init__(
+        self,
+        prompt: str = "> ",
+        startup: "Callable[[], None]" = None,  # type: ignore[assignment]
+        cleanup: "Callable[[], None]" = None,  # type: ignore[assignment]
+        ctx_args: "Dict[str, Any]" = {},
+        **repl_kwargs: "Any",
+    ):
+        ctx_args["invoke_without_command"] = True
+        super().__init__(**ctx_args)
+        print(f"{repl_kwargs = }")
+
+        self.prompt = prompt
+        self.startup = startup
+        self.cleanup = cleanup
+        self.repl_kwargs = repl_kwargs
+
+    def invoke(self, ctx: "Context") -> "Any":
+        return_val = super().invoke(ctx)
+
+        try:
+            if not (ctx.invoked_subcommand or ctx.protected_args):
+                if self.startup is not None:
+                    self.startup()
+
+                _repl.repl(
+                    ctx,
+                    prompt_kwargs={
+                        "message": self.prompt,
+                    },
+                    **self.repl_kwargs,
+                )
+
+        finally:
+            # Finisher callback on the context
+            if self.cleanup is not None:
+                self.cleanup()
+
+        return return_val

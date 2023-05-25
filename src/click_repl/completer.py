@@ -100,9 +100,11 @@ class ClickCompleter(Completer):
             )
 
             self.ctx_command = self.parsed_ctx.command
+            self.state = currently_introspecting_args(
+                self.cli, self.parsed_ctx, self.parsed_args
+            )
 
-            self.state = currently_introspecting_args(self.cli, self.parsed_ctx, args)
-
+        # print(f'{vars(self.parsed_ctx) = }')
         # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
 
         if getattr(self.ctx_command, "hidden", False):
@@ -110,7 +112,7 @@ class ClickCompleter(Completer):
 
         # try:
         # print(f'(from completions) {self.parsed_ctx.command} {self.parsed_ctx.params}')
-        # print(f' {state = }\n')
+        # print(f' {self.state = }\n')
 
         # except Exception as e:
         #     click.echo(f"{type(e).__name__}: {e}")

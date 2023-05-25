@@ -8,7 +8,7 @@ from ._internal_cmds import exit
 from ._repl import register_repl, repl
 from .completer import ClickCompleter, ReplCompletion
 from .core import ClickReplContext
-from .decorators import pass_context
+from .decorators import pass_context, repl_cli
 from .exceptions import (
     CommandLineParserError,
     ExitReplException,
@@ -24,6 +24,7 @@ __all__ = [
     "repl",
     "ClickReplContext",
     "pass_context",
+    "repl_cli",
     "CommandLineParserError",
     "ExitReplException",
     "InternalCommandException",

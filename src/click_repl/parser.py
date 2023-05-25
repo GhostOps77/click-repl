@@ -92,6 +92,8 @@ def _split_args(document_text: str) -> "Tuple[List[str], str]":
         opt, incomplete = incomplete.rsplit("=", 1)
         args.append(opt)
 
+    incomplete = os.path.expandvars(os.path.expanduser(incomplete))
+
     return args, incomplete
 
 
@@ -140,57 +142,68 @@ class ParsingState:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def get_params_to_parse(self, ctx: "Context") -> None:
+        if self.current_cmd is not None:
+            minus_one_args = []
+            option_args = []
+
+            for param in self.current_cmd.params:
+                if param.nargs == -1:
+                    minus_one_args.append(param)
+
+                elif isinstance(param, click.Option):
+                    option_args.append(param)
+
+                elif ctx.params.get(param.name, None) is None:  # type: ignore
+                    self.remaining_params.append(param)
+
+            self.remaining_params += option_args + minus_one_args
+
     def parse_cmd(self, ctx: "Context") -> None:
         ctx_cmd = ctx.command
-        parent_group = None
+        parent_group = ctx_cmd
         if ctx.parent is not None:
             parent_group = ctx.parent.command
 
         self.current_group = parent_group  # type: ignore[assignment]
         is_cli = ctx_cmd == self.cli
 
-        if all(value is not None for value in ctx.params.values()) or is_cli:
-            # if is_cli:
-            #     self.current_cmd = None
+        # All the required arguments are assigned with values
+        args_val = (
+            ctx.params.get(i.name, None) is not None  # type: ignore[arg-type]
+            for i in ctx_cmd.params
+            if isinstance(i, click.Argument)
+        )
 
-            if isinstance(ctx_cmd, click.MultiCommand):
-                self.current_group = ctx_cmd
+        if isinstance(ctx_cmd, click.MultiCommand) and (is_cli or all(args_val)):
+            self.current_group = ctx_cmd
 
-            elif isinstance(ctx_cmd, click.Command):
-                self.current_group = parent_group  # type: ignore[assignment]
-                if getattr(parent_group, "chain", False) and not any(
-                    isinstance(i, click.Option) for i in ctx_cmd.params
-                ):
-                    self.current_cmd = None
-                else:
-                    self.current_cmd = ctx_cmd
+        elif isinstance(ctx_cmd, click.Command):
+            self.current_group = parent_group  # type: ignore[assignment]
+
+            if not (getattr(parent_group, "chain", False) and all(args_val)):
+                self.current_cmd = ctx_cmd
 
         else:
-            self.current_cmd = ctx_cmd
+            self.current_cmd = ctx_cmd  # type: ignore[unreachable]
 
         # print(f'{ctx.params = }')
-        if self.current_cmd is not None:
-            minus_one_args = []
-            for param in self.current_cmd.params:
-                if ctx.params.get(
-                    param.name, None  # type: ignore
-                ) is None or isinstance(  # type: ignore[arg-type]
-                    param, click.Option
-                ):
-                    if param.nargs == -1:
-                        minus_one_args.append(param)
-                    else:
-                        self.remaining_params.append(param)
-
-            self.remaining_params += minus_one_args
+        self.get_params_to_parse(ctx)
         # print(f'\n{self.current_cmd} {self.remaining_params = }')
+
+        # if not (
+        #     getattr(self.current_group, 'chain', False)
+        #     and self.remaining_params
+        #     and any(isinstance(i, click.Argument) for i in self.remaining_params)
+        # ):
+        #     ...
 
     def parse_params(self, ctx: "Context", args: "List[str]") -> None:
         # skip_arguments = False
 
         # print(f'\n{ctx.command} {ctx.command.params}')
         for param in ctx.command.params:
-            if isinstance(param, click.Option):
+            if isinstance(param, click.Option) and not ctx.args and "--" not in args:
                 # print(f'{param.name = } rem:{param in self.remaining_params}')
                 options_name_list = param.opts + param.secondary_opts
 
@@ -313,11 +326,10 @@ class ReplParser:
         if "*" in incomplete:
             return
 
-        _expanded_env_incomplete = os.path.expandvars(incomplete)
-        search_pattern = _expanded_env_incomplete.strip("'\"").replace("\\\\", "\\") + "*"
+        search_pattern = incomplete.strip("'\"").replace("\\\\", "\\") + "*"
         quote = ""  # Quote thats used to surround the path in shell
 
-        if " " in _expanded_env_incomplete:
+        if " " in incomplete:
             for i in incomplete:
                 if i in ("'", '"'):
                     quote = i
