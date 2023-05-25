@@ -22,15 +22,21 @@ if t.TYPE_CHECKING:
 
 
 def repl_cli(
-    name: "Union[Callable[..., Any], str]", **attrs: "Any"
+    func: "Union[Callable[..., Any], str, None]" = None, **attrs: "Any"
 ) -> "Callable[[F], ReplCli]":
     """Creates a new :class:`ReplCli` with a function as callback.  This
     works otherwise the same as :func:`command` just that the `cls`
     parameter is set to :class:`ReplCli`.
     """
 
-    attrs.setdefault("cls", ReplCli)
-    return cast(ReplCli, click.command(name, **attrs))
+    def decorator(f: "Union[Callable[..., Any], str, None]") -> ReplCli:
+        attrs.setdefault("cls", ReplCli)
+        return cast(ReplCli, click.group(f, **attrs))
+
+    if func is not None:
+        return decorator(func)
+
+    return decorator
 
 
 def pass_context(
