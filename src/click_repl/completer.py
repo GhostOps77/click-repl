@@ -5,7 +5,11 @@ from prompt_toolkit.completion import Completer, Completion
 
 # from .exceptions import CommandLineParserError
 from .utils import _resolve_context
-from .parser import CompletionsProvider, get_args_and_incomplete_from_args, currently_introspecting_args
+from .parser import (
+    CompletionsProvider,
+    get_args_and_incomplete_from_args,
+    currently_introspecting_args,
+)
 
 __all__ = ["ClickCompleter"]
 

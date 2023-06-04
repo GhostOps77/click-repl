@@ -44,12 +44,12 @@ except ImportError:
 
 
 def quotes(text: str) -> str:
-    if ' ' in text:
+    if " " in text:
         return f'"{text}"'
     return text
 
 
-def shlex_split(string: str, posix: bool = True):
+def shlex_split(string: str, posix: bool = True) -> "Tuple[List[str], str]":
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.
@@ -70,7 +70,7 @@ def shlex_split(string: str, posix: bool = True):
     lex.commenters = ""
     lex.escape = ""
     out: "List[str]" = []
-    remaining_token: str = ''
+    remaining_token: str = ""
 
     try:
         out.extend(lex)
@@ -83,20 +83,20 @@ def shlex_split(string: str, posix: bool = True):
 
     # To get the actual text passed in through REPL cmd line
     # irrespective of quotes
-    last_val = ''
-    if out and remaining_token == '' and not string[-1].isspace():
+    last_val = ""
+    if out and remaining_token == "" and not string[-1].isspace():
         remaining_token = out[-1]
 
-        tmp = ''
+        tmp = ""
         for i in reversed(string.split()):
-          last_val = f'{i} {tmp}'.strip()
-          if last_val.replace("'", '').replace('"', '') == remaining_token:
-              break
-          else:
-              tmp = last_val
+            last_val = f"{i} {tmp}".strip()
+            if last_val.replace("'", "").replace('"', "") == remaining_token:
+                break
+            else:
+                tmp = last_val
 
         if out and last_val == out[-1]:
-            last_val = ''
+            last_val = ""
 
     return out, last_val
 
@@ -367,16 +367,16 @@ class CompletionsProvider:
     ) -> "Generator[Completion, None, None]":
 
         if "*" in incomplete:
-            return []
+            return []  # type: ignore[return-value]
 
         # print(f'\n{incomplete = }')
 
-        has_space = ' ' in incomplete
+        has_space = " " in incomplete
         quoted = incomplete.count('"') % 2
 
-        print(f'\n{has_space = } {quoted = } {incomplete = }')
+        print(f"\n{has_space = } {quoted = } {incomplete = }")
 
-        search_pattern = incomplete.strip('"\'') + "*"
+        search_pattern = incomplete.strip("\"'") + "*"
         # if has_space and not quoted:
         #     incomplete = f'"{incomplete}'
 
@@ -390,26 +390,26 @@ class CompletionsProvider:
         #             quote = i
         #             break
 
-        completion_txt_len = -len(incomplete) - has_space*2 + quoted*2
+        completion_txt_len = -len(incomplete) - has_space * 2 + quoted * 2
 
-        print(f'{temp_path_obj = }')
+        print(f"{temp_path_obj = }")
         for path in temp_path_obj.parent.glob(temp_path_obj.name):
-        #     if " " in path:
-        #         if quote:
-        #             path = quote + path
-        #         else:
-        #             if IS_WINDOWS:
-        #                 path = repr(path).replace("\\\\", "\\")
-        #     else:
-        #         if IS_WINDOWS:
-        #             path = path.replace("\\", "\\\\")
+            #     if " " in path:
+            #         if quote:
+            #             path = quote + path
+            #         else:
+            #             if IS_WINDOWS:
+            #                 path = repr(path).replace("\\\\", "\\")
+            #     else:
+            #         if IS_WINDOWS:
+            #             path = path.replace("\\", "\\\\")
 
             path_str = str(path)
 
             if IS_WINDOWS:
                 path_str = path_str.replace("\\\\", "\\")
 
-            if ' ' in path_str:
+            if " " in path_str:
                 path_str = path_str.replace('"', '\\"')
 
                 if quoted:
@@ -436,9 +436,7 @@ class CompletionsProvider:
         for value, aliases in boolean_mapping.items():
             if any(alias.startswith(incomplete) for alias in aliases):
                 yield Completion(
-                    quotes(value),
-                    -len(incomplete),
-                    display_meta="/".join(aliases)
+                    quotes(value), -len(incomplete), display_meta="/".join(aliases)
                 )
 
     def get_completion_for_Range_types(

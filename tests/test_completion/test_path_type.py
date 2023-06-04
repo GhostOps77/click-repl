@@ -25,13 +25,13 @@ c = ClickCompleter(root_command, click.Context(root_command))
 @pytest.mark.parametrize(
     "test_input,expected",
     [
-        ("pathTypeArg ", Path('.').glob("*")),
-        ("pathTypeArg tests/", Path('.').glob("tests/*")),
+        ("pathTypeArg ", Path(".").glob("*")),
+        ("pathTypeArg tests/", Path(".").glob("tests/*")),
         ("pathTypeArg src/*", []),
         ("pathTypeArg src/**", []),
         (
             "pathTypeArg tests/testdir/",
-            Path('.').glob("tests/testdir/*"),
+            Path(".").glob("tests/testdir/*"),
         ),
     ],
 )
