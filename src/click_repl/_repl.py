@@ -9,6 +9,7 @@ from prompt_toolkit.history import InMemoryHistory
 
 from ._globals import ISATTY, get_current_repl_ctx
 from ._internal_cmds import _execute_internal_and_sys_cmds
+from .parser import split_arg_string
 from .completer import ClickCompleter
 from .core import ClickReplContext
 from .exceptions import (
@@ -168,19 +169,21 @@ def repl(
                     break
 
             try:
-                args = _execute_internal_and_sys_cmds(
-                    command, allow_internal_commands, allow_system_commands
-                )
-                if args is None:
-                    continue
+                if command.startswith((internal_cmd_prefix, system_cmd_prefix)):
+                    _execute_internal_and_sys_cmds(
+                        command.lower(), allow_internal_commands, allow_system_commands
+                    )
 
-                # The group command will dispatch based on args.
-                old_protected_args = group_ctx.protected_args
-                try:
-                    group_ctx.protected_args = args
-                    group.invoke(group_ctx)
-                finally:
-                    group_ctx.protected_args = old_protected_args
+                else:
+                    args = split_arg_string(command)
+
+                    # The group command will dispatch based on args.
+                    old_protected_args = group_ctx.protected_args
+                    try:
+                        group_ctx.protected_args = args
+                        group.invoke(group_ctx)
+                    finally:
+                        group_ctx.protected_args = old_protected_args
 
             except CommandLineParserError:
                 continue

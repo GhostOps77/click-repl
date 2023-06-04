@@ -123,15 +123,14 @@ class ReplCli(click.Group):
     def __init__(
         self,
         prompt: str = "> ",
-        startup: "Callable[[], None]" = None,  # type: ignore[assignment]
-        cleanup: "Callable[[], None]" = None,  # type: ignore[assignment]
+        startup: "Optional[Callable[[], None]]" = None,
+        cleanup: "Optional[Callable[[], None]]" = None,
         ctx_args: "Dict[str, Any]" = {},
         repl_kwargs: "Dict[str, Any]" = {},
         **attrs: "Any",
     ):
         ctx_args["invoke_without_command"] = True
         super().__init__(**ctx_args)
-        print(f"{attrs = }")
 
         self.prompt = prompt
         self.startup = startup

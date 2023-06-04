@@ -5,7 +5,7 @@ from prompt_toolkit.completion import Completer, Completion
 
 # from .exceptions import CommandLineParserError
 from .utils import _resolve_context
-from .parser import ReplParser, _split_args, currently_introspecting_args
+from .parser import CompletionsProvider, get_args_and_incomplete_from_args, currently_introspecting_args
 
 __all__ = ["ClickCompleter"]
 
@@ -14,7 +14,7 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, Optional, Iterable  # noqa: F401
+    from typing import Dict, Generator, List, Optional  # noqa: F401
 
     from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
     from click import Command, Context, Group  # noqa: F401
@@ -67,7 +67,7 @@ class ClickCompleter(Completer):
         if styles is None:
             styles = dict.fromkeys(("command", "argument", "option"), "")
 
-        self.completion_parser = ReplParser(self.cli, styles)
+        self.completion_parser = CompletionsProvider(self.cli, styles)
 
     def get_completions(
         self, document: "Document", complete_event: "Optional[CompleteEvent]" = None
@@ -90,7 +90,8 @@ class ClickCompleter(Completer):
         if document.text.startswith((self.internal_cmd_prefix, self.system_cmd_prefix)):
             return
 
-        args, incomplete = _split_args(document.text_before_cursor)
+        args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
+        # print(f'{args = } {incomplete = }')
 
         if self.parsed_args != args:
             self.parsed_args = args

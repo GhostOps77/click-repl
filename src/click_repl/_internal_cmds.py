@@ -7,10 +7,9 @@ from prompt_toolkit.shortcuts import clear
 import click
 
 from .exceptions import ExitReplException
-from .parser import split_arg_string
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
+    from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, Union
 
 
 _locals = local()
@@ -120,7 +119,7 @@ def _execute_internal_and_sys_cmds(
     command: str,
     allow_internal_commands: bool = True,
     allow_system_commands: bool = True,
-) -> "Optional[List[str]]":
+) -> None:
     """
     Executes internal, system, and all the other registered click commands from the input
     """
@@ -132,5 +131,3 @@ def _execute_internal_and_sys_cmds(
         if isinstance(result, str):
             click.echo(result)
             return None
-
-    return split_arg_string(command)

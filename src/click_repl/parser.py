@@ -1,9 +1,9 @@
 import os
+import re
 import typing as t
 from functools import lru_cache
-from glob import iglob
 
-# from pathlib import Path
+from pathlib import Path
 from shlex import shlex
 
 import click
@@ -18,6 +18,7 @@ if t.TYPE_CHECKING:
     from click import Command, Context, Parameter, MultiCommand  # noqa: F401
 
 
+EQUAL_SIGNED_OPTION = re.compile(r"^((?:-|--)[a-z][a-z-]*)=(.*)", re.I)
 IS_WINDOWS = os.name == "nt"
 
 # Float Range is introduced after IntRange, in click v7
@@ -42,7 +43,13 @@ except ImportError:
     AUTO_COMPLETION_PARAM = "autocompletion"
 
 
-def split_arg_string(string: str, posix: bool = True) -> "List[str]":
+def quotes(text: str) -> str:
+    if ' ' in text:
+        return f'"{text}"'
+    return text
+
+
+def shlex_split(string: str, posix: bool = True):
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.
@@ -61,7 +68,9 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     lex = shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
     lex.commenters = ""
+    lex.escape = ""
     out: "List[str]" = []
+    remaining_token: str = ''
 
     try:
         out.extend(lex)
@@ -69,27 +78,60 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
         # Raised when end-of-string is reached in an invalid state. Use
         # the partial token as-is. The quote or escape character is in
         # lex.state, not lex.token.
-        out.append(lex.token)
+        remaining_token = lex.token
+        out.append(remaining_token)
+
+    # To get the actual text passed in through REPL cmd line
+    # irrespective of quotes
+    last_val = ''
+    if out and remaining_token == '' and not string[-1].isspace():
+        remaining_token = out[-1]
+
+        tmp = ''
+        for i in reversed(string.split()):
+          last_val = f'{i} {tmp}'.strip()
+          if last_val.replace("'", '').replace('"', '') == remaining_token:
+              break
+          else:
+              tmp = last_val
+
+        if out and last_val == out[-1]:
+            last_val = ''
+
+    return out, last_val
+
+
+def split_arg_string(string: str) -> "List[str]":
+    args, _ = shlex_split(string)
+    out = []
+    for i in args:
+        match = EQUAL_SIGNED_OPTION.match(i)
+        if match:
+            out.append(match[1])
+            out.append(match[2])
+        else:
+            out.append(i)
 
     return out
 
 
 @lru_cache(maxsize=3)
-def _split_args(document_text: str) -> "Tuple[List[str], str]":
-    args = split_arg_string(document_text, posix=False)
-    cursor_within_command = document_text.rstrip() == document_text
+def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], str]":
+    args, remaining_token = shlex_split(document_text)
+    cursor_within_command = not document_text[-1:].isspace()
 
-    if args and cursor_within_command:
+    if args and cursor_within_command and not remaining_token:
         # We've entered some text and no space, give completions for the
         # current word.
         incomplete = args.pop()
     else:
         # We've not entered anything, either at all or for the current
         # command, so give all relevant completions for this context.
-        incomplete = ""
+        incomplete = remaining_token
 
-    if incomplete.startswith("-") and incomplete[-1] == "=" and incomplete[-2] != "=":
-        opt, incomplete = incomplete.rsplit("=", 1)
+    match = EQUAL_SIGNED_OPTION.match(incomplete)
+    if match:
+        opt, incomplete = match[1], match[2]
         args.append(opt)
 
     incomplete = os.path.expandvars(os.path.expanduser(incomplete))
@@ -98,7 +140,7 @@ def _split_args(document_text: str) -> "Tuple[List[str], str]":
 
 
 class ParsingState:
-    """Custom class to parse the lsit of args
+    """Custom class to parse the list of args
 
     Keyword arguments:
     argument -- description
@@ -248,7 +290,7 @@ def currently_introspecting_args(
     return ParsingState(cli, ctx, args)
 
 
-class ReplParser:
+class CompletionsProvider:
     """Provides Completion items based on the given parameters
     along with the styles provided to it.
 
@@ -284,7 +326,7 @@ class ReplParser:
         for autocomplete in autocompletions:
             if isinstance(autocomplete, tuple):
                 yield Completion(
-                    autocomplete[0],
+                    quotes(autocomplete[0]),
                     -len(incomplete),
                     display_meta=autocomplete[1],
                 )
@@ -292,13 +334,13 @@ class ReplParser:
             elif HAS_CLICK_V8 and isinstance(
                 autocomplete, click.shell_completion.CompletionItem
             ):
-                yield Completion(autocomplete.value, -len(incomplete))
+                yield Completion(quotes(autocomplete.value), -len(incomplete))
 
             elif isinstance(autocomplete, Completion):
                 yield autocomplete
 
             else:
-                yield Completion(str(autocomplete), -len(incomplete))
+                yield Completion(quotes(str(autocomplete)), -len(incomplete))
 
     def get_completion_from_choices_click_le_7(
         self, param_type: "click.Choice", incomplete: str
@@ -314,42 +356,73 @@ class ReplParser:
 
             if choice.startswith(incomplete):
                 yield Completion(
-                    choice,
+                    quotes(choice),
                     -len(incomplete),
                     style=self.styles["argument"],
-                    display=repr(choice) if " " in choice else choice,
+                    display=choice,
                 )
 
     def get_completion_for_Path_types(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
+
         if "*" in incomplete:
-            return
+            return []
 
-        search_pattern = incomplete.strip("'\"").replace("\\\\", "\\") + "*"
-        quote = ""  # Quote thats used to surround the path in shell
+        # print(f'\n{incomplete = }')
 
-        if " " in incomplete:
-            for i in incomplete:
-                if i in ("'", '"'):
-                    quote = i
-                    break
+        has_space = ' ' in incomplete
+        quoted = incomplete.count('"') % 2
 
-        for path in iglob(search_pattern):
-            if " " in path:
-                if quote:
-                    path = quote + path
+        print(f'\n{has_space = } {quoted = } {incomplete = }')
+
+        search_pattern = incomplete.strip('"\'') + "*"
+        # if has_space and not quoted:
+        #     incomplete = f'"{incomplete}'
+
+        temp_path_obj = Path(search_pattern)
+
+        # quote = ""  # Quote thats used to surround the path in shell
+
+        # if " " in incomplete:
+        #     for i in incomplete:
+        #         if i in ("'", '"'):
+        #             quote = i
+        #             break
+
+        completion_txt_len = -len(incomplete) - has_space*2 + quoted*2
+
+        print(f'{temp_path_obj = }')
+        for path in temp_path_obj.parent.glob(temp_path_obj.name):
+        #     if " " in path:
+        #         if quote:
+        #             path = quote + path
+        #         else:
+        #             if IS_WINDOWS:
+        #                 path = repr(path).replace("\\\\", "\\")
+        #     else:
+        #         if IS_WINDOWS:
+        #             path = path.replace("\\", "\\\\")
+
+            path_str = str(path)
+
+            if IS_WINDOWS:
+                path_str = path_str.replace("\\\\", "\\")
+
+            if ' ' in path_str:
+                path_str = path_str.replace('"', '\\"')
+
+                if quoted:
+                    path_str = f'"{path_str}'
                 else:
-                    if IS_WINDOWS:
-                        path = repr(path).replace("\\\\", "\\")
-            else:
-                if IS_WINDOWS:
-                    path = path.replace("\\", "\\\\")
+                    path_str = f'"{path_str}"'
+
+                # completion_txt_len -= 1
 
             yield Completion(
-                path,
-                -len(incomplete),
-                display=os.path.basename(path.strip("'\"")),
+                path_str,
+                completion_txt_len,
+                display=path.name,
             )
 
     def get_completion_for_Boolean_type(
@@ -362,7 +435,11 @@ class ReplParser:
 
         for value, aliases in boolean_mapping.items():
             if any(alias.startswith(incomplete) for alias in aliases):
-                yield Completion(value, -len(incomplete), display_meta="/".join(aliases))
+                yield Completion(
+                    quotes(value),
+                    -len(incomplete),
+                    display_meta="/".join(aliases)
+                )
 
     def get_completion_for_Range_types(
         self, param_type: "Union[click.IntRange, click.FloatRange]"
@@ -379,6 +456,7 @@ class ReplParser:
         args: "Iterable[str]",
         incomplete: str,
     ) -> "List[Completion]":
+
         choices: "List[Completion]" = []
         param_type: "click.ParamType" = param.type
 
@@ -386,7 +464,7 @@ class ReplParser:
             return self.get_completion_for_Range_types(param_type)
 
         elif isinstance(param_type, click.Tuple):
-            return [Completion("", display=_type.name) for _type in param_type.types]
+            return [Completion("-", display=_type.name) for _type in param_type.types]
 
         # shell_complete method for click.Choice is intorduced in click-v8
         elif not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
@@ -420,7 +498,7 @@ class ReplParser:
         incomplete: "str",
     ) -> "Generator[Completion, None, None]":
 
-        param_choices = []
+        opt_aliases = []
         for param in state.current_cmd.params:  # type: ignore[union-attr]
             if (
                 isinstance(param, click.Option) and not param.hidden
@@ -442,7 +520,7 @@ class ReplParser:
                         else:
                             display = option
 
-                        param_choices.append(
+                        opt_aliases.append(
                             Completion(
                                 option,
                                 -len(incomplete),
@@ -457,7 +535,7 @@ class ReplParser:
 
         if curr_param is not None:
             if isinstance(curr_param, click.Argument):
-                yield from param_choices
+                yield from opt_aliases
 
             if not getattr(curr_param, "hidden", False):
                 yield from self.get_completion_from_params(
@@ -465,7 +543,13 @@ class ReplParser:
                 )
 
         else:
-            yield from param_choices
+            yield from opt_aliases
+
+        # a = curr_param is None
+        # if not a or isinstance(curr_param, click.Argument):
+        #   yield from lst1
+        # if a and not getattr(curr_param, "hidden", False):
+        #   yield from lst2
 
     def get_completions_for_command(
         self,
