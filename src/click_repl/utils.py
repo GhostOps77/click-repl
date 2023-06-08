@@ -1,10 +1,13 @@
 import click
 import typing as t
+from functools import lru_cache
+
+from .parser import currently_introspecting_args, get_args_and_incomplete_from_args
 
 if t.TYPE_CHECKING:
-    from typing import List  # noqa: F401
-
-    from click import Context  # noqa: F401
+    from typing import List, Tuple  # noqa: F401
+    from .parser import ParsingState  # noqa: F401
+    from click import Context, Command  # noqa: F401
 
 
 # def flatten_click_tuple(tuple_type: "click.Tuple") -> "Generator[Any, None, None]":
@@ -24,10 +27,7 @@ if t.TYPE_CHECKING:
 #             yield val
 
 
-def _resolve_context(
-    args: "List[str]",
-    ctx: "Context",
-) -> "Context":
+def _resolve_context(args: "List[str]", ctx: "Context") -> "Context":
     """Produce the context hierarchy starting with the command and
     traversing the complete arguments. This only follows the commands,
     it doesn't trigger input prompts or callbacks.
@@ -71,3 +71,22 @@ def _resolve_context(
             break
 
     return ctx
+
+
+@lru_cache(maxsize=2)
+def get_parsed_ctx_and_state(
+    cli_ctx: "Context", document_text: "str"
+) -> "Tuple[Context, List[str], str, Command, ParsingState]":
+    """Used in both completer class and validator class
+    to execute once and use the cached result in the other
+    """
+    args, incomplete = get_args_and_incomplete_from_args(document_text)
+
+    parsed_ctx = _resolve_context(args, cli_ctx)
+
+    ctx_command = parsed_ctx.command
+    state = currently_introspecting_args(
+        cli_ctx.command, parsed_ctx, args  # type: ignore[arg-type]
+    )
+
+    return parsed_ctx, args, incomplete, ctx_command, state

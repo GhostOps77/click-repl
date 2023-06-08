@@ -11,7 +11,8 @@ from ._globals import ISATTY, get_current_repl_ctx
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .parser import split_arg_string
 from .completer import ClickCompleter
-from .core import ClickReplContext
+from .validator import ReplValidator
+from .core import ClickReplContext, toolbar_func
 from .exceptions import (
     ClickExit,
     CommandLineParserError,
@@ -20,7 +21,7 @@ from .exceptions import (
 )
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Callable, Optional  # noqa: F401
+    from typing import Any, Dict, Optional  # noqa: F401
 
     from click import Context, Group  # noqa: F401
 
@@ -32,7 +33,6 @@ def bootstrap_prompt(
     group: "Group",
     prompt_kwargs: "Dict[str, Any]",
     group_ctx: "Context",
-    validator: "bool",
     internal_cmd_prefix: str,
     system_cmd_prefix: str,
     styles: "Optional[Dict[str, Any]]" = None,
@@ -62,15 +62,13 @@ def bootstrap_prompt(
             styles=styles,
         ),
         "message": "> ",
+        "validator": ReplValidator(group_ctx),
         # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
+        "validate_while_typing": True,
         "mouse_support": True,
     }
-
-    if validator and prompt_kwargs.get("validator", None) is None:
-        prompt_kwargs["validator"] = None
-        prompt_kwargs["validate_while_typing"] = True
 
     defaults.update(prompt_kwargs)
     return defaults
@@ -81,7 +79,6 @@ def repl(
     prompt_kwargs: "Dict[str, Any]" = {},
     allow_system_commands: bool = True,
     allow_internal_commands: bool = True,
-    validator: bool = False,
     internal_cmd_prefix: str = ":",
     system_cmd_prefix: str = "!",
     styles: "Optional[Dict[str, str]]" = None,
@@ -124,13 +121,12 @@ def repl(
             )
 
     if styles is None:
-        styles = dict.fromkeys(["command", "option", "argument"], "ansiblack")
+        styles = dict.fromkeys(("command", "option", "argument"), "ansiblack")
 
     prompt_kwargs = bootstrap_prompt(
         group,
         prompt_kwargs,
         group_ctx,
-        validator,
         internal_cmd_prefix,
         system_cmd_prefix,
         styles,
@@ -156,6 +152,7 @@ def repl(
     with repl_ctx:
         while True:
             try:
+                toolbar_func.msg = ""  # type: ignore[attr-defined]
                 command = get_command()
             except KeyboardInterrupt:
                 continue
@@ -185,14 +182,14 @@ def repl(
                     finally:
                         group_ctx.protected_args = old_protected_args
 
-            except CommandLineParserError:
+            except (CommandLineParserError, ClickExit, SystemExit):
                 continue
 
             except click.ClickException as e:
                 e.show()
 
-            except (ClickExit, SystemExit):
-                pass
+            # except (ClickExit, SystemExit):
+            #     pass
 
             except ExitReplException:
                 break

@@ -5,6 +5,8 @@ from . import _repl
 # from click_repl.parser import currently_introspecting_args
 
 from prompt_toolkit import PromptSession
+
+# from prompt_toolkit.application.current import get_app
 from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
@@ -23,6 +25,10 @@ if t.TYPE_CHECKING:
     #         "cli_args": List[str],
     #     },
     # )
+
+
+def toolbar_func() -> str:
+    return getattr(toolbar_func, "msg", "")
 
 
 class ClickReplContext:

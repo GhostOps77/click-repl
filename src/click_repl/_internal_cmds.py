@@ -108,10 +108,10 @@ def _help_internal() -> str:
     return formatter.getvalue()
 
 
-_register_internal_command(["q", "quit", "exit"], _exit_internal, "Exits the repl")
-_register_internal_command(["cls", "clear"], clear, "Clears screen")
+_register_internal_command(("q", "quit", "exit"), _exit_internal, "Exits the repl")
+_register_internal_command(("cls", "clear"), clear, "Clears screen")
 _register_internal_command(
-    ["?", "h", "help"], _help_internal, "Displays general help information"
+    ("?", "h", "help"), _help_internal, "Displays general help information"
 )
 
 

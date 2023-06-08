@@ -9,7 +9,6 @@ from shlex import shlex
 import click
 from prompt_toolkit.completion import Completion
 
-# from .utils import _resolve_context
 # from .exceptions import CommandLineParserError
 
 if t.TYPE_CHECKING:
@@ -18,7 +17,7 @@ if t.TYPE_CHECKING:
     from click import Command, Context, Parameter, MultiCommand  # noqa: F401
 
 
-EQUAL_SIGNED_OPTION = re.compile(r"^((?:-|--)[a-z][a-z-]*)=(.*)", re.I)
+EQUAL_SIGNED_OPTION = re.compile(r"^(\W{1,2}[a-z][a-z-]*)=", re.I)
 IS_WINDOWS = os.name == "nt"
 
 # Float Range is introduced after IntRange, in click v7
@@ -49,14 +48,14 @@ def quotes(text: str) -> str:
     return text
 
 
-def shlex_split(string: str, posix: bool = True) -> "Tuple[List[str], str]":
+def shlex_split(string: str, posix: bool = True) -> "List[str]":
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.
     .. code-block:: python
-        split_arg_string("example 'my file")
+        shlex_split("example 'my file")
         ["example", "my file"]
-        split_arg_string("example my\\")
+        shlex_split("example my\\")
         ["example", "my"]
 
     :param `string`: String to split.
@@ -70,7 +69,7 @@ def shlex_split(string: str, posix: bool = True) -> "Tuple[List[str], str]":
     lex.commenters = ""
     lex.escape = ""
     out: "List[str]" = []
-    remaining_token: str = ""
+    # remaining_token: str = ""
 
     try:
         out.extend(lex)
@@ -78,59 +77,62 @@ def shlex_split(string: str, posix: bool = True) -> "Tuple[List[str], str]":
         # Raised when end-of-string is reached in an invalid state. Use
         # the partial token as-is. The quote or escape character is in
         # lex.state, not lex.token.
-        remaining_token = lex.token
-        out.append(remaining_token)
+        # remaining_token = lex.token
+        out.append(lex.token)
 
     # To get the actual text passed in through REPL cmd line
     # irrespective of quotes
-    last_val = ""
-    if out and remaining_token == "" and not string[-1].isspace():
-        remaining_token = out[-1]
+    # last_val = ""
+    # if out and remaining_token == "" and not string[-1].isspace():
+    #     remaining_token = out[-1]
 
-        tmp = ""
-        for i in reversed(string.split()):
-            last_val = f"{i} {tmp}".strip()
-            if last_val.replace("'", "").replace('"', "") == remaining_token:
-                break
-            else:
-                tmp = last_val
+    #     tmp = ""
+    #     for i in reversed(string.split()):
+    #         last_val = f"{i} {tmp}".strip()
+    #         if last_val.replace("'", "").replace('"', "") == remaining_token:
+    #             break
+    #         else:
+    #             tmp = last_val
 
-        if out and last_val == out[-1]:
-            last_val = ""
+    #     if out and last_val == out[-1]:
+    #         last_val = ""
 
-    return out, last_val
+    return out  # , last_val
 
 
 def split_arg_string(string: str) -> "List[str]":
-    args, _ = shlex_split(string)
-    out = []
-    for i in args:
-        match = EQUAL_SIGNED_OPTION.match(i)
-        if match:
-            out.append(match[1])
-            out.append(match[2])
-        else:
-            out.append(i)
+    args = shlex_split(string)
+    # out = []
+    # for i in args:
+    #     match = EQUAL_SIGNED_OPTION.match(i)
+    #     if match:
+    #         out.append(match[1])
+    #         out.append(match[2])
+    #     else:
+    #         out.append(i)
 
-    return out
+    return args
 
 
 @lru_cache(maxsize=3)
 def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], str]":
-    args, remaining_token = shlex_split(document_text)
+    args = shlex_split(document_text)
     cursor_within_command = not document_text[-1:].isspace()
+    # cursor_within_command = (
+    #     document_text.rstrip() == document_text
+    # )
 
-    if args and cursor_within_command and not remaining_token:
+    if args and cursor_within_command:  # and not remaining_token:
         # We've entered some text and no space, give completions for the
         # current word.
         incomplete = args.pop()
     else:
         # We've not entered anything, either at all or for the current
         # command, so give all relevant completions for this context.
-        incomplete = remaining_token
+        incomplete = ""  # remaining_token
 
-    match = EQUAL_SIGNED_OPTION.match(incomplete)
-    if match:
+    match = EQUAL_SIGNED_OPTION.split(incomplete, 1)
+    if len(match) > 1:
         opt, incomplete = match[1], match[2]
         args.append(opt)
 
@@ -140,12 +142,7 @@ def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], s
 
 
 class ParsingState:
-    """Custom class to parse the list of args
-
-    Keyword arguments:
-    argument -- description
-    Return: return_description
-    """
+    """Custom class to parse the list of args"""
 
     __slots__ = (
         "cli",
@@ -154,6 +151,7 @@ class ParsingState:
         "current_group",
         "current_cmd",
         "current_param",
+        "cmd_params",
         # 'parsed_params',
         "remaining_params",
     )
@@ -167,39 +165,29 @@ class ParsingState:
         self.current_cmd: "Optional[Command]" = None
         self.current_param: "Optional[Parameter]" = None
 
-        # self.parsed_params: 'List[Parameter]' = []
+        self.cmd_params: "List[Parameter]" = []
         # self.current_cmd_or_group_params = None
         self.remaining_params: "List[Parameter]" = []
 
         self.parse_cmd(ctx)
+        self.get_params_to_parse(ctx)
         self.parse_params(ctx, args)
 
     def __str__(self) -> str:
-        return (
-            f"{getattr(self.current_group, 'name', None)}"
-            f" > {getattr(self.current_cmd, 'name', None)}"
-            f" > {getattr(self.current_param, 'name', None)}"
-        )
+        res = f"{getattr(self.current_group, 'name', None)}"
+
+        cmd = getattr(self.current_cmd, "name", None)
+        if cmd is not None:
+            res += f" > {cmd}"
+
+        param = getattr(self.current_param, "name", None)
+        if param is not None:
+            res += f" > {param}"
+
+        return res
 
     def __repr__(self) -> str:
-        return self.__str__()
-
-    def get_params_to_parse(self, ctx: "Context") -> None:
-        if self.current_cmd is not None:
-            minus_one_args = []
-            option_args = []
-
-            for param in self.current_cmd.params:
-                if param.nargs == -1:
-                    minus_one_args.append(param)
-
-                elif isinstance(param, click.Option):
-                    option_args.append(param)
-
-                elif ctx.params.get(param.name, None) is None:  # type: ignore
-                    self.remaining_params.append(param)
-
-            self.remaining_params += option_args + minus_one_args
+        return f'"{str(self)}"'
 
     def parse_cmd(self, ctx: "Context") -> None:
         ctx_cmd = ctx.command
@@ -211,27 +199,22 @@ class ParsingState:
         is_cli = ctx_cmd == self.cli
 
         # All the required arguments are assigned with values
-        args_val = (
+        all_args_val = all(
             ctx.params.get(i.name, None) is not None  # type: ignore[arg-type]
             for i in ctx_cmd.params
             if isinstance(i, click.Argument)
         )
 
-        if isinstance(ctx_cmd, click.MultiCommand) and (is_cli or all(args_val)):
+        if isinstance(ctx_cmd, click.MultiCommand) and (is_cli or all_args_val):
             self.current_group = ctx_cmd
 
-        elif isinstance(ctx_cmd, click.Command):
-            self.current_group = parent_group  # type: ignore[assignment]
-
-            if not (getattr(parent_group, "chain", False) and all(args_val)):
-                self.current_cmd = ctx_cmd
+        elif isinstance(ctx_cmd, click.Command) and not (
+            getattr(parent_group, "chain", False) and all_args_val
+        ):
+            self.current_cmd = ctx_cmd
 
         else:
             self.current_cmd = ctx_cmd  # type: ignore[unreachable]
-
-        # print(f'{ctx.params = }')
-        self.get_params_to_parse(ctx)
-        # print(f'\n{self.current_cmd} {self.remaining_params = }')
 
         # if not (
         #     getattr(self.current_group, 'chain', False)
@@ -240,13 +223,45 @@ class ParsingState:
         # ):
         #     ...
 
-    def parse_params(self, ctx: "Context", args: "List[str]") -> None:
-        # skip_arguments = False
+    def get_params_to_parse(self, ctx: "Context") -> None:
+        if self.current_cmd is None:
+            return
 
-        # print(f'\n{ctx.command} {ctx.command.params}')
-        for param in ctx.command.params:
+        minus_one_args = []
+        minus_one_opts = []
+        option_args = []
+
+        for param in self.current_cmd.params:
+            if isinstance(param, click.Option):
+                if param.nargs == -1:
+                    minus_one_opts.append(param)
+
+                else:
+                    option_args.append(param)
+
+            elif isinstance(param, click.Argument):
+                if (
+                    param.nargs == -1
+                    and ctx.params.get(param, None)  # type: ignore[call-overload]
+                    is not None
+                ):
+                    minus_one_args.append(param)
+
+                elif ctx.params.get(param.name, None) is None:  # type: ignore[arg-type]
+                    self.remaining_params.append(param)
+
+        self.remaining_params.extend(option_args)
+        self.remaining_params.extend(minus_one_args)
+
+        self.cmd_params = sorted(
+            self.current_cmd.params,
+            key=lambda x: isinstance(x, click.Option) and x.nargs != -1,
+        )
+        print(f"{self.cmd_params = }")
+
+    def parse_params(self, ctx: "Context", args: "List[str]") -> None:
+        for param in self.cmd_params:
             if isinstance(param, click.Option) and not ctx.args and "--" not in args:
-                # print(f'{param.name = } rem:{param in self.remaining_params}')
                 options_name_list = param.opts + param.secondary_opts
 
                 if param.is_bool_flag and any(i in args for i in options_name_list):
@@ -256,13 +271,11 @@ class ParsingState:
                     # We want to make sure if this parameter was called
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
-                    # print(f'{param = }')
                     if (
                         option in args[param.nargs * -1 :]  # noqa: E203
                         and not param.count
                     ):
                         self.current_param = param
-                        # print(f'\nfinals - {self.current_param = } ({ctx.command})')
                         return
 
             elif (
@@ -274,16 +287,12 @@ class ParsingState:
                     or param.nargs == -1
                 )
             ):
+                # The current param will get updated
                 self.current_param = param
-                # skip_arguments = True
-                # print(f'\nfinals - {self.current_param = } ({ctx.command})')
                 return
-
-        # print(f'\nfinals - {self.current_param = } ({ctx.command})')
 
 
 # @lru_cache(maxsize=3)
-# Make a decorator around this decorator to catch the latest value
 def currently_introspecting_args(
     cli: "MultiCommand", ctx: "Context", args: "List[str]"
 ) -> ParsingState:
@@ -372,9 +381,9 @@ class CompletionsProvider:
         # print(f'\n{incomplete = }')
 
         has_space = " " in incomplete
-        quoted = incomplete.count('"') % 2
+        # quoted = incomplete.count('"') % 2
 
-        print(f"\n{has_space = } {quoted = } {incomplete = }")
+        # print(f"\n{has_space = } {quoted = } {incomplete = }")
 
         search_pattern = incomplete.strip("\"'") + "*"
         # if has_space and not quoted:
@@ -390,9 +399,9 @@ class CompletionsProvider:
         #             quote = i
         #             break
 
-        completion_txt_len = -len(incomplete) - has_space * 2 + quoted * 2
+        completion_txt_len = -len(incomplete) - has_space * 2  # + quoted * 2
 
-        print(f"{temp_path_obj = }")
+        # print(f"{temp_path_obj = }")
         for path in temp_path_obj.parent.glob(temp_path_obj.name):
             #     if " " in path:
             #         if quote:
@@ -410,12 +419,12 @@ class CompletionsProvider:
                 path_str = path_str.replace("\\\\", "\\")
 
             if " " in path_str:
-                path_str = path_str.replace('"', '\\"')
+                path_str = f'"{path_str}"'
 
-                if quoted:
-                    path_str = f'"{path_str}'
-                else:
-                    path_str = f'"{path_str}"'
+                # if quoted:
+                #     path_str = f'"{path_str}'
+                # else:
+                #     path_str = f'"{path_str}"'
 
                 # completion_txt_len -= 1
 

@@ -1,18 +1,53 @@
-# from prompt_toolkit.validation import Validator, ValidationError
-# from ._parser import _split_args
+from prompt_toolkit.validation import Validator, ValidationError
+
+from click.exceptions import ClickException
+from .utils import get_parsed_ctx_and_state
+import typing as t
+
+if t.TYPE_CHECKING:
+    from click import Group, Context
+    from prompt_toolkit.document import Document
+
+__all__ = ["ReplValidator"]
 
 
-# class ClickValidator(Validator):
-#     def validate(self, document):
-#         if document.text.startswith(
-#             (self.internal_cmd_prefix, self.system_cmd_prefix)
-#         ):
-#             return
+class ReplValidator(Validator):
+    __slots__ = ("cli", "cli_ctx")
 
-#         args, incomplete = _split_args(document.text_before_cursor)
+    def __init__(self, ctx: "Context") -> None:
+        self.cli_ctx = ctx
+        self.cli: "Group" = ctx.command  # type: ignore[assignment]
 
-#         i = 0
+        # self.parsed_args = []
+        # self.parsed_ctx = cli_ctx
+        # self.ctx_command = cli
 
-#         raise ValidationError(
-#             message='This input contains non-numeric characters', cursor_position=i
-#         )
+    def validate(self, document: "Document") -> None:
+        """Validates input from the prompt by raising the
+        :class:~prompt_toolkit.validation.ValidationError
+
+        Keyword arguments:
+        ---
+        :param:`document` - :class:`~prompt_toolkit.document.Document` object
+        containing the incomplete command line string
+        """
+        if document.text.startswith(("!", ":")):
+            return
+
+        try:
+            (
+                parsed_ctx,
+                parsed_args,
+                incomplete,
+                ctx_command,
+                state,
+            ) = get_parsed_ctx_and_state(self.cli_ctx, document.text_before_cursor)
+
+        except ClickException as e:
+            raise ValidationError(0, f"{type(e).__name__}: {e.format_message()}")
+
+        except (IndexError, KeyError) as e:
+            raise e
+
+        except Exception as e:
+            raise ValidationError(0, f"{type(e).__name__}: {e}")
