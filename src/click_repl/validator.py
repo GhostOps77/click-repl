@@ -1,7 +1,8 @@
 from prompt_toolkit.validation import Validator, ValidationError
 
 from click.exceptions import ClickException
-from .utils import get_parsed_ctx_and_state, get_args_and_incomplete_from_args
+from .utils import get_parsed_ctx_and_state
+from .parser import get_args_and_incomplete_from_args
 import typing as t
 
 if t.TYPE_CHECKING:

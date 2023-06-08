@@ -2,7 +2,7 @@ import click
 import typing as t
 from functools import lru_cache
 
-from .parser import currently_introspecting_args, get_args_and_incomplete_from_args
+from .parser import currently_introspecting_args
 
 if t.TYPE_CHECKING:
     from typing import List, Tuple  # noqa: F401

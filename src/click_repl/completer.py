@@ -7,7 +7,8 @@ from prompt_toolkit.completion import Completer, Completion
 
 # from .exceptions import CommandLineParserError
 from .parser import currently_introspecting_args
-from .utils import get_parsed_ctx_and_state, get_args_and_incomplete_from_args
+from .utils import get_parsed_ctx_and_state
+from .parser import get_args_and_incomplete_from_args
 from .parser import CompletionsProvider
 
 __all__ = ["ClickCompleter"]
