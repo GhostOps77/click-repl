@@ -6,7 +6,8 @@ from prompt_toolkit.completion import Completer, Completion
 # from .core import toolbar_func
 
 # from .exceptions import CommandLineParserError
-from .utils import get_parsed_ctx_and_state
+from .parser import currently_introspecting_args
+from .utils import get_parsed_ctx_and_state, get_args_and_incomplete_from_args
 from .parser import CompletionsProvider
 
 __all__ = ["ClickCompleter"]
@@ -19,9 +20,10 @@ if t.TYPE_CHECKING:
     from typing import Dict, Generator, List, Optional  # noqa: F401
 
     from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
-    from click import Command, Context, Group  # noqa: F401
+    from click import Context, Group  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
+    from .parser import ParsingState
 
 
 class ClickCompleter(Completer):
@@ -38,9 +40,12 @@ class ClickCompleter(Completer):
     __slots__ = (
         "cli",
         "cli_ctx",
+        "parsed_args",
+        "parsed_ctx",
         "internal_cmd_prefix",
         "system_cmd_prefix",
         "completion_parser",
+        "state"
     )
 
     def __init__(
@@ -53,6 +58,11 @@ class ClickCompleter(Completer):
     ) -> None:
         self.cli: "Group" = cli
         self.cli_ctx: "Context" = ctx
+
+        self.parsed_args: "List[str]" = []
+        self.parsed_ctx: "Context" = ctx
+        self.ctx_command = cli
+        self.state: "ParsingState" = currently_introspecting_args(cli, ctx, [])
 
         self.internal_cmd_prefix = internal_cmd_prefix
         self.system_cmd_prefix = system_cmd_prefix
@@ -83,19 +93,20 @@ class ClickCompleter(Completer):
         if document.text.startswith((self.internal_cmd_prefix, self.system_cmd_prefix)):
             return
 
+        args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
+
         try:
-            (
-                parsed_ctx,
-                parsed_args,
-                incomplete,
-                ctx_command,
-                state,
-            ) = get_parsed_ctx_and_state(self.cli_ctx, document.text_before_cursor)
+            if self.parsed_args != args:
+                self.parsed_args = args
+
+                self.parsed_ctx, self.ctx_command, self.state = get_parsed_ctx_and_state(
+                    self.cli_ctx, tuple(args)
+                )
 
             # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
             # print(f'{self.state = }')
 
-            if getattr(ctx_command, "hidden", False):
+            if getattr(self.ctx_command, "hidden", False):
                 return
 
             # except Exception as e:
@@ -103,11 +114,11 @@ class ClickCompleter(Completer):
             # raise CommandLineParserError(f"{type(e).__name__} - {e}")
 
             yield from self.completion_parser.get_completions_for_command(
-                parsed_ctx, state, parsed_args, incomplete
+                self.parsed_ctx, self.state, self.parsed_args, incomplete
             )
 
         except Exception:
-            pass
+            raise
 
 
 class ReplCompletion(Completion):

@@ -73,20 +73,18 @@ def _resolve_context(args: "List[str]", ctx: "Context") -> "Context":
     return ctx
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=3)
 def get_parsed_ctx_and_state(
-    cli_ctx: "Context", document_text: "str"
-) -> "Tuple[Context, List[str], str, Command, ParsingState]":
+    cli_ctx: "Context", args: "Tuple[str]"
+) -> "Tuple[Context, Command, ParsingState]":
     """Used in both completer class and validator class
     to execute once and use the cached result in the other
     """
-    args, incomplete = get_args_and_incomplete_from_args(document_text)
-
-    parsed_ctx = _resolve_context(args, cli_ctx)
+    parsed_ctx = _resolve_context(list(args), cli_ctx)
 
     ctx_command = parsed_ctx.command
     state = currently_introspecting_args(
         cli_ctx.command, parsed_ctx, args  # type: ignore[arg-type]
     )
 
-    return parsed_ctx, args, incomplete, ctx_command, state
+    return parsed_ctx, ctx_command, state

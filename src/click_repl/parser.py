@@ -174,7 +174,7 @@ class ParsingState:
         self.parse_params(ctx, args)
 
     def __str__(self) -> str:
-        res = f"{getattr(self.current_group, 'name', None)}"
+        res = getattr(self.current_group, 'name', 'None')
 
         cmd = getattr(self.current_cmd, "name", None)
         if cmd is not None:
@@ -257,7 +257,7 @@ class ParsingState:
             self.current_cmd.params,
             key=lambda x: isinstance(x, click.Option) and x.nargs != -1,
         )
-        print(f"{self.cmd_params = }")
+        # print(f"{self.cmd_params = }")
 
     def parse_params(self, ctx: "Context", args: "List[str]") -> None:
         for param in self.cmd_params:
