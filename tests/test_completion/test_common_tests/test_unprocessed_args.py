@@ -14,7 +14,7 @@ def unprocessed_arg(handler):
     pass
 
 
-c = ClickCompleter(root_command, click.Context(root_command))
+c = ClickCompleter(click.Context(root_command))
 
 
 def test_unprocessed_arg():

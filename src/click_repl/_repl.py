@@ -7,12 +7,12 @@ import click
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, get_current_repl_ctx
+from ._globals import ISATTY, get_current_repl_ctx, toolbar_func
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .parser import split_arg_string
 from .completer import ClickCompleter
 from .validator import ReplValidator
-from .core import ClickReplContext, toolbar_func
+from .core import ReplContext
 from .exceptions import (
     ClickExit,
     CommandLineParserError,
@@ -23,16 +23,15 @@ from .exceptions import (
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional  # noqa: F401
 
-    from click import Context, Group  # noqa: F401
+    from click import Context, Group, MultiCommand  # noqa: F401
 
 
-# __all__ = ["register_repl", "repl"]
+__all__ = ["register_repl", "repl"]
 
 
 def bootstrap_prompt(
-    group: "Group",
-    prompt_kwargs: "Dict[str, Any]",
     group_ctx: "Context",
+    prompt_kwargs: "Dict[str, Any]",
     internal_cmd_prefix: str,
     system_cmd_prefix: str,
     styles: "Optional[Dict[str, Any]]" = None,
@@ -40,11 +39,8 @@ def bootstrap_prompt(
     """Bootstrap prompt_toolkit kwargs or use user defined values.
 
     Keyword arguments:
-    :param:`group` - click Group for CLI
-    :param:`prompt_kwargs` - The user specified prompt kwargs.
     :param:`group_ctx` - click Context relative to the CLI Group object
-    :param:`cli_args` - command line arguments for the CLI object
-    :param:`validator` - Enable Input Validator for the REPL
+    :param:`prompt_kwargs` - The user specified prompt kwargs.
     :param:`styles` - Dictionary of string to string mapping thats
         used to apply custom coloring to the
         :class:`~prompt_toolkit.completion.Completion` objects
@@ -55,14 +51,17 @@ def bootstrap_prompt(
     defaults = {
         "history": InMemoryHistory(),
         "completer": ClickCompleter(
-            group,
             group_ctx,
             internal_cmd_prefix,
             system_cmd_prefix,
             styles=styles,
         ),
         "message": "> ",
-        "validator": ReplValidator(group_ctx),
+        "validator": ReplValidator(
+            group_ctx,
+            internal_cmd_prefix,
+            system_cmd_prefix,
+        ),
         # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
         "complete_in_thread": True,
         "complete_while_typing": True,
@@ -124,9 +123,8 @@ def repl(
         styles = dict.fromkeys(("command", "option", "argument"), "ansiblack")
 
     prompt_kwargs = bootstrap_prompt(
-        group,
-        prompt_kwargs,
         group_ctx,
+        prompt_kwargs,
         internal_cmd_prefix,
         system_cmd_prefix,
         styles,
@@ -135,7 +133,7 @@ def repl(
     # To assign the parent repl context for the next repl context
     parent_repl_ctx = get_current_repl_ctx(silent=True)
 
-    repl_ctx = ClickReplContext(group_ctx, prompt_kwargs, parent=parent_repl_ctx)
+    repl_ctx = ReplContext(group_ctx, prompt_kwargs, parent=parent_repl_ctx)
 
     if ISATTY:
 
@@ -201,7 +199,7 @@ def register_repl(group: "Group", name: str = "repl") -> None:
     Keyword arguments:
     :param `group`: Group/CLI object to register repl command
     :param `name`: Name of the repl command in the
-        given Group (default='repl')
+        given Group (default="repl")
     """
 
     group.command(name=name)(click.pass_context(repl))

@@ -10,7 +10,7 @@ def root_command():
     pass
 
 
-c = ClickCompleter(root_command, click.Context(root_command))
+c = ClickCompleter(click.Context(root_command))
 
 
 @pytest.mark.skipif(

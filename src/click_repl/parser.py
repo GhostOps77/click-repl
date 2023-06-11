@@ -174,7 +174,7 @@ class ParsingState:
         self.parse_params(ctx, args)
 
     def __str__(self) -> str:
-        res = getattr(self.current_group, 'name', 'None')
+        res = getattr(self.current_group, "name", "None")
 
         cmd = getattr(self.current_cmd, "name", None)
         if cmd is not None:
@@ -251,13 +251,14 @@ class ParsingState:
                     self.remaining_params.append(param)
 
         self.remaining_params.extend(option_args)
-        self.remaining_params.extend(minus_one_args)
+        self.remaining_params.extend(option_args)
+        self.remaining_params.extend(minus_one_opts)
 
         self.cmd_params = sorted(
             self.current_cmd.params,
             key=lambda x: isinstance(x, click.Option) and x.nargs != -1,
         )
-        # print(f"{self.cmd_params = }")
+        print(f"{self.cmd_params = }")
 
     def parse_params(self, ctx: "Context", args: "List[str]") -> None:
         for param in self.cmd_params:
@@ -286,10 +287,11 @@ class ParsingState:
                     ctx.params.get(param.name) is None  # type: ignore[arg-type]
                     or param.nargs == -1
                 )
+                and self.current_param is None
             ):
                 # The current param will get updated
                 self.current_param = param
-                return
+                # return
 
 
 # @lru_cache(maxsize=3)
@@ -309,13 +311,9 @@ class CompletionsProvider:
         for arguments, options, etc.
     """
 
-    __slots__ = (
-        "cli",
-        "styles",
-    )
+    __slots__ = ("styles",)
 
-    def __init__(self, cli: "MultiCommand", styles: "Dict[str, str]") -> None:
-        self.cli = cli
+    def __init__(self, styles: "Dict[str, str]") -> None:
         self.styles = styles
 
     def get_completion_from_autocompletion_functions(
@@ -505,44 +503,44 @@ class CompletionsProvider:
         incomplete: "str",
     ) -> "Generator[Completion, None, None]":
 
-        opt_aliases = []
+        opt_names = []
         for param in state.current_cmd.params:  # type: ignore[union-attr]
-            if (
-                isinstance(param, click.Option) and not param.hidden
-            ):  # type: ignore[union-attr]
-                options_name_list = param.opts + param.secondary_opts
+            if isinstance(param, click.Argument) or param.hidden:  # type: ignore[union-attr]
+                continue
 
-                if param.is_bool_flag and any(i in args for i in options_name_list):
-                    continue
+            options_name_list = param.opts + param.secondary_opts
 
-                for option in options_name_list:
-                    if option.startswith(incomplete):
-                        display_meta = ""
+            if param.is_bool_flag and any(i in args for i in options_name_list):
+                continue
 
-                        if param.default is not None:
-                            display_meta += f" [Default={param.default}]"
+            for option in options_name_list:
+                if option.startswith(incomplete):
+                    display_meta = ""
 
-                        if param.metavar is not None:
-                            display = param.metavar
-                        else:
-                            display = option
+                    if param.default is not None:
+                        display_meta += f" [Default={param.default}]"
 
-                        opt_aliases.append(
-                            Completion(
-                                option,
-                                -len(incomplete),
-                                display=display,
-                                display_meta=display_meta,
-                                style=self.styles["option"],
-                            )
+                    if param.metavar is not None:
+                        display = param.metavar
+                    else:
+                        display = option
+
+                    opt_names.append(
+                        Completion(
+                            option,
+                            -len(incomplete),
+                            display=display,
+                            display_meta=display_meta,
+                            style=self.styles["option"],
                         )
+                    )
 
         curr_param = state.current_param
         # print(f'{curr_param = }')
 
         if curr_param is not None:
             if isinstance(curr_param, click.Argument):
-                yield from opt_aliases
+                yield from opt_names
 
             if not getattr(curr_param, "hidden", False):
                 yield from self.get_completion_from_params(
@@ -550,7 +548,7 @@ class CompletionsProvider:
                 )
 
         else:
-            yield from opt_aliases
+            yield from opt_names
 
         # a = curr_param is None
         # if not a or isinstance(curr_param, click.Argument):
@@ -570,19 +568,21 @@ class CompletionsProvider:
         curr_cmd_exists = state.current_cmd is not None
         is_chain = getattr(curr_group, "chain", False)
 
-        if curr_group is not None:
-            if curr_cmd_exists:
-                yield from self.get_completion_for_cmd_args(ctx, state, args, incomplete)
+        if curr_group is None:
+            return []
 
-            if (not state.remaining_params and is_chain) or not curr_cmd_exists:
-                for name in curr_group.list_commands(ctx):
-                    command = curr_group.get_command(ctx, name)
-                    if command.hidden:  # type: ignore[union-attr]
-                        continue
+        if curr_cmd_exists:
+            yield from self.get_completion_for_cmd_args(ctx, state, args, incomplete)
 
-                    elif name.startswith(incomplete):
-                        yield Completion(
-                            name,
-                            -len(incomplete),
-                            display_meta=getattr(command, "short_help", ""),
-                        )
+        if (not state.remaining_params and is_chain) or not curr_cmd_exists:
+            for name in curr_group.list_commands(ctx):
+                command = curr_group.get_command(ctx, name)
+                if command.hidden:  # type: ignore[union-attr]
+                    continue
+
+                elif name.startswith(incomplete):
+                    yield Completion(
+                        name,
+                        -len(incomplete),
+                        display_meta=getattr(command, "short_help", ""),
+                    )

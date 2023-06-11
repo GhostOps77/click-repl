@@ -19,7 +19,7 @@ def pathTypeArg(path):
     pass
 
 
-c = ClickCompleter(root_command, click.Context(root_command))
+c = ClickCompleter(click.Context(root_command))
 
 
 @pytest.mark.parametrize(

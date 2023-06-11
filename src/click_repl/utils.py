@@ -1,6 +1,5 @@
 import click
 import typing as t
-from functools import lru_cache
 
 from .parser import currently_introspecting_args
 
@@ -27,13 +26,13 @@ if t.TYPE_CHECKING:
 #             yield val
 
 
-def _resolve_context(args: "List[str]", ctx: "Context") -> "Context":
+def _resolve_context(ctx: "Context", args: "List[str]") -> "Context":
     """Produce the context hierarchy starting with the command and
     traversing the complete arguments. This only follows the commands,
     it doesn't trigger input prompts or callbacks.
 
-    :param args: List of complete args before the incomplete value.
     :param ctx: `~click.Context` object of the CLI group.
+    :param args: List of complete args before the incomplete value.
     """
 
     while args:
@@ -73,14 +72,13 @@ def _resolve_context(args: "List[str]", ctx: "Context") -> "Context":
     return ctx
 
 
-@lru_cache(maxsize=3)
 def get_parsed_ctx_and_state(
-    cli_ctx: "Context", args: "Tuple[str]"
+    cli_ctx: "Context", args: "List[str]"
 ) -> "Tuple[Context, Command, ParsingState]":
     """Used in both completer class and validator class
     to execute once and use the cached result in the other
     """
-    parsed_ctx = _resolve_context(list(args), cli_ctx)
+    parsed_ctx = _resolve_context(cli_ctx, args)
 
     ctx_command = parsed_ctx.command
     state = currently_introspecting_args(

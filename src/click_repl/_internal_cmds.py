@@ -1,21 +1,15 @@
 import os
+import click
 import typing as t
 from collections import defaultdict
-from threading import local
 from prompt_toolkit.shortcuts import clear
 
-import click
-
 from .exceptions import ExitReplException
+from ._globals import _internal_commands
+
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, Union
-
-
-_locals = local()
-_internal_commands: """Dict[
-    str, Tuple[Callable[[], Any], Optional[str]]
-]""" = _locals.__dict__
+    from typing import Any, Callable, NoReturn, Optional, Union
 
 
 def exit() -> "NoReturn":

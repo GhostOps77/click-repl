@@ -23,8 +23,8 @@ def test_command_collection():
     def foobar_cmd():
         pass
 
-    cmd = click.CommandCollection(sources=(foo_group, foobar_group))
-    c = ClickCompleter(cmd, click.Context(cmd))
+    ctx = click.Context(click.CommandCollection(sources=(foo_group, foobar_group)))
+    c = ClickCompleter(ctx)
     completions = c.get_completions(Document("foo"))
 
     if HAS_CLICK6:
@@ -53,7 +53,7 @@ def second_level_command_two():
     pass
 
 
-c3 = ClickCompleter(root_group, click.Context(root_group))
+c3 = ClickCompleter(click.Context(root_group))
 
 
 @pytest.mark.parametrize(

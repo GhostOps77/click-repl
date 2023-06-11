@@ -1,6 +1,6 @@
 import os
 import typing as t
-
+from time import perf_counter
 from prompt_toolkit.completion import Completer, Completion
 
 # from .core import toolbar_func
@@ -18,10 +18,10 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, Optional  # noqa: F401
+    from typing import Dict, Generator, List, Optional, Final  # noqa: F401
 
     from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
-    from click import Context, Group  # noqa: F401
+    from click import Context, MultiCommand, Command  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
     from .parser import ParsingState
@@ -46,32 +46,31 @@ class ClickCompleter(Completer):
         "internal_cmd_prefix",
         "system_cmd_prefix",
         "completion_parser",
-        "state"
+        "state",
     )
 
     def __init__(
         self,
-        cli: "Group",
         ctx: "Context",
         internal_cmd_prefix: str = ":",
         system_cmd_prefix: str = "!",
         styles: "Optional[Dict[str, str]]" = None,
     ) -> None:
-        self.cli: "Group" = cli
-        self.cli_ctx: "Context" = ctx
+        self.cli_ctx: "Final[Context]" = ctx
+        self.cli: "Final[MultiCommand]" = ctx.command  # type: ignore[assignment]
 
         self.parsed_args: "List[str]" = []
         self.parsed_ctx: "Context" = ctx
-        self.ctx_command = cli
-        self.state: "ParsingState" = currently_introspecting_args(cli, ctx, [])
+        self.ctx_command: "Command" = self.cli
+        self.state: "ParsingState" = currently_introspecting_args(self.cli, ctx, [])
 
-        self.internal_cmd_prefix = internal_cmd_prefix
-        self.system_cmd_prefix = system_cmd_prefix
+        self.internal_cmd_prefix: str = internal_cmd_prefix
+        self.system_cmd_prefix: str = system_cmd_prefix
 
         if styles is None:
             styles = dict.fromkeys(("command", "argument", "option"), "")
 
-        self.completion_parser = CompletionsProvider(self.cli, styles)
+        self.completion_parser: "Final[CompletionsProvider]" = CompletionsProvider(styles)
 
     def get_completions(
         self, document: "Document", complete_event: "Optional[CompleteEvent]" = None
@@ -97,12 +96,16 @@ class ClickCompleter(Completer):
         args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
 
         try:
+            # To Detect the changes in the args
+            # a = perf_counter()
             if self.parsed_args != args:
                 self.parsed_args = args
 
                 self.parsed_ctx, self.ctx_command, self.state = get_parsed_ctx_and_state(
-                    self.cli_ctx, tuple(args)
+                    self.cli_ctx, args
                 )
+            # b = perf_counter()
+            # print(f'Time took: {b-a}')
 
             # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
             # print(f'{self.state = }')
@@ -110,16 +113,13 @@ class ClickCompleter(Completer):
             if getattr(self.ctx_command, "hidden", False):
                 return
 
-            # except Exception as e:
-            #     click.echo(f"{type(e).__name__}: {e}")
-            # raise CommandLineParserError(f"{type(e).__name__} - {e}")
-
             yield from self.completion_parser.get_completions_for_command(
                 self.parsed_ctx, self.state, self.parsed_args, incomplete
             )
 
-        except Exception:
-            raise
+        except Exception as e:
+            raise e
+            # pass
 
 
 class ReplCompletion(Completion):

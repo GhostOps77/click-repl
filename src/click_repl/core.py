@@ -7,10 +7,10 @@ from . import _repl
 from prompt_toolkit import PromptSession
 
 # from prompt_toolkit.application.current import get_app
-from ._globals import ISATTY, pop_context, push_context
+from ._globals import ISATTY, pop_context, push_context, toolbar_func
 
 if t.TYPE_CHECKING:
-    from typing import List  # noqa: F401
+    from typing import List, Final  # noqa: F401
     from typing import Any, Dict, Generator, Optional, Union, Callable
 
     from click import Context  # noqa: F401
@@ -27,11 +27,15 @@ if t.TYPE_CHECKING:
     # )
 
 
-def toolbar_func() -> str:
-    return getattr(toolbar_func, "msg", "")
+class PrefixCommands:
+    __slots__ = ("internal_cmd_prefix", "system_cmd_prefix")
+
+    def __init__(self, internal_cmd_prefix: str, system_cmd_prefix: str) -> None:
+        self.internal_cmd_prefix = internal_cmd_prefix
+        self.system_cmd_prefix = system_cmd_prefix
 
 
-class ClickReplContext:
+class ReplContext:
     """Context object for REPL
 
     Keyword arguments:
@@ -54,11 +58,12 @@ class ClickReplContext:
         self,
         group_ctx: "Context",
         prompt_kwargs: "Dict[str, Any]",
-        parent: "Optional[ClickReplContext]" = None,
+        parent: "Optional[ReplContext]" = None,
     ) -> None:
         if ISATTY:
             self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs,
+                bottom_toolbar=toolbar_func
                 # bottom_toolbar=currently_introspecting_args()
             )
             self._history: "Union[History, List[str]]" = self.session.history
@@ -67,11 +72,11 @@ class ClickReplContext:
             self.session = None
             self._history = []
 
-        self.group_ctx = group_ctx
+        self.group_ctx: "Final[Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.parent = parent
 
-    def __enter__(self) -> "ClickReplContext":
+    def __enter__(self) -> "ReplContext":
         push_context(self)
         return self
 
@@ -126,17 +131,18 @@ class ClickReplContext:
 
 
 class ReplCli(click.Group):
+    __slots__ = ("prompt", "startup", "cleanup", "repl_kwargs", "attrs")
+
     def __init__(
         self,
         prompt: str = "> ",
         startup: "Optional[Callable[[], None]]" = None,
         cleanup: "Optional[Callable[[], None]]" = None,
-        ctx_args: "Dict[str, Any]" = {},
         repl_kwargs: "Dict[str, Any]" = {},
         **attrs: "Any",
     ):
-        ctx_args["invoke_without_command"] = True
-        super().__init__(**ctx_args)
+        attrs["invoke_without_command"] = True
+        super().__init__(**attrs)
 
         self.prompt = prompt
         self.startup = startup
@@ -145,23 +151,23 @@ class ReplCli(click.Group):
 
     def invoke(self, ctx: "Context") -> "Any":
         return_val = super().invoke(ctx)
+        if ctx.invoked_subcommand or ctx.protected_args:
+            return return_val
+
+        self.repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": self.prompt})
 
         try:
-            if not (ctx.invoked_subcommand or ctx.protected_args):
-                if self.startup is not None:
-                    self.startup()
+            if self.startup is not None:
+                self.startup()
 
-                _repl.repl(
-                    ctx,
-                    prompt_kwargs={
-                        "message": self.prompt,
-                    },
-                    **self.repl_kwargs,
-                )
+            _repl.repl(
+                ctx,
+                **self.repl_kwargs,
+            )
 
         finally:
             # Finisher callback on the context
             if self.cleanup is not None:
                 self.cleanup()
 
-        return return_val
+            return return_val

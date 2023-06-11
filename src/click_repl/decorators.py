@@ -9,7 +9,7 @@ import typing as t
 from typing import cast
 from functools import wraps
 
-from .core import ClickReplContext, ReplCli
+from .core import ReplContext, ReplCli
 
 from ._globals import get_current_repl_ctx
 
@@ -40,7 +40,7 @@ def repl_cli(
 
 
 def pass_context(
-    func: "Callable[t.Concatenate[Optional[ClickReplContext], P], R]",
+    func: "Callable[t.Concatenate[Optional[ReplContext], P], R]",
 ) -> "Callable[P, R]":
     """Marks a callback as wanting to receive the current REPL context
     object as first argument.

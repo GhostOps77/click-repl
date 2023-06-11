@@ -7,7 +7,7 @@ from ._globals import get_current_repl_ctx
 from ._internal_cmds import exit
 from ._repl import register_repl, repl
 from .completer import ClickCompleter, ReplCompletion
-from .core import ClickReplContext
+from .core import ReplContext
 from .decorators import pass_context, repl_cli
 from .exceptions import (
     CommandLineParserError,
@@ -22,7 +22,7 @@ __all__ = [
     "exit",
     "register_repl",
     "repl",
-    "ClickReplContext",
+    "ReplContext",
     "pass_context",
     "repl_cli",
     "CommandLineParserError",
@@ -31,4 +31,4 @@ __all__ = [
 ]
 
 version_info = (0, 2, 1, 1)
-__version__ = "0.2.1dev1"
+__version__ = "0.2.1dev2"
