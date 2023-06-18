@@ -2,6 +2,7 @@ import os
 import re
 import typing as t
 from functools import lru_cache
+from collections import deque
 
 from pathlib import Path
 from shlex import shlex
@@ -13,8 +14,9 @@ from prompt_toolkit.completion import Completion
 
 if t.TYPE_CHECKING:
     from typing import Dict, Generator, List, Tuple, Union, Optional, Iterable
-
     from click import Command, Context, Parameter, MultiCommand  # noqa: F401
+
+    V = t.TypeVar("V")
 
 
 EQUAL_SIGNED_OPTION = re.compile(r"^(\W{1,2}[a-z][a-z-]*)=", re.I)
@@ -43,12 +45,22 @@ except ImportError:
 
 
 def quotes(text: str) -> str:
-    if " " in text:
+    if " " in text and text[0] != '"' and text[-1] != '"':
         return f'"{text}"'
     return text
 
 
-def shlex_split(string: str, posix: bool = True) -> "List[str]":
+def _fetch(c: "t.Deque[V]", spos: "t.Optional[int]" = None) -> "t.Optional[V]":
+    try:
+        if spos is None:
+            return c.popleft()
+        else:
+            return c.pop()
+    except IndexError:
+        return None
+
+
+def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     """Split an argument string as with :func:`shlex.split`, but don't
     fail if the string is incomplete. Ignores a missing closing quote or
     incomplete escape sequence and uses the partial token as-is.
@@ -100,23 +112,9 @@ def shlex_split(string: str, posix: bool = True) -> "List[str]":
     return out  # , last_val
 
 
-def split_arg_string(string: str) -> "List[str]":
-    args = shlex_split(string)
-    # out = []
-    # for i in args:
-    #     match = EQUAL_SIGNED_OPTION.match(i)
-    #     if match:
-    #         out.append(match[1])
-    #         out.append(match[2])
-    #     else:
-    #         out.append(i)
-
-    return args
-
-
 @lru_cache(maxsize=3)
 def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], str]":
-    args = shlex_split(document_text)
+    args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
     # cursor_within_command = (
     #     document_text.rstrip() == document_text
@@ -131,9 +129,13 @@ def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], s
         # command, so give all relevant completions for this context.
         incomplete = ""  # remaining_token
 
-    match = EQUAL_SIGNED_OPTION.split(incomplete, 1)
-    if len(match) > 1:
-        opt, incomplete = match[1], match[2]
+    # match = EQUAL_SIGNED_OPTION.split(incomplete, 1)
+    # if len(match) > 1:
+    #     opt, incomplete = match[1], match[2]
+    #     args.append(opt)
+
+    if "=" in incomplete:
+        opt, incomplete = incomplete.split("=", 1)
         args.append(opt)
 
     incomplete = os.path.expandvars(os.path.expanduser(incomplete))
@@ -151,8 +153,6 @@ class ParsingState:
         "current_group",
         "current_cmd",
         "current_param",
-        "cmd_params",
-        # 'parsed_params',
         "remaining_params",
     )
 
@@ -165,16 +165,20 @@ class ParsingState:
         self.current_cmd: "Optional[Command]" = None
         self.current_param: "Optional[Parameter]" = None
 
-        self.cmd_params: "List[Parameter]" = []
-        # self.current_cmd_or_group_params = None
         self.remaining_params: "List[Parameter]" = []
 
-        self.parse_cmd(ctx)
-        self.get_params_to_parse(ctx)
-        self.parse_params(ctx, args)
+        self.current_group, self.current_cmd = self.get_current_cmd()
+        if self.current_cmd is None:
+            return
+
+        self.current_param = self.parse_params()
 
     def __str__(self) -> str:
-        res = getattr(self.current_group, "name", "None")
+        res = ""
+
+        group = getattr(self.current_group, "name", None)
+        if group is not None:
+            res += f"{group}"
 
         cmd = getattr(self.current_cmd, "name", None)
         if cmd is not None:
@@ -189,109 +193,102 @@ class ParsingState:
     def __repr__(self) -> str:
         return f'"{str(self)}"'
 
-    def parse_cmd(self, ctx: "Context") -> None:
-        ctx_cmd = ctx.command
+    def get_current_cmd(self) -> "Tuple[MultiCommand, Optional[Command]]":
+        ctx_cmd = self.ctx.command
         parent_group = ctx_cmd
-        if ctx.parent is not None:
-            parent_group = ctx.parent.command
+        if self.ctx.parent is not None:
+            parent_group = self.ctx.parent.command
 
-        self.current_group = parent_group  # type: ignore[assignment]
+        current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
+        current_cmd = None
         is_cli = ctx_cmd == self.cli
 
         # All the required arguments are assigned with values
         all_args_val = all(
-            ctx.params.get(i.name, None) is not None  # type: ignore[arg-type]
+            self.ctx.params[i.name] is not None  # type: ignore[index]
             for i in ctx_cmd.params
             if isinstance(i, click.Argument)
         )
 
         if isinstance(ctx_cmd, click.MultiCommand) and (is_cli or all_args_val):
-            self.current_group = ctx_cmd
+            current_group = ctx_cmd
 
-        elif isinstance(ctx_cmd, click.Command) and not (
-            getattr(parent_group, "chain", False) and all_args_val
-        ):
-            self.current_cmd = ctx_cmd
+        # elif isinstance(ctx_cmd, click.Command) and not (
+        #     getattr(parent_group, "chain", False) and all_args_val
+        # ):
+        #     current_cmd = ctx_cmd
 
         else:
-            self.current_cmd = ctx_cmd  # type: ignore[unreachable]
+            current_cmd = ctx_cmd  # type: ignore[unreachable]
 
-        # if not (
-        #     getattr(self.current_group, 'chain', False)
-        #     and self.remaining_params
-        #     and any(isinstance(i, click.Argument) for i in self.remaining_params)
-        # ):
-        #     ...
+        return current_group, current_cmd
 
-    def get_params_to_parse(self, ctx: "Context") -> None:
-        if self.current_cmd is None:
-            return
-
-        minus_one_args = []
-        minus_one_opts = []
-        option_args = []
-
+    def parse_param_opt(self) -> "Optional[Parameter]":
         for param in self.current_cmd.params:
-            if isinstance(param, click.Option):
-                if param.nargs == -1:
-                    minus_one_opts.append(param)
-
-                else:
-                    option_args.append(param)
-
-            elif isinstance(param, click.Argument):
-                if (
-                    param.nargs == -1
-                    and ctx.params.get(param, None)  # type: ignore[call-overload]
-                    is not None
-                ):
-                    minus_one_args.append(param)
-
-                elif ctx.params.get(param.name, None) is None:  # type: ignore[arg-type]
-                    self.remaining_params.append(param)
-
-        self.remaining_params.extend(option_args)
-        self.remaining_params.extend(option_args)
-        self.remaining_params.extend(minus_one_opts)
-
-        self.cmd_params = sorted(
-            self.current_cmd.params,
-            key=lambda x: isinstance(x, click.Option) and x.nargs != -1,
-        )
-        print(f"{self.cmd_params = }")
-
-    def parse_params(self, ctx: "Context", args: "List[str]") -> None:
-        for param in self.cmd_params:
-            if isinstance(param, click.Option) and not ctx.args and "--" not in args:
+            if (
+                isinstance(param, click.Option)
+                # and not ctx.args
+                and "--" not in self.args
+            ):
                 options_name_list = param.opts + param.secondary_opts
 
-                if param.is_bool_flag and any(i in args for i in options_name_list):
+                # if (
+                #     param.is_bool_flag and ctx.params[param.name] == param.flag_value
+                # ) or (param.count and ctx.params[param.name] != 0):
+                #     continue
+
+                if param.is_bool_flag or param.count:
                     continue
 
-                for option in options_name_list:
+                # elif (
+                #     isinstance(self.current_cmd, click.MultiCommand)
+                #     and param.name in ctx.params
+                # ) or
+                elif any(
+                    i in self.args[param.nargs * -1 :]  # noqa: E203
+                    for i in options_name_list
+                ):
                     # We want to make sure if this parameter was called
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
-                    if (
-                        option in args[param.nargs * -1 :]  # noqa: E203
-                        and not param.count
-                    ):
-                        self.current_param = param
-                        return
+                    return param
 
-            elif (
-                isinstance(param, click.Argument)
-                and param in self.remaining_params
-                # and not skip_arguments
-                and (
-                    ctx.params.get(param.name) is None  # type: ignore[arg-type]
-                    or param.nargs == -1
-                )
-                and self.current_param is None
-            ):
-                # The current param will get updated
-                self.current_param = param
-                # return
+        return None
+
+    def parse_params_arg(self) -> "Optional[Parameter]":
+        minus_one_param = None
+
+        cmd_params = deque(
+            i for i in self.current_cmd.params if isinstance(i, click.Argument)
+        )
+        while cmd_params:
+            param = _fetch(cmd_params, minus_one_param)
+
+            if param is None:
+                continue
+
+            if param.nargs == -1:
+                minus_one_param = param
+
+            elif self.ctx.params[param.name] is None:  # type: ignore[index]
+                return param
+
+        return minus_one_param
+
+    def parse_params(self) -> "Optional[Parameter]":
+        # print(f"\n{vars(ctx) = }")
+
+        self.remaining_params = [
+            param
+            for param in self.current_cmd.params
+            if self.ctx.params.get(param, None) is None
+        ]
+
+        param = self.parse_param_opt()
+        if param is None:
+            param = self.parse_params_arg()
+
+        return param
 
 
 # @lru_cache(maxsize=3)
@@ -505,7 +502,9 @@ class CompletionsProvider:
 
         opt_names = []
         for param in state.current_cmd.params:  # type: ignore[union-attr]
-            if isinstance(param, click.Argument) or param.hidden:  # type: ignore[union-attr]
+            if isinstance(param, click.Argument) or getattr(
+                param, "hidden", False
+            ):  # type: ignore[union-attr]
                 continue
 
             options_name_list = param.opts + param.secondary_opts
@@ -517,8 +516,8 @@ class CompletionsProvider:
                 if option.startswith(incomplete):
                     display_meta = ""
 
-                    if param.default is not None:
-                        display_meta += f" [Default={param.default}]"
+                    if not param.count and param.default is not None:
+                        display_meta = f" [Default={param.default}]"
 
                     if param.metavar is not None:
                         display = param.metavar
@@ -536,25 +535,25 @@ class CompletionsProvider:
                     )
 
         curr_param = state.current_param
-        # print(f'{curr_param = }')
 
-        if curr_param is not None:
-            if isinstance(curr_param, click.Argument):
-                yield from opt_names
+        # if curr_param is not None:
+        #     if isinstance(curr_param, click.Argument):
+        #         yield from opt_names
 
-            if not getattr(curr_param, "hidden", False):
-                yield from self.get_completion_from_params(
-                    ctx, curr_param, args, incomplete
-                )
+        #     if not getattr(curr_param, "hidden", False):
+        #         yield from self.get_completion_from_params(
+        #             ctx, curr_param, args, incomplete
+        #         )
 
-        else:
+        # else:
+        #     yield from opt_names
+
+        curr_param_is_None = curr_param is None
+        if curr_param_is_None or isinstance(curr_param, click.Argument):
             yield from opt_names
 
-        # a = curr_param is None
-        # if not a or isinstance(curr_param, click.Argument):
-        #   yield from lst1
-        # if a and not getattr(curr_param, "hidden", False):
-        #   yield from lst2
+        if not (curr_param_is_None or getattr(curr_param, "hidden", False)):
+            yield from self.get_completion_from_params(ctx, curr_param, args, incomplete)
 
     def get_completions_for_command(
         self,
@@ -569,15 +568,17 @@ class CompletionsProvider:
         is_chain = getattr(curr_group, "chain", False)
 
         if curr_group is None:
-            return []
+            return
 
         if curr_cmd_exists:
             yield from self.get_completion_for_cmd_args(ctx, state, args, incomplete)
 
-        if (not state.remaining_params and is_chain) or not curr_cmd_exists:
+        if not curr_cmd_exists or (
+            is_chain and any(i is not None for i in ctx.params.values())
+        ):
             for name in curr_group.list_commands(ctx):
                 command = curr_group.get_command(ctx, name)
-                if command.hidden:  # type: ignore[union-attr]
+                if getattr(command, "hidden", False):  # type: ignore[union-attr]
                     continue
 
                 elif name.startswith(incomplete):

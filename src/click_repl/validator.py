@@ -8,23 +8,26 @@ import typing as t
 if t.TYPE_CHECKING:
     from click import MultiCommand, Context
     from prompt_toolkit.document import Document
-    from typing import List, Final
+    from typing import List, Final, Optional
 
 
-__all__ = ["ReplValidator"]
+__all__ = ["ClickValidator"]
 
 
-class ReplValidator(Validator):
+class ClickValidator(Validator):
     __slots__ = ("cli_ctx", "parsed_args", "internal_cmd_prefix", "system_cmd_prefix")
 
     def __init__(
-        self, ctx: "Context", internal_cmd_prefix: str, system_cmd_prefix: str
+        self,
+        ctx: "Context",
+        internal_cmd_prefix: "Optional[str]",
+        system_cmd_prefix: "Optional[str]",
     ) -> None:
         self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = ctx.command  # type: ignore[assignment]
 
-        self.internal_cmd_prefix = (internal_cmd_prefix,)
-        self.system_cmd_prefix = (system_cmd_prefix,)
+        self.internal_cmd_prefix = internal_cmd_prefix
+        self.system_cmd_prefix = system_cmd_prefix
 
         self.parsed_args: "List[str]" = []
         # self.parsed_ctx = cli_ctx
@@ -49,7 +52,13 @@ class ReplValidator(Validator):
         containing the incomplete command line string
         """
 
-        if document.text.startswith(("!", ":")):
+        if (
+            self.internal_cmd_prefix is not None
+            and self.system_cmd_prefix is not None
+            and document.text.startswith(
+                (self.internal_cmd_prefix, self.system_cmd_prefix)
+            )
+        ):
             return
 
         try:

@@ -10,7 +10,6 @@ from .completer import ClickCompleter, ReplCompletion
 from .core import ReplContext
 from .decorators import pass_context, repl_cli
 from .exceptions import (
-    CommandLineParserError,
     ExitReplException,
     InternalCommandException,
 )
@@ -25,7 +24,6 @@ __all__ = [
     "ReplContext",
     "pass_context",
     "repl_cli",
-    "CommandLineParserError",
     "ExitReplException",
     "InternalCommandException",
 ]

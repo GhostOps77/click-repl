@@ -65,7 +65,7 @@ def _resolve_context(ctx: "Context", args: "List[str]") -> "Context":
                     args = sub_ctx.args
 
                 ctx = sub_ctx
-                args = [*sub_ctx.protected_args, *sub_ctx.args]
+                args = sub_ctx.protected_args + sub_ctx.args
         else:
             break
 

@@ -2,6 +2,7 @@ import os
 import click
 import typing as t
 from collections import defaultdict
+from collections.abc import Mapping, Iterable
 from prompt_toolkit.shortcuts import clear
 
 from .exceptions import ExitReplException
@@ -9,7 +10,7 @@ from ._globals import _internal_commands
 
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, NoReturn, Optional, Union
+    from typing import Any, Optional, NoReturn, Union, Callable
 
 
 def exit() -> "NoReturn":
@@ -17,35 +18,37 @@ def exit() -> "NoReturn":
     _exit_internal()
 
 
-def dispatch_repl_commands(command: str) -> bool:
+def dispatch_repl_commands(command: str, system_cmd_prefix: str) -> bool:
     """
     Execute system commands entered in the repl.
 
-    System commands are all commands starting with "!".
+    System commands are all commands starting with
+    the given :param:`system_cmd_prefix`.
     """
-    if command.startswith("!"):
-        os.system(command[1:])
+    if command.startswith(system_cmd_prefix):
+        os.system(command[len(system_cmd_prefix) :])
         return True
 
     return False
 
 
-def handle_internal_commands(command: str) -> "Any":
+def handle_internal_commands(command: str, internal_cmd_prefix: str) -> "Any":
     """
     Run repl-internal commands.
 
-    Repl-internal commands are all commands starting with ":".
+    Repl-internal commands are all commands starting with
+    the given `internal_cmd_prefix`.
     """
-    if command.startswith(":"):
-        target = _get_registered_target(command[1:], default=None)
+    if command.startswith(internal_cmd_prefix):
+        target = _get_registered_target(command[len(internal_cmd_prefix) :], default=None)
         if target:
             return target()
 
 
 def _register_internal_command(
-    names: "t.Iterable[str]",
-    target: "t.Callable[[], Any]",
-    description: "t.Optional[str]" = None,
+    names: "Iterable[str]",
+    target: "Callable[[], Any]",
+    description: "Optional[str]" = None,
 ) -> None:
     if not callable(target):
         raise ValueError("Internal command must be a callable")
@@ -53,10 +56,10 @@ def _register_internal_command(
     if isinstance(names, str):
         names = [names]
 
-    elif isinstance(names, t.Mapping) or not isinstance(names, t.Iterable):
+    elif isinstance(names, Mapping) or not isinstance(names, Iterable):
         raise ValueError(
-            '"names" must be a string,'
-            f'or an iterable object, but got "{type(names).__name__}"'
+            '"names" must be a string, or an iterable object, '
+            f'but got "{type(names).__name__}"'
         )
 
     for name in names:
@@ -93,7 +96,7 @@ def _help_internal() -> str:
 
         formatter.write_dl(
             (  # type: ignore[arg-type]
-                ", ".join(map(":{}".format, sorted(mnemonics))),
+                ", ".join(f":{i}" for i in sorted(mnemonics)),
                 description,
             )
             for description, mnemonics in info_table.items()
@@ -111,17 +114,19 @@ _register_internal_command(
 
 def _execute_internal_and_sys_cmds(
     command: str,
-    allow_internal_commands: bool = True,
-    allow_system_commands: bool = True,
+    internal_cmd_prefix: "Optional[str]",
+    system_cmd_prefix: "Optional[str]",
 ) -> None:
     """
     Executes internal, system, and all the other registered click commands from the input
     """
-    if allow_system_commands and dispatch_repl_commands(command):
+    if system_cmd_prefix is not None and dispatch_repl_commands(
+        command, system_cmd_prefix
+    ):
         return None
 
-    if allow_internal_commands:
-        result = handle_internal_commands(command)
+    if internal_cmd_prefix is not None:
+        result = handle_internal_commands(command, internal_cmd_prefix)
         if isinstance(result, str):
             click.echo(result)
             return None

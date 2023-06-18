@@ -1,12 +1,13 @@
 import sys
 import typing as t
 from threading import local
+from prompt_toolkit.formatted_text import HTML
 
 import click
 
 if t.TYPE_CHECKING:
     from typing import Any, NoReturn, Union, Optional, Tuple, Callable, Dict  # noqa: F401
-
+    from .parser import ParsingState
     from .core import ReplContext  # noqa: F401
 
 
@@ -55,5 +56,28 @@ def pop_context() -> None:
     _locals.ctx_stack.pop()
 
 
-def toolbar_func() -> str:
-    return getattr(toolbar_func, "msg", "")
+def toolbar_func() -> "Union[HTML, str]":
+    state: "Optional[ParsingState]" = getattr(toolbar_func, "msg", None)
+    if state is None:
+        return ""
+
+    if state.current_cmd is None:
+        return HTML(
+            f"<b>{type(state.current_group).__name__} {state.current_group.name}:"
+            "</b> &lt;command&gt;"
+        )
+
+    out = f"<b>{state.current_cmd.name}: </b>"
+
+    for param in state.current_cmd.params:
+        if param in state.remaining_params:
+            out += f'<style bg="grey">{param.name} </style>'
+
+        elif param == getattr(state, "current_param", None):
+            out += f"<b>{param.name} </b>"
+
+        else:
+            out += f"{param.name} "
+
+    # print(f'{val = }')
+    return HTML(out.strip())

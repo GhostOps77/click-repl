@@ -1,7 +1,6 @@
 __all__ = [
     "InternalCommandException",
     "ExitReplException",
-    "CommandLineParserError",
     "InvalidGroupFormat",
     "ClickExit",
 ]
@@ -12,10 +11,6 @@ class InternalCommandException(Exception):
 
 
 class ExitReplException(InternalCommandException):
-    pass
-
-
-class CommandLineParserError(Exception):
     pass
 
 

@@ -74,7 +74,7 @@ class ReplContext:
 
         self.group_ctx: "Final[Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
-        self.parent = parent
+        self.parent: "Final[Optional[ReplContext]]" = parent
 
     def __enter__(self) -> "ReplContext":
         push_context(self)
