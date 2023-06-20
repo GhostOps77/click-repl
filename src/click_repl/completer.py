@@ -8,7 +8,7 @@ from .parser import (
     CompletionsProvider,
 )
 from .utils import get_parsed_ctx_and_state
-from ._globals import toolbar_func
+from ._globals import TOOLBAR_OBJ
 
 
 __all__ = ["ClickCompleter"]
@@ -23,7 +23,7 @@ if t.TYPE_CHECKING:
     from click import Context, MultiCommand, Command  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
-    from .parser import ParsingState
+    from .parser import ArgsParsingState
 
 
 class ClickCompleter(Completer):
@@ -60,7 +60,7 @@ class ClickCompleter(Completer):
         self.parsed_args: "List[str]" = []
         self.parsed_ctx: "Context" = ctx
         self.ctx_command: "Command" = self.cli
-        self.state: "ParsingState" = currently_introspecting_args(self.cli, ctx, [])
+        self.state: "ArgsParsingState" = currently_introspecting_args(self.cli, ctx, [])
 
         self.internal_cmd_prefix = internal_cmd_prefix
         self.system_cmd_prefix = system_cmd_prefix
@@ -101,6 +101,7 @@ class ClickCompleter(Completer):
         ):
             return
 
+        print("\ncompleter")
         args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
 
         try:
@@ -114,7 +115,7 @@ class ClickCompleter(Completer):
 
             # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
             # print(f"\n{self.state = }")
-            toolbar_func.msg = self.state  # type: ignore[attr-defined]
+            TOOLBAR_OBJ.update_state(self.state)  # type: ignore[attr-defined]
 
             if getattr(self.ctx_command, "hidden", False):
                 return

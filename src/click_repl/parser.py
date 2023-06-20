@@ -3,32 +3,32 @@ import re
 import typing as t
 from functools import lru_cache
 from collections import deque
-
 from pathlib import Path
 from shlex import shlex
 
 import click
+from click.parser import Argument as _Argument, _flag_needs_value, OptionParser
 from prompt_toolkit.completion import Completion
 
-# from .exceptions import CommandLineParserError
+from ._globals import _RANGE_TYPES
+
 
 if t.TYPE_CHECKING:
     from typing import Dict, Generator, List, Tuple, Union, Optional, Iterable
-    from click import Command, Context, Parameter, MultiCommand  # noqa: F401
+    from click import (
+        Command,
+        Context,
+        Parameter,
+        MultiCommand,
+        Argument as CoreArgument,
+    )  # noqa: F401
+    from click.parser import ParsingState, Option
 
     V = t.TypeVar("V")
 
 
 EQUAL_SIGNED_OPTION = re.compile(r"^(\W{1,2}[a-z][a-z-]*)=", re.I)
 IS_WINDOWS = os.name == "nt"
-
-# Float Range is introduced after IntRange, in click v7
-try:
-    from click import FloatRange
-
-    _Range_types = (click.IntRange, FloatRange)
-except ImportError:
-    _Range_types = (click.IntRange,)  # type: ignore[assignment]
 
 
 # Handle backwards compatibility for click<=8
@@ -143,7 +143,7 @@ def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], s
     return args, incomplete
 
 
-class ParsingState:
+class ArgsParsingState:
     """Custom class to parse the list of args"""
 
     __slots__ = (
@@ -161,17 +161,15 @@ class ParsingState:
         self.ctx = ctx
         self.args = args
 
-        self.current_group: "Optional[MultiCommand]" = None
+        self.current_group: "MultiCommand" = cli
         self.current_cmd: "Optional[Command]" = None
         self.current_param: "Optional[Parameter]" = None
 
         self.remaining_params: "List[Parameter]" = []
 
         self.current_group, self.current_cmd = self.get_current_cmd()
-        if self.current_cmd is None:
-            return
-
-        self.current_param = self.parse_params()
+        if self.current_cmd is not None:
+            self.current_param = self.parse_params()
 
     def __str__(self) -> str:
         res = ""
@@ -213,18 +211,38 @@ class ParsingState:
         if isinstance(ctx_cmd, click.MultiCommand) and (is_cli or all_args_val):
             current_group = ctx_cmd
 
-        # elif isinstance(ctx_cmd, click.Command) and not (
-        #     getattr(parent_group, "chain", False) and all_args_val
-        # ):
-        #     current_cmd = ctx_cmd
+        elif getattr(parent_group, "chain", False) and all_args_val:
+            # The current command should point to its parent, once it
+            # got all of its values, only if the parent has chain=True
+            # Let current_cmd be None and never let it change in the else clause
+            pass
 
         else:
+            # This else clause helps in some unknown edge cases, to fill up the
+            # current command value
             current_cmd = ctx_cmd  # type: ignore[unreachable]
 
         return current_group, current_cmd
 
+    def parse_params(self) -> "Optional[Parameter]":
+        # print(f"\n{vars(ctx) = }")
+
+        self.remaining_params = [
+            param
+            for param in self.current_cmd.params  # type: ignore[union-attr]
+            if self.ctx.params.get(param.name, None)  # type: ignore[arg-type]
+            in (None, ())
+            # or not is_bool_flag_or_count_parsed(param, self.ctx)
+        ]
+
+        param = self.parse_param_opt()
+        if param is None:
+            param = self.parse_params_arg()
+
+        return param
+
     def parse_param_opt(self) -> "Optional[Parameter]":
-        for param in self.current_cmd.params:
+        for param in self.current_cmd.params:  # type: ignore[union-attr]
             if (
                 isinstance(param, click.Option)
                 # and not ctx.args
@@ -259,7 +277,9 @@ class ParsingState:
         minus_one_param = None
 
         cmd_params = deque(
-            i for i in self.current_cmd.params if isinstance(i, click.Argument)
+            i
+            for i in self.current_cmd.params  # type: ignore[union-attr]
+            if isinstance(i, click.Argument)
         )
         while cmd_params:
             param = _fetch(cmd_params, minus_one_param)
@@ -275,27 +295,12 @@ class ParsingState:
 
         return minus_one_param
 
-    def parse_params(self) -> "Optional[Parameter]":
-        # print(f"\n{vars(ctx) = }")
-
-        self.remaining_params = [
-            param
-            for param in self.current_cmd.params
-            if self.ctx.params.get(param, None) is None
-        ]
-
-        param = self.parse_param_opt()
-        if param is None:
-            param = self.parse_params_arg()
-
-        return param
-
 
 # @lru_cache(maxsize=3)
 def currently_introspecting_args(
     cli: "MultiCommand", ctx: "Context", args: "List[str]"
-) -> ParsingState:
-    return ParsingState(cli, ctx, args)
+) -> ArgsParsingState:
+    return ArgsParsingState(cli, ctx, args)
 
 
 class CompletionsProvider:
@@ -462,7 +467,7 @@ class CompletionsProvider:
         choices: "List[Completion]" = []
         param_type: "click.ParamType" = param.type
 
-        if isinstance(param_type, _Range_types):
+        if isinstance(param_type, _RANGE_TYPES):
             return self.get_completion_for_Range_types(param_type)
 
         elif isinstance(param_type, click.Tuple):
@@ -495,7 +500,7 @@ class CompletionsProvider:
     def get_completion_for_cmd_args(
         self,
         ctx: "Context",
-        state: "ParsingState",
+        state: "ArgsParsingState",
         args: "Iterable[str]",
         incomplete: "str",
     ) -> "Generator[Completion, None, None]":
@@ -509,14 +514,16 @@ class CompletionsProvider:
 
             options_name_list = param.opts + param.secondary_opts
 
-            if param.is_bool_flag and any(i in args for i in options_name_list):
+            if getattr(param, "is_bool_flag", False) and any(
+                i in args for i in options_name_list
+            ):
                 continue
 
             for option in options_name_list:
                 if option.startswith(incomplete):
                     display_meta = ""
 
-                    if not param.count and param.default is not None:
+                    if not (getattr(param, "count", False) or param.default is None):
                         display_meta = f" [Default={param.default}]"
 
                     if param.metavar is not None:
@@ -553,12 +560,14 @@ class CompletionsProvider:
             yield from opt_names
 
         if not (curr_param_is_None or getattr(curr_param, "hidden", False)):
-            yield from self.get_completion_from_params(ctx, curr_param, args, incomplete)
+            yield from self.get_completion_from_params(
+                ctx, curr_param, args, incomplete  # type: ignore[arg-type]
+            )
 
     def get_completions_for_command(
         self,
         ctx: "Context",
-        state: "ParsingState",
+        state: "ArgsParsingState",
         args: "Iterable[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
@@ -567,8 +576,8 @@ class CompletionsProvider:
         curr_cmd_exists = state.current_cmd is not None
         is_chain = getattr(curr_group, "chain", False)
 
-        if curr_group is None:
-            return
+        # if curr_group is None:
+        #     return
 
         if curr_cmd_exists:
             yield from self.get_completion_for_cmd_args(ctx, state, args, incomplete)
@@ -587,3 +596,93 @@ class CompletionsProvider:
                         -len(incomplete),
                         display_meta=getattr(command, "short_help", ""),
                     )
+
+
+class Argument(_Argument):
+    def process(
+        self,
+        value: "t.Union[t.Optional[str], t.Sequence[t.Optional[str]]]",
+        state: "ParsingState",
+    ) -> None:
+        if self.nargs > 1 and value is not None:
+            holes = sum(1 for x in value if x is None)
+            if holes == len(value):
+                value = None  # responsible for adding None value if arg is empty
+
+        # if self.nargs == -1 and self.obj.envvar is not None and value == ():
+        #     # Replace empty tuple with None so that a value from the
+        #     # environment may be tried.
+        #     value = None
+
+        state.opts[self.dest] = value  # type: ignore
+        state.order.append(self.obj)
+
+
+class CustomOptionsParser(OptionParser):
+    __slots__ = (
+        "ctx",
+        "allow_interspersed_args",
+        "ignore_unknown_options",
+        "_short_opt",
+        "_long_opt",
+        "_opt_prefixes",
+        "_args",
+    )
+
+    def __init__(self, ctx: "Context") -> None:
+        ctx.resilient_parsing = True
+        ctx.allow_extra_args = True
+        ctx.allow_interspersed_args = True
+
+        super().__init__(ctx)
+
+        for opt in self.ctx.command.params:  # type: ignore[union-attr]
+            opt.add_to_parser(self, ctx)
+
+    def add_argument(
+        self, obj: "CoreArgument", dest: "t.Optional[str]", nargs: int = 1
+    ) -> None:
+        """Adds a positional argument named `dest` to the parser.
+
+        The `obj` can be used to identify the option in the order list
+        that is returned from the parser.
+        """
+        self._args.append(Argument(obj, dest=dest, nargs=nargs))
+
+    def _get_value_from_state(
+        self, option_name: str, option: "Option", state: "ParsingState"
+    ) -> t.Any:
+        nargs = option.nargs
+        rargs_len = len(state.rargs)
+
+        if rargs_len < nargs:
+            if option.obj._flag_needs_value:
+                # Option allows omitting the value.
+                value = _flag_needs_value
+            else:
+                # Fills up missing values with None
+                if nargs == 1 or rargs_len == 0:
+                    value = None
+                else:
+                    value = tuple(state.rargs + [None] * (nargs - rargs_len))
+                state.rargs = []
+
+        elif nargs == 1:
+            next_rarg = state.rargs[0]
+
+            if (
+                option.obj._flag_needs_value
+                and isinstance(next_rarg, str)
+                and next_rarg[:1] in self._opt_prefixes
+                and len(next_rarg) > 1
+            ):
+                # The next arg looks like the start of an option, don't
+                # use it as the value if omitting the value is allowed.
+                value = _flag_needs_value
+            else:
+                value = state.rargs.pop(0)
+        else:
+            value = tuple(state.rargs[:nargs])
+            del state.rargs[:nargs]
+
+        return value

@@ -61,6 +61,7 @@ class ClickValidator(Validator):
         ):
             return
 
+        print("\nvalidator")
         try:
             self._validate(document)
 

@@ -2,12 +2,8 @@ import click
 import typing as t
 from . import _repl
 
-# from click_repl.parser import currently_introspecting_args
-
 from prompt_toolkit import PromptSession
-
-# from prompt_toolkit.application.current import get_app
-from ._globals import ISATTY, pop_context, push_context, toolbar_func
+from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
     from typing import List, Final  # noqa: F401
@@ -57,14 +53,12 @@ class ReplContext:
     def __init__(
         self,
         group_ctx: "Context",
-        prompt_kwargs: "Dict[str, Any]",
+        prompt_kwargs: "Dict[str, Any]" = {},
         parent: "Optional[ReplContext]" = None,
     ) -> None:
         if ISATTY:
             self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs,
-                bottom_toolbar=toolbar_func
-                # bottom_toolbar=currently_introspecting_args()
             )
             self._history: "Union[History, List[str]]" = self.session.history
 
@@ -147,14 +141,15 @@ class ReplCli(click.Group):
         self.prompt = prompt
         self.startup = startup
         self.cleanup = cleanup
+
+        repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": prompt})
+
         self.repl_kwargs = repl_kwargs
 
     def invoke(self, ctx: "Context") -> "Any":
         return_val = super().invoke(ctx)
         if ctx.invoked_subcommand or ctx.protected_args:
             return return_val
-
-        self.repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": self.prompt})
 
         try:
             if self.startup is not None:

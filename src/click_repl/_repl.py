@@ -7,7 +7,7 @@ import click
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, get_current_repl_ctx, toolbar_func
+from ._globals import ISATTY, get_current_repl_ctx, TOOLBAR_OBJ
 from ._internal_cmds import _execute_internal_and_sys_cmds
 from .parser import split_arg_string
 from .completer import ClickCompleter
@@ -116,6 +116,7 @@ class Repl:
             "complete_while_typing": True,
             "validate_while_typing": True,
             "mouse_support": True,
+            "bottom_toolbar": TOOLBAR_OBJ.get_formatted_text,
         }
 
         defaults.update(prompt_kwargs)
@@ -182,7 +183,7 @@ class Repl:
         with self.repl_ctx:
             while True:
                 try:
-                    toolbar_func.msg = None  # type: ignore[attr-defined]
+                    TOOLBAR_OBJ.state_reset()  # type: ignore[attr-defined]
                     command = self.get_command()
                 except KeyboardInterrupt:
                     continue
