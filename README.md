@@ -19,7 +19,7 @@ pip install click-repl
 Usage
 ===
 
-There are many faciliating ways to create your clic-repl app<br>
+There are many facilitating ways to create your click-repl app<br>
 All you have to do in your [click](https://click.palletsprojects.com/en/) app is either -
 
 <details open>
