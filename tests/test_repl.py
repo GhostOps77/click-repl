@@ -213,11 +213,11 @@ def test_internal_commands(capsys):
         == """REPL help:
 
   External/System Commands:
-    prefix external commands with "!"
+    Prefix External commands with "!"
 
   Internal Commands:
-    prefix internal commands with ":"
-    :exit, :q, :quit  Exits the repl
+    Prefix Internal commands with ":"
+    :exit, :q, :quit  Exits the REPL
     :clear, :cls      Clears screen
     :?, :h, :help     Displays general help information
 

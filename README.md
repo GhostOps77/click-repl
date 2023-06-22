@@ -19,10 +19,10 @@ pip install click-repl
 Usage
 ===
 
-There are many faciliating ways to create your clic-repl app<br>
+There are many facilitating ways to create your click-repl app<br>
 All you have to do in your [click](https://click.palletsprojects.com/en/) app is either -
 
-<details open>
+<details>
   <summary>1. Use <code>register_repl</code> to add <code>repl</code> command to your click app</summary>
 
   ```py
@@ -119,21 +119,22 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
   >>> :q
   ```
 </details>
+
 **Features not shown:**
 
 - Tab-completion.
 - The parent context is reused, which means `ctx.obj` persists between
   subcommands. If you're keeping caches on that object (like I do), using the
   app's repl instead of the shell is a huge performance win.
-- `!` - prefix executes shell commands.
-- `:` - prefix executes some pre-defined internal commands.
+- Shell commands can be execeuted via this REPL using a prefix (Default Prefix: `!`)
+- Some pre-defined, helpful Internal commands are also registered, and invoked via a specified prefix (Default Prefix: `:`)
 
 You can use the internal `:help` command to explain usage.
 
 Advanced Usage
 ===
 
-For more flexibility over how your REPL works you can use the `repl` function, the `ReplCli` class, or the `repl_cli` dcorator, instead of `register_repl`. For example, in your app:
+For more flexibility over how your REPL works you can use the `repl` function, the `ReplCli` class, or the `repl_cli` decorator (as shown above), instead of `register_repl`. For example, in your app:
 
 ```py
 import click

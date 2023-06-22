@@ -29,5 +29,5 @@ __all__ = [
     "InternalCommandException",
 ]
 
-version_info = (0, 2, 1, 1)
-__version__ = "0.2.1dev2"
+version_info = (0, 2, 1, 3)
+__version__ = "0.2.1dev3"

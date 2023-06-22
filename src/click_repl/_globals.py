@@ -22,8 +22,7 @@ HAS_CLICK6 = click.__version__[0] == "6"
 ISATTY = sys.stdin.isatty()
 
 _locals = local()
-_locals.ctx_stack: "List[ReplContext]" = []
-_locals._internal_commands = {}
+_locals.ctx_stack = []
 
 
 def get_current_repl_ctx(

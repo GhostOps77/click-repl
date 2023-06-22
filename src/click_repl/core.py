@@ -6,11 +6,12 @@ from prompt_toolkit import PromptSession
 from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
-    from typing import List, Final  # noqa: F401
-    from typing import Any, Dict, Generator, Optional, Union, Callable
+    from typing import List, Final, Any, Dict, Generator, Optional, Union, Callable
 
     from click import Context  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401
+
+    from ._internal_cmds import InternalCommandSystem
 
     # InfoDict = t.TypedDict(
     #     "InfoDict",
@@ -21,14 +22,6 @@ if t.TYPE_CHECKING:
     #         "cli_args": List[str],
     #     },
     # )
-
-
-class PrefixCommands:
-    __slots__ = ("internal_cmd_prefix", "system_cmd_prefix")
-
-    def __init__(self, internal_cmd_prefix: str, system_cmd_prefix: str) -> None:
-        self.internal_cmd_prefix = internal_cmd_prefix
-        self.system_cmd_prefix = system_cmd_prefix
 
 
 class ReplContext:
@@ -47,12 +40,14 @@ class ReplContext:
         "prompt_kwargs",
         "parent",
         "session",
+        "internal_command_system",
         "_history",
     )
 
     def __init__(
         self,
         group_ctx: "Context",
+        internal_command_system: "InternalCommandSystem",
         prompt_kwargs: "Dict[str, Any]" = {},
         parent: "Optional[ReplContext]" = None,
     ) -> None:
@@ -66,6 +61,7 @@ class ReplContext:
             self.session = None
             self._history = []
 
+        self.internal_command_system = internal_command_system
         self.group_ctx: "Final[Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.parent: "Final[Optional[ReplContext]]" = parent
@@ -131,11 +127,10 @@ class ReplCli(click.Group):
         startup: "Optional[Callable[[], None]]" = None,
         cleanup: "Optional[Callable[[], None]]" = None,
         repl_kwargs: "Dict[str, Any]" = {},
-        *args: "List[Any]",
-        **attrs: "Dict[str, Any]",
+        **attrs: "Any",
     ):
         attrs["invoke_without_command"] = True
-        super().__init__(*args, **attrs)
+        super().__init__(**attrs)
 
         self.prompt = prompt
         self.startup = startup

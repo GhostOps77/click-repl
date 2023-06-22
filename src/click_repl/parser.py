@@ -248,7 +248,7 @@ class ArgsParsingState:
                 # and not ctx.args
                 and "--" not in self.args
             ):
-                options_name_list = param.opts + param.secondary_opts
+                opts = param.opts + param.secondary_opts
 
                 # if (
                 #     param.is_bool_flag and ctx.params[param.name] == param.flag_value
@@ -262,10 +262,7 @@ class ArgsParsingState:
                 #     isinstance(self.current_cmd, click.MultiCommand)
                 #     and param.name in ctx.params
                 # ) or
-                elif any(
-                    i in self.args[param.nargs * -1 :]  # noqa: E203
-                    for i in options_name_list
-                ):
+                elif any(i in self.args[param.nargs * -1 :] for i in opts):  # noqa: E203
                     # We want to make sure if this parameter was called
                     # If we are inside a parameter that was called, we want to show only
                     # relevant choices
@@ -507,9 +504,7 @@ class CompletionsProvider:
 
         opt_names = []
         for param in state.current_cmd.params:  # type: ignore[union-attr]
-            if isinstance(param, click.Argument) or getattr(
-                param, "hidden", False
-            ):  # type: ignore[union-attr]
+            if isinstance(param, click.Argument) or getattr(param, "hidden", False):
                 continue
 
             options_name_list = param.opts + param.secondary_opts
@@ -520,26 +515,28 @@ class CompletionsProvider:
                 continue
 
             for option in options_name_list:
-                if option.startswith(incomplete):
-                    display_meta = getattr(param, "help", "")
+                if not option.startswith(incomplete):
+                    continue
 
-                    if not (getattr(param, "count", False) or param.default is None):
-                        display_meta += f" [Default={param.default}]"
+                display_meta = getattr(param, "help", "")
 
-                    if param.metavar is not None:
-                        display = param.metavar
-                    else:
-                        display = option
+                if not (getattr(param, "count", False) or param.default is None):
+                    display_meta += f" [Default={param.default}]"
 
-                    opt_names.append(
-                        Completion(
-                            option,
-                            -len(incomplete),
-                            display=display,
-                            display_meta=display_meta.strip(),
-                            style=self.styles["option"],
-                        )
+                if param.metavar is not None:
+                    display = param.metavar
+                else:
+                    display = option
+
+                opt_names.append(
+                    Completion(
+                        option,
+                        -len(incomplete),
+                        display=display,
+                        display_meta=display_meta,
+                        style=self.styles["option"],
                     )
+                )
 
         curr_param = state.current_param
 
@@ -636,7 +633,7 @@ class CustomOptionsParser(OptionParser):
 
         super().__init__(ctx)
 
-        for opt in self.ctx.command.params:  # type: ignore[union-attr]
+        for opt in ctx.command.params:  # type: ignore[union-attr]
             opt.add_to_parser(self, ctx)
 
     def add_argument(

@@ -66,26 +66,25 @@ class Repl:
             styles,
         )
 
+        self.internal_cmds_system = InternalCommandSystem(
+            internal_cmd_prefix, system_cmd_prefix
+        )
+
         # To assign the parent repl context for the next repl context
         self.repl_ctx = ReplContext(
             self.group_ctx,
+            self.internal_cmds_system,
             prompt_kwargs,
             parent=get_current_repl_ctx(silent=True),
         )
 
         self.get_command: "Callable[[], str]" = self.get_command_func()
 
-        self.internal_cmd_prefix = internal_cmd_prefix
-        self.system_cmd_prefix = system_cmd_prefix
-        self.internal_cmds_system = InternalCommandSystem(
-            self.internal_cmd_prefix, self.system_cmd_prefix
-        )
-
     def bootstrap_prompt(
         self,
         prompt_kwargs: "Dict[str, Any]",
-        internal_cmd_prefix: "Optional[str]",
-        system_cmd_prefix: "Optional[str]",
+        internal_command_prefix: "Optional[str]",
+        system_command_prefix: "Optional[str]",
         styles: "Optional[Dict[str, str]]",
     ) -> "Dict[str, Any]":
         """Bootstrap prompt_toolkit kwargs or use user defined values.
@@ -104,13 +103,13 @@ class Repl:
             "history": InMemoryHistory(),
             "completer": ClickCompleter(
                 self.group_ctx,
-                internal_cmd_prefix,
-                system_cmd_prefix,
+                internal_command_prefix,
+                system_command_prefix,
                 styles=styles,
             ),
             "message": "> ",
             "validator": ClickValidator(
-                self.group_ctx, internal_cmd_prefix, system_cmd_prefix
+                self.group_ctx, internal_command_prefix, system_command_prefix
             ),
             # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
             "complete_in_thread": True,

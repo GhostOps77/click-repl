@@ -101,7 +101,6 @@ class ClickCompleter(Completer):
         ):
             return
 
-        TOOLBAR.queue.append('c')
         args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
 
         try:

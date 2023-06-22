@@ -22,7 +22,7 @@ if t.TYPE_CHECKING:
 
 
 def repl_cli(
-    func: "Union[Callable[..., Any], str, None]" = None, *args, **attrs: "Any"
+    func: "Union[Callable[..., Any], str, None]" = None, **attrs: "Any"
 ) -> "Callable[[F], ReplCli]":
     """Creates a new :class:`ReplCli` with a function as callback.  This
     works otherwise the same as :func:`command` just that the `cls`
@@ -31,7 +31,7 @@ def repl_cli(
 
     def decorator(f: "Union[Callable[..., Any], str, None]") -> ReplCli:
         attrs.setdefault("cls", ReplCli)
-        return cast(ReplCli, click.group(f, *args, **attrs))
+        return cast(ReplCli, click.group(f, **attrs))
 
     if func is not None:
         return decorator(func)

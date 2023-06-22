@@ -10,14 +10,13 @@ if t.TYPE_CHECKING:
     from .parser import ArgsParsingState
 
 
-__all__ = ['TOOLBAR']
+__all__ = ["TOOLBAR", "ToolBar"]
 
 
 class ToolBar:
     def __init__(self) -> None:
         self.state: "Optional[ArgsParsingState]" = None
         self._formatted_text: "t.Union[str, HTML]" = ""
-        self.queue = []
 
     def state_reset(self) -> None:
         self.state = None

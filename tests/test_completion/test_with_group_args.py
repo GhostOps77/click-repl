@@ -30,7 +30,7 @@ def test_subcommand_invocation_from_group(test_input, expected):
 
 
 @click.group(invoke_without_command=True)
-@click.argument("rg", required=False)
+@click.argument("arg", required=False)
 @click.option("--opt", nargs=5, required=True)
 @click.pass_context
 def cli(ctx, arg, opt):
