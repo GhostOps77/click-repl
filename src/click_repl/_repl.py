@@ -41,41 +41,19 @@ class Repl:
 
     def __init__(
         self,
-        group_ctx: "Context",
         prompt_kwargs: "Dict[str, Any]" = {},
         internal_cmd_prefix: "Optional[str]" = ":",
         system_cmd_prefix: "Optional[str]" = "!",
         styles: "Optional[Dict[str, str]]" = None,
     ):
-        self.group_ctx = group_ctx
-
-        # parent should be available, but we're not going to bother if not
-        if self.group_ctx.parent is not None and not isinstance(
-            self.group_ctx.command, click.MultiCommand
-        ):
-            self.group_ctx = self.group_ctx.parent
-
-        self.group: "MultiCommand" = self.group_ctx.command  # type: ignore[assignment]
-
-        # Generating prompt kwargs (changing in here, also changes in the ReplContext obj)
-        prompt_kwargs = self.bootstrap_prompt(
-            prompt_kwargs,
-            internal_cmd_prefix,
-            system_cmd_prefix,
-            styles,
-        )
+        self.prompt_kwargs = prompt_kwargs
+        self.styles = styles
+        self.internal_cmd_prefix = internal_cmd_prefix
+        self.system_cmd_prefix = system_cmd_prefix
 
         # Internal Command System setup
-        internal_commands_system = InternalCommandSystem(
+        self.internal_commands_system = InternalCommandSystem(
             internal_cmd_prefix, system_cmd_prefix
-        )
-
-        # To assign the parent repl context for the next repl context
-        self.repl_ctx = ReplContext(
-            self.group_ctx,
-            internal_commands_system,
-            prompt_kwargs,
-            parent=get_current_repl_ctx(silent=True),
         )
 
         self.get_command: "Callable[[], str]" = self.get_command_func()
@@ -161,6 +139,7 @@ class Repl:
             self.execute_click_cmds(command)
 
     def execute_click_cmds(self, command: str) -> None:
+        # Split command text
         args = split_arg_string(command)
 
         # The group command will dispatch based on args.
@@ -171,7 +150,37 @@ class Repl:
         finally:
             self.group_ctx.protected_args = old_protected_args
 
-    def loop(self) -> None:
+    def start_setup(self, group_ctx: "Context") -> None:
+        """Main setup before firing up the REPL"""
+
+        self.group_ctx: "Context" = group_ctx
+
+        # parent should be available, but we're not going to bother if not
+        if self.group_ctx.parent is not None and not isinstance(
+            self.group_ctx.command, click.MultiCommand
+        ):
+            self.group_ctx = self.group_ctx.parent
+
+        self.group: "MultiCommand" = self.group_ctx.command  # type: ignore[assignment]
+
+        # Generating prompt kwargs (changing in here, also changes in the ReplContext obj)
+        self.prompt_kwargs = self.bootstrap_prompt(
+            self.prompt_kwargs,
+            self.internal_cmd_prefix,
+            self.system_cmd_prefix,
+            self.styles,
+        )
+
+        # To assign the parent repl context for the next repl context
+        self.repl_ctx = ReplContext(
+            self.group_ctx,
+            self.internal_commands_system,
+            self.prompt_kwargs,
+            parent=get_current_repl_ctx(silent=True),
+        )
+
+    def loop(self, group_ctx: "Context") -> None:
+        self.start_setup(group_ctx)
         self.repl_check()
 
         with self.repl_ctx:
@@ -232,9 +241,7 @@ def repl(
     if cls is not None:
         ReplCls = cls
 
-    ReplCls(
-        group_ctx, prompt_kwargs, internal_cmd_prefix, system_cmd_prefix, styles
-    ).loop()
+    ReplCls(prompt_kwargs, internal_cmd_prefix, system_cmd_prefix, styles).loop(group_ctx)
 
 
 def register_repl(group: "MultiCommand", name: str = "repl") -> None:

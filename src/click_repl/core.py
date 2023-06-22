@@ -24,6 +24,9 @@ if t.TYPE_CHECKING:
     # )
 
 
+__all__ = ["ReplContext", "ReplCli"]
+
+
 class ReplContext:
     """Context object for REPL
 

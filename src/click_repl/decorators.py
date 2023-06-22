@@ -18,6 +18,8 @@ if t.TYPE_CHECKING:
     F = t.TypeVar("F", bound=Callable[..., Any])
 
 
+__all__ = ["pass_context"]
+
 # def repl_cli(
 #     func: "Union[Callable[..., Any], str, None]" = None, **attrs: "Any"
 # ) -> "Callable[[F], ReplCli]":

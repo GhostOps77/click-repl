@@ -68,14 +68,15 @@ class ToolBar:
         if isinstance(state.current_cmd, click.MultiCommand):
             out = f"{type(state.current_cmd).__name__} {out}"
 
-        out = f"<b>{out}:</b> "
-
         # print(f'\n{state.ctx.params = }\n{state.ctx.args = }\n'
         #       f'{state.remaining_params = }')
+
+        all_params_info = ""
 
         for param in state.current_cmd.params:
             if isinstance(param, click.Argument):
                 param_info = f"{param.name} "
+
             else:
                 options_metavar_list = param.opts + param.secondary_opts
                 if len(options_metavar_list) == 1:
@@ -121,16 +122,21 @@ class ToolBar:
                 param_info = f"[{param_info}x{param.nargs}]"
 
             if param == getattr(state, "current_param", None):
-                out += f"<b>{param_info.strip()}</b> "
+                all_params_info += f"<b>{param_info.strip()}</b> "
 
             elif (
                 any(getattr(param, i, False) for i in ("count", "is_bool_flag"))
                 or param in state.remaining_params
             ):
-                out += f"{param_info} "
+                all_params_info += f"{param_info} "
 
             else:
-                out += f"<s>{param_info}</s> "
+                all_params_info += f"<s>{param_info}</s> "
+
+        if all_params_info:
+            out = f"<b>{out}:</b> {all_params_info}"
+        else:
+            out = f"<b>Command {out}</b>"
 
         # return out.strip()
         return HTML(out.strip())

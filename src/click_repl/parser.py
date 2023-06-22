@@ -51,6 +51,7 @@ def quotes(text: str) -> str:
 
 
 def _fetch(c: "t.Deque[V]", spos: "t.Optional[int]" = None) -> "t.Optional[V]":
+    """To fetch the click.Arguments in the required order to parse them"""
     try:
         if spos is None:
             return c.popleft()
@@ -171,43 +172,46 @@ class ArgsParsingState:
         if self.current_cmd is not None:
             self.current_param = self.parse_params()
 
-    def __str__(self) -> str:
-        res = ""
+    # def __str__(self) -> str:
+    #     res = ""
 
-        group = getattr(self.current_group, "name", None)
-        if group is not None:
-            res += f"{group}"
+    #     group = getattr(self.current_group, "name", None)
+    #     if group is not None:
+    #         res += f"{group}"
 
-        cmd = getattr(self.current_cmd, "name", None)
-        if cmd is not None:
-            res += f" > {cmd}"
+    #     cmd = getattr(self.current_cmd, "name", None)
+    #     if cmd is not None:
+    #         res += f" > {cmd}"
 
-        param = getattr(self.current_param, "name", None)
-        if param is not None:
-            res += f" > {param}"
+    #     param = getattr(self.current_param, "name", None)
+    #     if param is not None:
+    #         res += f" > {param}"
 
-        return res
+    #     return res
 
-    def __repr__(self) -> str:
-        return f'"{str(self)}"'
+    # def __repr__(self) -> str:
+    #     return f'"{str(self)}"'
 
     def get_current_cmd(self) -> "Tuple[MultiCommand, Optional[Command]]":
         ctx_cmd = self.ctx.command
         parent_group = ctx_cmd
+
+        # If there's a parent ctx exist
         if self.ctx.parent is not None:
             parent_group = self.ctx.parent.command
 
         current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
         current_cmd = None
-        is_cli = ctx_cmd == self.cli
+        is_cli = ctx_cmd == self.cli  # if current ctx's command is same as the CLI
 
-        # All the required arguments are assigned with values
+        # All the required arguments should be assigned with some values
         all_args_val = all(
             self.ctx.params[i.name] is not None  # type: ignore[index]
             for i in ctx_cmd.params
             if isinstance(i, click.Argument)
         )
 
+        # Every CLI command is a MultiCommand
         if isinstance(ctx_cmd, click.MultiCommand) and (is_cli or all_args_val):
             current_group = ctx_cmd
 
