@@ -66,14 +66,14 @@ class Repl:
             styles,
         )
 
-        self.internal_cmds_system = InternalCommandSystem(
+        self.internal_commands_system = InternalCommandSystem(
             internal_cmd_prefix, system_cmd_prefix
         )
 
         # To assign the parent repl context for the next repl context
         self.repl_ctx = ReplContext(
             self.group_ctx,
-            self.internal_cmds_system,
+            self.internal_commands_system,
             prompt_kwargs,
             parent=get_current_repl_ctx(silent=True),
         )
@@ -157,7 +157,7 @@ class Repl:
                 )
 
     def execute_command(self, command: str) -> None:
-        if self.internal_cmds_system.execute(command.lower()) == 1:
+        if self.internal_commands_system.execute(command.lower()) == 1:
             self.execute_click_cmds(command)
 
     def execute_click_cmds(self, command: str) -> None:
