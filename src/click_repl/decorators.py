@@ -4,39 +4,36 @@ click_repl.decorators
 Decorators to make using click_shell simpler and more similar to click.
 """
 
-import click
 import typing as t
-from typing import cast
 from functools import wraps
 
-from .core import ReplContext, ReplCli
-
+from .core import ReplContext
 from ._globals import get_current_repl_ctx
 
 if t.TYPE_CHECKING:
-    from typing import Callable, Optional, Any, Union
+    from typing import Callable, Optional, Any
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
     F = t.TypeVar("F", bound=Callable[..., Any])
 
 
-def repl_cli(
-    func: "Union[Callable[..., Any], str, None]" = None, **attrs: "Any"
-) -> "Callable[[F], ReplCli]":
-    """Creates a new :class:`ReplCli` with a function as callback.  This
-    works otherwise the same as :func:`command` just that the `cls`
-    parameter is set to :class:`ReplCli`.
-    """
+# def repl_cli(
+#     func: "Union[Callable[..., Any], str, None]" = None, **attrs: "Any"
+# ) -> "Callable[[F], ReplCli]":
+#     """Creates a new :class:`ReplCli` with a function as callback.  This
+#     works otherwise the same as :func:`command` just that the `cls`
+#     parameter is set to :class:`ReplCli`.
+#     """
 
-    def decorator(f: "Union[Callable[..., Any], str, None]") -> ReplCli:
-        attrs.setdefault("cls", ReplCli)
-        return cast(ReplCli, click.group(f, **attrs))
+#     def decorator(f: "Union[Callable[..., Any], str, None]") -> ReplCli:
+#         attrs.setdefault("cls", ReplCli)
+#         return cast(ReplCli, click.group(f, **attrs))
 
-    if func is not None:
-        return decorator(func)
+#     if func is not None:
+#         return decorator(func)
 
-    return decorator
+#     return decorator
 
 
 def pass_context(

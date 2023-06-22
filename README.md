@@ -55,48 +55,14 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
   ```
 </details>
 <details>
-  <summary>2. Use the <code>repl_cli</code> decorator instead of the <code>click.group()</code> decorator</summary>
-
-  ```py
-  import click
-  from click_repl import repl_cli
-
-  @repl_cli(
-      prompt='>>>',
-      startup=lambda: print("Entering REPL...")
-      cleanup=lambda: print("Exiting REPL...")
-  )
-  def cli():
-      pass
-
-  @cli.command()
-  def hello():
-      click.echo("Hello world!")
-
-  register_repl(cli)
-  cli()
-  ```
-  In the shell:
-  ```shell
-  $ my_app
-  Entering REPL...
-  >>> hello
-  Hello world!
-  Exiting REPL...
-  >>> :q
-  $
-  ```
-
-</details>
-<details>
-  <summary>3. Use the <code>Repl</code> class in the <code>cls</code> parameter of the <code>click.group()</code> decorator</summary>
+  <summary>2. Use the <code>Repl</code> class in the <code>cls</code> parameter of the <code>click.group()</code> decorator</summary>
 
   ```py
   import click
   from click_repl import Repl
 
   @click.group(
-      cls=Repl,
+      cls=ReplCli,
       prompt='>>> ',
       startup=lambda: print("Entering REPL...")
       cleanup=lambda: print("Exiting REPL...")
@@ -119,6 +85,36 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
   >>> :q
   ```
 </details>
+<details>
+  <summary>3. Invoke the <code>repl</code> function manually wherever as you want</summary>
+
+  ```py
+  import click
+  from click_repl import repl
+
+  @click.group()
+  @click.option('-r', '--repl', is_flag=True)
+  @click.pass_context
+  def cli(ctx, repl):
+      if repl:
+        repl(ctx)
+
+  @cli.command()
+  def hello():
+      click.echo("Hello world!")
+
+  register_repl(cli)
+  cli()
+  ```
+  In the shell:
+  ```shell
+  $ my_app --repl
+  > hello
+  Hello world!
+  > :q
+  $
+  ```
+</details>
 
 **Features not shown:**
 
@@ -132,7 +128,7 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
 Advanced Usage
 ===
 
-For more flexibility over how your REPL works you can use the `repl` function, the `Repl` class, or the `repl_cli` decorator (as shown above), instead of `register_repl`. For example, in your app:
+For more flexibility over how your REPL works you can use the `repl` function, the `ReplCli` class (as shown above), instead of `register_repl`. For example, in your app:
 
 ```py
 import click

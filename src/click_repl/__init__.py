@@ -8,23 +8,22 @@ from ._internal_cmds import exit
 from ._repl import register_repl, repl
 from .completer import ClickCompleter, ReplCompletion
 from .core import ReplContext, ReplCli
-from .decorators import pass_context, repl_cli
+from .decorators import pass_context
 from .exceptions import (
     ExitReplException,
     InternalCommandException,
 )
 
 __all__ = [
-    "ClickCompleter",
-    "ReplCompletion",
     "get_current_repl_ctx",
     "exit",
     "register_repl",
     "repl",
-    "ReplCli",
+    "ClickCompleter",
+    "ReplCompletion",
     "ReplContext",
+    "ReplCli",
     "pass_context",
-    "repl_cli",
     "ExitReplException",
     "InternalCommandException",
 ]
