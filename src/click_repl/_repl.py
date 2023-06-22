@@ -208,6 +208,7 @@ class Repl:
 def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
+    cls: "Repl" = None,
     internal_cmd_prefix: str = ":",
     system_cmd_prefix: str = "!",
     styles: "Optional[Dict[str, str]]" = None,
@@ -226,7 +227,13 @@ def repl(
     :param:`styles` - Optional dictionary with 'command', 'argument'
         and 'option' style names.
     """
-    Repl(group_ctx, prompt_kwargs, internal_cmd_prefix, system_cmd_prefix, styles).loop()
+    ReplCls: "Repl" = Repl
+    if cls is not None:
+        ReplCls = cls
+
+    ReplCls(
+        group_ctx, prompt_kwargs, internal_cmd_prefix, system_cmd_prefix, styles
+    ).loop()
 
 
 def register_repl(group: "MultiCommand", name: str = "repl") -> None:

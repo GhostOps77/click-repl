@@ -89,14 +89,14 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
 
 </details>
 <details>
-  <summary>3. Use the <code>ReplCli</code> class in the <code>cls</code> parameter of the <code>click.group()</code> decorator</summary>
+  <summary>3. Use the <code>Repl</code> class in the <code>cls</code> parameter of the <code>click.group()</code> decorator</summary>
 
   ```py
   import click
-  from click_repl import ReplCli
+  from click_repl import Repl
 
   @click.group(
-      cls=ReplCli,
+      cls=Repl,
       prompt='>>> ',
       startup=lambda: print("Entering REPL...")
       cleanup=lambda: print("Exiting REPL...")
