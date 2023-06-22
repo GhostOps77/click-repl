@@ -222,6 +222,7 @@ def repl(
     Keyword arguments:
     :param:`group_ctx` - The current click Context.
     :param:`prompt_kwargs` - Parameters passed to :func:`prompt_toolkit.PromptSession`.
+    :param:`cls` - Repl class to use for the app.
     :param:`internal_cmd_prefix` - Prefix for executing available internal commands
     :param:`system_cmd_prefix` - Prefix for executing System/Shell commands
     :param:`styles` - Optional dictionary with 'command', 'argument'

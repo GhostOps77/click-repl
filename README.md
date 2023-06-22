@@ -127,14 +127,12 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
   subcommands. If you're keeping caches on that object (like I do), using the
   app's repl instead of the shell is a huge performance win.
 - Shell commands can be execeuted via this REPL using a prefix (Default Prefix: `!`)
-- Some pre-defined, helpful Internal commands are also registered, and invoked via a specified prefix (Default Prefix: `:`)
-
-You can use the internal `:help` command to explain usage.
+- Some pre-defined, helpful Internal commands are also registered, and invoked via a specified prefix (Default Prefix: `:`). You can use the internal `:help` command to explain usage.
 
 Advanced Usage
 ===
 
-For more flexibility over how your REPL works you can use the `repl` function, the `ReplCli` class, or the `repl_cli` decorator (as shown above), instead of `register_repl`. For example, in your app:
+For more flexibility over how your REPL works you can use the `repl` function, the `Repl` class, or the `repl_cli` decorator (as shown above), instead of `register_repl`. For example, in your app:
 
 ```py
 import click

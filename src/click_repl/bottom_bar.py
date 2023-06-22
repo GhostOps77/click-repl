@@ -1,6 +1,8 @@
 import click
 import typing as t
 
+from click.parser import split_opt
+
 from prompt_toolkit.formatted_text import HTML
 
 from ._globals import _RANGE_TYPES
@@ -11,6 +13,24 @@ if t.TYPE_CHECKING:
 
 
 __all__ = ["TOOLBAR", "ToolBar"]
+
+
+def join_options(options: "t.Sequence[str]") -> "t.Tuple[t.List[str], str]":
+    """Given a list of option strings this joins them in the most appropriate
+    way and returns them in the form ``(formatted_string,
+    any_prefix_is_slash)`` where the second item in the tuple is a flag that
+    indicates if any of the option prefixes was a slash.
+    """
+    rv = []
+    any_prefix_is_slash = False
+
+    for opt in options:
+        prefix = split_opt(opt)[0]
+        any_prefix_is_slash = prefix == "/"
+        rv.append((len(prefix), opt))
+
+    rv.sort(key=lambda x: x[0])
+    return (x[1] for x in rv), ";" if any_prefix_is_slash else "/"
 
 
 class ToolBar:
@@ -59,7 +79,8 @@ class ToolBar:
                 if len(options_metavar_list) == 1:
                     param_info = f"{options_metavar_list[0].strip()} "
                 else:
-                    param_info = f"[{'/'.join(options_metavar_list)}] "
+                    opts, sep = join_options(options_metavar_list)
+                    param_info = f"[{sep.join(opts)}] "
 
             type_info = " "
             param_type = param.type

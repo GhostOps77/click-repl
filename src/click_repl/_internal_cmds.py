@@ -49,7 +49,7 @@ class InternalCommandSystem:
         """
         os.system(command[len(self.sys_cmd_prefix) :])  # type: ignore[arg-type]
 
-    def handle_internal_commands(self, command: str) -> None:
+    def handle_internal_commands(self, command: str) -> "Optional[int]":
         """
         Run REPL-internal commands.
 
@@ -60,8 +60,9 @@ class InternalCommandSystem:
             command[len(self.internal_cmd_prefix) :],  # type: ignore[arg-type]
             default=None,
         )
-        if target:
-            target()
+        if target is None:
+            return -1
+        target()
 
     def register_command(
         self,
@@ -107,7 +108,9 @@ class InternalCommandSystem:
         Executes internal commands and system commands
         """
         if self.internal_cmd_prefix and command.startswith(self.internal_cmd_prefix):
-            self.handle_internal_commands(command)
+            result_code = self.handle_internal_commands(command)
+            if result_code == -1:
+                click.echo(f"{command}, command not found")
             return 0
 
         elif self.sys_cmd_prefix and command.startswith(self.sys_cmd_prefix):
