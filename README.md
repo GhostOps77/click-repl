@@ -20,12 +20,14 @@ Usage
 ===
 
 There are many faciliating ways to create your clic-repl app<br>
-In your [click](https://click.palletsprojects.com/en/) app:
+All you have to do in your [click](https://click.palletsprojects.com/en/) app is either -
 
-<details>
-  <summary>**1. Use `register_repl` to add `repl` command**</summary>
+<details open>
+  <summary>1. Use <code>register_repl</code> to add <code>repl</code> command to your click app</summary>
+
   ```py
   import click
+
   from click_repl import register_repl
 
   @click.group()
@@ -53,7 +55,8 @@ In your [click](https://click.palletsprojects.com/en/) app:
   ```
 </details>
 <details>
-  <summary>**2. Use the `repl_cli` decorator instead of the `click.group()` decorator**</summary>
+  <summary>2. Use the <code>repl_cli</code> decorator instead of the <code>click.group()</code> decorator</summary>
+
   ```py
   import click
   from click_repl import repl_cli
@@ -86,7 +89,8 @@ In your [click](https://click.palletsprojects.com/en/) app:
 
 </details>
 <details>
-  <summary>**3. Use the `ReplCli` class in the `cls` parameter of the `click.group()` decorator**</summary>
+  <summary>3. Use the <code>ReplCli</code> class in the <code>cls</code> parameter of the <code>click.group()</code> decorator</summary>
+
   ```py
   import click
   from click_repl import ReplCli
@@ -125,7 +129,6 @@ In your [click](https://click.palletsprojects.com/en/) app:
 - `:` - prefix executes some pre-defined internal commands.
 
 You can use the internal `:help` command to explain usage.
-
 
 Advanced Usage
 ===
