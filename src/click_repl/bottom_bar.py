@@ -15,10 +15,12 @@ if t.TYPE_CHECKING:
 __all__ = ["TOOLBAR", "ToolBar"]
 
 
-def join_options(options: "t.Sequence[str]") -> "t.Tuple[t.List[str], str]":
+def join_options(
+    options: "t.Sequence[str]",
+) -> "t.Tuple[t.Generator[str, None, None], str]":
     """Given a list of option strings this joins them in the most appropriate
-    way and returns them in the form ``(formatted_string,
-    any_prefix_is_slash)`` where the second item in the tuple is a flag that
+    way and returns them in the form `(formatted_string,
+    any_prefix_is_slash)` where the second item in the tuple is a flag that
     indicates if any of the option prefixes was a slash.
     """
     rv = []

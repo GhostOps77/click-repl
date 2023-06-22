@@ -62,7 +62,8 @@ class InternalCommandSystem:
         )
         if target is None:
             return -1
-        target()
+
+        return target()
 
     def register_command(
         self,

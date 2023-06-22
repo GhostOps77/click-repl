@@ -21,9 +21,8 @@ from .exceptions import (
 )
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Callable  # noqa: F401
-
-    from click import Context, MultiCommand  # noqa: F401
+    from typing import Any, Dict, Optional, Callable, Type
+    from click import Context, MultiCommand
 
 
 __all__ = ["Repl", "register_repl", "repl"]
@@ -66,14 +65,15 @@ class Repl:
             styles,
         )
 
-        self.internal_commands_system = InternalCommandSystem(
+        # Internal Command System setup
+        internal_commands_system = InternalCommandSystem(
             internal_cmd_prefix, system_cmd_prefix
         )
 
         # To assign the parent repl context for the next repl context
         self.repl_ctx = ReplContext(
             self.group_ctx,
-            self.internal_commands_system,
+            internal_commands_system,
             prompt_kwargs,
             parent=get_current_repl_ctx(silent=True),
         )
@@ -157,7 +157,7 @@ class Repl:
                 )
 
     def execute_command(self, command: str) -> None:
-        if self.internal_commands_system.execute(command.lower()) == 1:
+        if self.repl_ctx.internal_command_system.execute(command.lower()) == 1:
             self.execute_click_cmds(command)
 
     def execute_click_cmds(self, command: str) -> None:
@@ -208,7 +208,7 @@ class Repl:
 def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
-    cls: "Repl" = None,
+    cls: "Optional[Type[Repl]]" = None,
     internal_cmd_prefix: str = ":",
     system_cmd_prefix: str = "!",
     styles: "Optional[Dict[str, str]]" = None,
@@ -228,7 +228,7 @@ def repl(
     :param:`styles` - Optional dictionary with 'command', 'argument'
         and 'option' style names.
     """
-    ReplCls: "Repl" = Repl
+    ReplCls = Repl
     if cls is not None:
         ReplCls = cls
 
