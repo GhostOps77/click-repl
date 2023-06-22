@@ -8,7 +8,7 @@ from .parser import (
     CompletionsProvider,
 )
 from .utils import get_parsed_ctx_and_state
-from ._globals import TOOLBAR_OBJ
+from .bottom_bar import TOOLBAR
 
 
 __all__ = ["ClickCompleter"]
@@ -101,7 +101,7 @@ class ClickCompleter(Completer):
         ):
             return
 
-        print("\ncompleter")
+        TOOLBAR.queue.append('c')
         args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
 
         try:
@@ -115,7 +115,7 @@ class ClickCompleter(Completer):
 
             # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
             # print(f"\n{self.state = }")
-            TOOLBAR_OBJ.update_state(self.state)  # type: ignore[attr-defined]
+            TOOLBAR.update_state(self.state)  # type: ignore[attr-defined]
 
             if getattr(self.ctx_command, "hidden", False):
                 return

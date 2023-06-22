@@ -473,7 +473,7 @@ class CompletionsProvider:
         elif isinstance(param_type, click.Tuple):
             return [Completion("-", display=_type.name) for _type in param_type.types]
 
-        # shell_complete method for click.Choice is intorduced in click-v8
+        # shell_complete method for click.Choice is introduced in click-v8
         elif not HAS_CLICK_V8 and isinstance(param_type, click.Choice):
             choices.extend(
                 self.get_completion_from_choices_click_le_7(param_type, incomplete)
@@ -521,10 +521,10 @@ class CompletionsProvider:
 
             for option in options_name_list:
                 if option.startswith(incomplete):
-                    display_meta = ""
+                    display_meta = getattr(param, "help", "")
 
                     if not (getattr(param, "count", False) or param.default is None):
-                        display_meta = f" [Default={param.default}]"
+                        display_meta += f" [Default={param.default}]"
 
                     if param.metavar is not None:
                         display = param.metavar
@@ -536,7 +536,7 @@ class CompletionsProvider:
                             option,
                             -len(incomplete),
                             display=display,
-                            display_meta=display_meta,
+                            display_meta=display_meta.strip(),
                             style=self.styles["option"],
                         )
                     )

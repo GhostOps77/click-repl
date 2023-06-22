@@ -7,7 +7,7 @@ from ._globals import get_current_repl_ctx
 from ._internal_cmds import exit
 from ._repl import register_repl, repl
 from .completer import ClickCompleter, ReplCompletion
-from .core import ReplContext
+from .core import ReplContext, ReplCli
 from .decorators import pass_context, repl_cli
 from .exceptions import (
     ExitReplException,
@@ -21,6 +21,7 @@ __all__ = [
     "exit",
     "register_repl",
     "repl",
+    "ReplCli",
     "ReplContext",
     "pass_context",
     "repl_cli",

@@ -4,9 +4,9 @@ import typing as t
 from .parser import currently_introspecting_args, CustomOptionsParser
 
 if t.TYPE_CHECKING:
-    from typing import List, Tuple  # noqa: F401
-    from .parser import ArgsParsingState  # noqa: F401
-    from click import Context, Command  # noqa: F401
+    from typing import List, Tuple
+    from .parser import ArgsParsingState
+    from click import Context, Command
 
     V = t.TypeVar("V")
 

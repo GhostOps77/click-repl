@@ -125,18 +125,17 @@ class ReplContext:
 
 
 class ReplCli(click.Group):
-    __slots__ = ("prompt", "startup", "cleanup", "repl_kwargs", "attrs")
-
     def __init__(
         self,
         prompt: str = "> ",
         startup: "Optional[Callable[[], None]]" = None,
         cleanup: "Optional[Callable[[], None]]" = None,
         repl_kwargs: "Dict[str, Any]" = {},
-        **attrs: "Any",
+        *args: "List[Any]",
+        **attrs: "Dict[str, Any]",
     ):
         attrs["invoke_without_command"] = True
-        super().__init__(**attrs)
+        super().__init__(*args, **attrs)
 
         self.prompt = prompt
         self.startup = startup

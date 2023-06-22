@@ -13,38 +13,108 @@ Installation
 ===
 
 Installation is done via pip:
-```
+```shell
 pip install click-repl
 ```
 Usage
 ===
 
+There are many faciliating ways to create your clic-repl app<br>
 In your [click](https://click.palletsprojects.com/en/) app:
 
-```py
-import click
-from click_repl import register_repl
+<details>
+  <summary>**1. Use `register_repl` to add `repl` command**</summary>
+  ```py
+  import click
+  from click_repl import register_repl
 
-@click.group()
-def cli():
-    pass
+  @click.group()
+  def cli():
+      pass
 
-@cli.command()
-def hello():
-    click.echo("Hello world!")
+  @cli.command()
+  def hello():
+      click.echo("Hello world!")
 
-register_repl(cli)
-cli()
-```
-In the shell:
-```
-$ my_app repl
-> hello
-Hello world!
-> ^C
-$ echo hello | my_app repl
-Hello world!
-```
+  register_repl(cli)
+  cli()
+  ```
+  In the shell:
+  ```shell
+  $ my_app
+  Entering REPL...
+  >>> hello
+  Hello world!
+  Exiting REPL...
+  >>> :exit
+  $ echo hello | my_app repl
+  Hello World!
+  $
+  ```
+</details>
+<details>
+  <summary>**2. Use the `repl_cli` decorator instead of the `click.group()` decorator**</summary>
+  ```py
+  import click
+  from click_repl import repl_cli
+
+  @repl_cli(
+      prompt='>>>',
+      startup=lambda: print("Entering REPL...")
+      cleanup=lambda: print("Exiting REPL...")
+  )
+  def cli():
+      pass
+
+  @cli.command()
+  def hello():
+      click.echo("Hello world!")
+
+  register_repl(cli)
+  cli()
+  ```
+  In the shell:
+  ```shell
+  $ my_app
+  Entering REPL...
+  >>> hello
+  Hello world!
+  Exiting REPL...
+  >>> :q
+  $
+  ```
+
+</details>
+<details>
+  <summary>**3. Use the `ReplCli` class in the `cls` parameter of the `click.group()` decorator**</summary>
+  ```py
+  import click
+  from click_repl import ReplCli
+
+  @click.group(
+      cls=ReplCli,
+      prompt='>>> ',
+      startup=lambda: print("Entering REPL...")
+      cleanup=lambda: print("Exiting REPL...")
+  )
+  def cli():
+      pass
+
+  @cli.command()
+  def hello():
+      click.echo("Hello world!")
+
+  register_repl(cli)
+  cli()
+  ```
+  In the shell:
+  ```shell
+  $ my_app
+  >>> hello
+  Hello world!
+  >>> :q
+  ```
+</details>
 **Features not shown:**
 
 - Tab-completion.
@@ -52,7 +122,7 @@ Hello world!
   subcommands. If you're keeping caches on that object (like I do), using the
   app's repl instead of the shell is a huge performance win.
 - `!` - prefix executes shell commands.
-- `:` - prfix executes some predefined internal commands.
+- `:` - prefix executes some pre-defined internal commands.
 
 You can use the internal `:help` command to explain usage.
 
@@ -60,8 +130,7 @@ You can use the internal `:help` command to explain usage.
 Advanced Usage
 ===
 
-For more flexibility over how your REPL works you can use the `repl` function
-directly instead of `register_repl`. For example, in your app:
+For more flexibility over how your REPL works you can use the `repl` function, the `ReplCli` class, or the `repl_cli` dcorator, instead of `register_repl`. For example, in your app:
 
 ```py
 import click
@@ -86,5 +155,4 @@ And then your custom `myrepl` command will be available on your CLI, which
 will start a REPL which has its history stored in
 `/etc/myrepl/myrepl-history` and persist between sessions.
 
-Any arguments that can be passed to the [`python-prompt-toolkit`](https://github.com/prompt-toolkit/python-prompt-toolkit) [PromptSession](https://python-prompt-toolkit.readthedocs.io/en/stable/pages/reference.html#prompt_toolkit.shortcuts.PromptSession) function can be passed in the `prompt_kwargs` argument and will be used when
-instantiating your `Prompt`.
+Any arguments that can be passed to the [`python-prompt-toolkit`](https://github.com/prompt-toolkit/python-prompt-toolkit) [PromptSession](https://python-prompt-toolkit.readthedocs.io/en/stable/pages/reference.html#prompt_toolkit.shortcuts.PromptSession) function can be passed in the `prompt_kwargs` argument and will be used when instantiating your `Prompt`.

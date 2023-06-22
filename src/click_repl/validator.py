@@ -3,6 +3,7 @@ from prompt_toolkit.validation import Validator, ValidationError
 from click.exceptions import ClickException
 from .utils import get_parsed_ctx_and_state
 from .parser import get_args_and_incomplete_from_args
+from .bottom_bar import TOOLBAR
 import typing as t
 
 if t.TYPE_CHECKING:
@@ -61,7 +62,7 @@ class ClickValidator(Validator):
         ):
             return
 
-        print("\nvalidator")
+        TOOLBAR.queue.append('v')
         try:
             self._validate(document)
 

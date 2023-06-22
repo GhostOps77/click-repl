@@ -7,8 +7,9 @@ import click
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, get_current_repl_ctx, TOOLBAR_OBJ
-from ._internal_cmds import _execute_internal_and_sys_cmds
+from ._globals import ISATTY, get_current_repl_ctx
+from ._internal_cmds import InternalCommandSystem
+from .bottom_bar import TOOLBAR
 from .parser import split_arg_string
 from .completer import ClickCompleter
 from .validator import ClickValidator
@@ -22,25 +23,22 @@ from .exceptions import (
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional, Callable  # noqa: F401
 
-    from click import Context, MultiCommand, Group  # noqa: F401
+    from click import Context, MultiCommand  # noqa: F401
 
 
 __all__ = ["Repl", "register_repl", "repl"]
 
 
-def is_not_None_and_startswith(prefix: "Optional[str]", command: str) -> bool:
-    return prefix is not None and command.startswith(prefix)
-
-
 class Repl:
-    __slots__ = (
-        "group_ctx",
-        "group",
-        "get_command",
-        "repl_ctx",
-        "internal_cmd_prefix",
-        "system_cmd_prefix",
-    )
+    # __slots__ = (
+    #     "group_ctx",
+    #     "group",
+    #     "get_command",
+    #     "repl_ctx",
+    #     "internal_cmd_prefix",
+    #     "system_cmd_prefix",
+    #     "internal_cmds_system",
+    # )
 
     def __init__(
         self,
@@ -79,6 +77,9 @@ class Repl:
 
         self.internal_cmd_prefix = internal_cmd_prefix
         self.system_cmd_prefix = system_cmd_prefix
+        self.internal_cmds_system = InternalCommandSystem(
+            self.internal_cmd_prefix, self.system_cmd_prefix
+        )
 
     def bootstrap_prompt(
         self,
@@ -116,7 +117,7 @@ class Repl:
             "complete_while_typing": True,
             "validate_while_typing": True,
             "mouse_support": True,
-            "bottom_toolbar": TOOLBAR_OBJ.get_formatted_text,
+            "bottom_toolbar": TOOLBAR.get_formatted_text,
         }
 
         defaults.update(prompt_kwargs)
@@ -156,17 +157,11 @@ class Repl:
                     f"value for an optional argument '{param.name}' in REPL mode"
                 )
 
-    def exec_cmds(self, command: str) -> None:
-        if is_not_None_and_startswith(
-            self.internal_cmd_prefix, command
-        ) or is_not_None_and_startswith(self.system_cmd_prefix, command):
-            _execute_internal_and_sys_cmds(
-                command.lower(), self.internal_cmd_prefix, self.system_cmd_prefix
-            )
-        else:
-            self.exec_click_cmds(command)
+    def execute_command(self, command: str) -> None:
+        if self.internal_cmds_system.execute(command.lower()) == 1:
+            self.execute_click_cmds(command)
 
-    def exec_click_cmds(self, command: str) -> None:
+    def execute_click_cmds(self, command: str) -> None:
         args = split_arg_string(command)
 
         # The group command will dispatch based on args.
@@ -183,7 +178,7 @@ class Repl:
         with self.repl_ctx:
             while True:
                 try:
-                    TOOLBAR_OBJ.state_reset()  # type: ignore[attr-defined]
+                    TOOLBAR.state_reset()  # type: ignore[attr-defined]
                     command = self.get_command()
                 except KeyboardInterrupt:
                     continue
@@ -197,7 +192,7 @@ class Repl:
                         break
 
                 try:
-                    self.exec_cmds(command)
+                    self.execute_command(command)
                 except (ClickExit, SystemExit):
                     continue
 
@@ -250,3 +245,8 @@ def register_repl(group: "MultiCommand", name: str = "repl") -> None:
 
     elif isinstance(group, click.CommandCollection):
         group.add_source(command)  # type: ignore[arg-type]
+
+    elif not isinstance(group, click.MultiCommand):
+        raise TypeError(
+            f"group must be a type of MultiCommand, but got {type(group).__name__}"
+        )
