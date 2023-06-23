@@ -1,14 +1,16 @@
-from prompt_toolkit.validation import Validator, ValidationError
-
-from click.exceptions import ClickException
-from .utils import get_parsed_ctx_and_state
-from .parser import get_args_and_incomplete_from_args
 import typing as t
 
+from click.exceptions import ClickException
+from prompt_toolkit.validation import ValidationError, Validator
+
+from .parser import get_args_and_incomplete_from_args
+from .utils import get_parsed_ctx_and_state
+
 if t.TYPE_CHECKING:
-    from click import MultiCommand, Context
+    from typing import Final, List, Optional
+
+    from click import Context, MultiCommand
     from prompt_toolkit.document import Document
-    from typing import List, Final, Optional
 
 
 __all__ = ["ClickValidator"]

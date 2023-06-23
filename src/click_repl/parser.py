@@ -1,29 +1,26 @@
 import os
 import re
 import typing as t
-from functools import lru_cache
 from collections import deque
+from functools import lru_cache
+from gettext import gettext as _
 from pathlib import Path
 from shlex import shlex
-from gettext import gettext as _
 
 import click
-from click.parser import Argument as _Argument, OptionParser, normalize_opt
-from click.exceptions import NoSuchOption, BadOptionUsage
+from click.exceptions import BadOptionUsage, NoSuchOption
+from click.parser import Argument as _Argument
+from click.parser import OptionParser, normalize_opt
 from prompt_toolkit.completion import Completion
 
 from ._globals import _RANGE_TYPES
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, Tuple, Union, Optional, Iterable
-    from click import (
-        Command,
-        Context,
-        Parameter,
-        MultiCommand,
-        Argument as CoreArgument,
-    )  # noqa: F401
-    from click.parser import ParsingState, Option
+    from typing import Dict, Generator, Iterable, List, Optional, Tuple, Union
+
+    from click import Argument as CoreArgument  # noqa: F401
+    from click import Command, Context, MultiCommand, Parameter
+    from click.parser import Option, ParsingState
 
     V = t.TypeVar("V")
 
@@ -380,7 +377,6 @@ class CompletionsProvider:
     def get_completion_for_Path_types(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
-
         if "*" in incomplete:
             return []  # type: ignore[return-value]
 
@@ -469,7 +465,6 @@ class CompletionsProvider:
         args: "Iterable[str]",
         incomplete: str,
     ) -> "List[Completion]":
-
         choices: "List[Completion]" = []
         param_type: "click.ParamType" = param.type
 
@@ -510,7 +505,6 @@ class CompletionsProvider:
         args: "Iterable[str]",
         incomplete: "str",
     ) -> "Generator[Completion, None, None]":
-
         opt_names = []
         for param in state.current_command.params:  # type: ignore[union-attr]
             if isinstance(param, click.Argument) or getattr(param, "hidden", False):
@@ -575,7 +569,6 @@ class CompletionsProvider:
         args: "Iterable[str]",
         incomplete: str,
     ) -> "Generator[Completion, None, None]":
-
         current_group = state.current_group
         current_command_exists = state.current_command is not None
         is_chain = getattr(current_group, "chain", False)

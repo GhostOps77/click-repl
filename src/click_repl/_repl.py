@@ -2,7 +2,6 @@ import sys
 import typing as t
 
 import click
-
 # from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
 #                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
@@ -10,18 +9,15 @@ from prompt_toolkit.history import InMemoryHistory
 from ._globals import ISATTY, get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
-from .parser import split_arg_string
 from .completer import ClickCompleter
-from .validator import ClickValidator
 from .core import ReplContext
-from .exceptions import (
-    ClickExit,
-    ExitReplException,
-    InvalidGroupFormat,
-)
+from .exceptions import ClickExit, ExitReplException, InvalidGroupFormat
+from .parser import split_arg_string
+from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Callable, Type
+    from typing import Any, Callable, Dict, Optional, Type
+
     from click import Context, MultiCommand
 
 

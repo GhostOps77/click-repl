@@ -7,11 +7,11 @@ Decorators to make using click_shell simpler and more similar to click.
 import typing as t
 from functools import wraps
 
-from .core import ReplContext
 from ._globals import get_current_repl_ctx
+from .core import ReplContext
 
 if t.TYPE_CHECKING:
-    from typing import Callable, Optional, Any
+    from typing import Any, Callable, Optional
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")

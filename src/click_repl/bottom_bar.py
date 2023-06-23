@@ -1,14 +1,14 @@
-import click
 import typing as t
 
+import click
 from click.parser import split_opt
-
 from prompt_toolkit.formatted_text import HTML
 
 from ._globals import _RANGE_TYPES, HAS_CLICK6
 
 if t.TYPE_CHECKING:
     from typing import Optional
+
     from .parser import ArgsParsingState
 
 
