@@ -182,7 +182,7 @@ def test_subcommand_invocation(capfd):
     def lvl2_command():
         print("from lvl2 command")
 
-    with mock_stdin("group-level2\nlvl2-command\n"):
+    with mock_stdin(("group-level2\nlvl2-command\n")):
         with pytest.raises(SystemExit):
             group_level1(args=[], prog_name="test_subcommand_invocation")
     assert (

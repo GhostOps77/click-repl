@@ -5,7 +5,7 @@ from click.parser import split_opt
 
 from prompt_toolkit.formatted_text import HTML
 
-from ._globals import _RANGE_TYPES
+from ._globals import _RANGE_TYPES, HAS_CLICK6
 
 if t.TYPE_CHECKING:
     from typing import Optional
@@ -13,6 +13,13 @@ if t.TYPE_CHECKING:
 
 
 __all__ = ["TOOLBAR", "ToolBar"]
+
+
+# click.DateTime type is introduced in click v7
+if HAS_CLICK6:
+    _METAVAR_PARAMS = (click.Choice,)
+else:
+    _METAVAR_PARAMS = (click.Choice, click.DateTime)  # type: ignore[assignment]
 
 
 def join_options(
@@ -45,7 +52,8 @@ class ToolBar:
         self._formatted_text = ""
 
     def get_formatted_text(self) -> "t.Union[str, HTML]":
-        return self._formatted_text
+        return str(self.state)
+        # return self._formatted_text
 
     def update_state(self, state: "ArgsParsingState") -> None:
         self.state = state
@@ -57,23 +65,25 @@ class ToolBar:
         if state is None:
             return ""
 
-        if state.current_cmd is None:
+        current_command = state.current_command
+
+        if current_command is None:
             return HTML(
                 f"<b>{type(state.current_group).__name__} "
                 f"{state.current_group.name}: "
                 "&lt;COMMAND&gt;</b> [OPTIONS ...] ARGS ..."
             )
 
-        out = state.current_cmd.name
-        if isinstance(state.current_cmd, click.MultiCommand):
-            out = f"{type(state.current_cmd).__name__} {out}"
+        out = current_command.name
+        if isinstance(current_command, click.MultiCommand):
+            out = f"{type(current_command).__name__} {out}"
 
         # print(f'\n{state.ctx.params = }\n{state.ctx.args = }\n'
         #       f'{state.remaining_params = }')
 
         all_params_info = ""
 
-        for param in state.current_cmd.params:
+        for param in current_command.params:
             if isinstance(param, click.Argument):
                 param_info = f"{param.name} "
 
@@ -100,11 +110,11 @@ class ToolBar:
                             .replace(">", "&gt;")
                         )
 
-                elif isinstance(param_type, (click.Choice, click.DateTime)):
+                elif isinstance(param_type, _METAVAR_PARAMS):
                     type_info += param_type.get_metavar(param)
 
                 elif isinstance(param_type, (click.Path, click.File, click.Tuple)):
-                    type_info += f"{param_type.name}"
+                    type_info += param_type.name
 
                 else:
                     type_info += f"{param_type}"

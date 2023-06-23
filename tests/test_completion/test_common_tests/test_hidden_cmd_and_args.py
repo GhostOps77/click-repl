@@ -13,6 +13,10 @@ def root_command():
 c = ClickCompleter(click.Context(root_command))
 
 
+@pytest.mark.skipif(
+    click.__version__[0] < "8",
+    reason="click-v8 built-in shell complete is not available, so skipped",
+)
 def test_hidden_option():
     @root_command.command()
     @click.option("--handler", "-h", hidden=True)

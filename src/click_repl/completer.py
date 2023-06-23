@@ -41,8 +41,8 @@ class ClickCompleter(Completer):
         "cli_ctx",
         "parsed_args",
         "parsed_ctx",
-        "internal_cmd_prefix",
-        "system_cmd_prefix",
+        "internal_command_prefix",
+        "system_command_prefix",
         "completion_parser",
         "state",
     )
@@ -50,8 +50,8 @@ class ClickCompleter(Completer):
     def __init__(
         self,
         ctx: "Context",
-        internal_cmd_prefix: "Optional[str]" = None,
-        system_cmd_prefix: "Optional[str]" = None,
+        internal_command_prefix: "Optional[str]" = None,
+        system_command_prefix: "Optional[str]" = None,
         styles: "Optional[Dict[str, str]]" = None,
     ) -> None:
         self.cli_ctx: "Final[Context]" = ctx
@@ -62,15 +62,10 @@ class ClickCompleter(Completer):
         self.ctx_command: "Command" = self.cli
         self.state: "ArgsParsingState" = currently_introspecting_args(self.cli, ctx, [])
 
-        self.internal_cmd_prefix = internal_cmd_prefix
-        self.system_cmd_prefix = system_cmd_prefix
+        self.internal_command_prefix = internal_command_prefix
+        self.system_command_prefix = system_command_prefix
 
         if styles is None:
-            # styles = {
-            #     "command": "ansiblack",
-            #     "option": "ansiblack",
-            #     "argument": "ansiblack",
-            # }
             styles = {
                 "command": "",
                 "option": "",
@@ -98,10 +93,10 @@ class ClickCompleter(Completer):
         """
 
         if (
-            self.internal_cmd_prefix is not None
-            and self.system_cmd_prefix is not None
+            self.internal_command_prefix is not None
+            and self.system_command_prefix is not None
             and document.text.startswith(
-                (self.internal_cmd_prefix, self.system_cmd_prefix)
+                (self.internal_command_prefix, self.system_command_prefix)
             )
         ):
             return
@@ -111,6 +106,7 @@ class ClickCompleter(Completer):
         try:
             # To Detect the changes in the args
             if self.parsed_args != args:
+                # print('different cmds')
                 self.parsed_args = args
 
                 self.parsed_ctx, self.ctx_command, self.state = get_parsed_ctx_and_state(
@@ -124,13 +120,14 @@ class ClickCompleter(Completer):
             if getattr(self.ctx_command, "hidden", False):
                 return
 
+            # print(f'{self.state = }')
             yield from self.completion_parser.get_completions_for_command(
                 self.parsed_ctx, self.state, self.parsed_args, incomplete
             )
 
-        except Exception:
-            # raise e
-            pass
+        except Exception as e:
+            raise e
+            # pass
 
 
 class ReplCompletion(Completion):
@@ -150,5 +147,15 @@ class ReplCompletion(Completion):
         display_meta: "AnyFormattedText" = None,
         style: str = "",
         selected_style: str = "",
+        **attrs: "t.Any"
     ) -> None:
-        super().__init__(text, -len(text), display, display_meta, style, selected_style)
+        attrs.setdefault("start_position", -len(text))
+
+        super().__init__(
+            text=text,
+            display=display,
+            display_meta=display_meta,
+            style=style,
+            selected_style=selected_style,
+            **attrs,
+        )

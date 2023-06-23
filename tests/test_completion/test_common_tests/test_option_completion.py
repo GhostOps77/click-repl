@@ -1,8 +1,8 @@
 import click
 import pytest
-from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
+from tests import TestDocument
 
 
 @click.group()
@@ -19,7 +19,7 @@ def test_option_choices():
     def option_choices(handler):
         pass
 
-    completions = c.get_completions(Document("option-choices --handler "))
+    completions = c.get_completions(TestDocument("option-choices --handler "))
     assert {x.text for x in completions} == {"foo", "bar"}
 
 
@@ -37,7 +37,7 @@ def bool_option(foo):
     ],
 )
 def test_boolean_option(test_input, expected):
-    completions = c.get_completions(Document(test_input))
+    completions = c.get_completions(TestDocument(test_input))
     assert {x.text for x in completions} == expected
 
 
@@ -56,5 +56,5 @@ def option_cmd(handler):
     ],
 )
 def test_option_completion(test_input, expected):
-    completions = c.get_completions(Document(test_input))
+    completions = c.get_completions(TestDocument(test_input))
     assert {x.text for x in completions} == expected

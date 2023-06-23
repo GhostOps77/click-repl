@@ -1,6 +1,6 @@
 import click
 from click_repl import ClickCompleter
-from prompt_toolkit.document import Document
+from tests import TestDocument
 
 
 @click.group()
@@ -18,5 +18,5 @@ c = ClickCompleter(click.Context(root_command))
 
 
 def test_unprocessed_arg():
-    completions = list(c.get_completions(Document("unprocessed-arg --handler ")))
+    completions = c.get_completions(TestDocument("unprocessed-arg --handler "))
     assert {x.text for x in completions} == set()

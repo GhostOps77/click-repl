@@ -44,7 +44,7 @@ def return_type_tuple_shell_complete(ctx, args, incomplete):
 
 
 @pytest.mark.skipif(
-    click.__version__[0] > "7",
+    click.__version__[0] != "7",
     reason="click-v7 old autocomplete function is not available, so skipped",
 )
 @pytest.mark.parametrize(
