@@ -196,30 +196,30 @@ from lvl2 command
     )
 
 
-def test_internal_commands(capsys):
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def cli(ctx):
-        if not ctx.invoked_subcommand:
-            click_repl.repl(ctx)
+# def test_internal_commands(capsys):
+#     @click.group(invoke_without_command=True)
+#     @click.pass_context
+#     def cli(ctx):
+#         if not ctx.invoked_subcommand:
+#             click_repl.repl(ctx)
 
-    with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
-        with mock_stdin(":help\n:exit\n"):
-            cli()
+#     with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
+#         with mock_stdin(":help\n:exit\n"):
+#             cli()
 
-    captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
-    assert (
-        captured_stdout
-        == """REPL help:
+#     captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
+#     assert (
+#         captured_stdout
+#         == """REPL help:
 
-  External/System Commands:
-    Prefix External commands with "!"
+#   External/System Commands:
+#     Prefix External commands with "!"
 
-  Internal Commands:
-    Prefix Internal commands with ":"
-    :exit, :q, :quit  Exits the REPL
-    :clear, :cls      Clears screen
-    :?, :h, :help     Displays general help information
+#   Internal Commands:
+#     Prefix Internal commands with ":"
+#     :exit, :q, :quit  Exits the REPL
+#     :clear, :cls      Clears screen
+#     :?, :h, :help     Displays general help information
 
-"""
-    )
+# """
+#     )

@@ -97,7 +97,7 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
   @click.pass_context
   def cli(ctx, repl):
       if repl:
-        repl(ctx)
+          repl(ctx)
 
   @cli.command()
   def hello():

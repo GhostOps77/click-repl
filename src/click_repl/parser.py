@@ -5,12 +5,19 @@ from functools import lru_cache
 from collections import deque
 from pathlib import Path
 from shlex import shlex
+from gettext import gettext as _
 
 import click
-from click.parser import Argument as _Argument, _flag_needs_value, OptionParser
+from click.parser import Argument as _Argument, OptionParser, normalize_opt
+from click.exceptions import NoSuchOption, BadOptionUsage
 from prompt_toolkit.completion import Completion
 
 from ._globals import _RANGE_TYPES
+
+# try:
+#     from click.parser import _flag_needs_value
+# except ImportError:
+_flag_needs_value = object()
 
 
 if t.TYPE_CHECKING:
@@ -649,6 +656,76 @@ class CustomOptionsParser(OptionParser):
         that is returned from the parser.
         """
         self._args.append(Argument(obj, dest=dest, nargs=nargs))
+
+    def _match_long_opt(
+        self, opt: str, explicit_value: "t.Optional[str]", state: "ParsingState"
+    ) -> None:
+        if opt not in self._long_opt:
+            from difflib import get_close_matches
+
+            possibilities = get_close_matches(opt, self._long_opt)
+            raise NoSuchOption(opt, possibilities=possibilities, ctx=self.ctx)
+
+        option = self._long_opt[opt]
+        if option.takes_value:
+            # At this point it's safe to modify rargs by injecting the
+            # explicit value, because no exception is raised in this
+            # branch.  This means that the inserted value will be fully
+            # consumed.
+            if explicit_value is not None:
+                state.rargs.insert(0, explicit_value)
+
+            value = self._get_value_from_state(opt, option, state)
+
+        elif explicit_value is not None:
+            raise BadOptionUsage(
+                opt, _("Option {name!r} does not take a value.").format(name=opt)
+            )
+
+        else:
+            value = None
+
+        option.process(value, state)
+
+    def _match_short_opt(self, arg: str, state: "ParsingState") -> None:
+        stop = False
+        i = 1
+        prefix = arg[0]
+        unknown_options = []
+
+        for ch in arg[1:]:
+            opt = normalize_opt(f"{prefix}{ch}", self.ctx)
+            option = self._short_opt.get(opt)
+            i += 1
+
+            if not option:
+                if self.ignore_unknown_options:
+                    unknown_options.append(ch)
+                    continue
+                raise NoSuchOption(opt, ctx=self.ctx)
+            if option.takes_value:
+                # Any characters left in arg?  Pretend they're the
+                # next arg, and stop consuming characters of arg.
+                if i < len(arg):
+                    state.rargs.insert(0, arg[i:])
+                    stop = True
+
+                value = self._get_value_from_state(opt, option, state)
+
+            else:
+                value = None
+
+            option.process(value, state)
+
+            if stop:
+                break
+
+        # If we got any unknown options we re-combinate the string of the
+        # remaining options and re-attach the prefix, then report that
+        # to the state as new larg.  This way there is basic combinatorics
+        # that can be achieved while still ignoring unknown arguments.
+        if self.ignore_unknown_options and unknown_options:
+            state.largs.append(f"{prefix}{''.join(unknown_options)}")
 
     def _get_value_from_state(
         self, option_name: str, option: "Option", state: "ParsingState"

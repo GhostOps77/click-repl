@@ -66,10 +66,15 @@ class ClickCompleter(Completer):
         self.system_cmd_prefix = system_cmd_prefix
 
         if styles is None:
+            # styles = {
+            #     "command": "ansiblack",
+            #     "option": "ansiblack",
+            #     "argument": "ansiblack",
+            # }
             styles = {
-                "command": "ansiblack",
-                "option": "ansiblack",
-                "argument": "ansiblack",
+                "command": "",
+                "option": "",
+                "argument": "",
             }
 
         self.completion_parser: "Final[CompletionsProvider]" = CompletionsProvider(styles)
