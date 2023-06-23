@@ -203,11 +203,11 @@ def test_internal_commands(capsys):
         if not ctx.invoked_subcommand:
             click_repl.repl(ctx)
 
-    with mock_stdin(":help\n:exit\n"):
+    with mock_stdin(":help"):
         with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
             cli()
 
-    print('hihi')
+    # print('hihi')
 
     captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
     assert (
