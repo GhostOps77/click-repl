@@ -11,6 +11,8 @@ from .completer import ReplCompletion
 from .core import ReplCli
 from .core import ReplContext
 from .decorators import pass_context
+from .exceptions import ExitReplException
+from .exceptions import InternalCommandException
 
 __all__ = [
     "get_current_repl_ctx",
@@ -22,6 +24,8 @@ __all__ = [
     "ReplContext",
     "ReplCli",
     "pass_context",
+    "ExitReplException",
+    "InternalCommandException",
 ]
 
 version_info = (0, 2, 1, 3)
