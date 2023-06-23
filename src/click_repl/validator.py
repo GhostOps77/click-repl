@@ -15,7 +15,9 @@ __all__ = ["ClickValidator"]
 
 
 class ClickValidator(Validator):
-    __slots__ = ("cli_ctx", "parsed_args", "internal_cmd_prefix", "system_cmd_prefix")
+    # __slots__ = (
+    #     "cli", "cli_ctx", "parsed_args", "internal_cmd_prefix", "system_cmd_prefix"
+    # )
 
     def __init__(
         self,

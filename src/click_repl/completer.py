@@ -36,16 +36,17 @@ class ClickCompleter(Completer):
     :param:`styles` - Dictionary of style mapping for the Completion objects.
     """
 
-    __slots__ = (
-        "cli",
-        "cli_ctx",
-        "parsed_args",
-        "parsed_ctx",
-        "internal_command_prefix",
-        "system_command_prefix",
-        "completion_parser",
-        "state",
-    )
+    # __slots__ = (
+    #     "cli",
+    #     "cli_ctx",
+    #     "parsed_args",
+    #     "parsed_ctx",
+    #     "ctx_command",
+    #     "internal_command_prefix",
+    #     "system_command_prefix",
+    #     "completion_parser",
+    #     "state",
+    # )
 
     def __init__(
         self,

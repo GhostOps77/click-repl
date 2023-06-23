@@ -104,7 +104,7 @@ class Repl:
         if ISATTY:
 
             def get_command() -> str:
-                return self.repl_ctx.session.prompt()  # type: ignore[return-value, union-attr]  # noqa: E501
+                return self.repl_ctx.session.prompt()  # type: ignore[no-any-return, return-value, union-attr]  # noqa: E501
 
         else:
 
