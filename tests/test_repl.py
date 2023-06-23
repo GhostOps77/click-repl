@@ -207,6 +207,8 @@ def test_internal_commands(capsys):
         with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
             cli()
 
+    print('hihi')
+
     captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
     assert (
         captured_stdout

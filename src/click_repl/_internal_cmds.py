@@ -137,6 +137,9 @@ class InternalCommandSystem:
             formatter.write_heading("REPL help")
             formatter.indent()
 
+            if not (self.system_command_prefix or self.internal_command_prefix):
+                formatter.write_text("No Internal commands are registered with this REPL")
+
             if self.system_command_prefix:
                 with formatter.section("External/System Commands"):
                     formatter.write_text(
