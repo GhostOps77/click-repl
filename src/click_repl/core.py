@@ -4,9 +4,7 @@ import click
 from prompt_toolkit import PromptSession
 
 from . import _repl
-from ._globals import ISATTY
-from ._globals import pop_context
-from ._globals import push_context
+from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
     from typing import Any, Callable, Dict, Final, Generator, List, Optional

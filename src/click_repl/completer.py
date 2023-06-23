@@ -4,11 +4,8 @@ import typing as t
 from prompt_toolkit.completion import Completer, Completion
 
 from .bottom_bar import TOOLBAR
-from .parser import (
-    CompletionsProvider,
-    currently_introspecting_args,
-    get_args_and_incomplete_from_args,
-)
+from .parser import (CompletionsProvider, currently_introspecting_args,
+                     get_args_and_incomplete_from_args)
 from .utils import get_parsed_ctx_and_state
 
 __all__ = ["ClickCompleter"]
