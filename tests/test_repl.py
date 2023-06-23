@@ -200,7 +200,7 @@ def test_internal_commands(capsys):
     @click.group(invoke_without_command=True)
     @click.pass_context
     def cli(ctx):
-        if ctx.invoked_subcommand is None:
+        if not ctx.invoked_subcommand:
             click_repl.repl(ctx)
 
     with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
