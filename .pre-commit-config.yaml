@@ -10,7 +10,7 @@ repos:
       - id: check-docstring-first
       - id: debug-statements
 
-  # Adds a standard feel to import segments, adds future annotations
+  # Adds a standard feel to import segments
   - repo: https://github.com/asottile/reorder-python-imports
     rev: v3.10.0
     hooks:

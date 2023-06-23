@@ -4,13 +4,14 @@ import click
 from prompt_toolkit import PromptSession
 
 from . import _repl
-from ._globals import ISATTY, pop_context, push_context
+from ._globals import ISATTY
+from ._globals import pop_context
+from ._globals import push_context
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Final, Generator, List, Optional, Union
+    from typing import Any, Callable, Dict, Final, Generator, List, Optional
 
-    from click import Context  # noqa: F401
-    from prompt_toolkit.history import History  # noqa: F401
+    from click import Context
 
     from ._internal_cmds import InternalCommandSystem
 
@@ -59,7 +60,7 @@ class ReplContext:
             self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs,
             )
-            self._history: "Union[History, List[str]]" = self.session.history
+            self._history: "Optional[List[str]]" = None
 
         else:
             self.session = None
@@ -117,7 +118,7 @@ class ReplContext:
         """
 
         if self.session is not None:
-            _history = self._history.load_history_strings()  # type: ignore[union-attr]
+            _history = self.session.history.load_history_strings()
         else:
             _history = reversed(self._history)  # type: ignore[arg-type]
 

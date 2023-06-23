@@ -4,7 +4,8 @@ import click
 from click.parser import split_opt
 from prompt_toolkit.formatted_text import HTML
 
-from ._globals import _RANGE_TYPES, HAS_CLICK6
+from ._globals import _RANGE_TYPES
+from ._globals import HAS_CLICK6
 
 if t.TYPE_CHECKING:
     from typing import Optional
@@ -55,8 +56,8 @@ class ToolBar:
         self._formatted_text = ""
 
     def get_formatted_text(self) -> "t.Union[str, HTML]":
-        return str(self.state)
-        # return self._formatted_text
+        # return str(self.state)
+        return self._formatted_text
 
     def update_state(self, state: "ArgsParsingState") -> None:
         self.state = state
