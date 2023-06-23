@@ -1,15 +1,12 @@
 import os
 import typing as t
+
 from prompt_toolkit.completion import Completer, Completion
 
-from .parser import (
-    get_args_and_incomplete_from_args,
-    currently_introspecting_args,
-    CompletionsProvider,
-)
-from .utils import get_parsed_ctx_and_state
 from .bottom_bar import TOOLBAR
-
+from .parser import (CompletionsProvider, currently_introspecting_args,
+                     get_args_and_incomplete_from_args)
+from .utils import get_parsed_ctx_and_state
 
 __all__ = ["ClickCompleter"]
 
@@ -17,12 +14,13 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, List, Optional, Final  # noqa: F401
+    from typing import Dict, Final, Generator, List, Optional  # noqa: F401
 
-    from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
-    from click import Context, MultiCommand, Command  # noqa: F401
+    from click import Command, Context, MultiCommand  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
+    from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
+
     from .parser import ArgsParsingState
 
 

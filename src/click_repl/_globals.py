@@ -1,11 +1,12 @@
-import click
 import sys
 import typing as t
 from threading import local
 
+import click
 
 if t.TYPE_CHECKING:
     from typing import NoReturn, Union  # noqa: F401
+
     from .core import ReplContext  # noqa: F401
 
 

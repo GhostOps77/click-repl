@@ -1,13 +1,15 @@
 import os
-import click
 import typing as t
 from collections import defaultdict
 from collections.abc import Sequence
 
+import click
+
 from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import Any, Optional, NoReturn, Union, Callable, Tuple, Dict, TypeAlias
+    from typing import (Any, Callable, Dict, NoReturn, Optional, Tuple,
+                        TypeAlias, Union)
 
     InternalCommandCallback: TypeAlias = "Callable[[], None]"
     InternalCommandDict: TypeAlias = (

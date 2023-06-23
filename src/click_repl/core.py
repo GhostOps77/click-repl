@@ -1,12 +1,14 @@
-import click
 import typing as t
-from . import _repl
 
+import click
 from prompt_toolkit import PromptSession
+
+from . import _repl
 from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
-    from typing import List, Final, Any, Dict, Generator, Optional, Union, Callable
+    from typing import (Any, Callable, Dict, Final, Generator, List, Optional,
+                        Union)
 
     from click import Context  # noqa: F401
     from prompt_toolkit.history import History  # noqa: F401

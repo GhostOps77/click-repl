@@ -1,12 +1,15 @@
-import click
 import typing as t
 
-from .parser import currently_introspecting_args, CustomOptionsParser
+import click
+
+from .parser import CustomOptionsParser, currently_introspecting_args
 
 if t.TYPE_CHECKING:
     from typing import List, Tuple
+
+    from click import Command, Context
+
     from .parser import ArgsParsingState
-    from click import Context, Command
 
     V = t.TypeVar("V")
 
