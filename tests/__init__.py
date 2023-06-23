@@ -1,8 +1,10 @@
 import contextlib
 import sys
 from io import StringIO
-from click_repl._globals import HAS_CLICK6
+
 from prompt_toolkit.document import Document
+
+from click_repl._globals import HAS_CLICK6
 
 
 @contextlib.contextmanager
@@ -18,18 +20,19 @@ def mock_stdin(text):
 
 
 def _to_click6_text(text: str) -> str:
-    if HAS_CLICK6:
-        cmd = text.split(" ", maxsplit=1)
-        if not cmd:
-            return text
+    if not HAS_CLICK6:
+        return text
 
-        cmd_text = cmd[0].replace("-", "_")
+    cmd = text.split(" ", maxsplit=1)
+    if not cmd:
+        return text
 
-        if len(cmd) == 1:
-            return cmd_text
+    cmd_text = cmd[0].replace("-", "_")
 
-        text = f"{cmd_text} {cmd[1]}"
-    return text
+    if len(cmd) == 1:
+        return cmd_text
+
+    return f"{cmd_text} {cmd[1]}"
 
 
 class TestDocument(Document):
