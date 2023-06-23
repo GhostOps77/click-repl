@@ -56,5 +56,3 @@ repos:
         pass_filenames: false
         args:
           - "src"
-          - "--exclude"
-          - "src/click_repl/__init__.py"
