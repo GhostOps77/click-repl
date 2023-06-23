@@ -132,6 +132,7 @@ class Repl:
                 )
 
     def execute_command(self, command: str) -> None:
+        print(f'{command = }')
         if self.repl_ctx.internal_command_system.execute(command.lower()) == 1:
             self.execute_click_cmds(command)
 
@@ -217,8 +218,8 @@ def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
     cls: "Optional[Type[Repl]]" = None,
-    internal_command_prefix: str = ":",
-    system_command_prefix: str = "!",
+    internal_command_prefix: "Optional[str]" = ":",
+    system_command_prefix: "Optional[str]" = "!",
     styles: "Optional[Dict[str, str]]" = None,
 ) -> None:
     """
