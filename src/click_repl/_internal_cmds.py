@@ -29,13 +29,17 @@ def exit() -> "NoReturn":
 
 class InternalCommandSystem:
     def __init__(
-        self, internal_cmd_prefix: "Optional[str]", sys_cmd_prefix: "Optional[str]"
+        self,
+        internal_command_prefix: "Optional[str]",
+        system_command_prefix: "Optional[str]",
     ) -> None:
-        if internal_cmd_prefix == sys_cmd_prefix and sys_cmd_prefix:
-            raise ValueError("internal_cmd_prefix and sys_cmd_prefix can't be same")
+        if internal_command_prefix == system_command_prefix and system_command_prefix:
+            raise ValueError(
+                "internal_cmd_prefix and system_command_prefix can't be same"
+            )
 
-        self.internal_cmd_prefix = internal_cmd_prefix
-        self.sys_cmd_prefix = sys_cmd_prefix
+        self.internal_command_prefix = internal_command_prefix
+        self.system_command_prefix = system_command_prefix
         self._internal_commands: "InternalCommandDict" = {}
 
         self.register_default_internal_commands()
@@ -47,7 +51,7 @@ class InternalCommandSystem:
         System commands are all commands starting with
         the given :param:`system_cmd_prefix`.
         """
-        os.system(command[len(self.sys_cmd_prefix) :])  # type: ignore[arg-type]
+        os.system(command[len(self.system_command_prefix) :])  # type: ignore[arg-type]
 
     def handle_internal_commands(self, command: str) -> "Optional[int]":
         """
@@ -57,7 +61,7 @@ class InternalCommandSystem:
         the given `internal_cmd_prefix`.
         """
         target = self.get_command(
-            command[len(self.internal_cmd_prefix) :],  # type: ignore[arg-type]
+            command[len(self.internal_command_prefix) :],  # type: ignore[arg-type]
             default=None,
         )
         if target is None:
@@ -108,13 +112,17 @@ class InternalCommandSystem:
         """
         Executes internal commands and system commands
         """
-        if self.internal_cmd_prefix and command.startswith(self.internal_cmd_prefix):
+        if self.internal_command_prefix and command.startswith(
+            self.internal_command_prefix
+        ):
             result_code = self.handle_internal_commands(command)
             if result_code == -1:
                 click.echo(f"{command}, command not found")
             return 0
 
-        elif self.sys_cmd_prefix and command.startswith(self.sys_cmd_prefix):
+        elif self.system_command_prefix and command.startswith(
+            self.system_command_prefix
+        ):
             self.dispatch_repl_commands(command)
             return 0
 
@@ -128,16 +136,16 @@ class InternalCommandSystem:
             formatter.write_heading("REPL help")
             formatter.indent()
 
-            if self.sys_cmd_prefix:
+            if self.system_command_prefix:
                 with formatter.section("External/System Commands"):
                     formatter.write_text(
-                        f'Prefix External commands with "{self.sys_cmd_prefix}"'
+                        f'Prefix External commands with "{self.system_command_prefix}"'
                     )
 
-            if self.internal_cmd_prefix:
+            if self.internal_command_prefix:
                 with formatter.section("Internal Commands"):
                     formatter.write_text(
-                        f'Prefix Internal commands with "{self.internal_cmd_prefix}"'
+                        f'Prefix Internal commands with "{self.internal_command_prefix}"'
                     )
 
                     info_table = defaultdict(list)

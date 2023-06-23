@@ -42,18 +42,18 @@ class Repl:
     def __init__(
         self,
         prompt_kwargs: "Dict[str, Any]" = {},
-        internal_cmd_prefix: "Optional[str]" = ":",
-        system_cmd_prefix: "Optional[str]" = "!",
+        internal_command_prefix: "Optional[str]" = ":",
+        system_command_prefix: "Optional[str]" = "!",
         styles: "Optional[Dict[str, str]]" = None,
     ):
         self.prompt_kwargs = prompt_kwargs
         self.styles = styles
-        self.internal_cmd_prefix = internal_cmd_prefix
-        self.system_cmd_prefix = system_cmd_prefix
+        self.internal_command_prefix = internal_command_prefix
+        self.system_command_prefix = system_command_prefix
 
         # Internal Command System setup
         self.internal_commands_system = InternalCommandSystem(
-            internal_cmd_prefix, system_cmd_prefix
+            internal_command_prefix, system_command_prefix
         )
 
         self.get_command: "Callable[[], str]" = self.get_command_func()
@@ -143,6 +143,8 @@ class Repl:
         args = split_arg_string(command)
 
         # The group command will dispatch based on args.
+        # The context object can parse args from the
+        # protected_args attribute.
         old_protected_args = self.group_ctx.protected_args
         try:
             self.group_ctx.protected_args = args
@@ -166,8 +168,8 @@ class Repl:
         # Generating prompt kwargs (changing in here, also changes in the ReplContext obj)
         self.prompt_kwargs = self.bootstrap_prompt(
             self.prompt_kwargs,
-            self.internal_cmd_prefix,
-            self.system_cmd_prefix,
+            self.internal_command_prefix,
+            self.system_command_prefix,
             self.styles,
         )
 
@@ -186,7 +188,7 @@ class Repl:
         with self.repl_ctx:
             while True:
                 try:
-                    TOOLBAR.state_reset()  # type: ignore[attr-defined]
+                    TOOLBAR.state_reset()
                     command = self.get_command()
                 except KeyboardInterrupt:
                     continue
@@ -218,8 +220,8 @@ def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
     cls: "Optional[Type[Repl]]" = None,
-    internal_cmd_prefix: str = ":",
-    system_cmd_prefix: str = "!",
+    internal_command_prefix: str = ":",
+    system_command_prefix: str = "!",
     styles: "Optional[Dict[str, str]]" = None,
 ) -> None:
     """
@@ -241,7 +243,9 @@ def repl(
     if cls is not None:
         ReplCls = cls
 
-    ReplCls(prompt_kwargs, internal_cmd_prefix, system_cmd_prefix, styles).loop(group_ctx)
+    ReplCls(prompt_kwargs, internal_command_prefix, system_command_prefix, styles).loop(
+        group_ctx
+    )
 
 
 def register_repl(group: "MultiCommand", name: str = "repl") -> None:
