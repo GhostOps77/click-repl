@@ -22,6 +22,6 @@ class InvalidGroupFormat(Exception):
 try:
     from click.exceptions import Exit as ClickExit
 except ImportError:
-    from click.exceptions import (  # type: ignore[assignment] # noqa: F401
+    from click.exceptions import (  # type: ignore[assignment]
         Abort as ClickExit,
     )
