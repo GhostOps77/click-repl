@@ -5,7 +5,7 @@ from threading import local
 
 
 if t.TYPE_CHECKING:
-    from typing import NoReturn, Union, List  # noqa: F401
+    from typing import NoReturn, Union  # noqa: F401
     from .core import ReplContext  # noqa: F401
 
 
