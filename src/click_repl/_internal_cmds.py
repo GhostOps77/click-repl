@@ -16,14 +16,14 @@ if t.TYPE_CHECKING:
     )
 
 
-__all__ = ["exit", "InternalCommandSystem"]
+__all__ = ["repl_exit", "InternalCommandSystem"]
 
 
 def _exit_internal() -> "NoReturn":
     raise ExitReplException()
 
 
-def exit() -> "NoReturn":
+def repl_exit() -> "NoReturn":
     """Exits the REPL"""
     _exit_internal()
 
@@ -166,7 +166,7 @@ class InternalCommandSystem:
 
             click.echo(formatter.getvalue())
 
-        self.register_command(target=exit, names=("q", "quit", "exit"))
+        self.register_command(target=repl_exit, names=("q", "quit", "exit"))
 
         self.register_command(
             target=lambda: click.clear(),

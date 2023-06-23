@@ -1,23 +1,28 @@
+from __future__ import annotations
+
 import sys
 import typing as t
 
 import click
-
-# from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
-#                                          ThreadedAutoSuggest)
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, get_current_repl_ctx
+from ._globals import get_current_repl_ctx
+from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
 from .completer import ClickCompleter
 from .core import ReplContext
-from .exceptions import ClickExit, ExitReplException, InvalidGroupFormat
+from .exceptions import ClickExit
+from .exceptions import ExitReplException
+from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
 from .validator import ClickValidator
 
+# from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
+#                                          ThreadedAutoSuggest)
+
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Optional, Type
+    from typing import Any, Callable
 
     from click import Context, MultiCommand
 
@@ -38,10 +43,10 @@ class Repl:
 
     def __init__(
         self,
-        prompt_kwargs: "Dict[str, Any]" = {},
-        internal_command_prefix: "Optional[str]" = ":",
-        system_command_prefix: "Optional[str]" = "!",
-        styles: "Optional[Dict[str, str]]" = None,
+        prompt_kwargs: dict[str, Any] = {},
+        internal_command_prefix: str | None = ":",
+        system_command_prefix: str | None = "!",
+        styles: dict[str, str] | None = None,
     ):
         self.prompt_kwargs = prompt_kwargs
         self.styles = styles
@@ -53,15 +58,15 @@ class Repl:
             internal_command_prefix, system_command_prefix
         )
 
-        self.get_command: "Callable[[], str]" = self.get_command_func()
+        self.get_command: Callable[[], str] = self.get_command_func()
 
     def bootstrap_prompt(
         self,
-        prompt_kwargs: "Dict[str, Any]",
-        internal_command_prefix: "Optional[str]",
-        system_command_prefix: "Optional[str]",
-        styles: "Optional[Dict[str, str]]",
-    ) -> "Dict[str, Any]":
+        prompt_kwargs: dict[str, Any],
+        internal_command_prefix: str | None,
+        system_command_prefix: str | None,
+        styles: dict[str, str] | None,
+    ) -> dict[str, Any]:
         """Bootstrap prompt_toolkit kwargs or use user defined values.
 
         Keyword arguments:
@@ -97,7 +102,7 @@ class Repl:
         defaults.update(prompt_kwargs)
         return defaults
 
-    def get_command_func(self) -> "Callable[[],  str]":
+    def get_command_func(self) -> Callable[[], str]:
         if ISATTY:
 
             def get_command() -> str:
@@ -132,7 +137,6 @@ class Repl:
                 )
 
     def execute_command(self, command: str) -> None:
-        print(f'{command = }')
         if self.repl_ctx.internal_command_system.execute(command.lower()) == 1:
             self.execute_click_cmds(command)
 
@@ -150,10 +154,10 @@ class Repl:
         finally:
             self.group_ctx.protected_args = old_protected_args
 
-    def start_setup(self, group_ctx: "Context") -> None:
+    def start_setup(self, group_ctx: Context) -> None:
         """Main setup before firing up the REPL"""
 
-        self.group_ctx: "Context" = group_ctx
+        self.group_ctx: Context = group_ctx
 
         # parent should be available, but we're not going to bother if not
         if self.group_ctx.parent is not None and not isinstance(
@@ -161,7 +165,7 @@ class Repl:
         ):
             self.group_ctx = self.group_ctx.parent
 
-        self.group: "MultiCommand" = self.group_ctx.command  # type: ignore[assignment]
+        self.group: MultiCommand = self.group_ctx.command  # type: ignore[assignment]
 
         # Generating prompt kwargs (changing in here, also changes in the ReplContext obj)
         self.prompt_kwargs = self.bootstrap_prompt(
@@ -179,7 +183,7 @@ class Repl:
             parent=get_current_repl_ctx(silent=True),
         )
 
-    def loop(self, group_ctx: "Context") -> None:
+    def loop(self, group_ctx: Context) -> None:
         self.start_setup(group_ctx)
         self.repl_check()
 
@@ -215,12 +219,12 @@ class Repl:
 
 
 def repl(
-    group_ctx: "Context",
-    prompt_kwargs: "Dict[str, Any]" = {},
-    cls: "Optional[Type[Repl]]" = None,
-    internal_command_prefix: "Optional[str]" = ":",
-    system_command_prefix: "Optional[str]" = "!",
-    styles: "Optional[Dict[str, str]]" = None,
+    group_ctx: Context,
+    prompt_kwargs: dict[str, Any] = {},
+    cls: type[Repl] | None = None,
+    internal_command_prefix: str | None = ":",
+    system_command_prefix: str | None = "!",
+    styles: dict[str, str] | None = None,
 ) -> None:
     """
     Start an interactive shell. All subcommands are available in it.
@@ -246,7 +250,7 @@ def repl(
     )
 
 
-def register_repl(group: "MultiCommand", name: str = "repl") -> None:
+def register_repl(group: MultiCommand, name: str = "repl") -> None:
     """Register :func:`repl()` as sub-command `name` of `group`.
 
     Keyword arguments:

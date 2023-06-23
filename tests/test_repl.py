@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import click
 import pytest
 
@@ -182,7 +184,7 @@ def test_subcommand_invocation(capfd):
     def lvl2_command():
         print("from lvl2 command")
 
-    with mock_stdin(("group-level2\nlvl2-command\n")):
+    with mock_stdin("group-level2\nlvl2-command\n"):
         with pytest.raises(SystemExit):
             group_level1(args=[], prog_name="test_subcommand_invocation")
     assert (
@@ -196,20 +198,18 @@ from lvl2 command
     )
 
 
-def test_internal_commands(capsys):
+def test_internal_commands(capfd):
     @click.group(invoke_without_command=True)
     @click.pass_context
     def cli(ctx):
         if not ctx.invoked_subcommand:
             click_repl.repl(ctx)
 
-    with mock_stdin(":help"):
+    with mock_stdin(":help\n:exit\n"):
         with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
             cli()
 
-    # print('hihi')
-
-    captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
+    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert (
         captured_stdout
         == """REPL help:
