@@ -1,8 +1,7 @@
 import os
 import typing as t
 
-from prompt_toolkit.completion import Completer
-from prompt_toolkit.completion import Completion
+from prompt_toolkit.completion import Completer, Completion
 
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
@@ -116,7 +115,6 @@ class ClickCompleter(Completer):
         except Exception:
             TOOLBAR.state_reset()
             # raise e
-            pass
 
 
 class ReplCompletion(Completion):

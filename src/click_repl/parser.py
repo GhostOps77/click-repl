@@ -8,11 +8,9 @@ from pathlib import Path
 from shlex import shlex
 
 import click
-from click.exceptions import BadOptionUsage
-from click.exceptions import NoSuchOption
+from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import normalize_opt
-from click.parser import OptionParser
+from click.parser import OptionParser, normalize_opt
 from prompt_toolkit.completion import Completion
 
 from ._globals import _RANGE_TYPES
