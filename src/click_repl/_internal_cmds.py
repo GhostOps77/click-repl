@@ -8,7 +8,8 @@ import click
 from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, TypeAlias, Union
+    from typing import (Any, Callable, Dict, NoReturn, Optional, Tuple,
+                        TypeAlias, Union)
 
     InternalCommandCallback: TypeAlias = "Callable[[], None]"
     InternalCommandDict: TypeAlias = (
