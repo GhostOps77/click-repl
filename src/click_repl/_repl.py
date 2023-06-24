@@ -5,12 +5,15 @@ import typing as t
 import click
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, get_current_repl_ctx
+from ._globals import get_current_repl_ctx
+from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
 from .completer import ClickCompleter
 from .core import ReplContext
-from .exceptions import ClickExit, ExitReplException, InvalidGroupFormat
+from .exceptions import ClickExit
+from .exceptions import ExitReplException
+from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
 from .validator import ClickValidator
 
@@ -39,9 +42,9 @@ class Repl:
 
     def __init__(
         self,
-        prompt_kwargs: "Dict[str, Any]" = {},
         internal_command_prefix: "Optional[str]" = ":",
         system_command_prefix: "Optional[str]" = "!",
+        prompt_kwargs: "Dict[str, Any]" = {},
         styles: "Optional[Dict[str, str]]" = None,
     ):
         self.prompt_kwargs = prompt_kwargs
@@ -54,13 +57,12 @@ class Repl:
             internal_command_prefix, system_command_prefix
         )
 
-        self.get_command: Callable[[], str] = self.get_command_func()
+        self.get_command: "Callable[[], str]" = self.get_command_func()
 
     def bootstrap_prompt(
         self,
         prompt_kwargs: "Dict[str, Any]",
-        internal_command_prefix: "Optional[str]",
-        system_command_prefix: "Optional[str]",
+        internal_commands_system: "InternalCommandSystem",
         styles: "Optional[Dict[str, str]]",
     ) -> "Dict[str, Any]":
         """Bootstrap prompt_toolkit kwargs or use user defined values.
@@ -79,11 +81,11 @@ class Repl:
             "history": InMemoryHistory(),
             "completer": ClickCompleter(
                 self.group_ctx,
-                self.internal_commands_system,
+                internal_commands_system,
                 styles=styles,
             ),
             "message": "> ",
-            "validator": ClickValidator(self.group_ctx, self.internal_commands_system),
+            "validator": ClickValidator(self.group_ctx, internal_commands_system),
             # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
             "complete_in_thread": True,
             "complete_while_typing": True,
@@ -163,8 +165,7 @@ class Repl:
         # Generating prompt kwargs (changing in here, also changes in the ReplContext obj)
         self.prompt_kwargs = self.bootstrap_prompt(
             self.prompt_kwargs,
-            self.internal_command_prefix,
-            self.system_command_prefix,
+            self.internal_commands_system,
             self.styles,
         )
 
@@ -246,7 +247,7 @@ def repl(
     if cls is not None:
         ReplCls = cls
 
-    ReplCls(prompt_kwargs, internal_command_prefix, system_command_prefix, styles).loop(
+    ReplCls(internal_command_prefix, system_command_prefix, prompt_kwargs, styles).loop(
         group_ctx
     )
 

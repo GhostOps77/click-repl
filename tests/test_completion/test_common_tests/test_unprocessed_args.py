@@ -1,5 +1,7 @@
 import click
+
 from click_repl import ClickCompleter
+from click_repl._internal_cmds import InternalCommandSystem
 from tests import TestDocument
 
 
@@ -14,7 +16,7 @@ def unprocessed_arg(handler):
     pass
 
 
-c = ClickCompleter(click.Context(root_command))
+c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
 
 
 def test_unprocessed_arg():

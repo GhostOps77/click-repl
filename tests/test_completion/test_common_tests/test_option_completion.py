@@ -2,6 +2,7 @@ import click
 import pytest
 
 from click_repl import ClickCompleter
+from click_repl._internal_cmds import InternalCommandSystem
 from tests import TestDocument
 
 
@@ -10,7 +11,7 @@ def root_command():
     pass
 
 
-c = ClickCompleter(click.Context(root_command))
+c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
 
 
 def test_option_choices():

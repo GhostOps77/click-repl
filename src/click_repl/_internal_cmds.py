@@ -31,8 +31,8 @@ def repl_exit() -> "NoReturn":
 class InternalCommandSystem:
     def __init__(
         self,
-        internal_command_prefix: "Optional[str]",
-        system_command_prefix: "Optional[str]",
+        internal_command_prefix: "Optional[str]" = ":",
+        system_command_prefix: "Optional[str]" = "!",
     ) -> None:
         if internal_command_prefix == system_command_prefix and system_command_prefix:
             raise ValueError(
