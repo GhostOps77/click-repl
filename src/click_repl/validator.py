@@ -1,9 +1,7 @@
 import typing as t
 
-from click.exceptions import ClickException
-from click.exceptions import UsageError
-from prompt_toolkit.validation import ValidationError
-from prompt_toolkit.validation import Validator
+from click.exceptions import ClickException, UsageError
+from prompt_toolkit.validation import ValidationError, Validator
 
 from ._internal_cmds import InternalCommandSystem
 from .parser import get_args_and_incomplete_from_args
@@ -11,6 +9,7 @@ from .utils import get_parsed_ctx_and_state
 
 if t.TYPE_CHECKING:
     from typing import Final, List
+
     from click import Context, MultiCommand
     from prompt_toolkit.document import Document
 

@@ -2,8 +2,7 @@ import typing as t
 
 import click
 
-from .parser import currently_introspecting_args
-from .parser import CustomOptionsParser
+from .parser import CustomOptionsParser, currently_introspecting_args
 
 if t.TYPE_CHECKING:
     from typing import List, Tuple
