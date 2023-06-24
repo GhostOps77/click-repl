@@ -118,7 +118,9 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
 
 
 @lru_cache(maxsize=3)
-def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], str]":
+def get_args_and_incomplete_from_args(
+    document_text: str,
+) -> "Tuple[Tuple[str, ...], str]":
     args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
     # cursor_within_command = (
@@ -145,7 +147,7 @@ def get_args_and_incomplete_from_args(document_text: str) -> "Tuple[List[str], s
 
     incomplete = os.path.expandvars(os.path.expanduser(incomplete))
 
-    return args, incomplete
+    return tuple(args), incomplete
 
 
 class ArgsParsingState:

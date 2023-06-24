@@ -7,9 +7,7 @@ from prompt_toolkit.completion import Completion
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
 from .parser import CompletionsProvider
-from .parser import currently_introspecting_args
-from .parser import get_args_and_incomplete_from_args
-from .utils import get_parsed_ctx_and_state
+from .utils import _resolve_state
 
 __all__ = ["ClickCompleter"]
 
@@ -17,14 +15,12 @@ IS_WINDOWS = os.name == "nt"
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Final, Generator, List, Optional  # noqa: F401
+    from typing import Dict, Final, Generator, Optional  # noqa: F401
 
-    from click import Command, Context, MultiCommand  # noqa: F401
+    from click import Context, MultiCommand  # noqa: F401
     from prompt_toolkit.completion import CompleteEvent  # noqa: F401
     from prompt_toolkit.document import Document  # noqa: F401
     from prompt_toolkit.formatted_text import AnyFormattedText  # noqa: F401
-
-    from .parser import ArgsParsingState
 
 
 class ClickCompleter(Completer):
@@ -58,10 +54,10 @@ class ClickCompleter(Completer):
         self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = ctx.command  # type: ignore[assignment]
 
-        self.parsed_args: "List[str]" = []
-        self.parsed_ctx: "Context" = ctx
-        self.ctx_command: "Command" = self.cli
-        self.state: "ArgsParsingState" = currently_introspecting_args(self.cli, ctx, [])
+        # self.parsed_args: "Tuple[str, ...]" = ()
+        # self.parsed_ctx: "Context" = ctx
+        # self.ctx_command: "Command" = self.cli
+        # self.state: "ArgsParsingState" = currently_introspecting_args(self.cli, ctx, [])
 
         if styles is None:
             styles = {
@@ -95,31 +91,30 @@ class ClickCompleter(Completer):
             TOOLBAR.state_reset()
             return
 
-        args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
-
         try:
-            # To Detect the changes in the args
-            if self.parsed_args != args:
-                # print('different cmds')
-                self.parsed_args = args
+            # # To Detect the changes in the args
+            # if self.parsed_args != args:
+            #     # print('different cmds')
+            #     self.parsed_args = args
 
-                self.parsed_ctx, self.ctx_command, self.state = get_parsed_ctx_and_state(
-                    self.cli_ctx, args
-                )
+            parsed_ctx, ctx_command, state, args, incomplete = _resolve_state(
+                self.cli_ctx, document.text_before_cursor
+            )
 
             # print(f'\n(from get_completions) {vars(self.parsed_ctx) = }\n')
             # print(f"\n{self.state = }")
-            TOOLBAR.update_state(self.state)  # type: ignore[attr-defined]
+            TOOLBAR.update_state(state)  # type: ignore[attr-defined]
 
-            if getattr(self.ctx_command, "hidden", False):
+            if getattr(ctx_command, "hidden", False):
                 return
 
             # print(f'{self.state = }')
             yield from self.completion_parser.get_completions_for_command(
-                self.parsed_ctx, self.state, self.parsed_args, incomplete
+                parsed_ctx, state, args, incomplete
             )
 
         except Exception:
+            TOOLBAR.state_reset()
             # raise e
             pass
 

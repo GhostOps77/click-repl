@@ -1,15 +1,15 @@
 import typing as t
+from functools import lru_cache
 
 import click
 
 from .parser import currently_introspecting_args
 from .parser import CustomOptionsParser
+from .parser import get_args_and_incomplete_from_args
 
 if t.TYPE_CHECKING:
     from typing import List, Tuple
-
     from click import Command, Context
-
     from .parser import ArgsParsingState
 
     V = t.TypeVar("V")
@@ -66,7 +66,6 @@ def _resolve_context(ctx: "Context", args: "List[str]") -> "Context":
     """
 
     # ctx.resilient_parsing = True
-    ctx.allow_extra_args = True
 
     while args:
         command = ctx.command
@@ -105,20 +104,24 @@ def _resolve_context(ctx: "Context", args: "List[str]") -> "Context":
     return ctx
 
 
-def get_parsed_ctx_and_state(
-    cli_ctx: "Context", args: "List[str]"
-) -> "Tuple[Context, Command, ArgsParsingState]":
+@lru_cache(maxsize=3)
+def _resolve_state(
+    cli_ctx: "Context", document: str
+) -> "Tuple[Context, Command, ArgsParsingState, Tuple[str, ...], str]":
     """Used in both completer class and validator class
     to execute once and use the cached result in the other
     """
+
+    args, incomplete = get_args_and_incomplete_from_args(document)
+
     # if args:
     #     cli_ctx.command.resolve_command(cli_ctx, args[0])
 
-    parsed_ctx = _resolve_context(cli_ctx, args)
+    parsed_ctx = _resolve_context(cli_ctx, list(args))
 
     ctx_command = parsed_ctx.command
     state = currently_introspecting_args(
         cli_ctx.command, parsed_ctx, args  # type: ignore[arg-type]
     )
 
-    return parsed_ctx, ctx_command, state
+    return parsed_ctx, ctx_command, state, args, incomplete

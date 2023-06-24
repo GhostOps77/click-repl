@@ -6,11 +6,10 @@ from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.validation import Validator
 
 from ._internal_cmds import InternalCommandSystem
-from .parser import get_args_and_incomplete_from_args
-from .utils import get_parsed_ctx_and_state
+from .utils import _resolve_state
 
 if t.TYPE_CHECKING:
-    from typing import Final, List
+    from typing import Final
     from click import Context, MultiCommand
     from prompt_toolkit.document import Document
 
@@ -32,18 +31,16 @@ class ClickValidator(Validator):
         self.cli: "Final[MultiCommand]" = ctx.command  # type: ignore[assignment]
         self.internal_commands_system = internal_commands_system
 
-        self.parsed_args: "List[str]" = []
+        # self.parsed_args: "List[str]" = []
         # self.parsed_ctx = cli_ctx
         # self.ctx_command = cli
 
     def _validate(self, document: "Document") -> None:
-        args, _ = get_args_and_incomplete_from_args(document.text_before_cursor)
-
         # To Detect the changes in the args
-        if self.parsed_args != args:
-            self.parsed_args = args
+        # if self.parsed_args != args:
+        #     self.parsed_args = args
 
-            get_parsed_ctx_and_state(self.cli_ctx, args)
+        _resolve_state(self.cli_ctx, document.text_before_cursor)
 
     def validate(self, document: "Document") -> None:
         """Validates input from the prompt by raising the
