@@ -16,11 +16,15 @@ c = ClickCompleter(click.Context(root_command))
 def test_option_choices():
     @root_command.command()
     @click.option("--handler", type=click.Choice(("foo", "bar")))
+    @click.option("--wrong", type=click.Choice(("bogged", "bogus")))
     def option_choices(handler):
         pass
 
-    completions = c.get_completions(TestDocument("option-choices --handler "))
+    completions = list(c.get_completions(TestDocument("option-choices --handler ")))
     assert {x.text for x in completions} == {"foo", "bar"}
+
+    completions = list(c.get_completions(TestDocument("option-choices --wrong ")))
+    assert {x.text for x in completions} == {"bogged", "bogus"}
 
 
 @root_command.command()
