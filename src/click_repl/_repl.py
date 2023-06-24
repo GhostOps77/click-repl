@@ -1,4 +1,5 @@
 import sys
+import traceback
 import typing as t
 
 import click
@@ -81,14 +82,11 @@ class Repl:
             "history": InMemoryHistory(),
             "completer": ClickCompleter(
                 self.group_ctx,
-                internal_command_prefix,
-                system_command_prefix,
+                self.internal_commands_system,
                 styles=styles,
             ),
             "message": "> ",
-            "validator": ClickValidator(
-                self.group_ctx, internal_command_prefix, system_command_prefix
-            ),
+            "validator": ClickValidator(self.group_ctx, self.internal_commands_system),
             # "auto_suggest": ThreadedAutoSuggest(AutoSuggestFromHistory()),
             "complete_in_thread": True,
             "complete_while_typing": True,
@@ -219,6 +217,9 @@ class Repl:
 
                 except ExitReplException:
                     break
+
+                except Exception:
+                    traceback.print_exc()
 
 
 def repl(

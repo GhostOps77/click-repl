@@ -8,8 +8,7 @@ import click
 from .exceptions import ExitReplException
 
 if t.TYPE_CHECKING:
-    from typing import (Any, Callable, Dict, NoReturn, Optional, Tuple,
-                        TypeAlias, Union)
+    from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, TypeAlias, Union
 
     InternalCommandCallback: TypeAlias = "Callable[[], None]"
     InternalCommandDict: TypeAlias = (
@@ -110,21 +109,34 @@ class InternalCommandSystem:
 
         return default
 
+    def get_prefix(self, command: str) -> "Optional[str]":
+        if self.internal_command_prefix and command.startswith(
+            self.internal_command_prefix
+        ):
+            return self.internal_command_prefix
+
+        elif self.system_command_prefix and command.startswith(
+            self.system_command_prefix
+        ):
+            return self.system_command_prefix
+
+        return None
+
     def execute(self, command: str) -> int:
         """
         Executes internal commands and system commands
         """
-        if self.internal_command_prefix and command.startswith(
-            self.internal_command_prefix
-        ):
+        prefix = self.get_prefix(command)
+        if prefix is None:
+            return 1
+
+        if prefix == self.internal_command_prefix:
             result_code = self.handle_internal_commands(command)
             if result_code == -1:
                 click.echo(f"{command}, command not found")
             return 0
 
-        elif self.system_command_prefix and command.startswith(
-            self.system_command_prefix
-        ):
+        elif prefix == self.system_command_prefix:
             self.dispatch_repl_commands(command)
             return 0
 

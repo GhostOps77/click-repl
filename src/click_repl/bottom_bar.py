@@ -59,7 +59,9 @@ class ToolBar:
         # return str(self.state)
         return self._formatted_text
         # if self.state:
-        #     return f'{self.state.ctx.params}'
+        #     return (
+        #     f"{self.state.ctx.args} {self.state.ctx.params}"
+        #     )
         # return ""
 
     def update_state(self, state: "ArgsParsingState") -> None:

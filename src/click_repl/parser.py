@@ -8,9 +8,11 @@ from pathlib import Path
 from shlex import shlex
 
 import click
-from click.exceptions import BadOptionUsage, NoSuchOption
+from click.exceptions import BadOptionUsage
+from click.exceptions import NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import OptionParser, normalize_opt
+from click.parser import normalize_opt
+from click.parser import OptionParser
 from prompt_toolkit.completion import Completion
 
 from ._globals import _RANGE_TYPES
@@ -627,7 +629,7 @@ class CustomOptionsParser(OptionParser):
     )
 
     def __init__(self, ctx: "Context") -> None:
-        ctx.resilient_parsing = True
+        # ctx.resilient_parsing = True
         ctx.allow_extra_args = True
         ctx.allow_interspersed_args = True
 
@@ -645,6 +647,27 @@ class CustomOptionsParser(OptionParser):
         that is returned from the parser.
         """
         self._args.append(Argument(obj, dest=dest, nargs=nargs))
+
+    def _process_args_for_options(self, state: "ParsingState") -> None:
+        # Tracking the scattered values using unparsed_args list
+        unparsed_args = []
+
+        while state.rargs:
+            arg = state.rargs.pop(0)
+            # Double dashes always handled explicitly regardless of what
+            # prefixes are valid.
+            if arg == "--":
+                return
+            elif arg[:1] in self._opt_prefixes and len(arg) > 1:
+                self._process_opts(arg, state)
+            elif self.allow_interspersed_args:
+                unparsed_args.append(arg)
+            else:
+                unparsed_args.append(arg)
+                break
+
+        # Insert unparsed args into the beginning of the rargs
+        state.rargs[0:1] = unparsed_args
 
     def _match_long_opt(
         self, opt: str, explicit_value: "t.Optional[str]", state: "ParsingState"

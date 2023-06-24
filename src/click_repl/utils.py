@@ -2,7 +2,8 @@ import typing as t
 
 import click
 
-from .parser import CustomOptionsParser, currently_introspecting_args
+from .parser import currently_introspecting_args
+from .parser import CustomOptionsParser
 
 if t.TYPE_CHECKING:
     from typing import List, Tuple
@@ -31,7 +32,7 @@ if t.TYPE_CHECKING:
 #             yield val
 
 
-class Proxy(object):
+class Proxy:
     def __init__(self, obj: "V") -> None:
         object.__setattr__(self, "_obj", obj)
 
@@ -64,7 +65,7 @@ def _resolve_context(ctx: "Context", args: "List[str]") -> "Context":
     :param args: List of complete args before the incomplete value.
     """
 
-    ctx.resilient_parsing = True
+    # ctx.resilient_parsing = True
     ctx.allow_extra_args = True
 
     while args:
@@ -110,6 +111,9 @@ def get_parsed_ctx_and_state(
     """Used in both completer class and validator class
     to execute once and use the cached result in the other
     """
+    # if args:
+    #     cli_ctx.command.resolve_command(cli_ctx, args[0])
+
     parsed_ctx = _resolve_context(cli_ctx, args)
 
     ctx_command = parsed_ctx.command

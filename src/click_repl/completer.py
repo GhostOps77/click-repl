@@ -1,11 +1,14 @@
 import os
 import typing as t
 
-from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.completion import Completer
+from prompt_toolkit.completion import Completion
 
+from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
-from .parser import (CompletionsProvider, currently_introspecting_args,
-                     get_args_and_incomplete_from_args)
+from .parser import CompletionsProvider
+from .parser import currently_introspecting_args
+from .parser import get_args_and_incomplete_from_args
 from .utils import get_parsed_ctx_and_state
 
 __all__ = ["ClickCompleter"]
@@ -49,8 +52,7 @@ class ClickCompleter(Completer):
     def __init__(
         self,
         ctx: "Context",
-        internal_command_prefix: "Optional[str]" = None,
-        system_command_prefix: "Optional[str]" = None,
+        internal_commands_system: "InternalCommandSystem",
         styles: "Optional[Dict[str, str]]" = None,
     ) -> None:
         self.cli_ctx: "Final[Context]" = ctx
@@ -61,9 +63,6 @@ class ClickCompleter(Completer):
         self.ctx_command: "Command" = self.cli
         self.state: "ArgsParsingState" = currently_introspecting_args(self.cli, ctx, [])
 
-        self.internal_command_prefix = internal_command_prefix
-        self.system_command_prefix = system_command_prefix
-
         if styles is None:
             styles = {
                 "command": "",
@@ -71,6 +70,7 @@ class ClickCompleter(Completer):
                 "argument": "",
             }
 
+        self.internal_commands_system = internal_commands_system
         self.completion_parser: "Final[CompletionsProvider]" = CompletionsProvider(styles)
 
     def get_completions(
@@ -91,13 +91,8 @@ class ClickCompleter(Completer):
             command line autocompletion
         """
 
-        if (
-            self.internal_command_prefix is not None
-            and self.system_command_prefix is not None
-            and document.text.startswith(
-                (self.internal_command_prefix, self.system_command_prefix)
-            )
-        ):
+        if self.internal_commands_system.get_prefix(document.text_before_cursor):
+            TOOLBAR.state_reset()
             return
 
         args, incomplete = get_args_and_incomplete_from_args(document.text_before_cursor)
@@ -124,9 +119,9 @@ class ClickCompleter(Completer):
                 self.parsed_ctx, self.state, self.parsed_args, incomplete
             )
 
-        except Exception as e:
-            raise e
-            # pass
+        except Exception:
+            # raise e
+            pass
 
 
 class ReplCompletion(Completion):
