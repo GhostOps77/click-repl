@@ -389,7 +389,8 @@ class ClickCompleter(Completer):
                 parsed_ctx, state, args, incomplete
             )
 
-        except Exception as e:
+        except Exception:
+            # except Exception as e:
             # TOOLBAR.state_reset()
-            raise e
-            # pass
+            # raise e
+            pass
