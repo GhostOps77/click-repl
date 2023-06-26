@@ -2,7 +2,6 @@ import click
 import pytest
 
 from click_repl import ClickCompleter
-from click_repl._internal_cmds import InternalCommandSystem
 from tests import TestDocument
 
 
@@ -23,7 +22,7 @@ def arg_choices(handler):
     pass
 
 
-c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
+c = ClickCompleter(click.Context(root_command))
 
 
 @pytest.mark.parametrize(

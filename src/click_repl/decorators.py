@@ -3,7 +3,6 @@ click_repl.decorators
 
 Decorators to make using click_shell simpler and more similar to click.
 """
-
 import typing as t
 from functools import wraps
 
@@ -12,8 +11,9 @@ from .core import ReplContext
 
 if t.TYPE_CHECKING:
     from typing import Any, Callable, Optional
+    from typing_extensions import ParamSpec, Concatenate
 
-    P = t.ParamSpec("P")
+    P = ParamSpec("P")
     R = t.TypeVar("R")
     F = t.TypeVar("F", bound=Callable[..., Any])
 
@@ -39,7 +39,7 @@ __all__ = ["pass_context"]
 
 
 def pass_context(
-    func: "Callable[t.Concatenate[Optional[ReplContext], P], R]",
+    func: "Callable[Concatenate[Optional[ReplContext], P], R]",
 ) -> "Callable[P, R]":
     """Marks a callback as wanting to receive the current REPL context
     object as first argument.

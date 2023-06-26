@@ -1,6 +1,7 @@
 import pytest
 
-from click_repl._internal_cmds import _exit_internal, InternalCommandSystem
+from click_repl._internal_cmds import _exit_internal
+from click_repl._internal_cmds import InternalCommandSystem
 
 
 internal_command_system = InternalCommandSystem(":", "!")
@@ -16,7 +17,7 @@ def test_register_cmd_from_str():
     "test_input",
     [
         ({"h": "help"}, str),
-        (["h", "help", "?"], str()),
+        (["h", "help", "?"], ""),
     ],
 )
 def test_register_func_xfails(test_input):

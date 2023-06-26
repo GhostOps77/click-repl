@@ -3,7 +3,6 @@ import pytest
 from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
-from click_repl._internal_cmds import InternalCommandSystem
 
 
 @click.group()
@@ -11,7 +10,7 @@ def root_command():
     pass
 
 
-c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
+c = ClickCompleter(click.Context(root_command))
 
 with pytest.importorskip(
     "click.shell_complete.CompletionItem",
