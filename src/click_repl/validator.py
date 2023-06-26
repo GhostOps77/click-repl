@@ -1,13 +1,10 @@
 import typing as t
 
-from click.exceptions import ClickException
-from click.exceptions import UsageError
-from prompt_toolkit.validation import ValidationError
-from prompt_toolkit.validation import Validator
+from click.exceptions import ClickException, UsageError
+from prompt_toolkit.validation import ValidationError, Validator
 
 from ._internal_cmds import InternalCommandSystem
-from .utils import _resolve_state
-from .utils import get_group_ctx
+from .utils import _resolve_state, get_group_ctx
 
 if t.TYPE_CHECKING:
     from typing import Final

@@ -6,16 +6,14 @@ from gettext import gettext as _
 from shlex import shlex
 
 import click
-from click.exceptions import BadOptionUsage
-from click.exceptions import NoSuchOption
+from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import normalize_opt
-from click.parser import OptionParser
+from click.parser import OptionParser, normalize_opt
 
 from . import utils
 
 if t.TYPE_CHECKING:
-    from typing import List, Optional, Tuple, Dict, Any, Sequence
+    from typing import Any, Dict, List, Optional, Sequence, Tuple
 
     from click import Argument as CoreArgument  # noqa: F401
     from click import Command, Context, MultiCommand, Parameter

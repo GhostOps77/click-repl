@@ -11,7 +11,8 @@ from .core import ReplContext
 
 if t.TYPE_CHECKING:
     from typing import Any, Callable, Optional
-    from typing_extensions import ParamSpec, Concatenate
+
+    from typing_extensions import Concatenate, ParamSpec
 
     P = ParamSpec("P")
     R = t.TypeVar("R")
