@@ -5,13 +5,17 @@ import typing as t
 import click
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import ISATTY, get_current_repl_ctx
+from ._globals import get_current_repl_ctx
+from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
 from .completer import ClickCompleter
 from .core import ReplContext
-from .exceptions import ClickExit, ExitReplException, InvalidGroupFormat
+from .exceptions import ClickExit
+from .exceptions import ExitReplException
+from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
+from .utils import get_group_ctx
 from .validator import ClickValidator
 
 # from prompt_toolkit.auto_suggest import (AutoSuggestFromHistory,
@@ -44,17 +48,13 @@ class Repl:
         prompt_kwargs: "Dict[str, Any]" = {},
         styles: "Optional[Dict[str, str]]" = None,
     ):
-        self.prompt_kwargs = prompt_kwargs
         self.styles = styles
-        self.internal_command_prefix = internal_command_prefix
-        self.system_command_prefix = system_command_prefix
+        self.prompt_kwargs = prompt_kwargs
 
         # Internal Command System setup
         self.internal_commands_system = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
         )
-
-        self.get_command: "Callable[[], str]" = self.get_command_func()
 
     def bootstrap_prompt(
         self,
@@ -92,6 +92,10 @@ class Repl:
         }
 
         defaults.update(prompt_kwargs)
+
+        # if defaults["validator"] is None:
+        #     defaults["validate_while_typing"] = True,
+
         return defaults
 
     def get_command_func(self) -> "Callable[[], str]":
@@ -146,19 +150,7 @@ class Repl:
         finally:
             self.group_ctx.protected_args = old_protected_args
 
-    def start_setup(self, group_ctx: "Context") -> None:
-        """Main setup before firing up the REPL"""
-
-        self.group_ctx: "Context" = group_ctx
-
-        # parent should be available, but we're not going to bother if not
-        if self.group_ctx.parent is not None and not isinstance(
-            self.group_ctx.command, click.MultiCommand
-        ):
-            self.group_ctx = self.group_ctx.parent
-
-        self.group: "MultiCommand" = self.group_ctx.command  # type: ignore[assignment]
-
+    def setup_repl_ctx(self) -> None:
         # Generating prompt kwargs (changing in here, also changes in the ReplContext obj)
         self.prompt_kwargs = self.bootstrap_prompt(
             self.prompt_kwargs,
@@ -174,9 +166,19 @@ class Repl:
             parent=get_current_repl_ctx(silent=True),
         )
 
+        self.get_command: "Callable[[], str]" = self.get_command_func()
+
+    def start_setup(self, group_ctx: "Context") -> None:
+        """Main setup before firing up the REPL"""
+
+        self.group_ctx: "Context" = get_group_ctx(group_ctx)
+        self.group: "MultiCommand" = self.group_ctx.command  # type: ignore[assignment]
+
+        self.repl_check()
+        self.setup_repl_ctx()
+
     def loop(self, group_ctx: "Context") -> None:
         self.start_setup(group_ctx)
-        self.repl_check()
 
         with self.repl_ctx:
             while True:
@@ -220,10 +222,9 @@ class Repl:
 def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
-    cls: "Optional[Type[Repl]]" = None,
-    internal_command_prefix: "Optional[str]" = ":",
-    system_command_prefix: "Optional[str]" = "!",
+    cls: "Type[Repl]" = Repl,
     styles: "Optional[Dict[str, str]]" = None,
+    **attrs: "Any",
 ) -> None:
     """
     Start an interactive shell. All subcommands are available in it.
@@ -240,13 +241,7 @@ def repl(
     :param:`styles` - Optional Dictionary with 'command', 'argument'
         and 'option' style names.
     """
-    ReplCls = Repl
-    if cls is not None:
-        ReplCls = cls
-
-    ReplCls(internal_command_prefix, system_command_prefix, prompt_kwargs, styles).loop(
-        group_ctx
-    )
+    cls(prompt_kwargs=prompt_kwargs, styles=styles, **attrs).loop(group_ctx)
 
 
 def register_repl(group: "MultiCommand", name: str = "repl") -> None:

@@ -3,12 +3,16 @@ import pytest
 from click_repl._internal_cmds import InternalCommandSystem
 
 
-sys_cmds_only_obj = InternalCommandSystem(None, "!")
+sys_cmds_only_obj = InternalCommandSystem(None)
 
 
 @pytest.mark.parametrize(
     "test_input, expected",
-    [("!echo hi", "hi\n"), ("!echo hi hi", "hi hi\n"), ("!", "")],
+    [
+        ("!echo hi", "hi\n"),
+        ("!echo hi hi", "hi hi\n"),
+        ("!", "Enter an Internal Command properly\n"),
+    ],
 )
 def test_system_commands(capfd, test_input, expected):
     sys_cmds_only_obj.execute(test_input)

@@ -5,9 +5,8 @@ from threading import local
 import click
 
 if t.TYPE_CHECKING:
-    from typing import NoReturn, Union  # noqa: F401
-
-    from .core import ReplContext  # noqa: F401
+    from typing import NoReturn, Union
+    from .core import ReplContext
 
 
 # Float Range is introduced after IntRange, in click v7
@@ -20,6 +19,7 @@ except ImportError:
 
 
 HAS_CLICK6 = click.__version__[0] == "6"
+HAS_CLICK8 = click.__version__[0] == "8"
 ISATTY = sys.stdin.isatty()
 
 _locals = local()

@@ -45,26 +45,23 @@ class InternalCommandSystem:
 
         self.register_default_internal_commands()
 
-    def dispatch_repl_commands(self, command: str) -> None:
+    def dispatch_system_commands(self, command: str) -> None:
         """
         Execute system commands entered in the REPL.
 
         System commands are all commands starting with
-        the given :param:`system_cmd_prefix`.
+        the given `system_command_prefix`.
         """
-        os.system(command[len(self.system_command_prefix) :])  # type: ignore[arg-type]
+        os.system(command)
 
     def handle_internal_commands(self, command: str) -> "Optional[int]":
         """
         Run REPL-internal commands.
 
         REPL-internal commands are all commands starting with
-        the given `internal_cmd_prefix`.
+        the given `internal_command_prefix`.
         """
-        target = self.get_command(
-            command[len(self.internal_command_prefix) :],  # type: ignore[arg-type]
-            default=None,
-        )
+        target = self.get_command(command, default=None)
         if target is None:
             return -1
 
@@ -130,6 +127,11 @@ class InternalCommandSystem:
         if prefix is None:
             return 1
 
+        command = command[len(prefix) :]
+        if not command:
+            click.echo("Enter an Internal Command properly")
+            return 0
+
         if prefix == self.internal_command_prefix:
             result_code = self.handle_internal_commands(command)
             if result_code == -1:
@@ -137,7 +139,7 @@ class InternalCommandSystem:
             return 0
 
         elif prefix == self.system_command_prefix:
-            self.dispatch_repl_commands(command)
+            self.dispatch_system_commands(command)
             return 0
 
         return 1

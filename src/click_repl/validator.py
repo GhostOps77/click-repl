@@ -7,6 +7,7 @@ from prompt_toolkit.validation import Validator
 
 from ._internal_cmds import InternalCommandSystem
 from .utils import _resolve_state
+from .utils import get_group_ctx
 
 if t.TYPE_CHECKING:
     from typing import Final
@@ -27,8 +28,8 @@ class ClickValidator(Validator):
         ctx: "Context",
         internal_commands_system: "InternalCommandSystem",
     ) -> None:
-        self.cli_ctx: "Final[Context]" = ctx
-        self.cli: "Final[MultiCommand]" = ctx.command  # type: ignore[assignment]
+        self.cli_ctx: "Final[Context]" = get_group_ctx(ctx)
+        self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
         self.internal_commands_system = internal_commands_system
 
         # self.parsed_args: "List[str]" = []
