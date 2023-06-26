@@ -6,6 +6,7 @@ import click
 
 if t.TYPE_CHECKING:
     from typing import NoReturn, Union
+
     from .core import ReplContext
 
 

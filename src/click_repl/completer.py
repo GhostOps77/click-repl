@@ -3,18 +3,13 @@ import typing as t
 from pathlib import Path
 
 import click
-from prompt_toolkit.completion import Completer
-from prompt_toolkit.completion import Completion
+from prompt_toolkit.completion import Completer, Completion
 
-from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK8
-from ._globals import ISATTY
+from ._globals import _RANGE_TYPES, HAS_CLICK8, ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
 from .parser import quotes
-from .utils import _resolve_state
-from .utils import get_group_ctx
-from .utils import join_options
+from .utils import _resolve_state, get_group_ctx, join_options
 
 __all__ = ["ClickCompleter"]
 
@@ -28,7 +23,7 @@ else:
 
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Final, Generator, Optional, Iterable, Union
+    from typing import Dict, Final, Generator, Iterable, Optional, Union
 
     from click import Context, MultiCommand, Parameter
     from prompt_toolkit.completion import CompleteEvent

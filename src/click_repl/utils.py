@@ -4,15 +4,15 @@ from functools import lru_cache
 import click
 from click.parser import split_opt
 
-from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK8
-from .parser import currently_introspecting_args
-from .parser import CustomOptionsParser
-from .parser import get_args_and_incomplete_from_args
+from ._globals import _RANGE_TYPES, HAS_CLICK8
+from .parser import (CustomOptionsParser, currently_introspecting_args,
+                     get_args_and_incomplete_from_args)
 
 if t.TYPE_CHECKING:
-    from typing import List, Tuple, Union, Dict, Any
+    from typing import Any, Dict, List, Tuple, Union
+
     from click import Command, Context, Parameter
+
     from .parser import ArgsParsingState
 
     V = t.TypeVar("V")
