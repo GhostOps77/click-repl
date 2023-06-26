@@ -9,6 +9,7 @@ from .utils import join_options
 
 if t.TYPE_CHECKING:
     from typing import Optional
+
     from .parser import ArgsParsingState
     from click import Parameter
 

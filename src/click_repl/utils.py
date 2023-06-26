@@ -10,7 +10,9 @@ from .parser import get_args_and_incomplete_from_args
 
 if t.TYPE_CHECKING:
     from typing import List, Tuple
+
     from click import Command, Context
+
     from .parser import ArgsParsingState
 
     V = t.TypeVar("V")

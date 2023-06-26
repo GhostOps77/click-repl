@@ -11,6 +11,7 @@ from .utils import get_group_ctx
 
 if t.TYPE_CHECKING:
     from typing import Final
+
     from click import Context, MultiCommand
     from prompt_toolkit.document import Document
 
