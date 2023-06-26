@@ -12,7 +12,7 @@ from click.parser import Argument as _Argument
 from click.parser import normalize_opt
 from click.parser import OptionParser
 
-# import re
+from . import utils
 
 if t.TYPE_CHECKING:
     from typing import List, Optional, Tuple, Dict, Any, Sequence
@@ -195,18 +195,16 @@ class ArgsParsingState:
         for i in (self.current_group, self.current_command, self.current_param):
             if i is None:
                 keys.append(None)
-            elif isinstance(i, click.Command):
-                keys.append(i.to_info_dict(self.cmd_ctx))
             else:
-                keys.append(i.to_info_dict())
+                keys.append(utils.get_info_dict(i))
 
         return (  # type: ignore[return-value]
             *keys,
-            tuple(param.to_info_dict() for param in self.remaining_params),
+            tuple(utils.get_info_dict(param) for param in self.remaining_params),
         )
 
-    def __eq__(
-        self, other: "Optional[ArgsParsingState]"  # type: ignore[override]
+    def __eq__(  # type: ignore[override]
+        self, other: "Optional[ArgsParsingState]"
     ) -> bool:
         if isinstance(other, ArgsParsingState):
             return self.__key() == other.__key()

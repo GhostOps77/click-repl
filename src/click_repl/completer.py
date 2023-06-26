@@ -8,6 +8,7 @@ from prompt_toolkit.completion import Completion
 
 from ._globals import _RANGE_TYPES
 from ._globals import HAS_CLICK8
+from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import TOOLBAR
 from .parser import quotes
@@ -367,7 +368,8 @@ class ClickCompleter(Completer):
             self.internal_commands_system is not None
             and self.internal_commands_system.get_prefix(document.text_before_cursor)
         ):
-            TOOLBAR.state_reset()
+            if ISATTY:
+                TOOLBAR.state_reset()
             return
 
         try:
@@ -377,7 +379,8 @@ class ClickCompleter(Completer):
 
             # print(f'\n(from get_completions) {vars(parsed_ctx) = }\n')
             # print(f'{state = }')
-            TOOLBAR.update_state(state)
+            if ISATTY:
+                TOOLBAR.update_state(state)
 
             if getattr(ctx_command, "hidden", False):
                 return
@@ -386,7 +389,7 @@ class ClickCompleter(Completer):
                 parsed_ctx, state, args, incomplete
             )
 
-        except Exception:
+        except Exception as e:
             # TOOLBAR.state_reset()
-            # raise e
-            pass
+            raise e
+            # pass

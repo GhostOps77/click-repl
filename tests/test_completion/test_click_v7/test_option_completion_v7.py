@@ -1,8 +1,8 @@
 import click
 import pytest
-from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
+from tests import TestDocument
 
 
 @click.group()
@@ -26,5 +26,5 @@ def test_click7_autocomplete_option():
     def autocompletion_opt_cmd2(handler):
         pass
 
-    completions = list(c.get_completions(Document("autocompletion-opt-cmd2 --handler ")))
+    completions = c.get_completions(TestDocument("autocompletion-opt-cmd2 --handler "))
     assert {x.text for x in completions} == {"foo", "bar"}

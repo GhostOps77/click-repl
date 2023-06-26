@@ -1,8 +1,8 @@
 import click
 import pytest
-from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
+from tests import TestDocument
 
 
 @click.group()
@@ -23,7 +23,7 @@ def test_hidden_option():
     def hidden_option_cmd(handler):
         pass
 
-    completions = c.get_completions(Document("hidden-option-cmd "))
+    completions = c.get_completions(TestDocument("hidden-option-cmd "))
     assert {x.text for x in completions} == set()
 
 
@@ -48,5 +48,5 @@ def test_args_of_hidden_command(test_input):
     def args_choices_hidden_cmd(handler):
         pass
 
-    completions = c.get_completions(Document(test_input))
+    completions = c.get_completions(TestDocument(test_input))
     assert {x.text for x in completions} == set()

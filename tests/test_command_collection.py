@@ -1,6 +1,5 @@
 import click
 import pytest
-from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
 from tests import _to_click6_text
@@ -26,7 +25,7 @@ def test_command_collection():
 
     ctx = click.Context(click.CommandCollection(sources=(foo_group, foobar_group)))
     c = ClickCompleter(ctx)
-    completions = c.get_completions(Document("foo"))
+    completions = c.get_completions(TestDocument("foo"))
 
     assert {x.text for x in completions} == {
         _to_click6_text(i) for i in ("foo-cmd", "foobar-cmd")

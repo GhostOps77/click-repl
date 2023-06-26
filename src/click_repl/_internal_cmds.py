@@ -184,7 +184,7 @@ class InternalCommandSystem:
         self.register_command(target=repl_exit, names=("q", "quit", "exit"))
 
         self.register_command(
-            target=lambda: click.clear(),
+            target=lambda: click.clear(),  # type: ignore[no-any-return]
             names=("cls", "clear"),
             description="Clears screen",
         )
