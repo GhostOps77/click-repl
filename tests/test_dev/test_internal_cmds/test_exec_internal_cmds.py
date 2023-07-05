@@ -1,15 +1,27 @@
+from __future__ import annotations
+
+import click
 import pytest
 
-import click_repl
 from click_repl._internal_cmds import InternalCommandSystem
+from click_repl.core import ReplContext
+from click_repl.exceptions import ExitReplException
+from click_repl.exceptions import PrefixNotFound
+
+
+@click.command()
+def dummy_cmd():
+    pass
 
 
 internal_command_system = InternalCommandSystem(":", "!")
+repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system)
 
 
 @pytest.mark.parametrize("test_input", [":help", ":h", ":?"])
 def test_internal_help_commands(capsys, test_input):
-    internal_command_system.execute(test_input)
+    with repl_ctx:
+        internal_command_system.execute(test_input)
 
     captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
 
@@ -18,13 +30,13 @@ def test_internal_help_commands(capsys, test_input):
         == """REPL help:
 
   External/System Commands:
-    Prefix External commands with "!"
+    Prefix External/System commands with "!".
 
   Internal Commands:
-    Prefix Internal commands with ":"
-    :exit, :q, :quit  Exits the REPL
-    :clear, :cls      Clears screen
-    :?, :h, :help     Displays general help information
+    Prefix Internal commands with ":".
+    :clear, :cls      Clears screen.
+    :?, :h, :help     Displays general help information.
+    :exit, :q, :quit  Exits the REPL.
 
 """
     )
@@ -32,7 +44,7 @@ def test_internal_help_commands(capsys, test_input):
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_internal_exit_commands(test_input):
-    with pytest.raises(click_repl.ExitReplException):
+    with pytest.raises(ExitReplException):
         internal_command_system.execute(test_input)
 
 
@@ -41,7 +53,5 @@ no_internal_cmds_obj = InternalCommandSystem(None, None)
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_no_internal_commands(capfd, test_input):
-    no_internal_cmds_obj.execute(test_input)
-
-    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
-    assert captured_stdout == ""
+    with pytest.raises(PrefixNotFound):
+        no_internal_cmds_obj.execute(test_input)

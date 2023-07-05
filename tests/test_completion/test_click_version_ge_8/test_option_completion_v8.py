@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import click
 import pytest
+from prompt_toolkit.document import Document
 
-from click_repl import ClickCompleter
-from tests import TestDocument
+from click_repl.completer import ClickCompleter
+from tests import DummyInternalCommandSystem
 
 
 @click.group()
@@ -10,7 +13,7 @@ def root_command():
     pass
 
 
-c = ClickCompleter(click.Context(root_command))
+c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 with pytest.importorskip(
     "click.shell_complete.CompletionItem",
@@ -34,7 +37,7 @@ with pytest.importorskip(
         def autocompletion_opt_cmd(handler):
             pass
 
-        completions = c.get_completions(TestDocument("autocompletion-opt-cmd "))
+        completions = c.get_completions(Document("autocompletion-opt-cmd "))
         assert {x.text for x in completions} == {"--handler", "bar"}
 
 
@@ -57,5 +60,5 @@ with pytest.importorskip(
         def autocompletion_cmd2(handler):
             pass
 
-        completions = c.get_completions(TestDocument("autocompletion-cmd2 --handler "))
+        completions = c.get_completions(Document("autocompletion-cmd2 --handler "))
         assert {x.text for x in completions} == {"foo", "bar"}

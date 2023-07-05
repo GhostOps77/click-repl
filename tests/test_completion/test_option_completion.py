@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import click
 import pytest
+from prompt_toolkit.document import Document
 
-from click_repl import ClickCompleter
-from tests import TestDocument
+from click_repl.completer import ClickCompleter
+from tests import DummyInternalCommandSystem
 
 
 @click.group()
@@ -10,21 +13,26 @@ def root_command():
     pass
 
 
-c = ClickCompleter(click.Context(root_command))
+c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 
-def test_option_choices():
-    @root_command.command()
-    @click.option("--handler", type=click.Choice(("foo", "bar")))
-    @click.option("--wrong", type=click.Choice(("bogged", "bogus")))
-    def option_choices(handler):
-        pass
+@root_command.command()
+@click.option("--handler", type=click.Choice(("foo", "bar")))
+@click.option("--wrong", type=click.Choice(("bogged", "bogus")))
+def option_choices(handler):
+    pass
 
-    completions = list(c.get_completions(TestDocument("option-choices --handler ")))
-    assert {x.text for x in completions} == {"foo", "bar"}
 
-    completions = list(c.get_completions(TestDocument("option-choices --wrong ")))
-    assert {x.text for x in completions} == {"bogged", "bogus"}
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("option-choices --handler ", {"foo", "bar"}),
+        ("option-choices --wrong ", {"bogged", "bogus"}),
+    ],
+)
+def test_option_choices(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
 
 
 @root_command.command()
@@ -41,7 +49,7 @@ def bool_option(foo):
     ],
 )
 def test_boolean_option(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
 
 
@@ -60,7 +68,7 @@ def option_cmd(handler):
     ],
 )
 def test_option_completion(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
 
 
@@ -72,23 +80,27 @@ def shortest_only(foo, bar, foobar):
     pass
 
 
-c1 = ClickCompleter(click.Context(root_command), shortest_opts_only=True)
+c1 = ClickCompleter(
+    click.Context(root_command), DummyInternalCommandSystem(), shortest_opts_only=True
+)
 
 
 @pytest.mark.parametrize(
     "test_input, expected",
     [
         ("shortest-only ", {"-f", "-b", "--foobar"}),
-        ("shortest-only -", {"-f", "-b", "--foobar"}),
+        ("shortest-only -", {"-f", "--foo", "-b", "--bar", "--foobar"}),
         ("shortest-only --f", {"--foo", "--foobar"}),
     ],
 )
 def test_shortest_only_true_mode(test_input, expected):
-    completions = c1.get_completions(TestDocument(test_input))
+    completions = c1.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
 
 
-c2 = ClickCompleter(click.Context(root_command), show_only_unused_opts=True)
+c2 = ClickCompleter(
+    click.Context(root_command), DummyInternalCommandSystem(), show_only_unused_opts=True
+)
 
 
 @root_command.command()
@@ -108,5 +120,5 @@ def multiple_option(u):
     ],
 )
 def test_only_unused_with_multiple_option(test_input, expected):
-    completions = list(c2.get_completions(TestDocument(test_input)))
+    completions = list(c2.get_completions(Document(test_input)))
     assert {x.text for x in completions} == expected

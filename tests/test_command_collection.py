@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import click
 import pytest
+from prompt_toolkit.document import Document
 
-from click_repl import ClickCompleter
-from tests import _to_click6_text
-from tests import TestDocument
+from click_repl._internal_cmds import InternalCommandSystem
+from click_repl.completer import ClickCompleter
 
 
 def test_command_collection():
@@ -24,12 +26,10 @@ def test_command_collection():
         pass
 
     ctx = click.Context(click.CommandCollection(sources=(foo_group, foobar_group)))
-    c = ClickCompleter(ctx)
-    completions = c.get_completions(TestDocument("foo"))
+    c = ClickCompleter(ctx, InternalCommandSystem())
+    completions = c.get_completions(Document("foo"))
 
-    assert {x.text for x in completions} == {
-        _to_click6_text(i) for i in ("foo-cmd", "foobar-cmd")
-    }
+    assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
 
 
 @click.group()
@@ -52,7 +52,7 @@ def second_level_command_two():
     pass
 
 
-c3 = ClickCompleter(click.Context(root_group))
+c3 = ClickCompleter(click.Context(root_group), InternalCommandSystem())
 
 
 @pytest.mark.parametrize(
@@ -69,5 +69,54 @@ c3 = ClickCompleter(click.Context(root_group))
     ],
 )
 def test_completion_multilevel_command(test_input, expected):
-    completions = c3.get_completions(TestDocument(test_input))
-    assert {x.text for x in completions} == {_to_click6_text(i) for i in expected}
+    completions = c3.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.group(chain=True)
+@click.argument("arg", type=click.Choice(["hi", "hi2", "hi3"]))
+def chained_group(arg):
+    pass
+
+
+@chained_group.command("subcommand1")
+@click.argument("arg1", type=click.Choice(["hlllo", "hello2", "hello3"]))
+@click.option("--opt1")
+def subcommand1(arg1, opt1):
+    pass
+
+
+@chained_group.command("subcommand2")
+@click.option("--opt2", type=click.Choice(["1944", "2018", "2005"]))
+def subcommand2(opt2):
+    pass
+
+
+c4 = ClickCompleter(click.Context(cli), InternalCommandSystem())
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        ("chained-group ", {"hi", "hi2", "hi3"}),
+        ("chained-group hi ", {"subcommand1", "subcommand2"}),
+        ("chained-group hi subcommand1 ", {"hlllo", "hello2", "hello3", "--opt1"}),
+        ("chained-group hi subcommand1 hlllo ", {"subcommand1", "subcommand2"}),
+        (
+            "chained-group hi subcommand1 hlllo subcommand2 ",
+            {"--opt2", "subcommand1", "subcommand2"},
+        ),
+        (
+            "chained-group hi subcommand1 hlllo subcommand2 --opt2 ",
+            {"1944", "2018", "2005"},
+        ),
+    ],
+)
+def test_chained_group(test_input, expected):
+    completions = c4.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected

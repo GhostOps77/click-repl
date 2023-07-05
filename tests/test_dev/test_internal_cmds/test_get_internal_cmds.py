@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import pytest
 
 import click_repl
 from click_repl._internal_cmds import InternalCommandSystem
 from click_repl._internal_cmds import repl_exit as repl_exit
-
 
 internal_command_system = InternalCommandSystem(":", "!")
 

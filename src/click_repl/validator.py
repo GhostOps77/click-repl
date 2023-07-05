@@ -1,70 +1,136 @@
-import typing as t
+""""
+click_repl.validator
 
-from click.exceptions import ClickException, UsageError
-from prompt_toolkit.validation import ValidationError, Validator
+Core utilities for input validation and displaying error messages
+raised during auto-completion.
+"""
 
+from __future__ import annotations
+
+import logging
+from typing import Final
+
+from click import Context
+from click import MultiCommand
+from click.exceptions import ClickException
+from click.exceptions import UsageError
+from prompt_toolkit.document import Document
+from prompt_toolkit.validation import ValidationError
+from prompt_toolkit.validation import Validator
+
+from ._globals import CLICK_REPL_DEV_ENV
+from ._globals import ISATTY
+from ._globals import get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
-from .utils import _resolve_state, get_group_ctx
-
-if t.TYPE_CHECKING:
-    from typing import Final
-
-    from click import Context, MultiCommand
-    from prompt_toolkit.document import Document
-
+from .utils import _resolve_state
 
 __all__ = ["ClickValidator"]
 
 
+logger = logging.getLogger(f"click_repl-{__name__}")
+
+if CLICK_REPL_DEV_ENV:
+    logger_level = logging.DEBUG
+
+else:
+    logger_level = logging.WARNING
+
+logger.setLevel(logger_level)
+
+log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
+formatter = logging.Formatter(log_format)
+
+log_file = "click-repl-err.log"
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+
 class ClickValidator(Validator):
-    # __slots__ = (
-    #     "cli", "cli_ctx", "parsed_args", "internal_cmd_prefix", "system_cmd_prefix"
-    # )
+    """
+    Custom prompt input validation for the click_repl app.
+
+    Parameters
+    ----------
+    ctx : `click.Context`
+        The current `click.Context` object.
+
+    display_all_errors : bool
+        If `False`, all generic Python Exceptions that are raised, will not be
+        displayed in the Validator bar, resulting in the full error traceback
+        being redirected to a log file in the REPL mode.
+    """
 
     def __init__(
         self,
-        ctx: "Context",
-        internal_commands_system: "InternalCommandSystem",
+        ctx: Context,
+        internal_commands_system: InternalCommandSystem,
+        display_all_errors: bool = True,
     ) -> None:
-        self.cli_ctx: "Final[Context]" = get_group_ctx(ctx)
-        self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
+        self.cli_ctx: Final[Context] = ctx
+        self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
+
         self.internal_commands_system = internal_commands_system
+        self.display_all_errors = display_all_errors
 
-        # self.parsed_args: "List[str]" = []
-        # self.parsed_ctx = cli_ctx
-        # self.ctx_command = cli
+    def validate(self, document: Document) -> None:
+        """
+        Validates the input from the prompt by raising a
+        `prompt_toolkit.validation.ValidationError` if it is invalid.
+        Any raised errors are displayed in the Validator bar.
 
-    def _validate(self, document: "Document") -> None:
-        # To Detect the changes in the args
-        # if self.parsed_args != args:
-        #     self.parsed_args = args
+        Parameters
+        ----------
+        document : `prompt_toolkit.document.Document`
+            A `prompt_toolkit.document.Document` object
+            containing the incomplete string from the REPL.
 
-        _resolve_state(self.cli_ctx, document.text_before_cursor)
+        Raises
+        ------
+        `prompt_toolkit.validation.ValidationError`
+            If there's any error occurred during argument parsing, and it needs
+            to be displayed in the validation bar.
 
-    def validate(self, document: "Document") -> None:
-        """Validates input from the prompt by raising the
-        :class:~prompt_toolkit.validation.ValidationError
-
-        Keyword arguments:
-        ---
-        :param:`document` - :class:`~prompt_toolkit.document.Document` object
-        containing the incomplete command line string
+        Exception
+            If the error just needs to be raised normally.
         """
 
-        if self.internal_commands_system.get_prefix(document.text_before_cursor):
+        if self.internal_commands_system.get_prefix(document.text_before_cursor)[1]:
+            # If the input text in the prompt starts with a prefix indicating an internal
+            # or system command, it is considered as such. In this case, there is no need
+            # to validate the input, so we can simply return and ignore it.
             return
 
         try:
-            self._validate(document)
+            _, state, _ = _resolve_state(self.cli_ctx, document.text_before_cursor)
 
-        except UsageError as e:
-            raise ValidationError(0, e.format_message())
+            if ISATTY:
+                bottombar = get_current_repl_ctx().bottombar  # type:ignore[union-attr]
 
-        except ClickException as e:
-            raise ValidationError(0, f"{type(e).__name__}: {e.format_message()}")
+                if bottombar is not None:
+                    bottombar.update_state(state)
 
-        # except (IndexError, KeyError) as e:
-        #     raise e
+        except UsageError as ue:
+            # UsageError's error messages are simple and are raised when there
+            # is an improper use of arguments and options. In this case, we can
+            # simply display the error message without mentioning the specific
+            # error class.
+            raise ValidationError(0, ue.format_message())
+
+        except ClickException as ce:
+            # Click formats its error messages to provide more detail. Therefore,
+            # we can use it to display error messages along with the specific error
+            # type.
+            raise ValidationError(0, f"{type(ce).__name__}: {ce.format_message()}")
 
         except Exception as e:
-            raise ValidationError(0, f"{type(e).__name__}: {e}")
+            if self.display_all_errors:
+                # All other errors raised during input validation are
+                # displayed in the Validator bar, but only if
+                # self.catch_all_errors is set to True.
+                raise ValidationError(0, f"{type(e).__name__}: {e}") from e
+
+            # Error tracebacks are displayed during the REPL loop if
+            # self.catch_all_errors is set to False. The short error
+            # messages are also logged into a click-repl-err.log file.
+            logger.exception("%s: %s", type(e).__name__, e)

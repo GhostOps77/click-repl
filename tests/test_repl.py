@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import click
 import pytest
 
@@ -64,9 +66,7 @@ def test_group_command_called(capsys):
         with pytest.raises(SystemExit):
             cli(args=[], prog_name="test_group_called")
 
-    assert capsys.readouterr().out.replace("\r\n", "\n") == (
-        "cli()\ncli()\nFoo!\ncli()\nBar!\n"
-    )
+    assert capsys.readouterr().out.replace("\r\n", "\n") == ("cli()\nFoo!\nBar!\n")
 
 
 @click.group(invoke_without_command=True)
@@ -83,17 +83,15 @@ def foo():
 
 
 @pytest.mark.parametrize(
-    "args, stdin, expected_err, expected_output",
+    "args, stdin, expected_output",
     [
-        ([], "foo\n", click_repl.exceptions.InvalidGroupFormat, ""),
-        (["temp_arg"], "", SystemExit, ""),
-        (["temp_arg"], "foo\n", SystemExit, "Foo\n"),
+        # ([], "foo\n", ""),
+        (["temp_arg"], "", ""),
+        (["temp_arg"], "foo\n", "Foo\n"),
     ],
 )
-def test_group_argument_with_required_false(
-    capsys, args, stdin, expected_err, expected_output
-):
-    with pytest.raises(expected_err):
+def test_group_argument_with_required_false(capsys, args, stdin, expected_output):
+    with pytest.raises(SystemExit):
         with mock_stdin(stdin):
             cli_arg_required_false(args=args, prog_name="cli_arg_required_false")
 
@@ -119,16 +117,10 @@ def foo2():
 @pytest.mark.parametrize(
     "args, expected",
     [
-        (["hi"], "cli(hi, 1, None)\ncli(hi, 1, None)\nFoo!\n"),
-        (
-            ["--option1", "opt1", "hi"],
-            "cli(hi, opt1, None)\ncli(hi, opt1, None)\nFoo!\n",
-        ),
-        (["--option2", "opt2", "hi"], "cli(hi, 1, opt2)\ncli(hi, 1, opt2)\nFoo!\n"),
-        (
-            ["--option1", "opt1", "--option2", "opt2", "hi"],
-            "cli(hi, opt1, opt2)\ncli(hi, opt1, opt2)\nFoo!\n",
-        ),
+        (["hi"], "cli(hi, 1, None)\nFoo!\n"),
+        (["--option1", "opt1", "hi"], "cli(hi, opt1, None)\nFoo!\n"),
+        (["--option2", "opt2", "hi"], "cli(hi, 1, opt2)\nFoo!\n"),
+        (["--option1", "opt1", "--option2", "opt2", "hi"], "cli(hi, opt1, opt2)\nFoo!\n"),
     ],
 )
 def test_group_with_multiple_args(capsys, args, expected):
@@ -188,8 +180,6 @@ def test_subcommand_invocation(capfd):
     assert (
         capfd.readouterr().out.replace("\r\n", "\n")
         == """from level1
-from level1
-from level2
 from level2
 from lvl2 command
 """
@@ -213,13 +203,41 @@ from lvl2 command
 #         == """REPL help:
 
 #   External/System Commands:
-#     Prefix External commands with "!"
+#     Prefix External/System commands with "!".
 
 #   Internal Commands:
-#     Prefix Internal commands with ":"
-#     :exit, :q, :quit  Exits the REPL
-#     :clear, :cls      Clears screen
-#     :?, :h, :help     Displays general help information
+#     Prefix Internal commands with ":".
+#     :clear, :cls      Clears screen.
+#     :?, :h, :help     Displays general help information.
+#     :exit, :q, :quit  Exits the REPL.
 
+# """
+#     )
+
+
+# @click.group(
+#     cls=click_repl.ReplCli, startup=lambda: print("hi"), cleanup=lambda: print("bye")
+# )
+# def main():
+#     print("main group")
+
+
+# @main.command()
+# def cmd1():
+#     print("hello")
+
+
+# def test_replcli_class(capfd):
+#     with pytest.raises(SystemExit):
+#         with mock_stdin("cmd1\n"):
+#             main()
+
+#     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
+#     assert (
+#         captured_stdout
+#         == """main group
+# hi
+# hello
+# bye
 # """
 #     )

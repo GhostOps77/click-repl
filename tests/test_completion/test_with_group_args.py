@@ -1,33 +1,35 @@
+from __future__ import annotations
+
 import click
 import pytest
+from prompt_toolkit.document import Document
 
-from click_repl import ClickCompleter
-from click_repl import repl
-from tests import TestDocument
+from click_repl.completer import ClickCompleter
+from tests import DummyInternalCommandSystem
 
 
 @click.group(invoke_without_command=True)
 @click.option("--user", required=True)
 @click.pass_context
 def cmd(ctx, user):
-    if ctx.invoked_subcommand is None:
-        click.echo(f"Top-level user: {user}")
-        repl(ctx)
+    pass
 
 
 @cmd.command()
-@click.option("--user")
+@click.option("--opt")
 def c1(user):
-    click.echo(f"Executed C1 with {user}!")
+    pass
 
 
-c = ClickCompleter(cmd.make_context("", args=["--user", "hi"]))
+c = ClickCompleter(
+    cmd.make_context("", args=["--user", "hi"]), DummyInternalCommandSystem()
+)
 
 
-@pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
+@pytest.mark.parametrize("test_input, expected", [(" ", {"c1"}), ("c1 ", {"--opt"})])
 def test_subcommand_invocation_from_group(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
-    assert {x.text for x in completions} == {expected}
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
 
 
 @click.group(invoke_without_command=True)
@@ -46,6 +48,7 @@ def cmd(cmd_arg):
 
 c2 = ClickCompleter(
     cli.make_context("", args=["--opt", "hi1", "hi2", "hi3", "hi4", "hi5", "hii"]),
+    DummyInternalCommandSystem(),
 )
 
 
@@ -53,5 +56,5 @@ c2 = ClickCompleter(
     "test_input, expected", [(" ", {"cmd"}), ("cmd ", {"foo", "foo2"})]
 )
 def test_subcommand_invocation_for_group_with_opts(test_input, expected):
-    completions = c2.get_completions(TestDocument(test_input))
+    completions = c2.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
