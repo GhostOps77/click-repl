@@ -37,15 +37,15 @@ def test_hidden_option():
         "args-",
         "args-choices",
         "args-choices-hidden-cmd foo ",
-        "args-choices-hidden-cmd --handler ",
-        "args-choices-hidden-cmd --handler ",
+        "args-choices-hidden-cmd --handler2 ",
+        "args-choices-hidden-cmd --handler2 ",
     ],
 )
 def test_args_of_hidden_command(test_input):
     @root_command.command(hidden=True)
     @click.argument("handler1", type=click.Choice(("foo", "bar")))
     @click.option("--handler2", type=click.Choice(("foo", "bar")))
-    def args_choices_hidden_cmd(handler):
+    def args_choices_hidden_cmd(handler1, handler2):
         pass
 
     completions = c.get_completions(TestDocument(test_input))

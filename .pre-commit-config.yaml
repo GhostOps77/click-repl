@@ -22,7 +22,7 @@ repos:
 
   # Automatically upgrade syntax to newer versions
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.7.0
+    rev: v3.8.0
     hooks:
       - id: pyupgrade
         args:
@@ -37,20 +37,28 @@ repos:
           - "src"
           - "tests"
 
-  # Flake8 for linting, line-length adjusted to match Black default
-  - repo: https://github.com/PyCQA/flake8
-    rev: '6.0.0'
+  # # Flake8 for linting, line-length adjusted to match Black default.
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: '6.0.0'
+  #   hooks:
+  #     - id: flake8
+  #       additional_dependencies:
+  #         - flake8-builtins
+  #       args:
+  #         - "src"
+  #         - "tests"
+
+  # Ruff for linting.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.0.277
     hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-builtins
-        args:
-          - "src"
-          - "tests"
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
 
   # Type enforcement for Python
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.4.0
+    rev: v1.4.1
     hooks:
       - id: mypy
         pass_filenames: false

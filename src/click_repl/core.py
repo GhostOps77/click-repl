@@ -1,15 +1,20 @@
+"""
+`click_repl.core`
+
+Core functionality for click-repl
+"""
 import typing as t
 
 import click
 from prompt_toolkit import PromptSession
 
 from . import _repl
-from ._globals import ISATTY, pop_context, push_context
+from ._globals import ISATTY
+from ._globals import pop_context
+from ._globals import push_context
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Final, Generator, List, Optional
-
-    from click import Context
+    from typing import Dict, Generator, Optional
 
     from ._internal_cmds import InternalCommandSystem
 
@@ -28,14 +33,17 @@ __all__ = ["ReplContext", "ReplCli"]
 
 
 class ReplContext:
-    """Context object for REPL
+    """
+    Context object for the REPL (Read-Eval-Print-Loop).
 
-    Keyword arguments:
-    ---
-    :param:`group_ctx` - Click Context object that belong to a Group
-    :param:`validator` - Adds a Validator to the PromptSession
-    :param:`prompt_kwargs` - Kwargs for PromptToolkit's `PromptSession` class
-    :param:`styles` - Dictionary that denote the style schema of the prompt
+    This class tracks the depth of nested REPLs, ensuring seamless navigation
+    between different levels. It facilitates nested REPL scenarios, allowing
+    multiple levels of interactive REPL sessions.
+
+    Each REPL's properties are stored inside this context class, allowing them to
+    be accessed and shared with their parent REPL.
+
+    All the settings for each REPL session persist until the session is terminated.
     """
 
     __slots__ = (
@@ -49,31 +57,49 @@ class ReplContext:
 
     def __init__(
         self,
-        group_ctx: "Context",
+        group_ctx: "click.Context",
         internal_command_system: "InternalCommandSystem",
-        prompt_kwargs: "Dict[str, Any]" = {},
+        prompt_kwargs: "Dict[str, t.Any]" = {},
         parent: "Optional[ReplContext]" = None,
     ) -> None:
+        """
+        Initialize the `ReplContext` class.
+
+        Parameters
+        ----------
+        group_ctx : click.Context
+            The click context object that belong to the CLI/parent Group.
+
+        internal_command_system : click_repl._internal_cmds.InternalCommandSystem
+            The `InternalCommandSystem` object that holds information about
+            the internal commands and their prefixes.
+
+        prompt_kwargs : A dictionary of str: Any pairs.
+            The extra Keyword arguments for `prompt_toolkit.PromptSession` class.
+
+        styles : A dictionary of str: str pairs.
+            A dictionary that denote the style schema of the prompt.
+        """
+        self._history: "t.List[str]" = []
+
         if ISATTY:
-            self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
+            self.session: "Optional[PromptSession[Dict[str, t.Any]]]" = PromptSession(
                 **prompt_kwargs,
             )
-            self._history: "Optional[List[str]]" = None
 
         else:
             self.session = None
-            self._history = []
 
         self.internal_command_system = internal_command_system
-        self.group_ctx: "Final[Context]" = group_ctx
+        self.group_ctx: "t.Final[click.Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
-        self.parent: "Final[Optional[ReplContext]]" = parent
+        self.parent: "t.Final[Optional[ReplContext]]" = parent
 
     def __enter__(self) -> "ReplContext":
         push_context(self)
         return self
 
-    def __exit__(self, *_: "Any") -> None:
+    def __exit__(self, *_: "t.Any") -> None:
         pop_context()
 
     @property
@@ -101,36 +127,39 @@ class ReplContext:
 
     def prompt_reset(self) -> None:
         """
-        Resets values of :class:`prompt_toolkit.session.PromptSession` to
+        Resets values of `prompt_toolkit.session.PromptSession` to
         the provided `prompt_kwargs`, discarding any changes done to the
-        :class:`prompt_toolkit.session.PromptSession` object
+        `prompt_toolkit.session.PromptSession` object
         """
 
         if self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)
 
     def history(self) -> "Generator[str, None, None]":
-        """Provides history of the past executed commands
+        """
+        Generates the history of past executed commands.
 
-        Yield: Executed command string from the history
+        Yields
+        ------
+        str
+            The executed command string from the history.
         """
 
         if self.session is not None:
-            _history = self.session.history.load_history_strings()
-        else:
-            _history = reversed(self._history)  # type: ignore[arg-type]
+            yield from self.session.history.load_history_strings()
 
-        yield from _history
+        else:
+            yield from reversed(self._history)
 
 
 class ReplCli(click.Group):
     def __init__(
         self,
         prompt: str = "> ",
-        startup: "Optional[Callable[[], None]]" = None,
-        cleanup: "Optional[Callable[[], None]]" = None,
-        repl_kwargs: "Dict[str, Any]" = {},
-        **attrs: "Any",
+        startup: "Optional[t.Callable[[], None]]" = None,
+        cleanup: "Optional[t.Callable[[], None]]" = None,
+        repl_kwargs: "Dict[str, t.Any]" = {},
+        **attrs: "t.Any",
     ):
         attrs["invoke_without_command"] = True
         super().__init__(**attrs)
@@ -143,7 +172,7 @@ class ReplCli(click.Group):
 
         self.repl_kwargs = repl_kwargs
 
-    def invoke(self, ctx: "Context") -> "Any":
+    def invoke(self, ctx: "click.Context") -> "t.Any":
         return_val = super().invoke(ctx)
         if ctx.invoked_subcommand or ctx.protected_args:
             return return_val

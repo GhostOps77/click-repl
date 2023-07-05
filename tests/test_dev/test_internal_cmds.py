@@ -1,15 +1,24 @@
+import click
 import pytest
 
 import click_repl
 from click_repl._internal_cmds import InternalCommandSystem
+from click_repl.core import ReplContext
+
+
+@click.command()
+def dummy_cmd():
+    pass
 
 
 internal_command_system = InternalCommandSystem(":", "!")
+repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system)
 
 
 @pytest.mark.parametrize("test_input", [":help", ":h", ":?"])
 def test_internal_help_commands(capsys, test_input):
-    internal_command_system.execute(test_input)
+    with repl_ctx:
+        internal_command_system.execute(test_input)
 
     captured_stdout = capsys.readouterr().out.replace("\r\n", "\n")
 
@@ -18,13 +27,13 @@ def test_internal_help_commands(capsys, test_input):
         == """REPL help:
 
   External/System Commands:
-    Prefix External commands with "!"
+    Prefix External/System commands with "!".
 
   Internal Commands:
-    Prefix Internal commands with ":"
-    :exit, :q, :quit  Exits the REPL
-    :clear, :cls      Clears screen
-    :?, :h, :help     Displays general help information
+    Prefix Internal commands with ":".
+    :clear, :cls      Clears screen.
+    :exit, :q, :quit  Exits the REPL.
+    :?, :h, :help     Displays general help information.
 
 """
     )
