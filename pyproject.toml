@@ -19,7 +19,7 @@ line-length = 90
 [tool.ruff]
 line-length = 90
 src = ["src", "tests"]
-# target-version = "py37"
+target-version = "py37"
 
 [tool.mypy]
 mypy_path = "src"
