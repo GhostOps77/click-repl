@@ -6,6 +6,7 @@ __all__ = [
 
 
 import typing as t
+from click.exceptions import Exit as ClickExit
 
 
 class InternalCommandException(Exception):
@@ -76,16 +77,3 @@ class InvalidGroupFormat(Exception):
     """
 
     pass
-
-
-# The `click.exceptions.Exit`` class was introduced in Click 7.0 as the
-# preferred exception for exiting a click application. However, prior to
-# click 7.0, the :exc`click.exceptions.Abort` class was used for the same
-# purpose. Therefore, this try-except block attempts to import
-# `click.exceptions.Exit`, and if it fails due to `ImportError`,
-# it falls back to importing `click.exceptions.Abort` instead.
-try:
-    from click.exceptions import Exit as ClickExit
-
-except ImportError:
-    from click.exceptions import Abort as ClickExit  # type: ignore[assignment]

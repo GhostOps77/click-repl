@@ -158,14 +158,16 @@ def _resolve_context(ctx: "Context", _args: "Tuple[str, ...]") -> "Context":
                 if cmd is None:
                     return ctx
 
-                # When using OptionParser.parse_args, incomplete string
-                # arguments that do not meet the nargs requirement of the
-                # current parameter are normally ignored. However, in our
+                # When using click.parser.OptionParser.parse_args, incomplete
+                # string arguments that do not meet the nargs requirement of
+                # the current parameter are normally ignored. However, in our
                 # case, we want to handle these incomplete arguments. To
                 # achieve this, we use a proxy command object to modify
                 # the command parsing behavior in click.
 
-                ctx = create_proxy_object(cmd).make_context(name, args, parent=ctx)
+                ctx = create_proxy_object(cmd).make_context(
+                    name, args, parent=ctx  # , resilient_parsing=True
+                )
 
                 args = ctx.protected_args + ctx.args
 
@@ -186,6 +188,7 @@ def _resolve_context(ctx: "Context", _args: "Tuple[str, ...]") -> "Context":
                         parent=ctx,
                         allow_extra_args=True,
                         allow_interspersed_args=False,
+                        # resilient_parsing=True
                     )
                     args = sub_ctx.args
 

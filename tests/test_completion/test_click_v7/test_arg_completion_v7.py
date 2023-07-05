@@ -1,8 +1,8 @@
 import click
 import pytest
+from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
-from tests import TestDocument
 
 
 @click.group()
@@ -26,7 +26,7 @@ def test_click7_autocomplete_arg():
     def autocompletion_arg_cmd2(handler):
         pass
 
-    completions = c.get_completions(TestDocument("autocompletion-arg-cmd2 "))
+    completions = c.get_completions(Document("autocompletion-arg-cmd2 "))
     assert {x.text for x in completions} == {"foo", "bar"}
 
 
@@ -78,7 +78,7 @@ def test_tuple_return_type_shell_complete_func_click7(
     def tuple_type_autocompletion(foo):
         pass
 
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == suggestions
 
     if click.__version__[0] <= "6":

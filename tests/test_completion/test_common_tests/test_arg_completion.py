@@ -1,8 +1,8 @@
 import click
 import pytest
+from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
-from tests import TestDocument
 
 
 @click.group()
@@ -34,7 +34,7 @@ c = ClickCompleter(click.Context(root_command))
     ],
 )
 def test_boolean_arg(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
 
 
@@ -47,5 +47,5 @@ def test_boolean_arg(test_input, expected):
     ],
 )
 def test_arg_choices(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

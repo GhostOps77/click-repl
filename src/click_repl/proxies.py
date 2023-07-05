@@ -4,6 +4,7 @@ from gettext import ngettext
 import click
 from click.core import iter_params_for_processing
 
+from ._globals import HAS_CLICK8
 from .parser import CustomOptionsParser
 
 
@@ -62,7 +63,10 @@ def parse_args(
         )
 
     ctx.args = args
-    ctx._opt_prefixes.update(parser._opt_prefixes)
+
+    if HAS_CLICK8:
+        ctx._opt_prefixes.update(parser._opt_prefixes)
+
     return args
 
 
@@ -145,8 +149,13 @@ class ProxyParameter(Proxy, click.Parameter):
     values as they are, even if they are incomplete or not provided.
     """
 
+    # For backwards compatibility with click v7.
+    def full_process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
+        return self.process_value(ctx, value)
+
     def process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
-        value = self.type_cast_value(ctx, value)
+        if value is not None:
+            value = self.type_cast_value(ctx, value)
 
         # if self.required and self.value_is_missing(value):
         #     raise MissingParameter(ctx=ctx, param=self)

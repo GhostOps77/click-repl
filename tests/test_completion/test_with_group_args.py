@@ -1,9 +1,9 @@
 import click
 import pytest
+from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
 from click_repl import repl
-from tests import TestDocument
 
 
 @click.group(invoke_without_command=True)
@@ -26,7 +26,7 @@ c = ClickCompleter(cmd.make_context("", args=["--user", "hi"]))
 
 @pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
 def test_subcommand_invocation_from_group(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == {expected}
 
 
@@ -53,5 +53,5 @@ c2 = ClickCompleter(
     "test_input, expected", [(" ", {"cmd"}), ("cmd ", {"foo", "foo2"})]
 )
 def test_subcommand_invocation_for_group_with_opts(test_input, expected):
-    completions = c2.get_completions(TestDocument(test_input))
+    completions = c2.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

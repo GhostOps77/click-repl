@@ -14,6 +14,7 @@ from click.parser import OptionParser
 from click.parser import ParsingState
 
 from . import utils
+from ._globals import HAS_CLICK8
 
 if t.TYPE_CHECKING:
     from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
@@ -386,7 +387,7 @@ class CustomOptionsParser(OptionParser):
         The `obj` can be used to identify the option in the order list
         that is returned from the parser.
         """
-        self._args.append(Argument(obj, dest=dest, nargs=nargs))
+        self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
 
     def _match_long_opt(
         self, opt: str, explicit_value: "t.Optional[str]", state: "ParsingState"
@@ -465,7 +466,7 @@ class CustomOptionsParser(OptionParser):
         rargs_len = len(state.rargs)
 
         if rargs_len < nargs:
-            if option.obj._flag_needs_value:
+            if HAS_CLICK8 and option.obj._flag_needs_value:
                 # Option allows omitting the value.
                 value = _flag_needs_value
             else:
@@ -480,7 +481,8 @@ class CustomOptionsParser(OptionParser):
             next_rarg = state.rargs[0]
 
             if (
-                option.obj._flag_needs_value
+                HAS_CLICK8
+                and option.obj._flag_needs_value
                 and isinstance(next_rarg, str)
                 and next_rarg[:1] in self._opt_prefixes
                 and len(next_rarg) > 1

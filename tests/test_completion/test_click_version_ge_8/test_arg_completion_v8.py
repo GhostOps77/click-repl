@@ -1,8 +1,8 @@
 import click
 import pytest
+from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
-from tests import TestDocument
 
 
 @click.group()
@@ -34,7 +34,7 @@ with pytest.importorskip(
         def autocompletion_arg_cmd(handler):
             pass
 
-        completions = c.get_completions(TestDocument("autocompletion-cmd "))
+        completions = c.get_completions(Document("autocompletion-cmd "))
         assert {x.text for x in completions} == {"foo", "bar"}
 
 
@@ -57,7 +57,7 @@ with pytest.importorskip(
         def autocompletion_cmd2(handler):
             pass
 
-        completions = c.get_completions(TestDocument("autocompletion-cmd2 "))
+        completions = c.get_completions(Document("autocompletion-cmd2 "))
         assert {x.text for x in completions} == {"foo", "bar"}
 
 
@@ -93,7 +93,7 @@ with pytest.importorskip(
         ],
     )
     def test_tuple_return_type_shell_complete_func(test_input, expected):
-        completions = list(c.get_completions(TestDocument(test_input)))
+        completions = list(c.get_completions(Document(test_input)))
         assert {x.text for x in completions} == expected and {
             x.display_meta[0][-1] for x in completions
         } == {i.lower() for i in expected}
@@ -119,5 +119,5 @@ case_sensitive attribute is introduced in click.Choice in click v8""",
     ],
 )
 def test_case_insensitive_choice_type(test_input, expected):
-    completions = c.get_completions(TestDocument(test_input))
+    completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

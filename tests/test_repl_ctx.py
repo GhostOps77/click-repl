@@ -1,6 +1,7 @@
-import click_repl
 import click
 import pytest
+
+import click_repl
 from tests import mock_stdin
 
 

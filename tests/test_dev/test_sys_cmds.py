@@ -2,7 +2,6 @@ import pytest
 
 from click_repl._internal_cmds import InternalCommandSystem
 
-
 sys_cmds_only_obj = InternalCommandSystem(None)
 
 
