@@ -65,7 +65,7 @@ def parse_args(
     ctx.args = args
 
     if HAS_CLICK8:
-        ctx._opt_prefixes.update(parser._opt_prefixes)
+        ctx._opt_prefixes.update(parser._opt_prefixes)  # type: ignore[attr-defined]
 
     return args
 

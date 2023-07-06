@@ -144,8 +144,12 @@ class Repl:
         default_prompt_kwargs = {
             "history": InMemoryHistory(),
             "message": "> ",
-            "completer": self.completer_cls(**default_completer_kwargs),
-            "validator": self.validator_cls(**default_validator_kwargs),
+            "completer": self.completer_cls(  # type: ignore[arg-type]
+                **default_completer_kwargs
+            ),
+            "validator": self.validator_cls(  # type: ignore[arg-type]
+                **default_validator_kwargs
+            ),
             "complete_in_thread": True,
             "complete_while_typing": True,
             "validate_while_typing": True,
