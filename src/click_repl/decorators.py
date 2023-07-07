@@ -10,9 +10,10 @@ from ._globals import get_current_repl_ctx
 
 if t.TYPE_CHECKING:
     from typing import Any, Callable
-    from .core import ReplContext
 
     from typing_extensions import Concatenate, ParamSpec
+
+    from .core import ReplContext
 
     P = ParamSpec("P")
     R = t.TypeVar("R")

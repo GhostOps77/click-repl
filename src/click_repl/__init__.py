@@ -4,17 +4,11 @@ inside your click app in just some simple steps.
 """
 from ._globals import get_current_repl_ctx
 from ._internal_cmds import repl_exit
-from ._repl import register_repl
-from ._repl import Repl
-from ._repl import repl
-from .completer import ClickCompleter
-from .completer import ReplCompletion
-from .core import ReplCli
-from .core import ReplContext
+from ._repl import Repl, register_repl, repl
+from .completer import ClickCompleter, ReplCompletion
+from .core import ReplCli, ReplContext
 from .decorators import pass_context
-from .exceptions import ExitReplException
-from .exceptions import InternalCommandException
-
+from .exceptions import ExitReplException, InternalCommandException
 
 __all__ = [
     "get_current_repl_ctx",

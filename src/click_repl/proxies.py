@@ -7,9 +7,9 @@ from click.core import iter_params_for_processing
 from ._globals import HAS_CLICK8
 from .parser import CustomOptionsParser
 
-
 if t.TYPE_CHECKING:
     from typing import List, NoReturn, Union
+
     from click import Command, Context, Group
 
     V = t.TypeVar("V")

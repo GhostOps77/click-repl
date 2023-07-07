@@ -8,9 +8,7 @@ import typing as t
 import click
 from prompt_toolkit.formatted_text import HTML
 
-from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK6
-from ._globals import ISATTY
+from ._globals import _RANGE_TYPES, HAS_CLICK6, ISATTY
 
 if t.TYPE_CHECKING:
     from typing import Optional
