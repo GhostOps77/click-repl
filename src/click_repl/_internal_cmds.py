@@ -12,13 +12,10 @@ from collections.abc import Sequence
 import click
 
 from ._globals import get_current_repl_ctx
-from .exceptions import ExitReplException
-from .exceptions import SamePrefixError
-from .exceptions import WrongType
-
+from .exceptions import ExitReplException, SamePrefixError, WrongType
 
 if t.TYPE_CHECKING:
-    from typing import Optional, Union, Literal, Callable
+    from typing import Callable, Literal, Optional, Union
 
     CallableNone: t.TypeAlias = "t.Callable[[], None]"
     InternalCommandDict: t.TypeAlias = "t.Dict[str, t.Tuple[CallableNone, Optional[str]]]"
