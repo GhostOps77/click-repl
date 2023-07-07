@@ -1,6 +1,6 @@
 pytest>=7.2.1
 pytest-cov>=4.0.0
 mypy>=0.991
-flake8>=6.0.0
+ruff>=0.0.277
 tox>=4.4.3
 pre-commit>=3.3.3
