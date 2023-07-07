@@ -141,14 +141,14 @@ class Repl:
         default_validator_kwargs.update(self.validator_kwargs)
 
         # Default Keyword arguments for PromptSession object.
-        default_prompt_kwargs = {
+        default_prompt_kwargs = {  # type: ignore[arg-type]
             "history": InMemoryHistory(),
             "message": "> ",
-            "completer": self.completer_cls(  # type: ignore[arg-type]
-                **default_completer_kwargs
+            "completer": self.completer_cls(
+                **default_completer_kwargs  # type: ignore[arg-type]
             ),
-            "validator": self.validator_cls(  # type: ignore[arg-type]
-                **default_validator_kwargs
+            "validator": self.validator_cls(
+                **default_validator_kwargs  # type: ignore[arg-type]
             ),
             "complete_in_thread": True,
             "complete_while_typing": True,
