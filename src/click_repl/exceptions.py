@@ -22,7 +22,6 @@ class InternalCommandException(Exception):
     """
 
 
-
 class WrongType(InternalCommandException):
     """
     Exception raised when an object with an invalid type is passed to one of
@@ -63,7 +62,6 @@ class ExitReplException(InternalCommandException):
     """Exception raised to exit the click_repl app."""
 
 
-
 class InvalidGroupFormat(Exception):
     """
     Exception raised when a Group has nonrequired arguments don't have
@@ -74,4 +72,3 @@ class InvalidGroupFormat(Exception):
     when attempting to parse command-line input that does not conform
     to the expected format.
     """
-

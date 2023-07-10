@@ -4,7 +4,7 @@
 Core Utilities thats used to manage the Internal Commands in the REPL.
 """
 import enum
-import os
+import subprocess
 import typing as t
 from collections import defaultdict
 from collections.abc import Sequence
@@ -12,7 +12,9 @@ from collections.abc import Sequence
 import click
 
 from ._globals import get_current_repl_ctx
-from .exceptions import ExitReplException, SamePrefixError, WrongType
+from .exceptions import ExitReplException
+from .exceptions import SamePrefixError
+from .exceptions import WrongType
 
 if t.TYPE_CHECKING:
     from typing import Callable, Literal, Optional, Union
@@ -121,6 +123,7 @@ class InternalCommandSystem:
         self,
         internal_command_prefix: "Optional[str]" = ":",
         system_command_prefix: "Optional[str]" = "!",
+        shell: bool = True,
     ) -> None:
         """
         Initialize the `InternalCommandSystem` class with the specified prefixes.
@@ -132,6 +135,9 @@ class InternalCommandSystem:
 
         system_command_prefix : str
             Prefix to execute Bash/Other Command-line scripts.
+
+        shell : bool, default: True
+            Whether the System commands should be executed in Shell or not.
 
         Notes
         -----
@@ -161,6 +167,7 @@ class InternalCommandSystem:
             "SYSTEM": system_command_prefix,
         }
 
+        self.shell = shell
         self._internal_commands: "InternalCommandDict" = {}
 
         self.register_default_internal_commands()
@@ -244,7 +251,7 @@ class InternalCommandSystem:
 
         self.prefix_table["SYSTEM"] = value
 
-    def dispatch_system_commands(self, command: str) -> None:
+    def dispatch_system_commands(self, command: str) -> "Literal[ErrorCodes.SUCCESS]":
         """ "Execute System commands entered in the REPL.
         System commands start with the `self.system_command_prefix`
         string in the REPL.
@@ -254,11 +261,14 @@ class InternalCommandSystem:
         command : str
             String containing thse System command to be executed.
         """
-        os.system(command)
+        subprocess.run(command, shell=self.shell)
 
-    def handle_internal_commands(
-        self, command: str
-    ) -> "Optional[Literal[ErrorCodes.NOT_FOUND]]":
+        # Since error messages can be automatically displayed by the shell,
+        # there is no need to catch those errors. Therefore, the code can
+        # simply return a SUCCESS code.
+        return ErrorCodes.SUCCESS
+
+    def handle_internal_commands(self, command: str) -> "Literal[ErrorCodes.SUCCESS]":
         """
         Run REPL-internal commands. REPL-internal commands start
         with the `self.internal_command_prefix` string in the REPL.
@@ -270,18 +280,26 @@ class InternalCommandSystem:
 
         Return:
         ---
-        None
+        ErrorCodes.SUCCESS
             if the Internal command is available and executed successfully.
 
-        CommandCallbackReturnCodes.NOT_FOUND
+        ErrorCodes.NOT_FOUND
             if the Internal command is not found.
         """
 
         target = self.get_command(command, default=None)
         if target is None:
-            return ErrorCodes.NOT_FOUND
+            # If no Internal Command was found under the given command string,
+            # then we still return SUCCESS code.
+            click.echo(f"{command}, command not found")
 
-        return target()
+        else:
+            target()
+
+        # Similarly, if the prefix is successfully found, the function can
+        # return a SUCCESS code to prevent the REPL from processing the
+        # command string as a click command.
+        return ErrorCodes.SUCCESS
 
     def register_command(
         self,
@@ -473,27 +491,12 @@ class InternalCommandSystem:
             return ErrorCodes.SUCCESS
 
         if flag == "INTERNAL":
-            result_code = self.handle_internal_commands(command)
-
-            if result_code == ErrorCodes.NOT_FOUND:
-                # If no Internal Command was found under the given command string,
-                # then we still return SUCCESS code.
-                click.echo(f"{command}, command not found")
-
-            # Similarly, if the prefix is successfully found, the function can
-            # return a SUCCESS code to prevent the REPL from processing the
-            # command string as a click command.
-
-            return ErrorCodes.SUCCESS
+            return self.handle_internal_commands(command)
 
         elif flag == "SYSTEM":
-            self.dispatch_system_commands(command)
-            # Since error messages can be automatically displayed by the shell,
-            # there is no need to catch those errors. Therefore, the code can
-            # simply return a SUCCESS code.
-            return ErrorCodes.SUCCESS
+            return self.dispatch_system_commands(command)
 
-        return ErrorCodes.NOT_FOUND
+        return ErrorCodes.SUCCESS
 
     def register_default_internal_commands(self) -> None:
         """
@@ -503,14 +506,17 @@ class InternalCommandSystem:
         to add all the default Internal Commands to the REPL.
         """
 
+        # Loading clear command
         self.register_command(
             target=click.clear,
             names=("cls", "clear"),
             description="Clears screen.",
         )
 
+        # Loading exit command
         self.register_command(target=repl_exit, names=("q", "quit", "exit"))
 
+        # Loading help command
         self.register_command(
             target=help_internal_cmd,
             names=("?", "h", "help"),

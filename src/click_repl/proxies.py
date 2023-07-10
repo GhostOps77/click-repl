@@ -28,11 +28,9 @@ def create_proxy_object(
 
     Returns
     -------
-    ProxyCommand
-        if the given object is an instance of `click.Command` class.
-
-    ProxyGroup
-        if the given object is an instance of `click.Group` class.
+    ProxyCommand or ProxyGroup
+        `ProxyCommand` object if the given object is an instance of `click.Command` class,
+        and `ProxyGroup` object if the given object is an instance of `click.Group` class.
     """
 
     if isinstance(obj, click.Group):
@@ -78,11 +76,6 @@ class Proxy:
     It allows accessing attributes, setting attributes, and deleting attributes on the
     underlying object.
 
-    Parameters
-    ----------
-    obj
-        The object to which attribute access is delegated.
-
     Notes
     -----
     This class is used as a base class for creating proxy objects that customize
@@ -90,7 +83,14 @@ class Proxy:
     """
 
     def __init__(self, obj: "V") -> None:
-        """Initialize the Proxy object with the underlying object."""
+        """
+        Initialize the Proxy object with the underlying object.
+
+        Parameters
+        ----------
+        obj
+            The object to which attribute access is delegated.
+        """
         object.__setattr__(self, "_obj", obj)
 
     def __getattr__(self, name: str) -> "t.Any":

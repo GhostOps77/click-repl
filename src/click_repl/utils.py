@@ -5,9 +5,10 @@ import click
 from click.parser import split_opt
 
 from . import bottom_bar
-from ._globals import _RANGE_TYPES, HAS_CLICK8
-from .parser import (currently_introspecting_args,
-                     get_args_and_incomplete_from_args)
+from ._globals import _RANGE_TYPES
+from ._globals import HAS_CLICK8
+from .parser import currently_introspecting_args
+from .parser import get_args_and_incomplete_from_args
 from .proxies import create_proxy_object
 
 if t.TYPE_CHECKING:
@@ -76,8 +77,8 @@ def join_options(options: "t.List[str]") -> "t.Tuple[t.List[str], str]":
     options : list of strings.
         A list containing all the flags of an option.
 
-    Return:
-    ---
+    Returns
+    -------
     A Tuple containing:
       - list of strings
             Sorted list of the option flags.
