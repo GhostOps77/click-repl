@@ -6,18 +6,15 @@ from gettext import gettext as _
 from shlex import shlex
 
 import click
-from click.exceptions import BadOptionUsage
-from click.exceptions import NoSuchOption
+from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import normalize_opt
-from click.parser import OptionParser
-from click.parser import ParsingState
+from click.parser import OptionParser, ParsingState, normalize_opt
 
 from . import utils
 from ._globals import HAS_CLICK8
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Deque
+    from typing import Any, Deque, Dict, List, Optional, Sequence, Tuple, Type
 
     from click import Argument as CoreArgument
     from click import Command, Context, MultiCommand, Parameter
