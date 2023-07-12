@@ -17,7 +17,7 @@ from . import utils
 from ._globals import HAS_CLICK8
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Deque
+    from typing import Any, Deque, Dict, List, Optional, Sequence, Tuple, Type
 
     from click import Argument as CoreArgument
     from click import Command, Context, MultiCommand, Parameter
