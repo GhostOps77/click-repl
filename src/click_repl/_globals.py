@@ -62,7 +62,7 @@ def get_current_repl_ctx(
     Raises
     ------
     RuntimeError
-        if there's no Context object in the stack.
+        If there's no Context object in the stack.
     """
 
     try:

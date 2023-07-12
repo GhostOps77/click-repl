@@ -8,7 +8,9 @@ import typing as t
 import click
 from prompt_toolkit.formatted_text import HTML
 
-from ._globals import _RANGE_TYPES, HAS_CLICK6, ISATTY
+from ._globals import _RANGE_TYPES
+from ._globals import HAS_CLICK6
+from ._globals import ISATTY
 
 if t.TYPE_CHECKING:
     from typing import Optional
@@ -35,7 +37,7 @@ class BottomBar:
     """Toolbar class to manage the text in the bottom toolbar."""
 
     def __init__(self) -> None:
-        """Initialize the BottomBar class."""
+        """Initialize the `BottomBar` class."""
 
         self.state: "Optional[ArgsParsingState]" = None
         self._formatted_text: "t.Union[str, HTML]" = ""
@@ -106,12 +108,21 @@ class BottomBar:
 
         current_group = self.state.current_group  # type: ignore[union-attr]
 
-        if getattr(current_group, "chain", False):
-            metavar = "COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
-        else:
-            metavar = "COMMAND [ARGS]..."
+        if not current_group.list_commands(
+            self.state.current_ctx  # type: ignore[union-attr]
+        ):
+            # Empty string if no subcommands.
+            metavar = ""
 
-        return HTML(f"<b>Group</b> {current_group.name}: {metavar}")
+        elif getattr(current_group, "chain", False):
+            # Metavar for chained group.
+            metavar = ": COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
+
+        else:
+            # Metavar for chained group.
+            metavar = ": COMMAND [ARGS]..."
+
+        return HTML(f"<b>Group {current_group.name}</b>{metavar}")
 
     def get_param_info(self, param: "Parameter") -> str:
         """

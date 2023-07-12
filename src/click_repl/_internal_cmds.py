@@ -47,11 +47,17 @@ class ErrorCodes(enum.Enum):
 
 
 def _exit_internal() -> "t.NoReturn":
-    """Exits the REPL.
+    """
+    Exits the REPL.
 
     Raises
     ------
     click_repl.exceptions.ExitReplException
+        To exit out of the REPL.
+
+    See Also
+    --------
+    click_repl.exceptions.ExitReplException: Exception class used to exit out of the REPL.
     """
     raise ExitReplException()
 
@@ -273,13 +279,13 @@ class InternalCommandSystem:
         Run REPL-internal commands. REPL-internal commands start
         with the `self.internal_command_prefix` string in the REPL.
 
-        Positional Arguments:
-        ---
+        Parameters
+        ----------
         command : str
             String containing the Internal command to be executed.
 
-        Return:
-        ---
+        Returns
+        -------
         ErrorCodes.SUCCESS
             if the Internal command is available and executed successfully.
 

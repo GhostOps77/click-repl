@@ -9,7 +9,9 @@ import click
 from prompt_toolkit import PromptSession
 
 from . import _repl
-from ._globals import ISATTY, pop_context, push_context
+from ._globals import ISATTY
+from ._globals import pop_context
+from ._globals import push_context
 
 if t.TYPE_CHECKING:
     from typing import Dict, Generator, Optional
@@ -179,10 +181,7 @@ class ReplCli(click.Group):
             if self.startup is not None:
                 self.startup()
 
-            _repl.repl(
-                ctx,
-                **self.repl_kwargs,
-            )
+            _repl.repl(ctx, **self.repl_kwargs)
 
         finally:
             # Finisher callback on the context

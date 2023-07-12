@@ -36,7 +36,7 @@ _flag_needs_value = object()
 
 
 def _fetch(
-    params_deque: "Deque[CoreArgument]", consuming_param: "Optional[CoreArgument]" = None
+    params_deque: "Deque[CoreArgument]", spos: "Optional[CoreArgument]" = None
 ) -> "Optional[CoreArgument]":
     """
     Fetch the next click.Argument object in the required order for parsing.
@@ -50,7 +50,7 @@ def _fetch(
         Deque of `click_repl.parser.Argument` objects representing the
         parameters to be parsed.
 
-    consuming_param : click.Argument or None
+    spos : click.Argument or None
         The most recent `click_repl.parser.Argument` parameter with nargs=-1.
 
     Returns
@@ -61,7 +61,7 @@ def _fetch(
     """
 
     try:
-        if consuming_param is None:
+        if spos is None:
             return params_deque.popleft()
         else:
             return params_deque.pop()
@@ -104,6 +104,7 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
         # Raised when end-of-string is reached in an invalid state. Use
         # the partial token as-is. The quote or escape character is in
         # lex.state, not lex.token.
+
         # remaining_token = lex.token
         out.append(lex.token)
 
@@ -273,9 +274,14 @@ class ArgsParsingState:
     ) -> bool:
         if isinstance(other, ArgsParsingState):
             return self.__key() == other.__key()
-        return False
+        return NotImplemented
 
     def parse(self) -> None:
+        """
+        Main method that parses the list of strings of args, and updates
+        the state object.
+        """
+
         self.current_group, self.current_command = self.get_current_group_and_command()
         if self.current_command is not None:
             self.current_param = self.get_current_params()
@@ -321,24 +327,26 @@ class ArgsParsingState:
         # incoming string value they receive. If any incomplete argument value
         # is found, is_all_args_available is set to False. This condition check
         # is only performed when the parent group is a non-chained multi-command.
+
         is_all_args_not_available = not any(
             utils.is_param_value_incomplete(self.current_ctx, param.name)
             for param in current_ctx_command.params
-            if (not is_parent_group_chained) or isinstance(param, click.Argument)
+            if not is_parent_group_chained or isinstance(param, click.Argument)
         )
 
-        # is_all_args_available = True
+        # is_all_args_not_available = True
 
         # if self.current_ctx.params:
         #     for param in current_ctx_command.params:
         #         if (
-        #             utils.is_param_value_incomplete(self.current_ctx, param.name)
-        #             and not (
-        #                 is_parent_group_chained and isinstance(param, click.Option)
-        #             )
+        #             # not (
+        #             #     is_parent_group_chained and isinstance(param, click.Option)
+        #             # )
+        #             not is_parent_group_chained or isinstance(param, click.Argument)
+        #             and utils.is_param_value_incomplete(self.current_ctx, param.name)
         #         ):
-        #             print(param, self.current_ctx.params.get(param.name, None))
-        #             is_all_args_available = False
+        #             # print(param, self.current_ctx.params.get(param.name, None))
+        #             is_all_args_not_available = False
         #             break
 
         if isinstance(current_ctx_command, click.MultiCommand) and (
@@ -365,13 +373,13 @@ class ArgsParsingState:
             if utils.is_param_value_incomplete(self.current_ctx, param.name)
         ]
 
-        param = self.parse_param_opt()
+        param: "Optional[Parameter]" = self.parse_param_opt()
         if param is None:
             param = self.parse_params_arg()
 
         return param
 
-    def parse_param_opt(self) -> "Optional[Parameter]":
+    def parse_param_opt(self) -> "Optional[click.Option]":
         if "--" in self.args:
             # click parses all input strings after "--" as values for click.Argument
             # type parameters. So, we don't check for click.Optional parameters.
@@ -391,11 +399,11 @@ class ArgsParsingState:
                 # We want to make sure if this parameter was called
                 # If we are inside a parameter that was called, we want to show only
                 # relevant choices
-                return param
+                return param  # type: ignore[return-value]
 
         return None
 
-    def parse_params_arg(self) -> "Optional[Parameter]":
+    def parse_params_arg(self) -> "Optional[click.Argument]":
         minus_one_param = None
 
         command_params = deque(

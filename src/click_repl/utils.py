@@ -4,12 +4,13 @@ from functools import lru_cache
 import click
 from click.parser import split_opt
 
-from . import bottom_bar
 from ._globals import _RANGE_TYPES
+from ._globals import HAS_CLICK6
 from ._globals import HAS_CLICK8
 from .parser import currently_introspecting_args
 from .parser import get_args_and_incomplete_from_args
 from .proxies import create_proxy_object
+
 
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional, Tuple, Union
@@ -79,7 +80,7 @@ def join_options(options: "t.List[str]") -> "t.Tuple[t.List[str], str]":
 
     Returns
     -------
-    A Tuple containing:
+    A tuple containing:
       - list of strings
             Sorted list of the option flags.
       - str
@@ -222,7 +223,8 @@ def get_info_dict(
 
     Returns
     -------
-    A dictionary containing the data about the given object `obj`.
+    A dictionary containing pairs of str: Any, holding the data about the
+    given object `obj`.
     """
 
     if isinstance(obj, click.Command):
@@ -311,7 +313,7 @@ def get_info_dict(
             info_dict["choices"] = obj.choices
             info_dict["case_sensitive"] = getattr(obj, "case_sensitive", True)
 
-        elif isinstance(obj, click.DateTime):
+        elif not HAS_CLICK6 and isinstance(obj, click.DateTime):
             info_dict["formats"] = obj.formats
 
         elif isinstance(obj, _RANGE_TYPES):
@@ -387,7 +389,5 @@ def _resolve_state(
     parsed_ctx = _resolve_context(ctx, args)
 
     state = currently_introspecting_args(ctx, parsed_ctx, args)
-
-    bottom_bar.BOTTOMBAR.update_state(state)
 
     return parsed_ctx, state, incomplete

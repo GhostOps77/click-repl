@@ -697,6 +697,9 @@ class ClickCompleter(Completer):
                 # We skip the hidden parameter if self.show_hidden_params is False.
                 return
 
+            # Update the state object of the bottom bar to display different info text.
+            BOTTOMBAR.update_state(state)
+
             yield from self.get_completions_for_command(parsed_ctx, state, incomplete)
 
         # except Exception:
@@ -711,30 +714,6 @@ class ReplCompletion(Completion):
     Custom Completion class to generate Completion
     objects with the default settings for proper auto-completion
     in the REPL prompt.
-
-    Parameters
-    ---
-    text : str
-        The string that should fill into the prompt
-        during auto-completion.
-
-    incomplete : str
-        The string thats not completed in the prompt.
-        It's used to get the `start_position` for the Completion to
-        swap text with, in the prompt.
-
-    quoted : bool, default: True
-        Boolean value to determine whether the given incomplete
-        text with space should be double-quoted.
-
-    *args : tuple
-        Additional arguments should be passed as keyword arguments to the
-        `prompt_toolkit.completion.Completion` class.
-
-    **kwargs : dict, optional
-        Extra arguments to `metric`: refer to each metric documentation for a
-        list of all possible arguments to the
-        `prompt_toolkit.completion.Completion` class.
     """
 
     def __init__(
@@ -745,6 +724,35 @@ class ReplCompletion(Completion):
         *args: "Any",
         **kwargs: "Any",
     ) -> None:
+        """
+        Initializes the Completion class with the appropriate
+        setting for auto-completion.
+
+        Parameters
+        ---
+        text : str
+            The string that should fill into the prompt
+            during auto-completion.
+
+        incomplete : str
+            The string thats not completed in the prompt.
+            It's used to get the `start_position` for the Completion to
+            swap text with, in the prompt.
+
+        quoted : bool, default: True
+            Boolean value to determine whether the given incomplete
+            text with space should be double-quoted.
+
+        *args : tuple
+            Additional arguments should be passed as keyword arguments to the
+            `prompt_toolkit.completion.Completion` class.
+
+        **kwargs : dict, optional
+            Extra arguments to `metric`: refer to each metric documentation for a
+            list of all possible arguments to the
+            `prompt_toolkit.completion.Completion` class.
+        """
+
         if " " in text and quoted:
             text = quotes(text)
 
