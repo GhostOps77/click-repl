@@ -3,18 +3,13 @@ import typing as t
 from pathlib import Path
 
 import click
-from prompt_toolkit.completion import Completer
-from prompt_toolkit.completion import Completion
+from prompt_toolkit.completion import Completer, Completion
 
-from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK8
-from ._globals import ISATTY
+from ._globals import _RANGE_TYPES, HAS_CLICK8, ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BOTTOMBAR
-from .utils import _resolve_state
-from .utils import get_group_ctx
-from .utils import is_param_value_incomplete
-from .utils import join_options
+from .utils import (_resolve_state, get_group_ctx, is_param_value_incomplete,
+                    join_options)
 
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Final, Generator, Optional, Tuple, Union

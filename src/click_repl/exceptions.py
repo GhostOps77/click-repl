@@ -2,7 +2,6 @@ import typing as t
 
 from click.exceptions import Exit as ClickExit
 
-
 __all__ = [
     "InternalCommandException",
     "ExitReplException",
@@ -73,7 +72,6 @@ class SamePrefixError(InternalCommandException):
 class ExitReplException(InternalCommandException):
     """Exception raised to exit the click_repl app."""
 
-    pass
 
 
 class InvalidGroupFormat(Exception):
@@ -87,4 +85,3 @@ class InvalidGroupFormat(Exception):
     to the expected format.
     """
 
-    pass

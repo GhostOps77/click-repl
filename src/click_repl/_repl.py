@@ -10,17 +10,13 @@ import typing as t
 import click
 from prompt_toolkit.history import InMemoryHistory
 
-from ._globals import get_current_repl_ctx
-from ._globals import ISATTY
-from ._internal_cmds import ErrorCodes
-from ._internal_cmds import InternalCommandSystem
+from ._globals import ISATTY, get_current_repl_ctx
+from ._internal_cmds import ErrorCodes, InternalCommandSystem
 from .bottom_bar import BOTTOMBAR
 from .completer import ClickCompleter
 from .core import ReplContext
-from .exceptions import ClickExit
-from .exceptions import ExitReplException
-from .exceptions import InternalCommandException
-from .exceptions import InvalidGroupFormat
+from .exceptions import (ClickExit, ExitReplException,
+                         InternalCommandException, InvalidGroupFormat)
 from .parser import split_arg_string
 from .utils import get_group_ctx
 from .validator import ClickValidator
