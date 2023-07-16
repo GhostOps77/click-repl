@@ -2,6 +2,9 @@ import typing as t
 
 from click.exceptions import Exit as ClickExit
 
+if t.TYPE_CHECKING:
+    from click import Argument, Command, Group
+
 
 __all__ = [
     "InternalCommandException",
@@ -20,6 +23,16 @@ class InternalCommandException(Exception):
     class in order to display their error messages separately
     in the REPL.
     """
+
+    pass
+
+
+class ParserError(Exception):
+    """
+    Exceptions that are raised when parsing given input of click objects.
+    """
+
+    pass
 
 
 class WrongType(InternalCommandException):
@@ -76,9 +89,9 @@ class ExitReplException(InternalCommandException):
     pass
 
 
-class InvalidGroupFormat(Exception):
+class InvalidGroupFormat(ParserError):
     """
-    Exception raised when a Group has nonrequired arguments don't have
+    Exception raised when a Group has non-required arguments don't have
     value assigned to them.
 
     This exception indicates an invalid format in a Group context object
@@ -87,4 +100,52 @@ class InvalidGroupFormat(Exception):
     to the expected format.
     """
 
-    pass
+    def __init__(self, group: "Group", param: "Argument") -> None:
+        """
+        Initialize the `InvalidGroupFormat` exception.
+
+        Parameters
+        ----------
+        group : click.Group
+            The group object representing the group that has the invalid format.
+
+        param : click.Argument
+            The argument object representing the non-required argument
+            that is missing a value.
+        """
+
+        super().__init__(
+            f'Expected some value for the optional argument "{param.name}" of '
+            f'Group "{group.name}" to invoke the REPL, but got None'
+        )
+
+
+class ArgumentPositionError(ParserError):
+    """
+    Exception raised when an argument with `nargs=-1` is not defined at the end
+    of the parameter list.
+
+    This exception indicates that the given command has an argument with `nargs=-1`
+    defined within the other parameters. However, an argument with `nargs=-1` must
+    be defined at the end of the parameter list. This is because an argument with
+    `nargs=-1` consumes all the incoming values as the remaining values from the REPL
+    prompt, and any other parameter defined after it will not receive any value.
+    """
+
+    def __init__(self, command: "Command", argument: "Argument") -> None:
+        """
+        Initialize the `ArgumentPositionError`.
+
+        Parameters
+        ----------
+        command : click.Command
+            The command object that contains the argument.
+
+        argument : click.Argument
+            The argument object that violates the position rule.
+        """
+
+        super().__init__(
+            f"The argument '{argument.name}' with nargs=-1, in command "
+            f"'{command.name}' must be defined at the end of the parameter list."
+        )

@@ -12,7 +12,6 @@ from prompt_toolkit.history import InMemoryHistory
 
 from ._globals import get_current_repl_ctx
 from ._globals import ISATTY
-from ._internal_cmds import ErrorCodes
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BOTTOMBAR
 from .completer import ClickCompleter
@@ -23,17 +22,21 @@ from .exceptions import InternalCommandException
 from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
 from .utils import get_group_ctx
+from .utils import print_err
 from .validator import ClickValidator
 
-# from prompt_toolkit.formatted_text import HTML
 
 if t.TYPE_CHECKING:
     from typing import Any, Callable, Dict, Optional, Type
 
-    from click import Context, Group, MultiCommand
+    from click import Context, Group
     from prompt_toolkit.completion import Completer
     from prompt_toolkit.validation import Validator
 
+
+from prompt_toolkit.styles import Style
+
+style = Style.from_dict({"bottom-toolbar": "fg:lightblue bg:default noreverse"})
 
 __all__ = ["Repl", "register_repl", "repl"]
 
@@ -63,11 +66,13 @@ class Repl:
         completer_cls : prompt_toolkit.completion.Completer type class or None.
             `prompt_toolkit.completion.Completer` class to generate
             `prompt_toolkit.completion.Completion` objects for
-            auto-completion.
+            auto-completion. `click_repl.completer.ClickCompleter` class
+            is used by default.
 
         validator_cls : prompt_toolkit.validation.Validator type class or None.
             `prompt_toolkit.validation.Validator` class to display error
             messages in the bottom bar during auto-completion.
+            `click_repl.validator.ClickValidator` class is used by default.
 
         completer_kwargs : Dictionary of str: Any pairs.
             Keyword arguments thats sent to the `completer_cls` class constructor.
@@ -83,6 +88,8 @@ class Repl:
 
         prompt_kwargs : Dictionary of str: Any pairs.
             Keyword arguments to be passed to the `prompt_toolkit.PromptSession` class.
+            Do note that you don't have to pass the Completer and Validator class
+            via this dictionary.
         """
 
         self.prompt_kwargs = prompt_kwargs
@@ -123,7 +130,6 @@ class Repl:
             # If the standard input is not a TTY device, there is no need
             # to generate any keyword arguments for rendering. In this case,
             # an empty dictionary is returned.
-
             return {}
 
         # Completer setup.
@@ -158,6 +164,7 @@ class Repl:
             "validate_while_typing": True,
             "mouse_support": True,
             "bottom_toolbar": BOTTOMBAR.get_formatted_text,
+            "style": style,
         }
 
         default_prompt_kwargs.update(self.prompt_kwargs)
@@ -206,13 +213,10 @@ class Repl:
         for param in self.group.params:
             if (
                 isinstance(param, click.Argument)
-                and self.group_ctx.params[param.name] is None  # type: ignore[index]
                 and not param.required
+                and self.group_ctx.params[param.name] is None  # type: ignore[index]
             ):
-                raise InvalidGroupFormat(
-                    f"Group '{self.group.name}' requires value for an "
-                    f"optional argument '{param.name}' in REPL mode"
-                )
+                raise InvalidGroupFormat(self.group, param)
 
     def execute_command(self, command: str) -> None:
         """
@@ -224,10 +228,10 @@ class Repl:
             The command string that needs to be parsed and executed.
         """
 
-        if (
-            self.repl_ctx.internal_command_system.execute(command.lower())
-            == ErrorCodes.NOT_FOUND
-        ):
+        if not command:
+            return
+
+        if not self.repl_ctx.internal_command_system.execute(command.lower()):
             # If the `InternalCommandSystem.execute()` method cannot find any
             # prefix to invoke the internal commands, the command string is
             # executed as a click command.
@@ -261,7 +265,6 @@ class Repl:
         finally:
             # After the command invocation, we restore the
             # protected_args back to the group_ctx.
-
             self.group_ctx.protected_args = old_protected_args
 
     def setup_repl_ctx(self) -> None:
@@ -295,7 +298,7 @@ class Repl:
         """
 
         self.group_ctx: "Context" = get_group_ctx(group_ctx)
-        self.group: "MultiCommand" = self.group_ctx.command  # type: ignore[assignment]
+        self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]
 
         self.repl_check()
         self.setup_repl_ctx()
@@ -335,16 +338,15 @@ class Repl:
                         # interactive mode, so we continue the loop.
                         continue
 
-                    else:
-                        # If ISATTY is False, it means the input is
-                        # being read from stdin. If the command
-                        # string is empty, it indicates that the stdin
-                        # stream has reached the end-of-file,
-                        # so we break the loop.
-                        break
+                    # else, then the input must be from stdin directly,
+                    # rather than via REPL prompt. If the command
+                    # string is empty, it indicates that the stdin
+                    # stream has reached the end-of-file, so we
+                    # break the loop.
+                    break
 
                 try:
-                    self.execute_command(command)
+                    self.execute_command(command.strip())
 
                 except (ClickExit, SystemExit):
                     # Hitting Ctrl+C or any click.Context.exit() method
@@ -353,9 +355,8 @@ class Repl:
                     continue
 
                 except click.ClickException as e:
-                    # For exceptions of type click.ClickException, the exception
-                    # class provides a show() method to display the exception
-                    # message.
+                    # For exceptions of type click.ClickException, they provide
+                    # a show() method to display the exception message.
                     e.show()
 
                 except ExitReplException:
@@ -367,16 +368,12 @@ class Repl:
                     # InternalCommandException exceptions are caught to print
                     # their error messages in red text, and continue the REPL
                     # loop.
-
-                    click.secho(
-                        f"{type(e).__name__}: {e}", color=True, err=True, fg="red"
-                    )
+                    print_err(f"{type(e).__name__}: {e}")
 
                 except Exception:
                     # Any other exceptions are caught here, as they can potentially
                     # disrupt the REPL. The traceback error message is displayed,
                     # and the loop continues to the next iteration.
-
                     traceback.print_exc()
 
 
@@ -401,6 +398,8 @@ def repl(
         Parameters passed to `prompt_toolkit.PromptSession`.
         These parameters configure the prompt appearance and behavior,
         such as prompt message, history, completion, etc.
+        Do note that you don't have to pass the Completer and Validator
+        class, and their arguments via this dictionary.
 
     repl_cls : click_repl._repl.Repl type class.
         Repl class to use for the click_repl app. if `None`, the

@@ -3,7 +3,6 @@
 
 Core Utilities thats used to manage the Internal Commands in the REPL.
 """
-import enum
 import subprocess
 import typing as t
 from collections import defaultdict
@@ -15,35 +14,20 @@ from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException
 from .exceptions import SamePrefixError
 from .exceptions import WrongType
+from .utils import print_err
 
 if t.TYPE_CHECKING:
-    from typing import Callable, Literal, Optional, Union
+    from typing import Callable, Optional, Union
 
     CallableNone: t.TypeAlias = "t.Callable[[], None]"
-    InternalCommandDict: t.TypeAlias = "t.Dict[str, t.Tuple[CallableNone, Optional[str]]]"
+    InternalCommandDict: t.TypeAlias = "t.Dict[str, t.Tuple[CallableNone, str]]"
 
     class PrefixTable(t.TypedDict):
-        INTERNAL: "Optional[str]"
-        SYSTEM: "Optional[str]"
+        Internal: "Optional[str]"
+        System: "Optional[str]"
 
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
-
-
-class ErrorCodes(enum.Enum):
-    """An Enumeration representing Error codes.
-
-    The ErrorCodes enum provides the following values:
-    - `SUCCESS` : Indicates a successful operation.
-    - `NOT_FOUND` : Indicates that a requested item,
-      or command was not found.
-
-    These error codes can be used to indicate the result or
-    status of various operations within the program.
-    """
-
-    SUCCESS = enum.auto()
-    NOT_FOUND = enum.auto()
 
 
 def _exit_internal() -> "t.NoReturn":
@@ -57,7 +41,8 @@ def _exit_internal() -> "t.NoReturn":
 
     See Also
     --------
-    click_repl.exceptions.ExitReplException: Exception class used to exit out of the REPL.
+    click_repl.exceptions.ExitReplException: Exception class
+    used to exit out of the REPL.
     """
     raise ExitReplException()
 
@@ -88,7 +73,8 @@ def help_internal_cmd() -> None:
         formatter.write_text("No Internal commands are registered with this REPL.")
 
     if ICS_obj.system_command_prefix:
-        # Help message for System Prefixed Commands.
+        # Help message for system prefixed commands, only if system command prefix
+        # is available.
 
         with formatter.section("External/System Commands"):
             formatter.write_text(
@@ -96,7 +82,8 @@ def help_internal_cmd() -> None:
             )
 
     if ICS_obj.internal_command_prefix:
-        # Help message for Internal Commands.
+        # Help message for internal commands, only if internal command prefix
+        # is available.
 
         with formatter.section("Internal Commands"):
             formatter.write_text(
@@ -109,11 +96,13 @@ def help_internal_cmd() -> None:
 
             # To display the help text of each Internal Command.
             formatter.write_dl(
-                (  # type: ignore[arg-type]
-                    ", ".join([f":{i}" for i in sorted(mnemonics)]),
-                    description,
-                )
-                for description, mnemonics in info_table.items()
+                [
+                    (
+                        ", ".join([f":{i}" for i in sorted(mnemonics)]),
+                        description,
+                    )
+                    for description, mnemonics in info_table.items()
+                ]
             )
 
     click.echo(formatter.getvalue())
@@ -158,19 +147,12 @@ class InternalCommandSystem:
             if internal_command_prefix == system_command_prefix:
                 raise SamePrefixError(system_command_prefix)  # type: ignore[arg-type]
 
-            if not isinstance(internal_command_prefix, str):
-                raise WrongType(
-                    internal_command_prefix, "internal_command_prefix", "str or None"
-                )
-
-            if not isinstance(system_command_prefix, str):
-                raise WrongType(
-                    system_command_prefix, "system_command_prefix", "str or None"
-                )
+        self._check_prefix_validity(internal_command_prefix, "internal_command_prefix")
+        self._check_prefix_validity(system_command_prefix, "system_command_prefix")
 
         self.prefix_table: "PrefixTable" = {
-            "INTERNAL": internal_command_prefix,
-            "SYSTEM": system_command_prefix,
+            "Internal": internal_command_prefix,
+            "System": system_command_prefix,
         }
 
         self.shell = shell
@@ -187,19 +169,6 @@ class InternalCommandSystem:
         -------
         prefix: str or None
             The prefix for internal commands.
-        """
-
-        return self.prefix_table["INTERNAL"]
-
-    @internal_command_prefix.setter
-    def internal_command_prefix(self, value: "Optional[str]") -> None:
-        """
-        Set the prefix used to trigger internal commands.
-
-        Parameters
-        ----------
-        value : str or None
-            The new prefix for internal commands.
 
         Raises
         ------
@@ -210,13 +179,16 @@ class InternalCommandSystem:
             If the new prefix is the same as the current prefix.
         """
 
-        if not isinstance(value, str):
-            raise WrongType(value, "internal_command_prefix", "str or None")
+        return self.prefix_table["Internal"]
 
-        if value is not None and value == self.prefix_table["SYSTEM"]:
+    @internal_command_prefix.setter
+    def internal_command_prefix(self, value: "Optional[str]") -> None:
+        self._check_prefix_validity(value, "internal_command_prefix")
+
+        if value is not None and value == self.prefix_table["System"]:
             raise SamePrefixError(value)
 
-        self.prefix_table["INTERNAL"] = value
+        self.prefix_table["Internal"] = value
 
     @property
     def system_command_prefix(self) -> "Optional[str]":
@@ -227,18 +199,6 @@ class InternalCommandSystem:
         -------
         prefix : str or None
             The prefix for system commands.
-        """
-        return self.prefix_table["SYSTEM"]
-
-    @system_command_prefix.setter
-    def system_command_prefix(self, value: "Optional[str]") -> None:
-        """
-        Set the prefix used to execute system commands.
-
-        Parameters
-        ----------
-        value : str or None
-            The new prefix for system commands.
 
         Raises
         ------
@@ -248,33 +208,69 @@ class InternalCommandSystem:
         SamePrefixError
             If the new prefix is the same as the current prefix.
         """
+        return self.prefix_table["System"]
 
-        if not isinstance(value, str):
-            raise WrongType(value, "system_command_prefix", "str or None")
+    @system_command_prefix.setter
+    def system_command_prefix(self, value: "Optional[str]") -> None:
+        self._check_prefix_validity(value, "system_command_prefix")
 
-        if value is not None and value == self.prefix_table["INTERNAL"]:
+        if value is not None and value == self.prefix_table["Internal"]:
             raise SamePrefixError(value)
 
-        self.prefix_table["SYSTEM"] = value
+        self.prefix_table["System"] = value
 
-    def dispatch_system_commands(self, command: str) -> "Literal[ErrorCodes.SUCCESS]":
-        """ "Execute System commands entered in the REPL.
+    def _check_prefix_validity(self, prefix: "Optional[str]", var_name: str) -> None:
+        """
+        Check the validity of the prefix.
+
+        This function checks whether the provided prefix is of type `str` or `None`,
+        and ensures that the prefix string is not empty. If the prefix is not in the
+        expected type or if it is an empty string, it raises appropriate exceptions.
+
+        Parameters
+        ----------
+        prefix : str or None
+            The prefix to be checked.
+
+        var_name : str
+            The name of the variable thats been passed to the `prefix` argument.
+            This is used to display the variable that holds the value of wrong type,
+            in the error message.
+
+        Raises
+        ------
+        WrongType
+            If the prefix is not of type `str` or `None`.
+
+        ValueError
+            If the prefix is an empty string.
+        """
+
+        if not (isinstance(prefix, str) or prefix is None):
+            raise WrongType(prefix, var_name, "str or None")
+
+        elif prefix is not None and prefix.strip() == "":
+            raise ValueError("Prefix string cannot be empty")
+
+    def dispatch_system_commands(self, command: str) -> None:
+        """
+        Execute System commands entered in the REPL.
         System commands start with the `self.system_command_prefix`
         string in the REPL.
 
         Parameters
         ----------
         command : str
-            String containing thse System command to be executed.
+            A string containing thse System command to be executed.
         """
-        subprocess.run(command, shell=self.shell)
 
-        # Since error messages can be automatically displayed by the shell,
-        # there is no need to catch those errors. Therefore, the code can
-        # simply return a SUCCESS code.
-        return ErrorCodes.SUCCESS
+        try:
+            subprocess.run(command, shell=self.shell)
 
-    def handle_internal_commands(self, command: str) -> "Literal[ErrorCodes.SUCCESS]":
+        except Exception as e:
+            print_err(f"{type(e).__name__}: {e}")
+
+    def handle_internal_commands(self, command: str) -> None:
         """
         Run REPL-internal commands. REPL-internal commands start
         with the `self.internal_command_prefix` string in the REPL.
@@ -283,29 +279,14 @@ class InternalCommandSystem:
         ----------
         command : str
             String containing the Internal command to be executed.
-
-        Returns
-        -------
-        ErrorCodes.SUCCESS
-            if the Internal command is available and executed successfully.
-
-        ErrorCodes.NOT_FOUND
-            if the Internal command is not found.
         """
 
         target = self.get_command(command, default=None)
         if target is None:
-            # If no Internal Command was found under the given command string,
-            # then we still return SUCCESS code.
-            click.echo(f"{command}, command not found")
+            click.echo(f"{command!r}, command not found")
 
         else:
             target()
-
-        # Similarly, if the prefix is successfully found, the function can
-        # return a SUCCESS code to prevent the REPL from processing the
-        # command string as a click command.
-        return ErrorCodes.SUCCESS
 
     def register_command(
         self,
@@ -329,7 +310,7 @@ class InternalCommandSystem:
         target : None, or a function that takes no arguments and returns None.
             The callback function for the Internal Command.
 
-        names : Its a string, or a sequence of strings.
+        names : It's a string, or a sequence of strings.
             A string or a sequence of strings representing the
             command names and aliases.
 
@@ -451,11 +432,9 @@ class InternalCommandSystem:
             if prefix and command.startswith(prefix):  # type: ignore[arg-type]
                 return prefix, flag  # type: ignore[return-value]
 
-        return None, "NOT FOUND"
+        return None, "Not Found"
 
-    def execute(
-        self, command: str
-    ) -> "Literal[ErrorCodes.NOT_FOUND, ErrorCodes.SUCCESS]":
+    def execute(self, command: str) -> bool:
         """
         Executes incoming Internal and System commands.
 
@@ -466,19 +445,17 @@ class InternalCommandSystem:
 
         Returns
         -------
-        ErrorCodes.SUCCESS
-            If the command is executed successfully,
-            or not found (for System Commands only).
-
-        ErrorCodes.NOT_FOUND
-            If the given Internal Command is not found, or the command string is empty.
+        bool
+            Returns True if the given command string has the required prefix,
+            the given command is available and executed successfully. False
+            otherwise.
         """
 
         prefix, flag = self.get_prefix(command)
 
         if prefix is None:
             # No Prefix is found in the command string.
-            return ErrorCodes.NOT_FOUND
+            return False
 
         # Slicing the string to retain only the necessary
         # information by removing the prefix.
@@ -487,22 +464,16 @@ class InternalCommandSystem:
         if not command:
             # If the command string originally consists only the prefix,
             # and nothing else, we display the error message in red text.
-            click.secho(
-                f"Enter a proper {flag.title()} Command.", fg="red", color=True, err=True
-            )
+            # And exit out with success code.
+            print_err(f"Enter a proper {flag} Command.")
 
-            # Even if the prefix is successfully found, the function can
-            # still return the SUCCESS code to prevent the REPL from further
-            # processing the command string as a click command.
-            return ErrorCodes.SUCCESS
+        elif flag == "Internal":
+            self.handle_internal_commands(command)
 
-        if flag == "INTERNAL":
-            return self.handle_internal_commands(command)
+        elif flag == "System":
+            self.dispatch_system_commands(command)
 
-        elif flag == "SYSTEM":
-            return self.dispatch_system_commands(command)
-
-        return ErrorCodes.SUCCESS
+        return True
 
     def register_default_internal_commands(self) -> None:
         """

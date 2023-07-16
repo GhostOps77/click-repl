@@ -80,6 +80,3 @@ def test_tuple_return_type_shell_complete_func_click7(
 
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == suggestions
-
-    if click.__version__[0] <= "6":
-        assert {x.display_meta[0][-1] for x in completions} == display_txts

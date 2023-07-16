@@ -1,6 +1,4 @@
-import os
 import typing as t
-from collections import deque
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
@@ -15,9 +13,10 @@ from click.parser import ParsingState
 
 from . import utils
 from ._globals import HAS_CLICK8
+from .exceptions import ArgumentPositionError
 
 if t.TYPE_CHECKING:
-    from typing import Any, Deque, Dict, List, Optional, Sequence, Tuple, Type
+    from typing import Any, Dict, List, Optional, Sequence, Tuple
 
     from click import Argument as CoreArgument
     from click import Command, Context, MultiCommand, Parameter
@@ -32,41 +31,6 @@ if t.TYPE_CHECKING:
 
 
 _flag_needs_value = object()
-# EQUAL_SIGNED_OPTION = re.compile(r"^(\W{1,2}[a-z][a-z-]*)=", re.I)
-
-
-def _fetch(
-    params_deque: "Deque[CoreArgument]", spos: "Optional[CoreArgument]" = None
-) -> "Optional[CoreArgument]":
-    """
-    Fetch the next click.Argument object in the required order for parsing.
-
-    This function is responsible for retrieving the next `click.Argument` object
-    from the deque in the appropriate order to ensure proper parsing.
-
-    Parameters
-    ----------
-    params_deque : deque[Argument]
-        Deque of `click_repl.parser.Argument` objects representing the
-        parameters to be parsed.
-
-    spos : click.Argument or None
-        The most recent `click_repl.parser.Argument` parameter with nargs=-1.
-
-    Returns
-    -------
-    click.Argument or None
-        The next `click_repl.parser.Argument` object to be parsed. If there are no more
-        arguments to be parsed, None is returned.
-    """
-
-    try:
-        if spos is None:
-            return params_deque.popleft()
-        else:
-            return params_deque.pop()
-    except IndexError:
-        return None
 
 
 def split_arg_string(string: str, posix: bool = True) -> "List[str]":
@@ -87,8 +51,7 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
 
     Returns
     -------
-    list[str]
-        A list of tokens parsed from the input string.
+    A list of string tokens parsed from the input string.
     """
 
     lex = shlex(string, posix=posix, punctuation_chars=True)
@@ -146,38 +109,28 @@ def get_args_and_incomplete_from_args(
     Returns
     -------
     A tuple containing:
-      - A tuple of string
-        A tuple of tokens parsed from the input string.
-
-      - str
-        An unfinished string in the prompt that needs to b completed.
+      - A tuple of tokens parsed from the input string.
+      - An unfinished string in the prompt that needs to be completed.
     """
 
     args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
-    # cursor_within_command = (
-    #     document_text.rstrip() == document_text
-    # )
 
     if args and cursor_within_command:  # and not remaining_token:
         # We've entered some text and no space, give completions for the
         # current word.
         incomplete = args.pop()
+
     else:
         # We've not entered anything, either at all or for the current
         # command, so give all relevant completions for this context.
         incomplete = ""  # remaining_token
 
-    # match = EQUAL_SIGNED_OPTION.split(incomplete, 1)
-    # if len(match) > 1:
-    #     opt, incomplete = match[1], match[2]
-    #     args.append(opt)
-
     if "=" in incomplete:
         opt, incomplete = incomplete.split("=", 1)
         args.append(opt)
 
-    incomplete = os.path.expandvars(os.path.expanduser(incomplete))
+    incomplete = utils._expand_envvars(incomplete)
 
     return tuple(args), incomplete
 
@@ -236,29 +189,34 @@ class ArgsParsingState:
         self.parse()
 
     def __str__(self) -> str:
-        res = ""
+        res = []
 
-        group = getattr(self.current_group, "name", None)
+        group = self.current_group.name
         if group is not None:
-            res += f"{group}"
+            res.append(group)
 
         cmd = getattr(self.current_command, "name", None)
         if cmd is not None:
-            res += f" > {cmd}"
+            res.append(cmd)
 
         param = getattr(self.current_param, "name", None)
         if param is not None:
-            res += f" > {param}"
+            res.append(param)
 
-        return res
+        return " > ".join(res)
 
     def __repr__(self) -> str:
         return f'"{str(self)}"'
 
-    def __key(self) -> "_KEY":
+    def _key(self) -> "_KEY":
         keys: "List[Optional[Dict[str, Any]]]" = []
 
-        for i in (self.current_group, self.current_command, self.current_param):
+        for i in (
+            self.current_group,
+            self.current_command,
+            self.current_param,
+            self.current_ctx,
+        ):
             if i is None:
                 keys.append(None)
             else:
@@ -272,9 +230,9 @@ class ArgsParsingState:
     def __eq__(  # type: ignore[override]
         self, other: "Optional[ArgsParsingState]"
     ) -> bool:
-        if isinstance(other, ArgsParsingState):
-            return self.__key() == other.__key()
-        return NotImplemented
+        if not isinstance(other, ArgsParsingState):
+            return NotImplemented
+        return self._key() == other._key()
 
     def parse(self) -> None:
         """
@@ -334,21 +292,6 @@ class ArgsParsingState:
             if not is_parent_group_chained or isinstance(param, click.Argument)
         )
 
-        # is_all_args_not_available = True
-
-        # if self.current_ctx.params:
-        #     for param in current_ctx_command.params:
-        #         if (
-        #             # not (
-        #             #     is_parent_group_chained and isinstance(param, click.Option)
-        #             # )
-        #             not is_parent_group_chained or isinstance(param, click.Argument)
-        #             and utils.is_param_value_incomplete(self.current_ctx, param.name)
-        #         ):
-        #             # print(param, self.current_ctx.params.get(param.name, None))
-        #             is_all_args_not_available = False
-        #             break
-
         if isinstance(current_ctx_command, click.MultiCommand) and (
             is_cli or is_all_args_not_available
         ):
@@ -406,17 +349,15 @@ class ArgsParsingState:
     def parse_params_arg(self) -> "Optional[click.Argument]":
         minus_one_param = None
 
-        command_params = deque(
+        command_argument_params = (
             i
             for i in self.current_command.params  # type: ignore[union-attr]
             if isinstance(i, click.Argument)
         )
 
-        while command_params:
-            param = _fetch(command_params, minus_one_param)
-
-            if param is None:
-                break
+        for param in command_argument_params:
+            if minus_one_param:
+                raise ArgumentPositionError(self.current_command, param)
 
             if param.nargs == -1:
                 minus_one_param = param
@@ -433,12 +374,8 @@ def currently_introspecting_args(
     cli_ctx: "Context",
     cmd_ctx: "Context",
     args: "Sequence[str]",
-    state_cls: "Optional[Type[ArgsParsingState]]" = None,
 ) -> ArgsParsingState:
-    if state_cls is None:
-        state_cls = ArgsParsingState
-
-    return state_cls(cli_ctx, cmd_ctx, args)
+    return ArgsParsingState(cli_ctx, cmd_ctx, args)
 
 
 class Argument(_Argument):

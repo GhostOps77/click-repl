@@ -54,7 +54,7 @@ def quotes(text: str) -> str:
     """
 
     if " " in text and text[0] != '"' and text[-1] != '"':
-        text = text.strip('"')
+        text = text.strip('"').replace('"', '\\"')
         return f'"{text}"'
 
     return text
@@ -203,7 +203,7 @@ class ClickCompleter(Completer):
             else:
                 yield ReplCompletion(str(autocomplete), incomplete)
 
-    def get_completion_from_choices_click_le_7(
+    def get_completion_from_choices_click_v7(
         self, param_type: "click.Choice", incomplete: str
     ) -> "Generator[Completion, None, None]":
         """
@@ -211,7 +211,7 @@ class ClickCompleter(Completer):
         based on data from the given `click.Choice` parameter type
         of a parameter.
 
-        This method is used for backwards compatibility with click <= v7
+        This method is used for backwards compatibility with click v7
         as `click.Choice` class didn't have a `shell_complete` method
         until click v8.
 
@@ -233,16 +233,18 @@ class ClickCompleter(Completer):
             given parameter type.
         """
 
-        case_insensitive = not getattr(param_type, "case_sensitive", True)
+        case_insensitive = param_type.case_sensitive
 
         if case_insensitive:
             incomplete = incomplete.lower()
 
         for choice in param_type.choices:
-            if case_insensitive:
-                choice = choice.lower()
+            _choice = choice
 
-            if choice.startswith(incomplete):
+            if case_insensitive:
+                _choice = choice.lower()
+
+            if _choice.startswith(incomplete):
                 yield ReplCompletion(
                     choice,
                     incomplete,
@@ -350,6 +352,7 @@ class ClickCompleter(Completer):
             The `prompt_toolkit.completion.Completion` objects thats sent
             for auto-completion of the incomplete prompt.
         """
+
         boolean_mapping: "Dict[str, Tuple[str, ...]]" = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
@@ -450,22 +453,24 @@ class ClickCompleter(Completer):
 
         # shell_complete method for click.Choice class is introduced in click-v8.
         elif not HAS_CLICK8 and isinstance(param_type, click.Choice):
-            yield from self.get_completion_from_choices_click_le_7(param_type, incomplete)
+            yield from self.get_completion_from_choices_click_v7(param_type, incomplete)
 
         elif isinstance(param_type, click.types.BoolParamType):
+            # Completion for click.BOOL types.
             yield from self.get_completion_for_Boolean_type(incomplete)
 
         elif isinstance(param_type, (click.Path, click.File)):
             yield from self.get_completion_for_Path_types(incomplete)
 
         elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
+            # Completions for parameters that have auto-completion functions.
             yield from self.get_completion_from_autocompletion_functions(
                 ctx, param, state, incomplete  # type: ignore[arg-type]
             )
 
         return
 
-    def get_completion_for_command_args(
+    def get_completion_for_command_arguments(
         self,
         ctx: "Context",
         state: "ArgsParsingState",
@@ -504,20 +509,25 @@ class ClickCompleter(Completer):
 
         if is_current_param_not_none:
             param_val = ctx.params[current_param.name]  # type: ignore[index, union-attr]
+
+            # To check whether the current parameter has receieved
+            # its values according to its nargs.
+
             all_values_present = param_val is None or (
                 current_param.nargs != 1  # type: ignore[union-attr]
-                and not any(value is not None for value in param_val)
+                and all(value is None for value in param_val)
             )
 
         if not is_current_param_not_none or (
             isinstance(current_param, click.Argument) and all_values_present
         ):
             for param in state.current_command.params:  # type: ignore[union-attr]
-                if isinstance(param, click.Argument):
-                    continue
-
-                if getattr(param, "hidden", False) and not self.show_hidden_params:
-                    # We skip the hidden parameter if self.show_hidden_params is False.
+                if isinstance(param, click.Argument) or (
+                    param.hidden  # type: ignore[union-attr]
+                    and not self.show_hidden_params
+                ):
+                    # We skip the Arguments and hidden parameters
+                    # if self.show_hidden_params is False.
                     continue
 
                 opts = param.opts + param.secondary_opts
@@ -531,18 +541,18 @@ class ClickCompleter(Completer):
                 ]
 
                 if (
-                    # If param is a bool flag, and its already in args.
-                    getattr(param, "is_bool_flag", False)
-                    and any(i in args for i in opts)
-                    # Or the param is called recently within its nargs length.
+                    getattr(param, "is_bool_flag", False) and any(i in args for i in opts)
                 ) or not opts_with_incomplete_prefix:
+                    # Skip the current iteration, if param is a bool flag,
+                    # and its already in args, or the param is called
+                    # recently within its nargs length.
                     continue
 
-                # Displays all the aliases of the option in the completion,
-                # but only provides the shortest one for auto-completion,
-                # by joining all the aliases into a single string.
-
                 if self.shortest_opts_only:
+                    # Displays all the aliases of the option in the completion,
+                    # but only provides the shortest one for auto-completion,
+                    # by joining all the aliases into a single string.
+
                     _, sep = join_options(opts)
                     display = sep.join(opts_with_incomplete_prefix)
 
@@ -554,15 +564,15 @@ class ClickCompleter(Completer):
                 for opt in opts_with_incomplete_prefix:
                     display_meta = getattr(param, "help", "")
 
-                    # If shortest_opts_only=False, display the alias
-                    # of the option as it is
                     if not self.shortest_opts_only:
+                        # If shortest_opts_only=False, display the alias
+                        # of the option as it is.
                         display = opt
 
-                    # Display the default value of the option, only if
-                    # the option is not a counting option, and
-                    # the default value is not None
                     if not (getattr(param, "count", False) or param.default is None):
+                        # Display the default value of the option, only if
+                        # the option is not a counting option, and
+                        # the default value is not None.
                         display += f" [Default: {param.default}]"
 
                     yield ReplCompletion(
@@ -573,15 +583,14 @@ class ClickCompleter(Completer):
                         style=self.styles["option"],
                     )
 
-        # If the current param is not None and it's not a
-        # hidden param, generate auto-completion for it.
-        # If the current param is a hidden param and
-        # self.show_completions_for_hidden_param is true,
-        # generate auto-completion for it.
-
         if is_current_param_not_none and (
             not getattr(current_param, "hidden", False) or self.show_hidden_params
         ):
+            # If the current param is not None and it's not a
+            # hidden param, generate auto-completion for it.
+            # If the current param is a hidden param and
+            # self.show_completions_for_hidden_param is true,
+            # generate auto-completion for it.
             yield from self.get_completion_from_params(ctx, state, incomplete)
 
     def get_completions_for_command(
@@ -624,10 +633,10 @@ class ClickCompleter(Completer):
         if is_current_command_available:
             # If there's a sub-command found in the state object,
             # generate completions for its arguments.
-            yield from self.get_completion_for_command_args(ctx, state, incomplete)
+            yield from self.get_completion_for_command_arguments(ctx, state, incomplete)
 
         # To check whether all the parameters in the current command
-        # has recieved their values.
+        # has receieved their values.
         all_ctx_values_provided = all(
             not is_param_value_incomplete(ctx, param_name) for param_name in ctx.params
         )
@@ -641,7 +650,10 @@ class ClickCompleter(Completer):
             for cmd_name in current_group.list_commands(ctx):
                 command = current_group.get_command(ctx, cmd_name)
 
-                if getattr(command, "hidden", False) and not self.show_hidden_commands:
+                if (
+                    command.hidden  # type: ignore[union-attr]
+                    and not self.show_hidden_commands
+                ):
                     # We skip the hidden command if self.show_hidden_commands is False.
                     continue
 
@@ -690,10 +702,7 @@ class ClickCompleter(Completer):
                 self.cli_ctx, document.text_before_cursor
             )
 
-            if (
-                getattr(parsed_ctx.command, "hidden", False)
-                and not self.show_hidden_commands
-            ):
+            if parsed_ctx.command.hidden and not self.show_hidden_commands:
                 # We skip the hidden parameter if self.show_hidden_params is False.
                 return
 
@@ -759,6 +768,8 @@ class ReplCompletion(Completion):
         kwargs.setdefault("start_position", -len(incomplete))
 
         if not ISATTY:
+            # We don't have to pass in style attributes if the completions
+            # are not gonnabe displayed.
             kwargs.pop("style", None)
             kwargs.pop("selected_style", None)
 

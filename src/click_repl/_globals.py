@@ -14,11 +14,10 @@ if t.TYPE_CHECKING:
     from .core import ReplContext
 
 
-# Float Range is introduced after IntRange, in click v7
-# Also, _NumberRangeBase abstract class is introduced in click v8
-# Therefore, we're gonna use this tuple throughout the code to
-# type-check whether the param types are range types, for
-# backwards-compatibility for both click v6 and v7
+# The _RANGE_TYPES tuple is used for type-checking range
+# parameter types in the code, providing compatibility for
+# both click v6 and v7. It includes click.IntRange and,
+# if available, FloatRange from click v7.
 try:
     from click import FloatRange
 

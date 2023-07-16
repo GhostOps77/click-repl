@@ -1,3 +1,4 @@
+import os
 import typing as t
 from functools import lru_cache
 
@@ -35,6 +36,22 @@ if t.TYPE_CHECKING:
 #                 yield item
 #         else:
 #             yield val
+
+
+def _expand_envvars(text: str) -> str:
+    return os.path.expandvars(os.path.expanduser(text))
+
+
+def print_err(text: str) -> None:
+    """
+    Prints the given text to the stderr, in red colour.
+
+    Parameters
+    ----------
+    text : str
+        The string that needs to be printed out to the stderr.
+    """
+    click.secho(text, color=True, err=True, fg="red")
 
 
 def is_param_value_incomplete(ctx: "Context", param_name: "Optional[str]") -> bool:
@@ -234,15 +251,21 @@ def get_info_dict(
         if isinstance(obj, click.Command):
             return obj.to_info_dict(ctx)  # type: ignore[no-any-return]
 
-        return obj.to_info_dict()  # type: ignore[no-any-return]
+        info_dict: "Dict[str, Any]" = obj.to_info_dict()
+
+        if isinstance(obj, click.Context):
+            info_dict.update(params_val=obj.params)
+
+        return info_dict
 
     # Following code contains the manual implementation of the
     # 'to_info_dict' method.
-    info_dict: "Dict[str, Any]" = {}
+    info_dict: "Dict[str, Any]" = {}  # type: ignore[no-redef]
 
     if isinstance(obj, click.Context):
         return {
             "command": get_info_dict(obj.command),
+            "params_val": obj.params,
             "info_name": obj.info_name,
             "allow_extra_args": obj.allow_extra_args,
             "allow_interspersed_args": obj.allow_interspersed_args,
@@ -311,7 +334,7 @@ def get_info_dict(
 
         elif isinstance(obj, click.Choice):
             info_dict["choices"] = obj.choices
-            info_dict["case_sensitive"] = getattr(obj, "case_sensitive", True)
+            info_dict["case_sensitive"] = obj.case_sensitive
 
         elif not HAS_CLICK6 and isinstance(obj, click.DateTime):
             info_dict["formats"] = obj.formats
