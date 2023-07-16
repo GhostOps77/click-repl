@@ -9,12 +9,10 @@ import click
 from prompt_toolkit import PromptSession
 
 from . import _repl
-from ._globals import ISATTY
-from ._globals import pop_context
-from ._globals import push_context
+from ._globals import ISATTY, pop_context, push_context
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, Optional, List, Any
+    from typing import Any, Dict, Generator, List, Optional
 
     from ._internal_cmds import InternalCommandSystem
 

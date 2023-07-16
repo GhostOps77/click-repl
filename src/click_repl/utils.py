@@ -5,11 +5,9 @@ from functools import lru_cache
 import click
 from click.parser import split_opt
 
-from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK6
-from ._globals import HAS_CLICK8
-from .parser import currently_introspecting_args
-from .parser import get_args_and_incomplete_from_args
+from ._globals import _RANGE_TYPES, HAS_CLICK6, HAS_CLICK8
+from .parser import (currently_introspecting_args,
+                     get_args_and_incomplete_from_args)
 from .proxies import create_proxy_object
 
 if t.TYPE_CHECKING:

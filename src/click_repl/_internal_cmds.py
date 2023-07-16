@@ -11,9 +11,7 @@ from collections.abc import Sequence
 import click
 
 from ._globals import get_current_repl_ctx
-from .exceptions import ExitReplException
-from .exceptions import SamePrefixError
-from .exceptions import WrongType
+from .exceptions import ExitReplException, SamePrefixError, WrongType
 from .utils import print_err
 
 if t.TYPE_CHECKING:

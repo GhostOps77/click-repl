@@ -4,12 +4,9 @@ from gettext import gettext as _
 from shlex import shlex
 
 import click
-from click.exceptions import BadOptionUsage
-from click.exceptions import NoSuchOption
+from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import normalize_opt
-from click.parser import OptionParser
-from click.parser import ParsingState
+from click.parser import OptionParser, ParsingState, normalize_opt
 
 from . import utils
 from ._globals import HAS_CLICK8
