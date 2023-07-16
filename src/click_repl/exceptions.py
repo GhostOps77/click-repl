@@ -86,8 +86,6 @@ class SamePrefixError(InternalCommandException):
 class ExitReplException(InternalCommandException):
     """Exception raised to exit the click_repl app."""
 
-    pass
-
 
 class InvalidGroupFormat(ParserError):
     """
