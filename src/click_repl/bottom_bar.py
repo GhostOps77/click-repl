@@ -10,6 +10,7 @@ from ._globals import ISATTY
 if t.TYPE_CHECKING:
     from typing import Optional
 
+    from prompt_toolkit.completion import Completer
     from click import Parameter
 
     from .parser import ArgsParsingState
@@ -37,8 +38,8 @@ class BottomBar:
         if repl_ctx is None:
             return
 
-        self.show_hidden_params = (
-            repl_ctx.session.completer.show_hidden_params  # type: ignore[union-attr]
+        self.current_completer: "Completer" = (
+            repl_ctx.session.completer  # type: ignore[union-attr, assignment]
         )
 
     def reset_state(self) -> None:
@@ -96,7 +97,6 @@ class BottomBar:
             # If its a click.Option type, we print the smallest flag,
             # prioritizing limited space on the bottom bar for
             # other parameters.
-
             param_info = min(param.opts + param.secondary_opts, key=len)
 
         if self.state.current_param == param:  # type: ignore[union-attr]
@@ -107,6 +107,9 @@ class BottomBar:
 
             if param.nargs != 1:
                 param_info = self.get_param_nargs_info(param, param_info)
+
+        elif getattr(param, "hidden", False):
+            return ""
 
         return param_info
 

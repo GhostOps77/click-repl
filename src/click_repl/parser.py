@@ -1,3 +1,4 @@
+import re
 import typing as t
 from functools import lru_cache
 from gettext import gettext as _
@@ -31,11 +32,14 @@ if t.TYPE_CHECKING:
 
 
 _flag_needs_value = object()
+_quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
+_EQUALS_SIGN_AFTER_FLAG = re.compile(r"^([^a-z\d\s]+[^=\s]+)=(.+)$", re.I)
 
 
 def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     """
     Split a command line string into a list of tokens.
+    Using the same implementation as in `click.parser.split_arg_string`
 
     This function behaves similarly to `shlex.split`, but it does not fail
     if the string is incomplete. It handles missing closing quotes or incomplete
@@ -59,80 +63,48 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     lex.commenters = ""
     lex.escape = ""
     out: "List[str]" = []
-    # remaining_token: str = ""
 
     try:
         out.extend(lex)
     except ValueError:
-        # Raised when end-of-string is reached in an invalid state. Use
-        # the partial token as-is. The quote or escape character is in
-        # lex.state, not lex.token.
-
-        # remaining_token = lex.token
         out.append(lex.token)
 
-    # To get the actual text passed in through REPL cmd line
-    # irrespective of quotes
-    # last_val = ""
-    # if out and remaining_token == "" and not string[-1].isspace():
-    #     remaining_token = out[-1]
-
-    #     tmp = ""
-    #     for i in reversed(string.split()):
-    #         last_val = f"{i} {tmp}".strip()
-    #         if last_val.replace("'", "").replace('"', "") == remaining_token:
-    #             break
-    #         else:
-    #             tmp = last_val
-
-    #     if out and last_val == out[-1]:
-    #         last_val = ""
-
-    return out  # , last_val
+    return out
 
 
 @lru_cache(maxsize=3)
 def get_args_and_incomplete_from_args(
     document_text: str,
 ) -> "Tuple[Tuple[str, ...], str]":
-    """
-    Split a command line string into a list of tokens.
-
-    It invokes `split_arg_string` command, and still gives the
-    last incomplete string without any loss of characters in it.
-
-    Parameters
-    ----------
-    document_text : str
-        The string inputted in the REPL prompt.
-
-    Returns
-    -------
-    A tuple containing:
-      - A tuple of tokens parsed from the input string.
-      - An unfinished string in the prompt that needs to be completed.
-    """
-
-    args = split_arg_string(document_text)
+    args = split_arg_string(document_text, posix=True)
     cursor_within_command = not document_text[-1:].isspace()
 
-    if args and cursor_within_command:  # and not remaining_token:
-        # We've entered some text and no space, give completions for the
-        # current word.
+    if args and cursor_within_command:
         incomplete = args.pop()
 
     else:
-        # We've not entered anything, either at all or for the current
-        # command, so give all relevant completions for this context.
-        incomplete = ""  # remaining_token
+        incomplete = ""
 
-    if "=" in incomplete:
-        opt, incomplete = incomplete.split("=", 1)
+    match = _EQUALS_SIGN_AFTER_FLAG.match(incomplete)
+
+    if match:
+        _, opt, incomplete = match.groups()
         args.append(opt)
 
-    incomplete = utils._expand_envvars(incomplete)
+    _args = tuple(args)
 
-    return tuple(args), incomplete
+    if not incomplete:
+        return _args, ""
+
+    tmp_incomplete = ""
+    tmp_args = document_text.split(" ")
+
+    for token in reversed(tmp_args):
+        tmp_incomplete = f"{token} {tmp_incomplete}".rstrip()
+        if tmp_incomplete.translate(_quotes_to_empty_str_dict) == incomplete:
+            break
+
+    return _args, tmp_incomplete
 
 
 class ArgsParsingState:
@@ -200,6 +172,9 @@ class ArgsParsingState:
             res.append(param)
 
         return " > ".join(res)
+
+    def __repr__(self) -> str:
+        return f'"{str(self)}"'
 
     def __key(self) -> "_KEY":
         keys: "List[Optional[Dict[str, Any]]]" = []

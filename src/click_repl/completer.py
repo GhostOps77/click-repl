@@ -719,13 +719,12 @@ class ClickCompleter(Completer):
 
             yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)
 
-            # print(f'{vars(parsed_ctx) = }')
-
         # except Exception:
         #     pass
 
         except Exception as e:
-            raise e
+            if __debug__:
+                raise e
 
 
 class ReplCompletion(Completion):

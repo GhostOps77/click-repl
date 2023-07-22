@@ -133,13 +133,8 @@ class Repl:
         default_completer_kwargs = {
             "ctx": self.group_ctx,
             "internal_commands_system": self.internal_commands_system,
+            "bottom_bar": self.bottom_bar,
         }
-
-        if ISATTY:
-            default_completer_kwargs.update(bottom_bar=self.bottom_bar)
-
-        else:
-            self.completer_kwargs.pop("styles", None)  # type: ignore[unreachable]
 
         default_completer_kwargs.update(self.completer_kwargs)
 
@@ -165,14 +160,9 @@ class Repl:
             "complete_in_thread": True,
             "complete_while_typing": True,
             "validate_while_typing": True,
+            "mouse_support": True,
+            "bottom_toolbar": self.bottom_bar.get_formatted_text,
         }
-
-        if ISATTY:
-            default_prompt_kwargs.update(
-                bottom_toolbar=self.bottom_bar.get_formatted_text,
-                mouse_support=True,
-                style=style,
-            )
 
         default_prompt_kwargs.update(self.prompt_kwargs)
 
@@ -190,17 +180,17 @@ class Repl:
 
         if ISATTY:
             # If stdin is a TTY, prompt the user for input using PromptSession.
-            def _get_command() -> str:
-                return self.repl_ctx.session.prompt()  # type: ignore[no-any-return, return-value, union-attr]  # noqa: E501
+            def get_command() -> str:
+                return self.repl_ctx.session.prompt()  # type: ignore
 
         else:
             # If stdin is not a TTY, read input from stdin directly.
-            def _get_command() -> str:
+            def get_command() -> str:
                 inp = sys.stdin.readline().strip()
                 self.repl_ctx._history.append(inp)  # type: ignore[union-attr]
                 return inp
 
-        return _get_command
+        return get_command
 
     def repl_check(self) -> None:
         """
@@ -213,16 +203,16 @@ class Repl:
             If there is an empty optional argument in the CLI Group.
         """
 
-        # When a click.Argument(required=False) parameter in the CLI Group
-        # does not have a value, it will consume the first few words from the REPL input.
-        # This can cause issues in parsing and executing the command.
-
         for param in self.group.params:
             if (
                 isinstance(param, click.Argument)
                 and not param.required
                 and self.group_ctx.params[param.name] is None  # type: ignore[index]
             ):
+                # When a click.Argument(required=False) parameter in the CLI Group
+                # does not have a value, it will consume the first few words from
+                # the REPL input. This can cause issues in parsing and
+                # executing the command.
                 raise InvalidGroupFormat(self.group, param)
 
     def execute_command(self, command: str) -> None:
