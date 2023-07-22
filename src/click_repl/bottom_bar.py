@@ -1,8 +1,3 @@
-"""
-`click_repl.bottom_bar`
-
-Utilities to manage bottom display bar of the click_repl app.
-"""
 import typing as t
 
 import click
@@ -10,9 +5,7 @@ from prompt_toolkit.formatted_text import HTML
 
 from ._globals import _RANGE_TYPES
 from ._globals import get_current_repl_ctx
-from ._globals import HAS_CLICK6
 from ._globals import ISATTY
-
 
 if t.TYPE_CHECKING:
     from typing import Optional
@@ -22,25 +15,16 @@ if t.TYPE_CHECKING:
     from .parser import ArgsParsingState
 
 
-__all__ = ["BOTTOMBAR", "BottomBar"]
+__all__ = ["BottomBar"]
 
 
-# click.DateTime type is introduced in click v7.
-# These types can generate metavar information by themselves.
-# Therefore, we're gonna just use their names, to display it in
-# the bottom toolbar.
-if HAS_CLICK6:
-    _METAVAR_PARAMS = (click.Choice,)
-else:
-    _METAVAR_PARAMS = (click.Choice, click.DateTime)  # type: ignore[assignment]
+_METAVAR_PARAMS = (click.Choice, click.DateTime)  # type: ignore[assignment]
 
 
 class BottomBar:
     """Toolbar class to manage the text in the bottom toolbar."""
 
     def __init__(self) -> None:
-        """Initialize the `BottomBar` class."""
-
         self.state: "Optional[ArgsParsingState]" = None
         self._formatted_text: "t.Union[str, HTML]" = ""
         self.show_hidden_params: bool = False
@@ -53,16 +37,11 @@ class BottomBar:
         if repl_ctx is None:
             return
 
-        completer = repl_ctx.session.completer  # type: ignore[union-attr]
-        self.show_hidden_params = completer.show_hidden_params  # type: ignore[union-attr]
+        self.show_hidden_params = (
+            repl_ctx.session.completer.show_hidden_params  # type: ignore[union-attr]
+        )
 
     def reset_state(self) -> None:
-        """
-        Resets the `click_repl.parser.ArgsParsingState` object
-        in order to clear the currently displayed parsing state
-        information from the bottom bar.
-        """
-
         if not ISATTY:
             # We don't have to render the bottom toolbar if the stdin is not
             # connected to a TTY device.
@@ -74,53 +53,22 @@ class BottomBar:
         self._formatted_text = ""
 
     def get_formatted_text(self) -> "t.Union[str, HTML]":
-        """
-        Used by `prompt_toolkit.PromptSession` to retrieve the
-        text that need to be rendered in the bottom bar.
-
-        Returns
-        -------
-        `str` or `prompt_toolkit.formatted_text.HTML`
-            The text that needs to be displayed in the bottom bar.
-        """
-
         if not ISATTY:
             return ""
 
         return self._formatted_text
 
     def update_state(self, state: "ArgsParsingState") -> None:
-        """
-        Updates the current state of the `click_repl.parser.ArgsParsingState`
-        object held in the `self.state` attribute.
-
-        Parameters
-        ----------
-        state : click_repl.parser.ArgsParsingState
-            A `click_repl.parser.ArgsParsingState` object that holds
-            information about the current command and parameter, based
-            on the current arguments.
-        """
-
         if not ISATTY or (state and state == self.state):
-            # print('self.state = ', self.state._key()[3])
-            # print('arg state = ', state._key()[3])
             return
 
         self.state = state
-        self._formatted_text = self.make_formatted_text()
+        # self._formatted_text = self.make_formatted_text()
+        self._formatted_text = str(state)
 
     def get_group_metavar_template(self) -> "HTML":
-        """
-        Gets the metavar to describe the CLI Group, indicating
-        whether it is a chained Group or not.
-
-        Returns
-        -------
-        prompt_toolkit.formatted_text.HTML
-            A `prompt_toolkit.formatted_text.HTML` object that represents
-            the metavar of the CLI Group information.
-        """
+        # Gets the metavar to describe the CLI Group, indicating
+        # whether it is a chained Group or not.
 
         current_group = self.state.current_group  # type: ignore[union-attr]
 
@@ -141,21 +89,6 @@ class BottomBar:
         return HTML(f"<b>Group {current_group.name}</b>{metavar}")
 
     def get_param_info(self, param: "Parameter") -> str:
-        """
-        Returns a string containing basic information about the given
-        parameter `param`, that to be displayed in the bottom bar.
-
-        Parameters
-        ----------
-        param : click.Parameter
-            A `click.Parameter` object to retrieve information from.
-
-        Returns
-        -------
-        str
-            A string containing basic information about the given parameter.
-        """
-
         if isinstance(param, click.Argument):
             param_info: str = param.name  # type: ignore[assignment]
 
@@ -178,20 +111,6 @@ class BottomBar:
         return param_info
 
     def get_param_type_info(self, param: "Parameter") -> str:
-        """
-        Retrieves information about the type of the given `param` parameter.
-
-        Parameters
-        ----------
-        param : click.Parameter
-            A `click.Parameter` object to retrieve information from.
-
-        Returns
-        -------
-        str
-            A string containing basic information about the type of the given parameter.
-        """
-
         param_type = param.type
         type_info = ""
 
@@ -231,27 +150,6 @@ class BottomBar:
         return type_info
 
     def get_param_nargs_info(self, param: "Parameter", param_info: str) -> str:
-        """
-        Retrieves about the nargs information about the given parameter `param`,
-        and adds it to the pre-existing `param_info` string, that has other
-        information about the parameter `param`.
-
-        Parameters
-        ----------
-        param : click.Parameter
-            A `click.Parameter` object to retrieve information from.
-
-        param_info : str
-            A string containing pre-existing information about
-            the parameter `param`.
-
-        Returns
-        -------
-        str
-            An updated string of `param_info` that includes information
-            about the `nargs` attribute of the given parameter.
-        """
-
         if param.nargs == -1:
             # This says that its a greedy consuming value.
             return f"[{param_info} ...]"
@@ -276,27 +174,10 @@ class BottomBar:
         return param_info
 
     def format_parsing_state_for_params(self, param: "Parameter", param_info: str) -> str:
-        """
-        Formats the given parameter info `param_info` based on the state of
-        the parameter `param`, indicating whether it is the current parameter,
-        whether it is yet to receive values from the REPL, or whether it has
-        already received its values.
-
-        Parameters
-        ----------
-        param : click.Parameter
-            A `click.Parameter` object to retrieve information from.
-
-        param_info : str
-            A string containing pre-existing information about
-            the parameter `param`.
-
-        Returns
-        -------
-        str
-            An updated string of `param_info` that includes information about
-            the current state of the parameter in terms of receiving values.
-        """
+        # Formats the given param_info string based on the state of
+        # the given param, indicating whether it is the current parameter,
+        # whether it is yet to receive values from the REPL, or whether it has
+        # already received its values.
 
         if param == getattr(self.state, "current_param", None):
             # The current parameter is shown in bold and underlined letters.
@@ -315,16 +196,6 @@ class BottomBar:
         return f"<s>{param_info}</s>"
 
     def make_formatted_text(self) -> "t.Union[str, HTML]":
-        """
-        Generates and returns the formatted text based on the
-        current parsing state.
-
-        Returns
-        -------
-        str or prompt_toolkit.formatted_text.HTML
-            The formatted text that needs to be displayed in the bottom bar.
-        """
-
         state = self.state
 
         if state is None:
@@ -362,8 +233,5 @@ class BottomBar:
             return HTML(f"<b>{output_text}:</b> {formatted_params_info}")
 
         # Otherwise, display the command name along with its type.
-        # It is most likely to be a click.Command.
+        # It is most likely to be a click.Command object that has no parameters.
         return HTML(f"<b>Command {output_text}</b>")
-
-
-BOTTOMBAR = BottomBar()

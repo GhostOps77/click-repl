@@ -10,11 +10,11 @@ from ._globals import _RANGE_TYPES
 from ._globals import HAS_CLICK8
 from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
-from .bottom_bar import BOTTOMBAR
+from .utils import _expand_envvars
+from .utils import _get_group_ctx
+from .utils import _is_param_value_incomplete
+from .utils import _join_options
 from .utils import _resolve_state
-from .utils import get_group_ctx
-from .utils import is_param_value_incomplete
-from .utils import join_options
 
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Final, Generator, Optional, Tuple, Union
@@ -23,13 +23,14 @@ if t.TYPE_CHECKING:
     from prompt_toolkit.completion import CompleteEvent
     from prompt_toolkit.document import Document
 
+    from .bottom_bar import BottomBar
     from .parser import ArgsParsingState
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
-IS_WINDOWS = os.name == "nt"
 
+IS_WINDOWS = os.name == "nt"
 
 # The method name for shell completion in click < v8 is "autocompletion".
 # Therefore, this conditional statement is used to handle backwards compatibility
@@ -38,22 +39,12 @@ IS_WINDOWS = os.name == "nt"
 AUTO_COMPLETION_PARAM = "shell_complete" if HAS_CLICK8 else "autocompletion"
 
 
-def quotes(text: str) -> str:
-    """
-    Adds double quotation marks to a string if it contains
-    a space and is not already enclosed in double quotation
-    marks. Otherwise, it returns the original string.
+def _quotes(text: str) -> str:
+    # Adds double quotation marks to a string if it contains
+    # a space and is not already enclosed in double quotation
+    # marks. Otherwise, it returns the original string.
 
-    Parameters
-    ----------
-    `text`: The text that need to be quoted.
-
-    Returns
-    -------
-    The same string, but enclosed by double quotation marks.
-    """
-
-    if " " in text and text[0] != '"' and text[-1] != '"':
+    if " " in text and text[0] != '"' != text[-1]:
         text = text.strip('"').replace('"', '\\"')
         return f'"{text}"'
 
@@ -66,6 +57,7 @@ class ClickCompleter(Completer):
     def __init__(
         self,
         ctx: "Context",
+        bottom_bar: "Optional[BottomBar]" = None,
         internal_commands_system: "Optional[InternalCommandSystem]" = None,
         styles: "Dict[str, str]" = {},
         shortest_opts_only: bool = False,
@@ -82,6 +74,10 @@ class ClickCompleter(Completer):
         ctx : click.Context
             The current click context object.
 
+        bottom_bar : BottomBar, optional
+            The `click_repl.bottom_bar.BottomBar` object thats used to update
+            the text displayed in the bottom bar.
+
         internal_commands_system : click_repl._internal_cmds.InternalCommandSystem
             The `click_repl._internal_cmds.InternalCommandSystem` object that
             holds information about the internal commands and their prefixes.
@@ -91,11 +87,11 @@ class ClickCompleter(Completer):
             `prompt_toolkit.completion.Completion` objects for
             `'command'`, `'argument'`, and `'option'`.
 
-        shortest_opts_only : bool
+        shortest_opts_only : bool, default: False
             If `True`, only the shortest flag of an option parameter is used
             for auto-completion.
 
-        show_only_unused_opts : bool
+        show_only_unused_opts : bool, default: False
             If `True`, only the options that are not mentioned or unused in
             the current prompt will be displayed during auto-completion.
 
@@ -108,8 +104,11 @@ class ClickCompleter(Completer):
             in autocompletion or not.
         """
 
-        self.cli_ctx: "Final[Context]" = get_group_ctx(ctx)
+        self.cli_ctx: "Final[Context]" = _get_group_ctx(ctx)
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
+
+        if ISATTY and bottom_bar is not None:
+            self.bottom_bar = bottom_bar
 
         self.shortest_opts_only = shortest_opts_only
         self.show_only_unused_opts = show_only_unused_opts
@@ -233,18 +232,20 @@ class ClickCompleter(Completer):
             given parameter type.
         """
 
-        case_insensitive = param_type.case_sensitive
+        case_sensitive = param_type.case_sensitive
 
-        if case_insensitive:
+        if not case_sensitive:
             incomplete = incomplete.lower()
+
+        _incomplete = _expand_envvars(incomplete)
 
         for choice in param_type.choices:
             _choice = choice
 
-            if case_insensitive:
+            if case_sensitive:
                 _choice = choice.lower()
 
-            if _choice.startswith(incomplete):
+            if _choice.startswith(_incomplete):
                 yield ReplCompletion(
                     choice,
                     incomplete,
@@ -252,7 +253,7 @@ class ClickCompleter(Completer):
                     style=self.styles["argument"],
                 )
 
-    def get_completion_for_Path_types(
+    def get_completion_for_path_types(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
         """
@@ -272,6 +273,8 @@ class ClickCompleter(Completer):
             The `prompt_toolkit.completion.Completion` objects thats sent
             for auto-completion of the incomplete prompt.
         """
+
+        # _incomplete = _expand_envvars(incomplete)
 
         if "*" in incomplete:
             return
@@ -333,7 +336,7 @@ class ClickCompleter(Completer):
                 display=path.name,
             )
 
-    def get_completion_for_Boolean_type(
+    def get_completion_for_boolean_type(
         self, incomplete: str
     ) -> "Generator[Completion, None, None]":
         """
@@ -353,16 +356,18 @@ class ClickCompleter(Completer):
             for auto-completion of the incomplete prompt.
         """
 
+        _incomplete = _expand_envvars(incomplete)
+
         boolean_mapping: "Dict[str, Tuple[str, ...]]" = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
         }
 
         for value, aliases in boolean_mapping.items():
-            if any(alias.startswith(incomplete) for alias in aliases):
+            if any(alias.startswith(_incomplete) for alias in aliases):
                 yield ReplCompletion(value, incomplete, display_meta="/".join(aliases))
 
-    def get_completion_for_Range_types(
+    def get_completion_for_range_types(
         self, param_type: "Union[click.IntRange, click.FloatRange]", incomplete: str
     ) -> "Generator[Completion, None, None]":
         """
@@ -388,6 +393,8 @@ class ClickCompleter(Completer):
             given parameter type.
         """
 
+        _incomplete = _expand_envvars(incomplete)
+
         lower_bound = param_type.min or 0
         upper_bound = param_type.max or 0
 
@@ -405,7 +412,7 @@ class ClickCompleter(Completer):
         for i in range(lower_bound, upper_bound):  # type: ignore[arg-type]
             text = display_template.format(i)
 
-            if text.startswith(incomplete):
+            if text.startswith(_incomplete):
                 yield ReplCompletion(text, incomplete)
 
     def get_completion_from_params(
@@ -446,7 +453,7 @@ class ClickCompleter(Completer):
         param_type: "click.ParamType" = param.type  # type: ignore[union-attr]
 
         if isinstance(param_type, _RANGE_TYPES):
-            yield from self.get_completion_for_Range_types(param_type, incomplete)
+            yield from self.get_completion_for_range_types(param_type, incomplete)
 
         # elif isinstance(param_type, click.Tuple):
         #     return [Completion("-", display=_type.name) for _type in param_type.types]
@@ -457,10 +464,11 @@ class ClickCompleter(Completer):
 
         elif isinstance(param_type, click.types.BoolParamType):
             # Completion for click.BOOL types.
-            yield from self.get_completion_for_Boolean_type(incomplete)
+            yield from self.get_completion_for_boolean_type(incomplete)
 
         elif isinstance(param_type, (click.Path, click.File)):
-            yield from self.get_completion_for_Path_types(incomplete)
+            # Both Path and File types are expected to receive input as path strings.
+            yield from self.get_completion_for_path_types(incomplete)
 
         elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
             # Completions for parameters that have auto-completion functions.
@@ -507,20 +515,12 @@ class ClickCompleter(Completer):
         current_param = state.current_param
         is_current_param_not_none = current_param is not None
 
-        if is_current_param_not_none:
-            param_val = ctx.params[current_param.name]  # type: ignore[index, union-attr]
-
-            # To check whether the current parameter has receieved
-            # its values according to its nargs.
-
-            all_values_present = param_val is None or (
-                current_param.nargs != 1  # type: ignore[union-attr]
-                and all(value is None for value in param_val)
-            )
-
         if not is_current_param_not_none or (
-            isinstance(current_param, click.Argument) and all_values_present
+            isinstance(current_param, click.Argument)
+            and ctx.params[current_param.name] is None  # type: ignore[index, union-attr]
         ):
+            # print(f'{state.current_command} {state.current_command.params}')
+
             for param in state.current_command.params:  # type: ignore[union-attr]
                 if isinstance(param, click.Argument) or (
                     param.hidden  # type: ignore[union-attr]
@@ -548,12 +548,15 @@ class ClickCompleter(Completer):
                     # recently within its nargs length.
                     continue
 
-                if self.shortest_opts_only:
+                display = ""  # Display text for the auto-completion.
+
+                if self.shortest_opts_only and not incomplete:
                     # Displays all the aliases of the option in the completion,
-                    # but only provides the shortest one for auto-completion,
+                    # only if the incomplete string is empty.
+                    # It provides only the shortest one for auto-completion,
                     # by joining all the aliases into a single string.
 
-                    _, sep = join_options(opts)
+                    _, sep = _join_options(opts)
                     display = sep.join(opts_with_incomplete_prefix)
 
                     # Changed for the auto-completion.
@@ -593,7 +596,7 @@ class ClickCompleter(Completer):
             # generate auto-completion for it.
             yield from self.get_completion_from_params(ctx, state, incomplete)
 
-    def get_completions_for_command(
+    def get_completions_for_subcommands(
         self,
         ctx: "Context",
         state: "ArgsParsingState",
@@ -638,7 +641,7 @@ class ClickCompleter(Completer):
         # To check whether all the parameters in the current command
         # has receieved their values.
         all_ctx_values_provided = all(
-            not is_param_value_incomplete(ctx, param_name) for param_name in ctx.params
+            not _is_param_value_incomplete(ctx, param_name) for param_name in ctx.params
         )
 
         if not is_current_command_available or (is_chain and all_ctx_values_provided):
@@ -694,7 +697,10 @@ class ClickCompleter(Completer):
             # completions for the incomplete input is unnecessary. Therefore, the text
             # in the bottom bar is cleared and the function returns without generating
             # any completions.
-            BOTTOMBAR.reset_state()
+
+            if ISATTY:
+                self.bottom_bar.reset_state()
+
             return
 
         try:
@@ -706,10 +712,14 @@ class ClickCompleter(Completer):
                 # We skip the hidden parameter if self.show_hidden_params is False.
                 return
 
-            # Update the state object of the bottom bar to display different info text.
-            BOTTOMBAR.update_state(state)
+            if ISATTY:
+                # Update the state object of the bottom bar to display
+                # different info text.
+                self.bottom_bar.update_state(state)
 
-            yield from self.get_completions_for_command(parsed_ctx, state, incomplete)
+            yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)
+
+            # print(f'{vars(parsed_ctx) = }')
 
         # except Exception:
         #     pass
@@ -763,13 +773,13 @@ class ReplCompletion(Completion):
         """
 
         if " " in text and quoted:
-            text = quotes(text)
+            text = _quotes(text)
 
         kwargs.setdefault("start_position", -len(incomplete))
 
         if not ISATTY:
-            # We don't have to pass in style attributes if the completions
-            # are not gonnabe displayed.
+            # We don't have to pass the style attributes if the completions
+            # are not gonna be displayed.
             kwargs.pop("style", None)
             kwargs.pop("selected_style", None)
 

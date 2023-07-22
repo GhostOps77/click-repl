@@ -16,7 +16,7 @@ from ._globals import HAS_CLICK8
 from .exceptions import ArgumentPositionError
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Sequence, Tuple
+    from typing import Any, Dict, List, Optional, Tuple
 
     from click import Argument as CoreArgument
     from click import Command, Context, MultiCommand, Parameter
@@ -156,7 +156,7 @@ class ArgsParsingState:
     )
 
     def __init__(
-        self, cli_ctx: "Context", current_ctx: "Context", args: "Sequence[str]"
+        self, cli_ctx: "Context", current_ctx: "Context", args: "Tuple[str]"
     ) -> None:
         """
         Initializes the parsing state using the CLI context, current context,
@@ -189,11 +189,7 @@ class ArgsParsingState:
         self.parse()
 
     def __str__(self) -> str:
-        res = []
-
-        group = self.current_group.name
-        if group is not None:
-            res.append(group)
+        res = [str(self.current_group.name)]
 
         cmd = getattr(self.current_command, "name", None)
         if cmd is not None:
@@ -205,10 +201,7 @@ class ArgsParsingState:
 
         return " > ".join(res)
 
-    def __repr__(self) -> str:
-        return f'"{str(self)}"'
-
-    def _key(self) -> "_KEY":
+    def __key(self) -> "_KEY":
         keys: "List[Optional[Dict[str, Any]]]" = []
 
         for i in (
@@ -219,6 +212,7 @@ class ArgsParsingState:
         ):
             if i is None:
                 keys.append(None)
+
             else:
                 keys.append(utils.get_info_dict(i))
 
@@ -232,7 +226,7 @@ class ArgsParsingState:
     ) -> bool:
         if not isinstance(other, ArgsParsingState):
             return NotImplemented
-        return self._key() == other._key()
+        return self.__key() == other.__key()
 
     def parse(self) -> None:
         """
@@ -259,17 +253,11 @@ class ArgsParsingState:
         """
 
         current_ctx_command = self.current_ctx.command
-        # parent_group = ctx_command
+        parent_group = current_ctx_command
 
         # If parent ctx exist, we change parent_group to the parent ctx's command
-        parent_group: "MultiCommand" = getattr(
-            self.current_ctx.parent,
-            "command",
-            current_ctx_command,  # type: ignore[arg-type]
-        )
-
-        # if self.cmd_ctx.parent is not None:
-        #     parent_group = self.cmd_ctx.parent.command
+        if self.current_ctx.parent is not None:
+            parent_group = self.current_ctx.parent.command
 
         current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
         is_parent_group_chained = getattr(parent_group, "chain", False)
@@ -286,11 +274,12 @@ class ArgsParsingState:
         # is found, is_all_args_available is set to False. This condition check
         # is only performed when the parent group is a non-chained multi-command.
 
-        is_all_args_not_available = not any(
-            utils.is_param_value_incomplete(self.current_ctx, param.name)
-            for param in current_ctx_command.params
-            if not is_parent_group_chained or isinstance(param, click.Argument)
-        )
+        is_all_args_not_available = True
+
+        for param in current_ctx_command.params:
+            if not is_parent_group_chained or isinstance(param, click.Argument):
+                if utils._is_param_value_incomplete(self.current_ctx, param.name):
+                    is_all_args_not_available = False
 
         if isinstance(current_ctx_command, click.MultiCommand) and (
             is_cli or is_all_args_not_available
@@ -307,13 +296,14 @@ class ArgsParsingState:
             # be the current_ctx_command.
             current_command = current_ctx_command
 
+        # print(current_group, current_command)
         return current_group, current_command
 
     def get_current_params(self) -> "Optional[Parameter]":
         self.remaining_params = [
             param
             for param in self.current_command.params  # type: ignore[union-attr]
-            if utils.is_param_value_incomplete(self.current_ctx, param.name)
+            if utils._is_param_value_incomplete(self.current_ctx, param.name)
         ]
 
         param: "Optional[Parameter]" = self.parse_param_opt()
@@ -363,7 +353,7 @@ class ArgsParsingState:
                 minus_one_param = param
                 continue
 
-            elif utils.is_param_value_incomplete(self.current_ctx, param.name):
+            elif utils._is_param_value_incomplete(self.current_ctx, param.name):
                 return param
 
         return minus_one_param
@@ -373,7 +363,7 @@ class ArgsParsingState:
 def currently_introspecting_args(
     cli_ctx: "Context",
     cmd_ctx: "Context",
-    args: "Sequence[str]",
+    args: "Tuple[str]",
 ) -> ArgsParsingState:
     return ArgsParsingState(cli_ctx, cmd_ctx, args)
 
@@ -393,8 +383,10 @@ class Argument(_Argument):
         state.order.append(self.obj)
 
 
-class CustomOptionsParser(OptionParser):
+class ReplOptionParser(OptionParser):
     def __init__(self, ctx: "Context") -> None:
+        ctx.resilient_parsing = False
+
         super().__init__(ctx)
 
         for opt in ctx.command.params:
@@ -403,12 +395,6 @@ class CustomOptionsParser(OptionParser):
     def add_argument(
         self, obj: "CoreArgument", dest: "t.Optional[str]", nargs: int = 1
     ) -> None:
-        """
-        Adds a positional argument named `dest` to the parser.
-
-        The `obj` can be used to identify the option in the order list
-        that is returned from the parser.
-        """
         self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
 
     def _match_long_opt(
@@ -456,7 +442,9 @@ class CustomOptionsParser(OptionParser):
                 if self.ignore_unknown_options:
                     unknown_options.append(ch)
                     continue
+
                 raise NoSuchOption(opt, ctx=self.ctx)
+
             if option.takes_value:
                 # Any characters left in arg?  Pretend they're the
                 # next arg, and stop consuming characters of arg.

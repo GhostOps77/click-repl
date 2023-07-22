@@ -1,9 +1,9 @@
 import click
 import pytest
 
-import click_repl
 from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.core import ReplContext
+from click_repl.exceptions import ExitReplException
 
 
 @click.command()
@@ -41,7 +41,7 @@ def test_internal_help_commands(capsys, test_input):
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_internal_exit_commands(test_input):
-    with pytest.raises(click_repl.ExitReplException):
+    with pytest.raises(ExitReplException):
         internal_command_system.execute(test_input)
 
 

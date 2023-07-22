@@ -1,8 +1,3 @@
-"""
-`click_repl._repl`
-
-Core functionality of the REPL feature of this module.
-"""
 import sys
 import traceback
 import typing as t
@@ -13,7 +8,7 @@ from prompt_toolkit.history import InMemoryHistory
 from ._globals import get_current_repl_ctx
 from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
-from .bottom_bar import BOTTOMBAR
+from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ClickExit
@@ -21,10 +16,9 @@ from .exceptions import ExitReplException
 from .exceptions import InternalCommandException
 from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
-from .utils import get_group_ctx
-from .utils import print_err
+from .utils import _get_group_ctx
+from .utils import _print_err
 from .validator import ClickValidator
-
 
 if t.TYPE_CHECKING:
     from typing import Any, Callable, Dict, Optional, Type
@@ -33,17 +27,17 @@ if t.TYPE_CHECKING:
     from prompt_toolkit.completion import Completer
     from prompt_toolkit.validation import Validator
 
-
 from prompt_toolkit.styles import Style
+
 
 style = Style.from_dict({"bottom-toolbar": "fg:lightblue bg:default noreverse"})
 
-__all__ = ["Repl", "register_repl", "repl"]
+__all__ = ["Repl", "repl"]
 
 
 class Repl:
     """
-    Resposnsible for executing and maintaining the REPL
+    Responsible for executing and maintaining the REPL
     (Read-Eval-Print-Loop) in the click_repl app.
     """
 
@@ -113,6 +107,9 @@ class Repl:
             internal_command_prefix, system_command_prefix
         )
 
+        if ISATTY:
+            self.bottom_bar = BottomBar()
+
     def bootstrap_prompt(self) -> "Dict[str, Any]":
         """
         Generates bootstrap keyword arguments for initializing a
@@ -138,6 +135,12 @@ class Repl:
             "internal_commands_system": self.internal_commands_system,
         }
 
+        if ISATTY:
+            default_completer_kwargs.update(bottom_bar=self.bottom_bar)
+
+        else:
+            self.completer_kwargs.pop("styles", None)  # type: ignore[unreachable]
+
         default_completer_kwargs.update(self.completer_kwargs)
 
         # Validator setup.
@@ -162,10 +165,14 @@ class Repl:
             "complete_in_thread": True,
             "complete_while_typing": True,
             "validate_while_typing": True,
-            "mouse_support": True,
-            "bottom_toolbar": BOTTOMBAR.get_formatted_text,
-            "style": style,
         }
+
+        if ISATTY:
+            default_prompt_kwargs.update(
+                bottom_toolbar=self.bottom_bar.get_formatted_text,
+                mouse_support=True,
+                style=style,
+            )
 
         default_prompt_kwargs.update(self.prompt_kwargs)
 
@@ -183,17 +190,17 @@ class Repl:
 
         if ISATTY:
             # If stdin is a TTY, prompt the user for input using PromptSession.
-            def get_command() -> str:
+            def _get_command() -> str:
                 return self.repl_ctx.session.prompt()  # type: ignore[no-any-return, return-value, union-attr]  # noqa: E501
 
         else:
             # If stdin is not a TTY, read input from stdin directly.
-            def get_command() -> str:
+            def _get_command() -> str:
                 inp = sys.stdin.readline().strip()
                 self.repl_ctx._history.append(inp)  # type: ignore[union-attr]
                 return inp
 
-        return get_command
+        return _get_command
 
     def repl_check(self) -> None:
         """
@@ -280,7 +287,7 @@ class Repl:
         self.repl_ctx = ReplContext(
             self.group_ctx,
             self.internal_commands_system,
-            self.prompt_kwargs,
+            prompt_kwargs=self.prompt_kwargs,
             parent=get_current_repl_ctx(silent=True),
         )
 
@@ -297,7 +304,7 @@ class Repl:
             The click context object of the root/parent/CLI group.
         """
 
-        self.group_ctx: "Context" = get_group_ctx(group_ctx)
+        self.group_ctx: "Context" = _get_group_ctx(group_ctx)
         self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]
 
         self.repl_check()
@@ -318,11 +325,12 @@ class Repl:
         with self.repl_ctx:
             while True:
                 try:
-                    # Resetting the toolbar to clear its text content,
-                    # ensuring that it doesn't display command info from
-                    # the previously executed command.
+                    if ISATTY:
+                        # Resetting the toolbar to clear its text content,
+                        # ensuring that it doesn't display command info from
+                        # the previously executed command.
+                        self.bottom_bar.reset_state()
 
-                    BOTTOMBAR.reset_state()
                     command = self.get_command()
 
                 except KeyboardInterrupt:
@@ -368,7 +376,7 @@ class Repl:
                     # InternalCommandException exceptions are caught to print
                     # their error messages in red text, and continue the REPL
                     # loop.
-                    print_err(f"{type(e).__name__}: {e}")
+                    _print_err(f"{type(e).__name__}: {e}")
 
                 except Exception:
                     # Any other exceptions are caught here, as they can potentially
@@ -416,30 +424,3 @@ def repl(
         repl_cls = Repl
 
     repl_cls(prompt_kwargs=prompt_kwargs, **attrs).loop(group_ctx)
-
-
-def register_repl(group: "Group", name: str = "repl") -> None:
-    """
-    Registers `repl()` as sub-command named `name` within the `group`.
-
-    Parameters
-    ----------
-    group : click.Group
-        The Group (current CLI) object to which the repl command will be registered.
-
-    name : str
-        The name of the repl command in the given Group.
-
-    Raises
-    ------
-    TypeError
-        If the given group is not an instance of click Group.
-    """
-
-    if not isinstance(group, click.Group):
-        raise TypeError(
-            "Expected 'group' to be a type of click.Group, "
-            f"but got {type(group).__name__}"
-        )
-
-    group.command(name=name)(click.pass_context(repl))

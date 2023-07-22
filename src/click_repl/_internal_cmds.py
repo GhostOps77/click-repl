@@ -14,13 +14,14 @@ from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException
 from .exceptions import SamePrefixError
 from .exceptions import WrongType
-from .utils import print_err
+from .utils import _print_err
 
 if t.TYPE_CHECKING:
-    from typing import Callable, Optional, Union
+    from typing import Callable, Optional, Union, List, Tuple, Dict
 
-    CallableNone: t.TypeAlias = "t.Callable[[], None]"
-    InternalCommandDict: t.TypeAlias = "t.Dict[str, t.Tuple[CallableNone, str]]"
+    CallableNone: t.TypeAlias = "Callable[[], None]"
+    InternalCommandDict: t.TypeAlias = "Dict[str, Tuple[CallableNone, str]]"
+    InfoTable: t.TypeAlias = "Dict[Tuple[CallableNone, str], List[str]]"
 
     class PrefixTable(t.TypedDict):
         Internal: "Optional[str]"
@@ -52,7 +53,7 @@ def repl_exit() -> "t.NoReturn":
     _exit_internal()
 
 
-def help_internal_cmd() -> None:
+def _help_internal_cmd() -> None:
     """Displays general help information."""
 
     formatter = click.HelpFormatter()
@@ -90,9 +91,7 @@ def help_internal_cmd() -> None:
                 f'Prefix Internal commands with "{ICS_obj.internal_command_prefix}".'
             )
 
-            info_table = defaultdict(list)
-            for mnemonic, target_info in ICS_obj._internal_commands.items():
-                info_table[target_info[1]].append(mnemonic)
+            info_table = ICS_obj._group_commands_by_callback()
 
             # To display the help text of each Internal Command.
             formatter.write_dl(
@@ -101,7 +100,7 @@ def help_internal_cmd() -> None:
                         ", ".join([f":{i}" for i in sorted(mnemonics)]),
                         description,
                     )
-                    for description, mnemonics in info_table.items()
+                    for (_, description), mnemonics in info_table.items()
                 ]
             )
 
@@ -268,7 +267,7 @@ class InternalCommandSystem:
             subprocess.run(command, shell=self.shell)
 
         except Exception as e:
-            print_err(f"{type(e).__name__}: {e}")
+            _print_err(f"{type(e).__name__}: {e}")
 
     def handle_internal_commands(self, command: str) -> None:
         """
@@ -374,9 +373,18 @@ class InternalCommandSystem:
 
         if target is None:
             return decorator
+        return decorator(target)
 
-        else:
-            return decorator(target)
+    def _group_commands_by_callback(self) -> "InfoTable":
+        info_table = defaultdict(list)
+
+        for mnemonic, target_info in self._internal_commands.items():
+            info_table[target_info].append(mnemonic)
+
+        return info_table
+
+    def list_commands(self) -> "List[List[str]]":
+        return list(self._group_commands_by_callback().values())
 
     def get_command(
         self, name: str, default: "t.Any" = None
@@ -400,7 +408,7 @@ class InternalCommandSystem:
         The callback function of the Internal Command if found. If not
         found, it returns the value specified in the `default` parameter.
         """
-        target_info = self._internal_commands.get(name)
+        target_info = self._internal_commands.get(name, None)
 
         if target_info:
             return target_info[0]
@@ -465,7 +473,7 @@ class InternalCommandSystem:
             # If the command string originally consists only the prefix,
             # and nothing else, we display the error message in red text.
             # And exit out with success code.
-            print_err(f"Enter a proper {flag} Command.")
+            _print_err(f"Enter a proper {flag} Command.")
 
         elif flag == "Internal":
             self.handle_internal_commands(command)
@@ -495,6 +503,6 @@ class InternalCommandSystem:
 
         # Loading help command
         self.register_command(
-            target=help_internal_cmd,
+            target=_help_internal_cmd,
             names=("?", "h", "help"),
         )

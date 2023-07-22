@@ -1,71 +1,25 @@
 import typing as t
-from gettext import ngettext
 
 import click
-from click.core import iter_params_for_processing
 
-from ._globals import HAS_CLICK8
-from .parser import CustomOptionsParser
+from .parser import ReplOptionParser
 
 if t.TYPE_CHECKING:
-    from typing import List, NoReturn, Union
-
-    from click import Command, Context, Group
+    from click import Command, Context, Parameter
 
     V = t.TypeVar("V")
 
 
-def create_proxy_object(
-    obj: "Union[Command, Group]",
-) -> "Union[ProxyCommand, ProxyGroup]":
-    """
-    Provides the appropriate proxy object based on the given click object.
-
-    Parameters
-    ----------
-    obj : click.Command or click.Group.
-       A `click.Command` or `click.Group` object for which a proxy needs to be created.
-
-    Returns
-    -------
-    ProxyCommand or ProxyGroup
-        `ProxyCommand` object if the given object is an instance of `click.Command` class,
-        and `ProxyGroup` object if the given object is an instance of `click.Group` class.
-    """
-
+def _create_proxy_command(obj: "Command") -> "ProxyCommand":
     if isinstance(obj, click.Group):
         return ProxyGroup(obj)
     return ProxyCommand(obj)
 
 
-def parse_args(
-    cmd: "Union[ProxyCommand, ProxyGroup]", ctx: "Context", args: "List[str]"
-) -> "Union[List[str], NoReturn]":
-    # if not args and cmd.no_args_is_help and not ctx.resilient_parsing:
-    #     click.echo(ctx.get_help(), color=ctx.color)
-    #     ctx.exit()
-
-    parser = CustomOptionsParser(ctx)
-    opts, args, param_order = parser.parse_args(args=args)
-
-    for param in iter_params_for_processing(param_order, cmd.get_params(ctx)):
-        value, args = ProxyParameter(param).handle_parse_result(ctx, opts, args)
-
-    if args and not ctx.allow_extra_args and not ctx.resilient_parsing:
-        ctx.fail(
-            ngettext(
-                "Got unexpected extra argument ({args})",
-                "Got unexpected extra arguments ({args})",
-                len(args),
-            ).format(args=" ".join(args))
-        )
-
-    ctx.args = args
-
-    if HAS_CLICK8:
-        ctx._opt_prefixes.update(parser._opt_prefixes)  # type: ignore[attr-defined]
-
-    return args
+def _create_proxy_param(obj: "Parameter") -> "ProxyParameter":
+    if isinstance(obj, click.Option):
+        return ProxyOption(obj)
+    return ProxyArgument(obj)
 
 
 class Proxy:
@@ -108,59 +62,78 @@ class Proxy:
 
 class ProxyCommand(Proxy, click.Command):
     """
-    A proxy class for `click.Command` class that changes its parser to
-    `click_repl.parser.CustomOptionParser` in the `parse_args` method.
-
-    This class overrides the `parse_args` method to use the custom
-    parser implementation provided by `click_repl.parser.CustomOptionParser`.
+    A proxy class for `click.Command` objects to modify their
+    options parser, by overriding its `make_parser` method to
+    use the custom parser implementation provided by
+    `click_repl.parser.ReplOptionParser`.
     """
 
-    def parse_args(self, ctx: "Context", args: "List[str]") -> "List[str]":
-        return parse_args(self, ctx, args)
+    def __init__(self, obj: "Command") -> None:
+        """
+        Initialize the `ProxyBaseCommand` class with the specified
+        command object.
+
+        Parameters
+        ----------
+        obj : click.Command
+            The `click.Command` object to be proxied.
+        """
+
+        # Changing the Parameter types to their proxies.
+        obj.params = [_create_proxy_param(param) for param in obj.params]
+        super().__init__(obj)
+
+    def make_parser(self, ctx: "Context") -> "ReplOptionParser":
+        return ReplOptionParser(ctx)
 
 
-class ProxyGroup(Proxy, click.Group):
+class ProxyGroup(ProxyCommand, click.Group):
     """
-    A proxy class for `click.Group` that changes its parser to
-    `click_repl.parser.CustomOptionParser` in the `parse_args` method.
-
-    This class overrides the `parse_args` method to use the custom parser
-    implementation provided by `click_repl.parser.CustomOptionParser`.
+    A proxy class for `click.Group` objects that changes its parser to
+    `click_repl.parser.ReplOptionParser` in the `make_parser` method.
     """
 
-    def parse_args(self, ctx: "Context", args: "List[str]") -> "List[str]":
-        rest = parse_args(self, ctx, args)
-
-        if self.chain:
-            ctx.protected_args = rest
-            ctx.args = []
-        elif rest:
-            ctx.protected_args, ctx.args = rest[:1], rest[1:]
-
-        return ctx.args  # type: ignore[no-any-return]
+    pass
 
 
 class ProxyParameter(Proxy, click.Parameter):
     """
-    A proxy class for `click.Parameter` that modifies its behavior
-    for missing values.
+    A generic proxy class for `click.Parameter` objects that modifies
+    its behavior for missing values.
 
     This class overrides the `process_value` method to return missing
     values as they are, even if they are incomplete or not provided.
     """
 
-    # For backwards compatibility with click v7.
     def full_process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
+        # click v7 has 'full_process_value' instead of 'process_value'.
+        # Therefor, for backwards compatibility with click v7, process_value
+        # method is called within this method.
         return self.process_value(ctx, value)
 
     def process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
         if value is not None:
             value = self.type_cast_value(ctx, value)
 
-        # if self.required and self.value_is_missing(value):
-        #     raise MissingParameter(ctx=ctx, param=self)
-
         if self.callback is not None:
             value = self.callback(ctx, self, value)
 
         return value
+
+
+class ProxyArgument(ProxyParameter, click.Argument):
+    """
+    A proxy class for `click.Argument` objects, allowing modification of their behavior
+    during the processing of values based on their type.
+    """
+
+    pass
+
+
+class ProxyOption(ProxyParameter, click.Option):
+    """
+    A proxy class for `click.Option` objects, allowing modification of their behavior
+    during the processing of values based on their type.
+    """
+
+    pass

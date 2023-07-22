@@ -79,7 +79,7 @@ c1 = ClickCompleter(click.Context(root_command), shortest_opts_only=True)
     "test_input, expected",
     [
         ("shortest-only ", {"-f", "-b", "--foobar"}),
-        ("shortest-only -", {"-f", "-b", "--foobar"}),
+        ("shortest-only -", {"-f", "--foo", "-b", "--bar", "--foobar"}),
         ("shortest-only --f", {"--foo", "--foobar"}),
     ],
 )

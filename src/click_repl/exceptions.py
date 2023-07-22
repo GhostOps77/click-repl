@@ -78,7 +78,7 @@ class SamePrefixError(InternalCommandException):
             and `system_command_prefix`.
         """
         super().__init__(
-            f"Both internal_command_prefix and system_command_prefix can't have "
+            "Both internal_command_prefix and system_command_prefix can't have "
             f"the same Prefix string {prefix_str}."
         )
 

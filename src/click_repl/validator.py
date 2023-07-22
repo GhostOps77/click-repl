@@ -6,11 +6,14 @@ raised during auto-completion.
 """
 import typing as t
 
-from click.exceptions import ClickException, UsageError
-from prompt_toolkit.validation import ValidationError, Validator
+from click.exceptions import ClickException
+from click.exceptions import UsageError
+from prompt_toolkit.validation import ValidationError
+from prompt_toolkit.validation import Validator
 
 from ._internal_cmds import InternalCommandSystem
-from .utils import _resolve_state, get_group_ctx
+from .utils import _get_group_ctx
+from .utils import _resolve_state
 
 if t.TYPE_CHECKING:
     from typing import Final
@@ -50,7 +53,7 @@ class ClickValidator(Validator):
             being displayed in the REPL mode.
         """
 
-        self.cli_ctx: "Final[Context]" = get_group_ctx(ctx)
+        self.cli_ctx: "Final[Context]" = _get_group_ctx(ctx)
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system

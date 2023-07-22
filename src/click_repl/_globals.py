@@ -26,7 +26,6 @@ except ImportError:
     _RANGE_TYPES = (click.IntRange,)  # type: ignore[assignment]
 
 
-HAS_CLICK6 = click.__version__[0] == "6"
 HAS_CLICK8 = click.__version__[0] == "8"
 
 # If ISATTY is False, then we're not gonna run any code
@@ -73,7 +72,7 @@ def get_current_repl_ctx(
     return None
 
 
-def push_context(ctx: "ReplContext") -> None:
+def _push_context(ctx: "ReplContext") -> None:
     """
     Pushes a new repl context to the current stack.
 
@@ -85,6 +84,6 @@ def push_context(ctx: "ReplContext") -> None:
     _locals.ctx_stack.append(ctx)
 
 
-def pop_context() -> None:
+def _pop_context() -> None:
     """Removes the top level repl context from the stack."""
     _locals.ctx_stack.pop()

@@ -1,20 +1,15 @@
-"""
-`click_repl.core`
-
-Core functionality for click-repl
-"""
 import typing as t
 
 import click
 from prompt_toolkit import PromptSession
 
 from . import _repl
+from ._globals import _pop_context
+from ._globals import _push_context
 from ._globals import ISATTY
-from ._globals import pop_context
-from ._globals import push_context
 
 if t.TYPE_CHECKING:
-    from typing import Dict, Generator, Optional, List, Any
+    from typing import Any, Dict, Generator, List, Optional
 
     from ._internal_cmds import InternalCommandSystem
 
@@ -98,11 +93,11 @@ class ReplContext:
         self.parent: "t.Final[Optional[ReplContext]]" = parent
 
     def __enter__(self) -> "ReplContext":
-        push_context(self)
+        _push_context(self)
         return self
 
     def __exit__(self, *_: "t.Any") -> None:
-        pop_context()
+        _pop_context()
 
     @property
     def prompt_message(self) -> "Optional[str]":
