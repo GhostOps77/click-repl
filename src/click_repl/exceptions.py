@@ -24,15 +24,11 @@ class InternalCommandException(Exception):
     in the REPL.
     """
 
-    pass
-
 
 class ParserError(Exception):
     """
     Exceptions that are raised when parsing given input of click objects.
     """
-
-    pass
 
 
 class WrongType(InternalCommandException):
