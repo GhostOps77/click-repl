@@ -10,7 +10,7 @@ from .parser import currently_introspecting_args
 from .parser import get_args_and_incomplete_from_args
 from .proxies import _create_proxy_command
 
-3
+
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional, Tuple, Union
     from click import Command, Context, Parameter
@@ -110,7 +110,7 @@ def _resolve_context(ctx: "Context", _args: "Tuple[str, ...]") -> "Context":
     return ctx
 
 
-@lru_cache
+@lru_cache(maxsize=128)
 def get_info_dict(
     obj: "Union[Context, Command, Parameter, click.ParamType]",
 ) -> "Dict[str, Any]":
