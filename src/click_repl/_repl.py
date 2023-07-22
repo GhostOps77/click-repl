@@ -43,8 +43,8 @@ class Repl:
 
     def __init__(
         self,
-        completer_cls: "Optional[Type[Completer]]" = None,
-        validator_cls: "Optional[Type[Validator]]" = None,
+        completer_cls: "Type[Completer]" = ClickCompleter,
+        validator_cls: "Optional[Type[Validator]]" = ClickValidator,
         completer_kwargs: "Dict[str, Any]" = {},
         validator_kwargs: "Dict[str, Any]" = {},
         internal_command_prefix: "Optional[str]" = ":",
@@ -89,16 +89,10 @@ class Repl:
         self.prompt_kwargs = prompt_kwargs
 
         # Completer setup.
-        if completer_cls is None:
-            completer_cls = ClickCompleter
-
         self.completer_cls = completer_cls
         self.completer_kwargs = completer_kwargs
 
         # Validator setup.
-        if validator_cls is None:
-            validator_cls = ClickValidator
-
         self.validator_cls = validator_cls
         self.validator_kwargs = validator_kwargs
 
@@ -138,14 +132,6 @@ class Repl:
 
         default_completer_kwargs.update(self.completer_kwargs)
 
-        # Validator setup.
-        default_validator_kwargs = {
-            "ctx": self.group_ctx,
-            "internal_commands_system": self.internal_commands_system,
-        }
-
-        default_validator_kwargs.update(self.validator_kwargs)
-
         # Default Keyword arguments for PromptSession object.
         default_prompt_kwargs = {  # type: ignore[arg-type]
             "history": InMemoryHistory(),
@@ -154,15 +140,27 @@ class Repl:
             "completer": self.completer_cls(
                 **default_completer_kwargs  # type: ignore[arg-type]
             ),
-            "validator": self.validator_cls(
-                **default_validator_kwargs  # type: ignore[arg-type]
-            ),
             "complete_in_thread": True,
             "complete_while_typing": True,
             "validate_while_typing": True,
             "mouse_support": True,
             "bottom_toolbar": self.bottom_bar.get_formatted_text,
         }
+
+        if self.validator_cls:
+            # Validator setup.
+            default_validator_kwargs = {
+                "ctx": self.group_ctx,
+                "internal_commands_system": self.internal_commands_system,
+            }
+
+            default_validator_kwargs.update(self.validator_kwargs)
+
+            default_prompt_kwargs.update(
+                validator=self.validator_cls(
+                    **default_validator_kwargs  # type: ignore[arg-type]
+                )
+            )
 
         default_prompt_kwargs.update(self.prompt_kwargs)
 
@@ -378,7 +376,7 @@ class Repl:
 def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
-    repl_cls: "Optional[Type[Repl]]" = None,
+    repl_cls: "Type[Repl]" = Repl,
     **attrs: "Any",
 ) -> None:
     """
@@ -410,7 +408,4 @@ def repl(
     """
 
     # Repl class setup.
-    if repl_cls is None:
-        repl_cls = Repl
-
     repl_cls(prompt_kwargs=prompt_kwargs, **attrs).loop(group_ctx)
