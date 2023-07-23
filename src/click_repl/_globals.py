@@ -26,6 +26,9 @@ except ImportError:
     _RANGE_TYPES = (click.IntRange,)  # type: ignore[assignment]
 
 
+_METAVAR_PARAMS = (click.Choice, click.DateTime)
+
+
 HAS_CLICK8 = click.__version__[0] == "8"
 
 # If ISATTY is False, then we're not gonna run any code

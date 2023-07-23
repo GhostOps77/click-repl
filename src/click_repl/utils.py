@@ -14,7 +14,7 @@ from .proxies import _create_proxy_command
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional, Tuple, Union
     from click import Command, Context, Parameter
-    from .parser import ArgsParsingState
+    from .parser import ArgsParsingState, Incomplete
 
 
 def _expand_envvars(text: str) -> str:
@@ -52,6 +52,106 @@ def _get_group_ctx(ctx: "Context") -> "Context":
         return ctx.parent
 
     return ctx
+
+
+@lru_cache(maxsize=128)
+def get_info_dict(
+    obj: "Union[Context, Command, Parameter, click.ParamType]",
+) -> "Dict[str, Any]":
+    if isinstance(obj, click.Context):
+        return {
+            "command": get_info_dict(obj.command),
+            "params": obj.params,
+        }
+
+    info_dict: "Dict[str, Any]" = {}  # type: ignore[no-redef]
+
+    if isinstance(obj, click.Command):
+        ctx = click.Context(obj)
+
+        info_dict.update(
+            name=obj.name,
+            params=tuple(get_info_dict(param) for param in obj.get_params(ctx)),
+            callback=obj.callback,
+        )
+
+        if isinstance(obj, click.MultiCommand):
+            commands = {}
+
+            for name in obj.list_commands(ctx):
+                command = obj.get_command(ctx, name)
+
+                if command is None:
+                    continue
+
+                commands[name] = get_info_dict(command)
+
+            info_dict.update(commands=commands, chain=obj.chain)
+
+    elif isinstance(obj, click.Parameter):
+        info_dict.update(
+            name=obj.name,
+            param_type_name=obj.param_type_name,
+            opts=obj.opts,
+            secondary_opts=obj.secondary_opts,
+            type=get_info_dict(obj.type),
+            required=obj.required,
+            nargs=obj.nargs,
+            multiple=obj.multiple,
+        )
+
+        if isinstance(obj, click.Option):
+            info_dict.update(
+                is_flag=obj.is_flag,
+                flag_value=obj.flag_value,
+                count=obj.count,
+                hidden=obj.hidden,
+            )
+
+    elif isinstance(obj, click.ParamType):
+        param_type = type(obj).__name__.partition("ParamType")[0]
+        param_type = param_type.partition("ParameterType")[0]
+
+        # Custom subclasses might not remember to set a name.
+        name = getattr(obj, "name", param_type)
+        info_dict.update(param_type=param_type, name=name)
+
+        if isinstance(obj, click.types.FuncParamType):
+            info_dict["func"] = obj.func
+
+        elif isinstance(obj, click.Choice):
+            info_dict["choices"] = obj.choices
+            info_dict["case_sensitive"] = obj.case_sensitive
+
+        elif isinstance(obj, click.DateTime):
+            info_dict["formats"] = obj.formats
+
+        elif isinstance(obj, _RANGE_TYPES):
+            info_dict.update(
+                min=obj.min,
+                max=obj.max,
+                min_open=getattr(obj, "min_open", False),
+                max_open=getattr(obj, "max_open", False),
+                clamp=obj.clamp,
+            )
+
+        elif isinstance(obj, click.File):
+            info_dict.update(mode=obj.mode, encoding=obj.encoding)
+
+        elif isinstance(obj, click.Path):
+            info_dict.update(
+                exists=obj.exists,
+                file_okay=obj.file_okay,
+                dir_okay=obj.dir_okay,
+                writable=obj.writable,
+                readable=obj.readable,
+                allow_dash=obj.allow_dash,
+            )
+
+        elif isinstance(obj, click.Tuple):
+            info_dict["types"] = tuple(get_info_dict(t) for t in obj.types)
+
+    return info_dict
 
 
 @lru_cache(maxsize=3)
@@ -110,132 +210,10 @@ def _resolve_context(ctx: "Context", _args: "Tuple[str, ...]") -> "Context":
     return ctx
 
 
-@lru_cache(maxsize=128)
-def get_info_dict(
-    obj: "Union[Context, Command, Parameter, click.ParamType]",
-) -> "Dict[str, Any]":
-    # A dummy ctx object is required to generate info_dict for
-    # click command types.
-    # if isinstance(obj, click.Command):
-    #     ctx = click.Context(obj)
-
-    # Following code contains the manual implementation of the
-    # 'to_info_dict' method.
-
-    if isinstance(obj, click.Context):
-        return {
-            "command": get_info_dict(obj.command),
-            "params": obj.params,
-            # "info_name": obj.info_name,
-            # "allow_extra_args": obj.allow_extra_args,
-            # "allow_interspersed_args": obj.allow_interspersed_args,
-            # "ignore_unknown_options": obj.ignore_unknown_options,
-            # "auto_envvar_prefix": obj.auto_envvar_prefix,
-        }
-
-    info_dict: "Dict[str, Any]" = {}  # type: ignore[no-redef]
-
-    if isinstance(obj, click.Command):
-        ctx = click.Context(obj)
-
-        info_dict.update(
-            name=obj.name,
-            params=tuple(get_info_dict(param) for param in obj.get_params(ctx)),
-            callback=obj.callback,
-            # help=obj.help,
-            # epilog=obj.epilog,
-            # short_help=obj.short_help,
-            # hidden=obj.hidden,
-            # deprecated=obj.deprecated,
-        )
-
-        if isinstance(obj, click.MultiCommand):
-            commands = {}
-
-            for name in obj.list_commands(ctx):
-                command = obj.get_command(ctx, name)
-
-                if command is None:
-                    continue
-
-                commands[name] = get_info_dict(command)
-
-            info_dict.update(commands=commands, chain=obj.chain)
-
-    elif isinstance(obj, click.Parameter):
-        info_dict.update(
-            name=obj.name,
-            param_type_name=obj.param_type_name,
-            opts=obj.opts,
-            secondary_opts=obj.secondary_opts,
-            type=get_info_dict(obj.type),
-            required=obj.required,
-            nargs=obj.nargs,
-            multiple=obj.multiple,
-            # default=obj.default,
-            # envvar=obj.envvar,
-        )
-
-        if isinstance(obj, click.Option):
-            info_dict.update(
-                # help=obj.help,
-                # prompt=obj.prompt,
-                is_flag=obj.is_flag,
-                flag_value=obj.flag_value,
-                count=obj.count,
-                hidden=obj.hidden,
-            )
-
-    elif isinstance(obj, click.ParamType):
-        param_type = type(obj).__name__.partition("ParamType")[0]
-        param_type = param_type.partition("ParameterType")[0]
-
-        # Custom subclasses might not remember to set a name.
-        name = getattr(obj, "name", param_type)
-        info_dict.update(param_type=param_type, name=name)
-
-        if isinstance(obj, click.types.FuncParamType):
-            info_dict["func"] = obj.func
-
-        elif isinstance(obj, click.Choice):
-            info_dict["choices"] = obj.choices
-            info_dict["case_sensitive"] = obj.case_sensitive
-
-        elif isinstance(obj, click.DateTime):
-            info_dict["formats"] = obj.formats
-
-        elif isinstance(obj, _RANGE_TYPES):
-            info_dict.update(
-                min=obj.min,
-                max=obj.max,
-                min_open=getattr(obj, "min_open", False),
-                max_open=getattr(obj, "max_open", False),
-                clamp=obj.clamp,
-            )
-
-        elif isinstance(obj, click.File):
-            info_dict.update(mode=obj.mode, encoding=obj.encoding)
-
-        elif isinstance(obj, click.Path):
-            info_dict.update(
-                exists=obj.exists,
-                file_okay=obj.file_okay,
-                dir_okay=obj.dir_okay,
-                writable=obj.writable,
-                readable=obj.readable,
-                allow_dash=obj.allow_dash,
-            )
-
-        elif isinstance(obj, click.Tuple):
-            info_dict["types"] = tuple(get_info_dict(t) for t in obj.types)
-
-    return info_dict
-
-
 @lru_cache(maxsize=3)
 def _resolve_state(
     ctx: "Context", document_text: str
-) -> "Tuple[Context, ArgsParsingState, str]":
+) -> "Tuple[Context, ArgsParsingState, Incomplete]":
     # Resolves the parsing state of the arguments in the REPL prompt.
     args, incomplete = get_args_and_incomplete_from_args(document_text)
     parsed_ctx = _resolve_context(ctx, args)

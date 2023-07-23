@@ -116,8 +116,8 @@ class InvalidGroupFormat(ParserError):
 
 class ArgumentPositionError(ParserError):
     """
-    Exception raised when an argument with `nargs=-1` is not defined at the end
-    of the parameter list.
+    Exception raised when an argument with `nargs=-1` is not defined at the rightmost
+    end of the parameter list.
 
     This exception indicates that the given command has an argument with `nargs=-1`
     defined within the other parameters. However, an argument with `nargs=-1` must

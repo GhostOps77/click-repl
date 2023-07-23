@@ -32,19 +32,6 @@ __all__ = ["repl_exit", "InternalCommandSystem"]
 
 
 def _exit_internal() -> "t.NoReturn":
-    """
-    Exits the REPL.
-
-    Raises
-    ------
-    click_repl.exceptions.ExitReplException
-        To exit out of the REPL.
-
-    See Also
-    --------
-    click_repl.exceptions.ExitReplException: Exception class
-    used to exit out of the REPL.
-    """
     raise ExitReplException()
 
 
@@ -67,33 +54,25 @@ def _help_internal_cmd() -> None:
         return
 
     # InternalCommandSystem object from current ReplContext object.
-    ICS_obj = current_repl_ctx.internal_command_system
+    ics_obj = current_repl_ctx.internal_command_system
 
     # If both internal_command_prefix and system_command_prefix are not available.
-    if not (ICS_obj.system_command_prefix or ICS_obj.internal_command_prefix):
+    if not (ics_obj.system_command_prefix or ics_obj.internal_command_prefix):
         formatter.write_text("No Internal commands are registered with this REPL.")
 
-    if ICS_obj.system_command_prefix:
-        # Help message for system prefixed commands, only if system command prefix
-        # is available.
-
+    if ics_obj.system_command_prefix:
         with formatter.section("External/System Commands"):
             formatter.write_text(
-                f'Prefix External/System commands with "{ICS_obj.system_command_prefix}".'
+                f'Prefix External/System commands with "{ics_obj.system_command_prefix}".'
             )
 
-    if ICS_obj.internal_command_prefix:
-        # Help message for internal commands, only if internal command prefix
-        # is available.
-
+    if ics_obj.internal_command_prefix:
         with formatter.section("Internal Commands"):
             formatter.write_text(
-                f'Prefix Internal commands with "{ICS_obj.internal_command_prefix}".'
+                f'Prefix Internal commands with "{ics_obj.internal_command_prefix}".'
             )
 
-            info_table = ICS_obj._group_commands_by_callback()
-
-            # To display the help text of each Internal Command.
+            info_table = ics_obj._group_commands_by_callback()
             formatter.write_dl(
                 [
                     (
@@ -139,12 +118,12 @@ class InternalCommandSystem:
         within the REPL.
         """
 
-        # If both internal_command_prefix and system_command_prefix are not None.
-        if internal_command_prefix and system_command_prefix:
+        if (
+            internal_command_prefix and system_command_prefix
+        ) and internal_command_prefix == system_command_prefix:
             # We don't want both internal_command_prefix and system_command_prefix
             # to be same. So, we raise SamePrefixError Exception if that happens.
-            if internal_command_prefix == system_command_prefix:
-                raise SamePrefixError(system_command_prefix)  # type: ignore[arg-type]
+            raise SamePrefixError(system_command_prefix)  # type: ignore[arg-type]
 
         self._check_prefix_validity(internal_command_prefix, "internal_command_prefix")
         self._check_prefix_validity(system_command_prefix, "system_command_prefix")
@@ -157,12 +136,12 @@ class InternalCommandSystem:
         self.shell = shell
         self._internal_commands: "InternalCommandDict" = {}
 
-        self.register_default_internal_commands()
+        self._register_default_internal_commands()
 
     @property
     def internal_command_prefix(self) -> "Optional[str]":
         """
-        Get the prefix used to trigger internal commands.
+        Prefix used to trigger internal commands.
 
         Returns
         -------
@@ -177,7 +156,6 @@ class InternalCommandSystem:
         SamePrefixError
             If the new prefix is the same as the current prefix.
         """
-
         return self.prefix_table["Internal"]
 
     @internal_command_prefix.setter
@@ -192,7 +170,7 @@ class InternalCommandSystem:
     @property
     def system_command_prefix(self) -> "Optional[str]":
         """
-        Get the prefix used to execute system commands.
+        Prefix used to execute system commands.
 
         Returns
         -------
@@ -384,6 +362,14 @@ class InternalCommandSystem:
         return info_table
 
     def list_commands(self) -> "List[List[str]]":
+        """
+        List of internal commands that are available.
+
+        Returns
+        -------
+        A list that contains all the names and aliases of
+        each available internal command.
+        """
         return list(self._group_commands_by_callback().values())
 
     def get_command(
@@ -462,7 +448,6 @@ class InternalCommandSystem:
         prefix, flag = self.get_prefix(command)
 
         if prefix is None:
-            # No Prefix is found in the command string.
             return False
 
         # Slicing the string to retain only the necessary
@@ -483,7 +468,7 @@ class InternalCommandSystem:
 
         return True
 
-    def register_default_internal_commands(self) -> None:
+    def _register_default_internal_commands(self) -> None:
         """
         Registers new Internal commands at the startup.
 
@@ -491,17 +476,14 @@ class InternalCommandSystem:
         to add all the default Internal Commands to the REPL.
         """
 
-        # Loading clear command
         self.register_command(
             target=click.clear,
             names=("cls", "clear"),
             description="Clears screen.",
         )
 
-        # Loading exit command
         self.register_command(target=repl_exit, names=("q", "quit", "exit"))
 
-        # Loading help command
         self.register_command(
             target=_help_internal_cmd,
             names=("?", "h", "help"),

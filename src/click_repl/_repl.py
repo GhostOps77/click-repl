@@ -4,6 +4,7 @@ import typing as t
 
 import click
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.styles import Style
 
 from ._globals import get_current_repl_ctx
 from ._globals import ISATTY
@@ -27,15 +28,25 @@ if t.TYPE_CHECKING:
     from prompt_toolkit.completion import Completer
     from prompt_toolkit.validation import Validator
 
-from prompt_toolkit.styles import Style
-
-
-style = Style.from_dict({"bottom-toolbar": "fg:lightblue bg:default noreverse"})
 
 __all__ = ["Repl", "repl"]
 
 
 class Repl:
+    __slots__ = (
+        "prompt_kwargs",
+        "completer_cls",
+        "completer_kwargs",
+        "validator_cls",
+        "validator_kwargs",
+        "internal_commands_system",
+        "bottom_bar",
+        "repl_ctx",
+        "group",
+        "group_ctx",
+        "get_command",
+    )
+
     """
     Responsible for executing and maintaining the REPL
     (Read-Eval-Print-Loop) in the click_repl app.
@@ -43,13 +54,13 @@ class Repl:
 
     def __init__(
         self,
+        prompt_kwargs: "Dict[str, Any]" = {},
         completer_cls: "Type[Completer]" = ClickCompleter,
         validator_cls: "Optional[Type[Validator]]" = ClickValidator,
         completer_kwargs: "Dict[str, Any]" = {},
         validator_kwargs: "Dict[str, Any]" = {},
         internal_command_prefix: "Optional[str]" = ":",
         system_command_prefix: "Optional[str]" = "!",
-        prompt_kwargs: "Dict[str, Any]" = {},
     ):
         """
         Initialize the `Repl` class with the specified settings and configuration
@@ -57,6 +68,11 @@ class Repl:
 
         Parameters
         ----------
+        prompt_kwargs : Dictionary of str: Any pairs.
+            Keyword arguments to be passed to the `prompt_toolkit.PromptSession` class.
+            Do note that you don't have to pass the Completer and Validator class
+            via this dictionary.
+
         completer_cls : prompt_toolkit.completion.Completer type class or None.
             `prompt_toolkit.completion.Completer` class to generate
             `prompt_toolkit.completion.Completion` objects for
@@ -79,30 +95,32 @@ class Repl:
 
         system_command_prefix : str or None.
             Prefix that triggers system commands within the click_repl app.
-
-        prompt_kwargs : Dictionary of str: Any pairs.
-            Keyword arguments to be passed to the `prompt_toolkit.PromptSession` class.
-            Do note that you don't have to pass the Completer and Validator class
-            via this dictionary.
         """
 
         self.prompt_kwargs = prompt_kwargs
 
-        # Completer setup.
         self.completer_cls = completer_cls
         self.completer_kwargs = completer_kwargs
 
-        # Validator setup.
         self.validator_cls = validator_cls
         self.validator_kwargs = validator_kwargs
 
-        # Internal Command System setup.
         self.internal_commands_system = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
         )
 
         if ISATTY:
-            self.bottom_bar = BottomBar()
+            self.bottom_bar: "Optional[BottomBar]" = prompt_kwargs.get(
+                "bottom_toolbar", BottomBar()
+            )
+
+            if self.bottom_bar is not None:
+                self.bottom_bar.show_hidden_params = completer_kwargs.get(
+                    "show_hidden_params", False
+                )
+
+        else:
+            self.bottom_bar = None
 
     def bootstrap_prompt(self) -> "Dict[str, Any]":
         """
@@ -123,7 +141,6 @@ class Repl:
             # an empty dictionary is returned.
             return {}
 
-        # Completer setup.
         default_completer_kwargs = {
             "ctx": self.group_ctx,
             "internal_commands_system": self.internal_commands_system,
@@ -132,8 +149,7 @@ class Repl:
 
         default_completer_kwargs.update(self.completer_kwargs)
 
-        # Default Keyword arguments for PromptSession object.
-        default_prompt_kwargs = {  # type: ignore[arg-type]
+        default_prompt_kwargs = {
             "history": InMemoryHistory(),
             # "message": HTML("<red>> </red>"),
             "message": "> ",
@@ -144,11 +160,17 @@ class Repl:
             "complete_while_typing": True,
             "validate_while_typing": True,
             "mouse_support": True,
-            "bottom_toolbar": self.bottom_bar.get_formatted_text,
         }
 
+        if self.bottom_bar:
+            default_prompt_kwargs.update(
+                bottom_toolbar=self.bottom_bar.get_formatted_text,
+                style=Style.from_dict(
+                    {"bottom-toolbar": "fg:lightblue bg:default noreverse"}
+                ),
+            )
+
         if self.validator_cls:
-            # Validator setup.
             default_validator_kwargs = {
                 "ctx": self.group_ctx,
                 "internal_commands_system": self.internal_commands_system,
@@ -166,7 +188,7 @@ class Repl:
 
         return default_prompt_kwargs
 
-    def get_command_func(self) -> "Callable[[], str]":
+    def _get_command_func(self) -> "Callable[[], str]":
         """
         Creates the function that recieves command string input either from user in
         interactive mode, or via stdin directly.
@@ -190,10 +212,9 @@ class Repl:
 
         return get_command
 
-    def repl_check(self) -> None:
+    def pre_repl_checks(self) -> None:
         """
-        Checks the CLI Group for empty optional arguments that can cause issues
-        when executing commands in the REPL.
+        Performs necessary checks before setting up the REPL.
 
         Raises
         ------
@@ -230,9 +251,9 @@ class Repl:
             # If the `InternalCommandSystem.execute()` method cannot find any
             # prefix to invoke the internal commands, the command string is
             # executed as a click command.
-            self.execute_click_cmds(command)
+            self.execute_click_command(command)
 
-    def execute_click_cmds(self, command: str) -> None:
+    def execute_click_command(self, command: str) -> None:
         """
         Executes click commands by parsing the given command string.
 
@@ -242,7 +263,6 @@ class Repl:
             The command string that needs to be parsed and executed.
         """
 
-        # Splits command text.
         args = split_arg_string(command)
 
         # The group command will dispatch based on args.
@@ -250,7 +270,6 @@ class Repl:
         # protected_args attribute.
         # To ensure correct parsing, we temporarily store the
         # previously available protected_args in a separate variable.
-
         old_protected_args = self.group_ctx.protected_args
 
         try:
@@ -268,10 +287,8 @@ class Repl:
         the state of the REPL.
         """
 
-        # Generating prompt kwargs
         self.prompt_kwargs = self.bootstrap_prompt()
 
-        # To assign the parent/previous repl context for the current repl context.
         self.repl_ctx = ReplContext(
             self.group_ctx,
             self.internal_commands_system,
@@ -279,8 +296,7 @@ class Repl:
             parent=get_current_repl_ctx(silent=True),
         )
 
-        # Creating and assigning the command input retrieval function.
-        self.get_command: "Callable[[], str]" = self.get_command_func()
+        self.get_command: "Callable[[], str]" = self._get_command_func()
 
     def setup_repl(self, group_ctx: "Context") -> None:
         """
@@ -295,7 +311,7 @@ class Repl:
         self.group_ctx: "Context" = _get_group_ctx(group_ctx)
         self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]
 
-        self.repl_check()
+        self.pre_repl_checks()
         self.setup_repl_ctx()
 
     def loop(self, group_ctx: "Context") -> None:
@@ -313,7 +329,7 @@ class Repl:
         with self.repl_ctx:
             while True:
                 try:
-                    if ISATTY:
+                    if ISATTY and self.bottom_bar is not None:
                         # Resetting the toolbar to clear its text content,
                         # ensuring that it doesn't display command info from
                         # the previously executed command.
@@ -345,31 +361,18 @@ class Repl:
                     self.execute_command(command.strip())
 
                 except (ClickExit, SystemExit):
-                    # Hitting Ctrl+C or any click.Context.exit() method
-                    # calls should not abort the REPL. We continue the loop to
-                    # allow the user to continue interacting with the REPL.
                     continue
 
                 except click.ClickException as e:
-                    # For exceptions of type click.ClickException, they provide
-                    # a show() method to display the exception message.
                     e.show()
 
                 except ExitReplException:
-                    # If an ExitReplException is raised, it is intended to break out
-                    # of the REPL loop. So, We break out of the loop to exit the REPL.
                     break
 
                 except InternalCommandException as e:
-                    # InternalCommandException exceptions are caught to print
-                    # their error messages in red text, and continue the REPL
-                    # loop.
                     _print_err(f"{type(e).__name__}: {e}")
 
                 except Exception:
-                    # Any other exceptions are caught here, as they can potentially
-                    # disrupt the REPL. The traceback error message is displayed,
-                    # and the loop continues to the next iteration.
                     traceback.print_exc()
 
 
@@ -394,8 +397,6 @@ def repl(
         Parameters passed to `prompt_toolkit.PromptSession`.
         These parameters configure the prompt appearance and behavior,
         such as prompt message, history, completion, etc.
-        Do note that you don't have to pass the Completer and Validator
-        class, and their arguments via this dictionary.
 
     repl_cls : click_repl._repl.Repl type class.
         Repl class to use for the click_repl app. if `None`, the
@@ -405,7 +406,15 @@ def repl(
     **attrs : dict, optional
         Extra keyword arguments to be passed to the Repl class. These additional
         arguments can be used to further customize the behavior of the Repl class.
+
+    Notes
+    -----
+    - You don't have to pass the `Completer` and `Validator` class,
+    and their arguments via this dictionary.
+
+    - Provide a text or a function to determine the content that will be displayed
+    in the bottom toolbar via the `bottom_toolbar` key in the `prompt_kwargs` dictionary.
+    To disable the bottom toolbar, pass `None` as the value for this key.
     """
 
-    # Repl class setup.
     repl_cls(prompt_kwargs=prompt_kwargs, **attrs).loop(group_ctx)

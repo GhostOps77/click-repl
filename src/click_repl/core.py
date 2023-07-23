@@ -9,7 +9,7 @@ from ._globals import _push_context
 from ._globals import ISATTY
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Generator, List, Optional
+    from typing import Any, Callable, Dict, Generator, List, Optional
 
     from ._internal_cmds import InternalCommandSystem
 
@@ -56,7 +56,7 @@ class ReplContext:
         self,
         group_ctx: "click.Context",
         internal_command_system: "InternalCommandSystem",
-        prompt_kwargs: "Dict[str, t.Any]" = {},
+        prompt_kwargs: "Dict[str, Any]" = {},
         parent: "Optional[ReplContext]" = None,
     ) -> None:
         """
@@ -80,7 +80,7 @@ class ReplContext:
         self._history: "List[str]" = []
 
         if ISATTY:
-            self.session: "Optional[PromptSession[Dict[str, t.Any]]]" = PromptSession(
+            self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs,
             )
 
@@ -96,7 +96,7 @@ class ReplContext:
         _push_context(self)
         return self
 
-    def __exit__(self, *_: "t.Any") -> None:
+    def __exit__(self, *_: "Any") -> None:
         _pop_context()
 
     @property
@@ -177,9 +177,9 @@ class ReplCli(click.Group):
     def __init__(
         self,
         prompt: str = "> ",
-        startup: "Optional[t.Callable[[], None]]" = None,
-        cleanup: "Optional[t.Callable[[], None]]" = None,
-        repl_kwargs: "Dict[str, t.Any]" = {},
+        startup: "Optional[Callable[[], None]]" = None,
+        cleanup: "Optional[Callable[[], None]]" = None,
+        repl_kwargs: "Dict[str, Any]" = {},
         **attrs: "t.Any",
     ):
         """
@@ -215,7 +215,7 @@ class ReplCli(click.Group):
 
         self.repl_kwargs = repl_kwargs
 
-    def invoke(self, ctx: "click.Context") -> "t.Any":
+    def invoke(self, ctx: "click.Context") -> "Any":
         return_val = super().invoke(ctx)
         if ctx.invoked_subcommand or ctx.protected_args:
             return return_val
@@ -227,8 +227,7 @@ class ReplCli(click.Group):
             _repl.repl(ctx, **self.repl_kwargs)
 
         finally:
-            # Finisher callback on the context.
             if self.cleanup is not None:
                 self.cleanup()
 
-            return return_val
+        return return_val

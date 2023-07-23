@@ -33,7 +33,7 @@ if t.TYPE_CHECKING:
 
 _flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
-_EQUALS_SIGN_AFTER_FLAG = re.compile(r"^([^a-z\d\s]+[^=\s]+)=(.+)$", re.I)
+_EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(r"^([^a-z\d\s]+[^=\s]+)=(.+)$", re.I)
 
 
 def split_arg_string(string: str, posix: bool = True) -> "List[str]":
@@ -72,11 +72,29 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     return out
 
 
+class Incomplete:
+    __slots__ = ("raw_str", "parsed_str")
+
+    def __init__(self, raw_str: str, parsed_str: str) -> None:
+        self.raw_str = raw_str
+        self.parsed_str = parsed_str
+
+    def __str__(self) -> str:
+        return self.parsed_str
+
+    def __repr__(self) -> str:
+        return repr(self.parsed_str)
+
+    def _expand_envvars(self) -> str:
+        self.parsed_str = utils._expand_envvars(self.parsed_str)
+        return self.parsed_str
+
+
 @lru_cache(maxsize=3)
 def get_args_and_incomplete_from_args(
     document_text: str,
-) -> "Tuple[Tuple[str, ...], str]":
-    args = split_arg_string(document_text, posix=True)
+) -> "Tuple[Tuple[str, ...], Incomplete]":
+    args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
 
     if args and cursor_within_command:
@@ -85,7 +103,7 @@ def get_args_and_incomplete_from_args(
     else:
         incomplete = ""
 
-    match = _EQUALS_SIGN_AFTER_FLAG.match(incomplete)
+    match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
 
     if match:
         _, opt, incomplete = match.groups()
@@ -94,17 +112,23 @@ def get_args_and_incomplete_from_args(
     _args = tuple(args)
 
     if not incomplete:
-        return _args, ""
+        return _args, Incomplete("", "")
 
-    tmp_incomplete = ""
-    tmp_args = document_text.split(" ")
+    raw_incomplete = ""
+    secondary_check = False
 
-    for token in reversed(tmp_args):
-        tmp_incomplete = f"{token} {tmp_incomplete}".rstrip()
-        if tmp_incomplete.translate(_quotes_to_empty_str_dict) == incomplete:
+    for token in reversed(document_text.split(" ")):
+        _tmp = f"{token} {raw_incomplete}".rstrip()
+
+        if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
+            secondary_check = True
+
+        elif secondary_check:
             break
 
-    return _args, tmp_incomplete
+        raw_incomplete = _tmp
+
+    return _args, Incomplete(raw_incomplete, incomplete)
 
 
 class ArgsParsingState:
@@ -239,7 +263,7 @@ class ArgsParsingState:
         current_command = None
 
         # Check whether if current ctx's command is same as the CLI.
-        is_cli = current_ctx_command == self.cli
+        # is_cli = current_ctx_command == self.cli
 
         # Check if not all the required arguments have been assigned a value.
         # Here, we are checking if any of the click.Argument type parameters
@@ -252,12 +276,14 @@ class ArgsParsingState:
         is_all_args_not_available = True
 
         for param in current_ctx_command.params:
-            if not is_parent_group_chained or isinstance(param, click.Argument):
-                if utils._is_param_value_incomplete(self.current_ctx, param.name):
-                    is_all_args_not_available = False
+            if (
+                not is_parent_group_chained or isinstance(param, click.Argument)
+            ) and utils._is_param_value_incomplete(self.current_ctx, param.name):
+                is_all_args_not_available = False
 
-        if isinstance(current_ctx_command, click.MultiCommand) and (
-            is_cli or is_all_args_not_available
+        if (
+            isinstance(current_ctx_command, click.MultiCommand)
+            and is_all_args_not_available
         ):
             # Every CLI command is a MultiCommand
             # If all the arguments are passed to the ctx command,

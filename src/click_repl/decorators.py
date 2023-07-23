@@ -22,24 +22,6 @@ if t.TYPE_CHECKING:
 __all__ = ["pass_context"]
 
 
-# def repl_cli(
-#     func: "Union[Callable[..., Any], str, None]" = None, **attrs: "Any"
-# ) -> "Callable[[F], ReplCli]":
-#     """Creates a new `ReplCli` with a function as callback.  This
-#     works otherwise the same as `command` just that the `cls`
-#     parameter is set to `ReplCli`.
-#     """
-
-#     def decorator(f: "Union[Callable[..., Any], str, None]") -> ReplCli:
-#         attrs.setdefault("cls", ReplCli)
-#         return cast(ReplCli, click.group(f, **attrs))
-
-#     if func is not None:
-#         return decorator(func)
-
-#     return decorator
-
-
 def pass_context(
     func: "Callable[Concatenate[t.Optional[ReplContext], P], R]",
 ) -> "Callable[P, R]":
