@@ -1,3 +1,8 @@
+"""
+`click_repl.bottom_bar`
+
+Utility for the Bottom bar of the REPL.
+"""
 import typing as t
 
 import click
@@ -175,10 +180,10 @@ class BottomBar:
             return f"<u><b>{param_info}</b></u>"
 
         elif (
-            any(getattr(param, attr, False) for attr in ("count", "is_bool_flag"))
+            any(getattr(param, attr, False) for attr in ("count", "is_flag"))
             or param in self.state.remaining_params  # type: ignore[union-attr]
         ):
-            # Counters, Boolean Flags, and Parameters that are awaiting for values
+            # Counters, Flags, and Parameters that are awaiting for values
             # are displayed without special formatting.
             return param_info
 

@@ -1,7 +1,7 @@
 """
 `click_repl._internal_cmds`
 
-Core Utilities thats used to manage the Internal Commands in the REPL.
+Utilities to manage the REPL's internal commands.
 """
 import subprocess
 import typing as t
@@ -47,16 +47,12 @@ def _help_internal_cmd() -> None:
     formatter.write_heading("REPL help")
     formatter.indent()
 
-    # The ReplContext object has a reference to an InternalCommandSystem
-    # object, which we can use it to process its help message.
     current_repl_ctx = get_current_repl_ctx(silent=True)
     if current_repl_ctx is None:
         return
 
-    # InternalCommandSystem object from current ReplContext object.
     ics_obj = current_repl_ctx.internal_command_system
 
-    # If both internal_command_prefix and system_command_prefix are not available.
     if not (ics_obj.system_command_prefix or ics_obj.internal_command_prefix):
         formatter.write_text("No Internal commands are registered with this REPL.")
 
@@ -90,6 +86,22 @@ class InternalCommandSystem:
     """
     A utility for managing and executing Internal/System commands
     from the REPL. Commands are triggered by their respective prefix.
+
+    Parameters
+    ----------
+    internal_command_prefix : str
+        Prefix to trigger Internal Commands.
+
+    system_command_prefix : str
+        Prefix to execute Bash/Other Command-line scripts.
+
+    shell : bool, default: True
+        Whether the System commands should be executed in Shell or not.
+
+    Notes
+    -----
+    The prefixes determine how the commands are recognized and distinguished
+    within the REPL.
     """
 
     def __init__(
@@ -98,32 +110,12 @@ class InternalCommandSystem:
         system_command_prefix: "Optional[str]" = "!",
         shell: bool = True,
     ) -> None:
-        """
-        Initialize the `InternalCommandSystem` class with the specified prefixes.
-
-        Parameters
-        ----------
-        internal_command_prefix : str
-            Prefix to trigger Internal Commands.
-
-        system_command_prefix : str
-            Prefix to execute Bash/Other Command-line scripts.
-
-        shell : bool, default: True
-            Whether the System commands should be executed in Shell or not.
-
-        Notes
-        -----
-        The prefixes determine how the commands are recognized and distinguished
-        within the REPL.
-        """
-
         if (
             internal_command_prefix and system_command_prefix
         ) and internal_command_prefix == system_command_prefix:
             # We don't want both internal_command_prefix and system_command_prefix
             # to be same. So, we raise SamePrefixError Exception if that happens.
-            raise SamePrefixError(system_command_prefix)  # type: ignore[arg-type]
+            raise SamePrefixError(system_command_prefix)
 
         self._check_prefix_validity(internal_command_prefix, "internal_command_prefix")
         self._check_prefix_validity(system_command_prefix, "system_command_prefix")
@@ -154,7 +146,7 @@ class InternalCommandSystem:
             If the value being assigned is not a str type.
 
         SamePrefixError
-            If the new prefix is the same as the current prefix.
+            If the new prefix thats being assigned is the same as the current prefix.
         """
         return self.prefix_table["Internal"]
 
@@ -183,7 +175,7 @@ class InternalCommandSystem:
             If the value being assigned is not a str type.
 
         SamePrefixError
-            If the new prefix is the same as the current prefix.
+            If the new prefix thats being assigned is the same as the current prefix.
         """
         return self.prefix_table["System"]
 
@@ -240,7 +232,6 @@ class InternalCommandSystem:
         command : str
             A string containing thse System command to be executed.
         """
-
         try:
             subprocess.run(command, shell=self.shell)
 
@@ -260,7 +251,7 @@ class InternalCommandSystem:
 
         target = self.get_command(command, default=None)
         if target is None:
-            click.echo(f"{command!r}, command not found")
+            _print_err(f"{command!r}, command not found")
 
         else:
             target()
@@ -326,16 +317,12 @@ class InternalCommandSystem:
                 target = func
 
             if not callable(target):
-                raise WrongType(target, "target", "Callable")
+                raise WrongType(target, "target", "function that takes no arguments")
 
             if names is None:
-                # If the `names`` parameter is not provided,
-                # the command name is extracted from the function name.
                 names = [target.__name__]
 
             if description is None:
-                # If the description parameter is not provided, the command help
-                # description is extracted from the function documentation.
                 description = target.__doc__ or ""
 
             if isinstance(names, str):
@@ -450,14 +437,9 @@ class InternalCommandSystem:
         if prefix is None:
             return False
 
-        # Slicing the string to retain only the necessary
-        # information by removing the prefix.
         command = command[len(prefix) :]
 
         if not command:
-            # If the command string originally consists only the prefix,
-            # and nothing else, we display the error message in red text.
-            # And exit out with success code.
             _print_err(f"Enter a proper {flag} Command.")
 
         elif flag == "Internal":

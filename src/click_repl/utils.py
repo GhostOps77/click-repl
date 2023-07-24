@@ -1,3 +1,8 @@
+"""
+`click_repl.utils`
+
+Utilities to facilitate the functionality of the click_repl module.
+"""
 import os
 import typing as t
 from functools import lru_cache

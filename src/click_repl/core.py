@@ -1,3 +1,8 @@
+"""
+`click_repl.core`
+
+Core functionality of the click-repl module.
+"""
 import typing as t
 
 import click
@@ -12,6 +17,7 @@ if t.TYPE_CHECKING:
     from typing import Any, Callable, Dict, Generator, List, Optional
 
     from ._internal_cmds import InternalCommandSystem
+    from .parser import ArgsParsingState
 
     InfoDict = t.TypedDict(
         "InfoDict",
@@ -22,6 +28,7 @@ if t.TYPE_CHECKING:
             "internal_command_system": InternalCommandSystem,
             "parent": Optional[ReplContext],  # type: ignore[used-before-def] # noqa: F821
             "_history": List[str],
+            "current_state": Optional[ArgsParsingState],
         },
     )
 
@@ -41,6 +48,21 @@ class ReplContext:
     be accessed and shared with their parent REPL.
 
     All the settings for each REPL session persist until the session is terminated.
+
+    Parameters
+    ----------
+    group_ctx : click.Context
+        The click context object that belong to the CLI/parent Group.
+
+    internal_command_system : click_repl._internal_cmds.InternalCommandSystem
+        The `InternalCommandSystem` object that holds information about
+        the internal commands and their prefixes.
+
+    prompt_kwargs : A dictionary of str: Any pairs.
+        The extra Keyword arguments for `prompt_toolkit.PromptSession` class.
+
+    styles : A dictionary of str: str pairs.
+        A dictionary that denote the style schema of the prompt.
     """
 
     __slots__ = (
@@ -50,6 +72,7 @@ class ReplContext:
         "session",
         "internal_command_system",
         "_history",
+        "current_state",
     )
 
     def __init__(
@@ -59,27 +82,10 @@ class ReplContext:
         prompt_kwargs: "Dict[str, Any]" = {},
         parent: "Optional[ReplContext]" = None,
     ) -> None:
-        """
-        Initialize the `ReplContext` class.
-
-        Parameters
-        ----------
-        group_ctx : click.Context
-            The click context object that belong to the CLI/parent Group.
-
-        internal_command_system : click_repl._internal_cmds.InternalCommandSystem
-            The `InternalCommandSystem` object that holds information about
-            the internal commands and their prefixes.
-
-        prompt_kwargs : A dictionary of str: Any pairs.
-            The extra Keyword arguments for `prompt_toolkit.PromptSession` class.
-
-        styles : A dictionary of str: str pairs.
-            A dictionary that denote the style schema of the prompt.
-        """
         self._history: "List[str]" = []
 
         if ISATTY:
+            prompt_kwargs["completer"].repl_ctx = self
             self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
                 **prompt_kwargs,
             )
@@ -91,6 +97,7 @@ class ReplContext:
         self.group_ctx: "t.Final[click.Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.parent: "t.Final[Optional[ReplContext]]" = parent
+        self.current_state: "Optional[ArgsParsingState]" = None
 
     def __enter__(self) -> "ReplContext":
         _push_context(self)
@@ -134,9 +141,10 @@ class ReplContext:
             "internal_command_system": self.internal_command_system,
             "parent": self.parent,
             "_history": self._history,
+            "current_state": self.current_state,
         }
 
-    def prompt_reset(self) -> None:
+    def session_reset(self) -> None:
         """
         Resets values of `prompt_toolkit.session.PromptSession` to
         the provided `prompt_kwargs`, discarding any changes done to the
@@ -172,6 +180,24 @@ class ReplCli(click.Group):
     class and is designed to be used as a wrapper to
     automatically invoke the `click_repl._repl.repl()`
     function when the group is invoked without any sub-command.
+
+    Parameters
+    ----------
+    prompt : str, default: "> "
+        The message that should be displayed for every prompt input.
+
+    startup : A function that takes and returns nothing, optional.
+        The function that gets called before invoking the REPL.
+
+    cleanup : A function that takes and returns nothing, optional.
+        The function that gets invoked after exiting out of the REPL.
+
+    repl_kwargs : A dictionary of str: Any pairs
+        The keyword arguments that needs to be sent to the
+        `click_repl._repl.repl()` function.
+
+    **attrs : dict, optional
+        Extra keyword arguments that need to be passed to the `click.Group` class.
     """
 
     def __init__(
@@ -182,28 +208,6 @@ class ReplCli(click.Group):
         repl_kwargs: "Dict[str, Any]" = {},
         **attrs: "t.Any",
     ):
-        """
-        Initialize the `ReplCli` class.
-
-        Parameters
-        ----------
-        prompt : str, default: "> "
-            The message that should be displayed for every prompt input.
-
-        startup : A function that takes and returns nothing, optional.
-            The function that gets called before invoking the REPL.
-
-        cleanup : A function that takes and returns nothing, optional.
-            The function that gets invoked after exiting out of the REPL.
-
-        repl_kwargs : A dictionary of str: Any pairs
-            The keyword arguments that needs to be sent to the
-            `click_repl._repl.repl()` function.
-
-        **attrs : dict, optional
-            Extra keyword arguments that need to be passed to the `click.Group`
-            class.
-        """
         attrs["invoke_without_command"] = True
         super().__init__(**attrs)
 
@@ -217,6 +221,7 @@ class ReplCli(click.Group):
 
     def invoke(self, ctx: "click.Context") -> "Any":
         return_val = super().invoke(ctx)
+
         if ctx.invoked_subcommand or ctx.protected_args:
             return return_val
 

@@ -26,7 +26,23 @@ __all__ = ["ClickValidator"]
 
 
 class ClickValidator(Validator):
-    """Custom prompt input validation for the click_repl app."""
+    """
+    Custom prompt input validation for the click_repl app.
+
+    Parameters
+    ----------
+    ctx : click.Context
+        The current `click.Context` object.
+
+    internal_commands_system : click_repl._internal_cmds.InternalCommandSystem
+        The `click_repl._internal_cmds.InternalCommandSystem` object
+        that holds information about the internal commands and their prefixes.
+
+    display_all_errors : bool
+        If `False`, all generic Python Exceptions that are raised, will not be
+        displayed in the Validator bar, resulting in the full error traceback
+        being displayed in the REPL mode.
+    """
 
     def __init__(
         self,
@@ -34,25 +50,6 @@ class ClickValidator(Validator):
         internal_commands_system: "InternalCommandSystem",
         display_all_errors: bool = True,
     ) -> None:
-        """
-        Initializing the Validator class with the specified settings
-        and configuration options.
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The current `click.Context` object.
-
-        internal_commands_system : click_repl._internal_cmds.InternalCommandSystem
-            The `click_repl._internal_cmds.InternalCommandSystem` object
-            that holds information about the internal commands and their prefixes.
-
-        display_all_errors : bool
-            If `False`, all generic Python Exceptions that are raised, will not be
-            displayed in the Validator bar, resulting in the full error traceback
-            being displayed in the REPL mode.
-        """
-
         self.cli_ctx: "Final[Context]" = _get_group_ctx(ctx)
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
 

@@ -1,3 +1,8 @@
+"""
+`click_repl.parser`
+
+Parsing functionalities for the click_repl module.
+"""
 import re
 import typing as t
 from functools import lru_cache
@@ -132,14 +137,6 @@ def get_args_and_incomplete_from_args(
 
 
 class ArgsParsingState:
-    """
-    Maintains the parsing state of the arguments in the REPL prompt.
-
-    This class parses a list of string arguments from the REPL prompt
-    and keeps track of the current group/CLI, current command, and current
-    parameter based on the given list of string arguments.
-    """
-
     __slots__ = (
         "cli",
         "current_ctx",
@@ -148,28 +145,13 @@ class ArgsParsingState:
         "current_group",
         "current_command",
         "current_param",
+        "is_parent_group_chained",
         "remaining_params",
     )
 
     def __init__(
         self, cli_ctx: "Context", current_ctx: "Context", args: "Tuple[str]"
     ) -> None:
-        """
-        Initializes the parsing state using the CLI context, current context,
-        and the sequence of string arguments.
-
-        Parameters
-        ----------
-        cli_ctx : click.Context
-            The CLI context representing the top-level command or group.
-
-        current_ctx : click.Context
-            The current context representing the current command or group being parsed.
-
-        args : A sequence of strings
-            The sequence of parsed string arguments from the REPL prompt.
-        """
-
         self.cli_ctx = cli_ctx
         self.cli: "MultiCommand" = self.cli_ctx.command  # type: ignore[assignment]
 
@@ -179,6 +161,8 @@ class ArgsParsingState:
         self.current_group: "MultiCommand" = self.cli
         self.current_command: "Optional[Command]" = None
         self.current_param: "Optional[Parameter]" = None
+
+        self.is_parent_group_chained = self.current_group.chain
 
         self.remaining_params: "List[Parameter]" = []
 
@@ -209,48 +193,24 @@ class ArgsParsingState:
             self.current_param,
             self.current_ctx,
         ):
-            if i is None:
-                keys.append(None)
-
-            else:
-                keys.append(utils.get_info_dict(i))
+            keys.append(None if i is None else utils.get_info_dict(i))
 
         return (  # type: ignore[return-value]
             *keys,
             tuple(utils.get_info_dict(param) for param in self.remaining_params),
         )
 
-    def __eq__(  # type: ignore[override]
-        self, other: "Optional[ArgsParsingState]"
-    ) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ArgsParsingState):
             return NotImplemented
         return self.__key() == other.__key()
 
     def parse(self) -> None:
-        """
-        Main method that parses the list of strings of args, and updates
-        the state object.
-        """
-
         self.current_group, self.current_command = self.get_current_group_and_command()
         if self.current_command is not None:
             self.current_param = self.get_current_params()
 
     def get_current_group_and_command(self) -> "Tuple[MultiCommand, Optional[Command]]":
-        """
-        Returns the current group and command based on the list of arguments.
-
-        Returns
-        -------
-        A tupe containing:
-          - MultiCommand
-            The current group/CLI object.
-
-          - Command or None
-            The current command object if available, else None
-        """
-
         current_ctx_command = self.current_ctx.command
         parent_group = current_ctx_command
 
@@ -259,11 +219,8 @@ class ArgsParsingState:
             parent_group = self.current_ctx.parent.command
 
         current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
-        is_parent_group_chained = getattr(parent_group, "chain", False)
+        self.is_parent_group_chained = getattr(parent_group, "chain", False)
         current_command = None
-
-        # Check whether if current ctx's command is same as the CLI.
-        # is_cli = current_ctx_command == self.cli
 
         # Check if not all the required arguments have been assigned a value.
         # Here, we are checking if any of the click.Argument type parameters
@@ -277,7 +234,7 @@ class ArgsParsingState:
 
         for param in current_ctx_command.params:
             if (
-                not is_parent_group_chained or isinstance(param, click.Argument)
+                not self.is_parent_group_chained or isinstance(param, click.Argument)
             ) and utils._is_param_value_incomplete(self.current_ctx, param.name):
                 is_all_args_not_available = False
 
@@ -290,14 +247,13 @@ class ArgsParsingState:
             # promote it as current group
             current_group = current_ctx_command
 
-        elif not (is_parent_group_chained and is_all_args_not_available):
+        elif not (self.is_parent_group_chained and is_all_args_not_available):
             # The current command should point to its parent, once it
             # got all of its values, only if the parent has chain=True
             # let current_cmd be None. Or else, let current_command
             # be the current_ctx_command.
             current_command = current_ctx_command
 
-        # print(current_group, current_command)
         return current_group, current_command
 
     def get_current_params(self) -> "Optional[Parameter]":
@@ -321,10 +277,10 @@ class ArgsParsingState:
 
         for param in self.current_command.params:  # type: ignore[union-attr]
             if isinstance(param, click.Argument) or (
-                param.is_bool_flag or param.count  # type: ignore[union-attr]
+                param.is_flag or param.count  # type: ignore[union-attr]
             ):
                 # We skip the current parameter check if its a click.Argument type
-                # parameter, or its a boolean flag or a counting type option.
+                # parameter, or its a flag or a counting type option.
                 continue
 
             opts = param.opts + param.secondary_opts

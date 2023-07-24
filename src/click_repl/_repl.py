@@ -1,3 +1,8 @@
+"""
+`click_repl._repl`
+
+Core functionality of the REPL.
+"""
 import sys
 import traceback
 import typing as t
@@ -49,7 +54,37 @@ class Repl:
 
     """
     Responsible for executing and maintaining the REPL
-    (Read-Eval-Print-Loop) in the click_repl app.
+    in the click_repl app.
+
+    Parameters
+    ----------
+    prompt_kwargs : Dictionary of str: Any pairs.
+        Keyword arguments to be passed to the `prompt_toolkit.PromptSession` class.
+        Do note that you don't have to pass the Completer and Validator class
+        via this dictionary.
+
+    completer_cls : prompt_toolkit.completion.Completer type class or None.
+        `prompt_toolkit.completion.Completer` class to generate
+        `prompt_toolkit.completion.Completion` objects for
+        auto-completion. `click_repl.completer.ClickCompleter` class
+        is used by default.
+
+    validator_cls : prompt_toolkit.validation.Validator type class or None.
+        `prompt_toolkit.validation.Validator` class to display error
+        messages in the bottom bar during auto-completion.
+        `click_repl.validator.ClickValidator` class is used by default.
+
+    completer_kwargs : Dictionary of str: Any pairs.
+        Keyword arguments thats sent to the `completer_cls` class constructor.
+
+    validator_kwargs : Dictionary of str: Any pairs.
+        Keyword arguments thats sent to the `validator_cls` class constructor.
+
+    internal_command_prefix : str or None.
+        Prefix that triggers internal commands within the click_repl app.
+
+    system_command_prefix : str or None.
+        Prefix that triggers system commands within the click_repl app.
     """
 
     def __init__(
@@ -62,41 +97,6 @@ class Repl:
         internal_command_prefix: "Optional[str]" = ":",
         system_command_prefix: "Optional[str]" = "!",
     ):
-        """
-        Initialize the `Repl` class with the specified settings and configuration
-        options.
-
-        Parameters
-        ----------
-        prompt_kwargs : Dictionary of str: Any pairs.
-            Keyword arguments to be passed to the `prompt_toolkit.PromptSession` class.
-            Do note that you don't have to pass the Completer and Validator class
-            via this dictionary.
-
-        completer_cls : prompt_toolkit.completion.Completer type class or None.
-            `prompt_toolkit.completion.Completer` class to generate
-            `prompt_toolkit.completion.Completion` objects for
-            auto-completion. `click_repl.completer.ClickCompleter` class
-            is used by default.
-
-        validator_cls : prompt_toolkit.validation.Validator type class or None.
-            `prompt_toolkit.validation.Validator` class to display error
-            messages in the bottom bar during auto-completion.
-            `click_repl.validator.ClickValidator` class is used by default.
-
-        completer_kwargs : Dictionary of str: Any pairs.
-            Keyword arguments thats sent to the `completer_cls` class constructor.
-
-        validator_kwargs : Dictionary of str: Any pairs.
-            Keyword arguments thats sent to the `validator_cls` class constructor.
-
-        internal_command_prefix : str or None.
-            Prefix that triggers internal commands within the click_repl app.
-
-        system_command_prefix : str or None.
-            Prefix that triggers system commands within the click_repl app.
-        """
-
         self.prompt_kwargs = prompt_kwargs
 
         self.completer_cls = completer_cls

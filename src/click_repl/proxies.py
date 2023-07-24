@@ -1,3 +1,8 @@
+"""
+`click_repl.proxies`
+
+Proxy objects to modify the parsing method of click objects.
+"""
 import typing as t
 
 import click
@@ -34,17 +39,14 @@ class Proxy:
     -----
     This class is used as a base class for creating proxy objects that customize
     attribute access behavior.
+
+    Parameters
+    ----------
+    obj
+        The object to which attribute access is delegated.
     """
 
     def __init__(self, obj: "V") -> None:
-        """
-        Initialize the Proxy object with the underlying object.
-
-        Parameters
-        ----------
-        obj
-            The object to which attribute access is delegated.
-        """
         object.__setattr__(self, "_obj", obj)
 
     def __getattr__(self, name: str) -> "t.Any":
@@ -66,19 +68,14 @@ class ProxyCommand(Proxy, click.Command):
     options parser, by overriding its `make_parser` method to
     use the custom parser implementation provided by
     `click_repl.parser.ReplOptionParser`.
+
+    Parameters
+    ----------
+    obj : click.Command
+        The `click.Command` object to be proxied.
     """
 
     def __init__(self, obj: "Command") -> None:
-        """
-        Initialize the `ProxyBaseCommand` class with the specified
-        command object.
-
-        Parameters
-        ----------
-        obj : click.Command
-            The `click.Command` object to be proxied.
-        """
-
         # Changing the Parameter types to their proxies.
         obj.params = [_create_proxy_param(param) for param in obj.params]
         super().__init__(obj)

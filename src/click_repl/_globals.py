@@ -4,6 +4,7 @@
 Global variables, values, and functions that are accessed across
 all the files in this module.
 """
+import os
 import sys
 import typing as t
 from threading import local
@@ -14,27 +15,27 @@ if t.TYPE_CHECKING:
     from .core import ReplContext
 
 
-# The _RANGE_TYPES tuple is used for type-checking range
-# parameter types in the code, providing compatibility for
-# both click v6 and v7. It includes click.IntRange and,
-# if available, FloatRange from click v7.
-try:
-    from click import FloatRange
+# _NumberRangeBase class is defined in click v8.
+# Therefore, this tuple is used to check for the
+# range type ParamType objects.
+_RANGE_TYPES = (click.IntRange, click.FloatRange)
 
-    _RANGE_TYPES = (click.IntRange, FloatRange)
-except ImportError:
-    _RANGE_TYPES = (click.IntRange,)  # type: ignore[assignment]
-
-
+# The only ParamType classes that have their
+# get_metavar method's functionality defined.
 _METAVAR_PARAMS = (click.Choice, click.DateTime)
-
-
 HAS_CLICK8 = click.__version__[0] == "8"
 
 # If ISATTY is False, then we're not gonna run any code
 # to generate auto-completions. Most of the code will be inactive
 ISATTY = sys.stdin.isatty()
 
+IS_WINDOWS = os.name == "nt"
+
+# The method name for shell completion in click < v8 is "autocompletion".
+# Therefore, this conditional statement is used to handle backwards compatibility
+# for click < v8. If the click version is 8 or higher, the parameter is set to
+# "shell_complete". Otherwise, it is set to "autocompletion".
+AUTO_COMPLETION_PARAM = "shell_complete" if HAS_CLICK8 else "autocompletion"
 
 # To store the ReplContext objects generated throughout the Runtime.
 _locals = local()

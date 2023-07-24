@@ -1,4 +1,8 @@
-import os
+"""
+`click_repl.completer`
+
+Configuration for auto-completion for REPL.
+"""
 import typing as t
 from pathlib import Path
 
@@ -7,7 +11,9 @@ from prompt_toolkit.completion import Completer
 from prompt_toolkit.completion import Completion
 
 from ._globals import _RANGE_TYPES
+from ._globals import AUTO_COMPLETION_PARAM
 from ._globals import HAS_CLICK8
+from ._globals import IS_WINDOWS
 from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .parser import Incomplete
@@ -24,19 +30,11 @@ if t.TYPE_CHECKING:
     from prompt_toolkit.document import Document
 
     from .bottom_bar import BottomBar
+    from .core import ReplContext
     from .parser import ArgsParsingState
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
-
-
-IS_WINDOWS = os.name == "nt"
-
-# The method name for shell completion in click < v8 is "autocompletion".
-# Therefore, this conditional statement is used to handle backwards compatibility
-# for click < v8. If the click version is 8 or higher, the parameter is set to
-# "shell_complete". Otherwise, it is set to "autocompletion".
-AUTO_COMPLETION_PARAM = "shell_complete" if HAS_CLICK8 else "autocompletion"
 
 
 def _quotes(text: str) -> str:
@@ -48,7 +46,43 @@ def _quotes(text: str) -> str:
 
 
 class ClickCompleter(Completer):
-    """Custom prompt Completion provider for the click-repl app."""
+    """
+    Custom prompt Completion provider for the click-repl app.
+
+    Parameters
+    ----------
+    ctx : click.Context
+        The current click context object.
+
+    bottom_bar : BottomBar, optional
+        The `click_repl.bottom_bar.BottomBar` object thats used to update
+        the text displayed in the bottom bar.
+
+    internal_commands_system : click_repl._internal_cmds.InternalCommandSystem
+        The `click_repl._internal_cmds.InternalCommandSystem` object that
+        holds information about the internal commands and their prefixes.
+
+    styles : A dictionary of str: str pairs.
+        A dictionary denoting different styles for
+        `prompt_toolkit.completion.Completion` objects for
+        `'command'`, `'argument'`, and `'option'`.
+
+    shortest_opts_only : bool, default: False
+        If `True`, only the shortest flag of an option parameter is used
+        for auto-completion.
+
+    show_only_unused_opts : bool, default: False
+        If `True`, only the options that are not mentioned or unused in
+        the current prompt will be displayed during auto-completion.
+
+    show_hidden_commands: bool, default: False
+        Determines whether the hidden commands should be shown
+        in autocompletion or not.
+
+    show_hidden_params: bool, default: False
+        Determines whether the hidden parameters should be shown
+        in autocompletion or not.
+    """
 
     def __init__(
         self,
@@ -61,47 +95,10 @@ class ClickCompleter(Completer):
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
     ) -> None:
-        """
-        Initializing the Completer class with the specified settings
-        and configuration options.
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The current click context object.
-
-        bottom_bar : BottomBar, optional
-            The `click_repl.bottom_bar.BottomBar` object thats used to update
-            the text displayed in the bottom bar.
-
-        internal_commands_system : click_repl._internal_cmds.InternalCommandSystem
-            The `click_repl._internal_cmds.InternalCommandSystem` object that
-            holds information about the internal commands and their prefixes.
-
-        styles : A dictionary of str: str pairs.
-            A dictionary denoting different styles for
-            `prompt_toolkit.completion.Completion` objects for
-            `'command'`, `'argument'`, and `'option'`.
-
-        shortest_opts_only : bool, default: False
-            If `True`, only the shortest flag of an option parameter is used
-            for auto-completion.
-
-        show_only_unused_opts : bool, default: False
-            If `True`, only the options that are not mentioned or unused in
-            the current prompt will be displayed during auto-completion.
-
-        show_hidden_commands: bool, default: False
-            Determines whether the hidden commands should be shown
-            in autocompletion or not.
-
-        show_hidden_params: bool, default: False
-            Determines whether the hidden parameters should be shown
-            in autocompletion or not.
-        """
-
         self.cli_ctx: "Final[Context]" = _get_group_ctx(ctx)
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
+
+        self.repl_ctx: "Optional[ReplContext]" = None
 
         if ISATTY:
             self.bottom_bar = bottom_bar
@@ -228,18 +225,15 @@ class ClickCompleter(Completer):
             given parameter type.
         """
 
-        case_sensitive = param_type.case_sensitive
+        case_insensitive = not param_type.case_sensitive
 
         _incomplete = incomplete._expand_envvars()
 
-        if not case_sensitive:
+        if case_insensitive:
             _incomplete = _incomplete.lower()
 
         for choice in param_type.choices:
-            _choice = choice
-
-            if case_sensitive:
-                _choice = choice.lower()
+            _choice = choice.lower() if case_insensitive else choice
 
             if _choice.startswith(_incomplete):
                 yield ReplCompletion(
@@ -314,15 +308,18 @@ class ClickCompleter(Completer):
             if IS_WINDOWS:
                 path_str = path_str.replace("\\\\", "\\")
 
-            if " " in path_str:
-                path_str = f'"{path_str}"'
+            if path.is_dir():
+                path_str += "/"
 
-                # if quoted:
-                #     path_str = f'"{path_str}'
-                # else:
-                #     path_str = f'"{path_str}"'
+            # if " " in path_str:
+            #     path_str = f'"{path_str}"'
 
-                # completion_txt_len -= 1
+            # if quoted:
+            #     path_str = f'"{path_str}'
+            # else:
+            #     path_str = f'"{path_str}"'
+
+            # completion_txt_len -= 1
 
             yield ReplCompletion(
                 path_str,
@@ -537,9 +534,9 @@ class ClickCompleter(Completer):
                 ]
 
                 if (
-                    getattr(param, "is_bool_flag", False) and any(i in args for i in opts)
+                    getattr(param, "is_flag", False) and any(i in args for i in opts)
                 ) or not opts_with_incomplete_prefix:
-                    # Skip the current iteration, if param is a bool flag,
+                    # Skip the current iteration, if param is a flag,
                     # and its already in args, or the param is called
                     # recently within its nargs length.
                     continue
@@ -708,10 +705,13 @@ class ClickCompleter(Completer):
                 # We skip the hidden parameter if self.show_hidden_params is False.
                 return
 
-            if ISATTY and self.bottom_bar is not None:
-                # Update the state object of the bottom bar to display
-                # different info text.
-                self.bottom_bar.update_state(state)
+            if ISATTY:
+                self.repl_ctx.current_state = state  # type: ignore[union-attr]
+
+                if self.bottom_bar is not None:
+                    # Update the state object of the bottom bar to display
+                    # different info text.
+                    self.bottom_bar.update_state(state)
 
             yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)
 
@@ -728,6 +728,30 @@ class ReplCompletion(Completion):
     Custom Completion class to generate Completion
     objects with the default settings for proper auto-completion
     in the REPL prompt.
+
+    Parameters
+    ---
+    text : str
+        The string that should fill into the prompt
+        during auto-completion.
+
+    incomplete : Incomplete
+        The string thats not completed in the prompt.
+        It's used to get the `start_position` for the Completion to
+        swap text with, in the prompt.
+
+    quote : bool, default: True
+        Boolean value to determine whether the given incomplete
+        text with space should be double-quoted.
+
+    *args : tuple
+        Additional arguments should be passed as keyword arguments to the
+        `prompt_toolkit.completion.Completion` class.
+
+    **kwargs : dict, optional
+        Extra arguments to `metric`: refer to each metric documentation for a
+        list of all possible arguments to the
+        `prompt_toolkit.completion.Completion` class.
     """
 
     def __init__(
@@ -738,35 +762,6 @@ class ReplCompletion(Completion):
         *args: "Any",
         **kwargs: "Any",
     ) -> None:
-        """
-        Initializes the Completion class with the appropriate
-        setting for auto-completion.
-
-        Parameters
-        ---
-        text : str
-            The string that should fill into the prompt
-            during auto-completion.
-
-        incomplete : Incomplete
-            The string thats not completed in the prompt.
-            It's used to get the `start_position` for the Completion to
-            swap text with, in the prompt.
-
-        quote : bool, default: True
-            Boolean value to determine whether the given incomplete
-            text with space should be double-quoted.
-
-        *args : tuple
-            Additional arguments should be passed as keyword arguments to the
-            `prompt_toolkit.completion.Completion` class.
-
-        **kwargs : dict, optional
-            Extra arguments to `metric`: refer to each metric documentation for a
-            list of all possible arguments to the
-            `prompt_toolkit.completion.Completion` class.
-        """
-
         display = text
 
         if quote:
