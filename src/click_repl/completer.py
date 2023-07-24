@@ -624,7 +624,7 @@ class ClickCompleter(Completer):
 
         current_group = state.current_group
         is_current_command_available = state.current_command is not None
-        is_chain = getattr(current_group, "chain", False)
+        is_chain = state.is_current_group_chained
 
         if is_current_command_available:
             # If there's a sub-command found in the state object,

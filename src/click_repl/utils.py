@@ -15,7 +15,6 @@ from .parser import currently_introspecting_args
 from .parser import get_args_and_incomplete_from_args
 from .proxies import _create_proxy_command
 
-
 if t.TYPE_CHECKING:
     from typing import Any, Dict, Optional, Tuple, Union
     from click import Command, Context, Parameter

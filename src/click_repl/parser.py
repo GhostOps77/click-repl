@@ -145,7 +145,7 @@ class ArgsParsingState:
         "current_group",
         "current_command",
         "current_param",
-        "is_parent_group_chained",
+        "is_current_group_chained",
         "remaining_params",
     )
 
@@ -162,7 +162,7 @@ class ArgsParsingState:
         self.current_command: "Optional[Command]" = None
         self.current_param: "Optional[Parameter]" = None
 
-        self.is_parent_group_chained = self.current_group.chain
+        self.is_current_group_chained = self.current_group.chain
 
         self.remaining_params: "List[Parameter]" = []
 
@@ -219,7 +219,7 @@ class ArgsParsingState:
             parent_group = self.current_ctx.parent.command
 
         current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
-        self.is_parent_group_chained = getattr(parent_group, "chain", False)
+        self.is_current_group_chained = getattr(parent_group, "chain", False)
         current_command = None
 
         # Check if not all the required arguments have been assigned a value.
@@ -234,7 +234,7 @@ class ArgsParsingState:
 
         for param in current_ctx_command.params:
             if (
-                not self.is_parent_group_chained or isinstance(param, click.Argument)
+                not self.is_current_group_chained or isinstance(param, click.Argument)
             ) and utils._is_param_value_incomplete(self.current_ctx, param.name):
                 is_all_args_not_available = False
 
@@ -247,7 +247,7 @@ class ArgsParsingState:
             # promote it as current group
             current_group = current_ctx_command
 
-        elif not (self.is_parent_group_chained and is_all_args_not_available):
+        elif not (self.is_current_group_chained and is_all_args_not_available):
             # The current command should point to its parent, once it
             # got all of its values, only if the parent has chain=True
             # let current_cmd be None. Or else, let current_command
