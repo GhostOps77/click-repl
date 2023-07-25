@@ -27,7 +27,7 @@ from .utils import _print_err
 from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Optional, Type
+    from typing import Any, Dict, Optional, Type
 
     from click import Context, Group
     from prompt_toolkit.completion import Completer
@@ -38,20 +38,6 @@ __all__ = ["Repl", "repl"]
 
 
 class Repl:
-    __slots__ = (
-        "prompt_kwargs",
-        "completer_cls",
-        "completer_kwargs",
-        "validator_cls",
-        "validator_kwargs",
-        "internal_commands_system",
-        "bottom_bar",
-        "repl_ctx",
-        "group",
-        "group_ctx",
-        "get_command",
-    )
-
     """
     Responsible for executing and maintaining the REPL
     in the click_repl app.
@@ -85,10 +71,30 @@ class Repl:
 
     system_command_prefix : str or None.
         Prefix that triggers system commands within the click_repl app.
+
+    Raises
+    ------
+    InvalidGroupFormat
+        If there is an empty optional argument in the CLI Group.
     """
+
+    __slots__ = (
+        "prompt_kwargs",
+        "completer_cls",
+        "completer_kwargs",
+        "validator_cls",
+        "validator_kwargs",
+        "internal_commands_system",
+        "bottom_bar",
+        "group_ctx",
+        "group",
+        "repl_ctx",
+        "get_command",
+    )
 
     def __init__(
         self,
+        ctx: "Context",
         prompt_kwargs: "Dict[str, Any]" = {},
         completer_cls: "Type[Completer]" = ClickCompleter,
         validator_cls: "Optional[Type[Validator]]" = ClickValidator,
@@ -97,13 +103,20 @@ class Repl:
         internal_command_prefix: "Optional[str]" = ":",
         system_command_prefix: "Optional[str]" = "!",
     ):
-        self.prompt_kwargs = prompt_kwargs
+        self.group_ctx = _get_group_ctx(ctx)
+        self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]
 
-        self.completer_cls = completer_cls
-        self.completer_kwargs = completer_kwargs
-
-        self.validator_cls = validator_cls
-        self.validator_kwargs = validator_kwargs
+        for param in self.group.params:
+            if (
+                isinstance(param, click.Argument)
+                and not param.required
+                and self.group_ctx.params[param.name] is None  # type: ignore[index]
+            ):
+                # When a click.Argument(required=False) parameter in the CLI Group
+                # does not have a value, it will consume the first few words from
+                # the REPL input. This can cause issues in parsing and
+                # executing the command.
+                raise InvalidGroupFormat(self.group, param)
 
         self.internal_commands_system = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
@@ -122,11 +135,117 @@ class Repl:
         else:
             self.bottom_bar = None
 
-    def bootstrap_prompt(self) -> "Dict[str, Any]":
+        self.completer_cls = completer_cls
+        self.completer_kwargs = self._bootstrap_completer_kwargs(completer_kwargs)
+
+        self.validator_cls = validator_cls
+        self.validator_kwargs = self._bootstrap_validator_kwargs(validator_kwargs)
+
+        self.prompt_kwargs = self._bootstrap_prompt_kwargs(prompt_kwargs)
+
+        self.repl_ctx = ReplContext(
+            self.group_ctx,
+            self.internal_commands_system,
+            prompt_kwargs=self.prompt_kwargs,
+            parent=get_current_repl_ctx(silent=True),
+        )
+
+        if ISATTY:
+            # If stdin is a TTY, prompt the user for input using PromptSession.
+            def get_command() -> str:
+                return self.repl_ctx.session.prompt()  # type: ignore
+
+        else:
+            # If stdin is not a TTY, read input from stdin directly.
+            def get_command() -> str:
+                inp = sys.stdin.readline().strip()
+                self.repl_ctx._history.append(inp)  # type: ignore[union-attr]
+                return inp
+
+        self.get_command = get_command
+
+    def _bootstrap_completer_kwargs(
+        self, completer_kwargs: "Dict[str, Any]"
+    ) -> "Dict[str, Any]":
         """
         Generates bootstrap keyword arguments for initializing a
-        `prompt_toolkit.PromptSession`object, either using default values
-        or user-defined values, if available.
+        `prompt_toolkit.completer.Completer` object, either using
+        default values or user-defined values, if available.
+
+        Parameters
+        ----------
+        completer_kwargs: Dictionary of str: Any pairs.
+            A dictionary that contains values for keyword arguments supplied by the
+            user, that to be passed to the `prompt_toolkit.completer.Completer` class.
+
+        Returns
+        -------
+        Dictionary of str: Any pairs.
+            A dictionary that contains all the keyword arguments to be passed
+            to the `prompt_toolkit.completer.Completer` class.
+        """
+
+        default_completer_kwargs = {
+            "ctx": self.group_ctx,
+            "internal_commands_system": self.internal_commands_system,
+            "bottom_bar": self.bottom_bar,
+        }
+
+        default_completer_kwargs.update(completer_kwargs)
+        return default_completer_kwargs
+
+    def _bootstrap_validator_kwargs(
+        self, validator_kwargs: "Dict[str, Any]"
+    ) -> "Dict[str, Any]":
+        """
+        Generates bootstrap keyword arguments for initializing a
+        `prompt_toolkit.validation.Validator` object, either
+        using default values or user-defined values, if available.
+
+        Parameters
+        ----------
+        validator_kwargs: Dictionary of str: Any pairs.
+            A dictionary that contains values for keyword arguments supplied by the
+            user, that to be passed to the `prompt_toolkit.validation.Validator` class.
+
+        Returns
+        -------
+        Dictionary of str: Any pairs.
+            A dictionary that contains all the keyword arguments to be passed
+            to the `prompt_toolkit.validation.Validator` class.
+        """
+
+        if not ISATTY:
+            # If the standard input is not a TTY device, there is no need
+            # to generate any keyword arguments for rendering. In this case,
+            # an empty dictionary is returned.
+            return {}
+
+        if self.validator_cls is not None:
+            default_validator_kwargs = {
+                "ctx": self.group_ctx,
+                "internal_commands_system": self.internal_commands_system,
+            }
+
+            default_validator_kwargs.update(validator_kwargs)
+
+            return default_validator_kwargs
+
+        return {}
+
+    def _bootstrap_prompt_kwargs(
+        self, prompt_kwargs: "Dict[str, Any]"
+    ) -> "Dict[str, Any]":
+        """
+        Generates bootstrap keyword arguments for initializing a
+        `prompt_toolkit.PromptSession`object, either
+        using default values or user-defined values, if available.
+
+        Parameters
+        ----------
+        prompt_kwargs: Dictionary of str: Any pairs.
+            A dictionary that contains values for keyword arguments supplied by the
+            user, that to be passed to the `prompt_toolkit.PromptSession` class.
 
         Returns
         -------
@@ -141,20 +260,12 @@ class Repl:
             # an empty dictionary is returned.
             return {}
 
-        default_completer_kwargs = {
-            "ctx": self.group_ctx,
-            "internal_commands_system": self.internal_commands_system,
-            "bottom_bar": self.bottom_bar,
-        }
-
-        default_completer_kwargs.update(self.completer_kwargs)
-
         default_prompt_kwargs = {
             "history": InMemoryHistory(),
             # "message": HTML("<red>> </red>"),
             "message": "> ",
             "completer": self.completer_cls(
-                **default_completer_kwargs  # type: ignore[arg-type]
+                **self.completer_kwargs  # type: ignore[arg-type]
             ),
             "complete_in_thread": True,
             "complete_while_typing": True,
@@ -170,69 +281,16 @@ class Repl:
                 ),
             )
 
-        if self.validator_cls:
-            default_validator_kwargs = {
-                "ctx": self.group_ctx,
-                "internal_commands_system": self.internal_commands_system,
-            }
-
-            default_validator_kwargs.update(self.validator_kwargs)
-
+        if self.validator_cls is not None:
             default_prompt_kwargs.update(
                 validator=self.validator_cls(
-                    **default_validator_kwargs  # type: ignore[arg-type]
+                    **self.validator_kwargs  # type: ignore[arg-type]
                 )
             )
 
-        default_prompt_kwargs.update(self.prompt_kwargs)
+        default_prompt_kwargs.update(prompt_kwargs)
 
         return default_prompt_kwargs
-
-    def _get_command_func(self) -> "Callable[[], str]":
-        """
-        Creates the function that recieves command string input either from user in
-        interactive mode, or via stdin directly.
-
-        Returns
-        -------
-        A function that accepts no arguments, and returns a string.
-        """
-
-        if ISATTY:
-            # If stdin is a TTY, prompt the user for input using PromptSession.
-            def get_command() -> str:
-                return self.repl_ctx.session.prompt()  # type: ignore
-
-        else:
-            # If stdin is not a TTY, read input from stdin directly.
-            def get_command() -> str:
-                inp = sys.stdin.readline().strip()
-                self.repl_ctx._history.append(inp)  # type: ignore[union-attr]
-                return inp
-
-        return get_command
-
-    def pre_repl_checks(self) -> None:
-        """
-        Performs necessary checks before setting up the REPL.
-
-        Raises
-        ------
-        InvalidGroupFormat
-            If there is an empty optional argument in the CLI Group.
-        """
-
-        for param in self.group.params:
-            if (
-                isinstance(param, click.Argument)
-                and not param.required
-                and self.group_ctx.params[param.name] is None  # type: ignore[index]
-            ):
-                # When a click.Argument(required=False) parameter in the CLI Group
-                # does not have a value, it will consume the first few words from
-                # the REPL input. This can cause issues in parsing and
-                # executing the command.
-                raise InvalidGroupFormat(self.group, param)
 
     def execute_command(self, command: str) -> None:
         """
@@ -281,50 +339,8 @@ class Repl:
             # protected_args back to the group_ctx.
             self.group_ctx.protected_args = old_protected_args
 
-    def setup_repl_ctx(self) -> None:
-        """
-        Creates the `click_repl.core.ReplContext` object to manage
-        the state of the REPL.
-        """
-
-        self.prompt_kwargs = self.bootstrap_prompt()
-
-        self.repl_ctx = ReplContext(
-            self.group_ctx,
-            self.internal_commands_system,
-            prompt_kwargs=self.prompt_kwargs,
-            parent=get_current_repl_ctx(silent=True),
-        )
-
-        self.get_command: "Callable[[], str]" = self._get_command_func()
-
-    def setup_repl(self, group_ctx: "Context") -> None:
-        """
-        Main setup before firing up the REPL.
-
-        Parameters
-        ----------
-        group_ctx : click.Context
-            The click context object of the root/parent/CLI group.
-        """
-
-        self.group_ctx: "Context" = _get_group_ctx(group_ctx)
-        self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]
-
-        self.pre_repl_checks()
-        self.setup_repl_ctx()
-
-    def loop(self, group_ctx: "Context") -> None:
-        """
-        Runs the main REPL loop.
-
-        Parameters
-        ----------
-        group_ctx : click.Context
-            The click context object of the root/parent/CLI group.
-        """
-
-        self.setup_repl(group_ctx)
+    def loop(self) -> None:
+        """Runs the main REPL loop."""
 
         with self.repl_ctx:
             while True:
@@ -344,18 +360,18 @@ class Repl:
                     break
 
                 if not command:
-                    if ISATTY:
-                        # If ISATTY is True, it means we can still get
-                        # input manually from the user in
-                        # interactive mode, so we continue the loop.
-                        continue
+                    if not ISATTY:
+                        # If ISATTY is False, the input must be from stdin directly,
+                        # rather than via REPL prompt. If the command
+                        # string is empty, it indicates that the stdin
+                        # stream has reached the end-of-file, so we
+                        # break the loop.
+                        break
 
-                    # else, then the input must be from stdin directly,
-                    # rather than via REPL prompt. If the command
-                    # string is empty, it indicates that the stdin
-                    # stream has reached the end-of-file, so we
-                    # break the loop.
-                    break
+                    # else, then it means we can still get
+                    # input manually from the user in
+                    # interactive mode, so we continue the loop.
+                    continue
 
                 try:
                     self.execute_command(command.strip())
@@ -417,4 +433,4 @@ def repl(
     To disable the bottom toolbar, pass `None` as the value for this key.
     """
 
-    repl_cls(prompt_kwargs=prompt_kwargs, **attrs).loop(group_ctx)
+    repl_cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()

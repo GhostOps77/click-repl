@@ -12,7 +12,6 @@ from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.validation import Validator
 
 from ._internal_cmds import InternalCommandSystem
-from .utils import _get_group_ctx
 from .utils import _resolve_state
 
 if t.TYPE_CHECKING:
@@ -50,7 +49,7 @@ class ClickValidator(Validator):
         internal_commands_system: "InternalCommandSystem",
         display_all_errors: bool = True,
     ) -> None:
-        self.cli_ctx: "Final[Context]" = _get_group_ctx(ctx)
+        self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system

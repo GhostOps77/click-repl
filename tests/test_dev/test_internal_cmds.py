@@ -12,7 +12,7 @@ def dummy_cmd():
 
 
 internal_command_system = InternalCommandSystem(":", "!")
-repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system)
+repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system, {})
 
 
 @pytest.mark.parametrize("test_input", [":help", ":h", ":?"])

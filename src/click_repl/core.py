@@ -79,7 +79,7 @@ class ReplContext:
         self,
         group_ctx: "click.Context",
         internal_command_system: "InternalCommandSystem",
-        prompt_kwargs: "Dict[str, Any]" = {},
+        prompt_kwargs: "Dict[str, Any]",
         parent: "Optional[ReplContext]" = None,
     ) -> None:
         self._history: "List[str]" = []

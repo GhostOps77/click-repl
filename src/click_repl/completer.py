@@ -17,7 +17,6 @@ from ._globals import IS_WINDOWS
 from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .parser import Incomplete
-from .utils import _get_group_ctx
 from .utils import _is_param_value_incomplete
 from .utils import _join_options
 from .utils import _resolve_state
@@ -95,7 +94,7 @@ class ClickCompleter(Completer):
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
     ) -> None:
-        self.cli_ctx: "Final[Context]" = _get_group_ctx(ctx)
+        self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
 
         self.repl_ctx: "Optional[ReplContext]" = None
