@@ -158,15 +158,11 @@ class ArgsParsingState:
         self.current_ctx = current_ctx
         self.args = args
 
-        self.current_group: "MultiCommand" = self.cli
-        self.current_command: "Optional[Command]" = None
-        self.current_param: "Optional[Parameter]" = None
-
-        self.is_current_group_chained = self.current_group.chain
-
         self.remaining_params: "List[Parameter]" = []
 
-        self.parse()
+        self.current_group, self.current_command, self.current_param = self.parse()
+
+        self.is_current_group_chained = self.current_group.chain
 
     def __str__(self) -> str:
         res = [str(self.current_group.name)]
@@ -205,10 +201,15 @@ class ArgsParsingState:
             return NotImplemented
         return self.__key() == other.__key()
 
-    def parse(self) -> None:
-        self.current_group, self.current_command = self.get_current_group_and_command()
-        if self.current_command is not None:
-            self.current_param = self.get_current_params()
+    def parse(self) -> "Tuple[MultiCommand, Optional[Command], Optional[Parameter]]":
+        current_group, current_command = self.get_current_group_and_command()
+
+        if current_command is not None:
+            current_param = self.get_current_params(current_command)
+        else:
+            current_param = None
+
+        return current_group, current_command, current_param
 
     def get_current_group_and_command(self) -> "Tuple[MultiCommand, Optional[Command]]":
         current_ctx_command = self.current_ctx.command
@@ -219,7 +220,7 @@ class ArgsParsingState:
             parent_group = self.current_ctx.parent.command
 
         current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
-        self.is_current_group_chained = getattr(parent_group, "chain", False)
+        is_parent_group_chained = getattr(parent_group, "chain", False)
         current_command = None
 
         # Check if not all the required arguments have been assigned a value.
@@ -234,7 +235,7 @@ class ArgsParsingState:
 
         for param in current_ctx_command.params:
             if (
-                not self.is_current_group_chained or isinstance(param, click.Argument)
+                not is_parent_group_chained or isinstance(param, click.Argument)
             ) and utils._is_param_value_incomplete(self.current_ctx, param.name):
                 is_all_args_not_available = False
 
@@ -247,7 +248,7 @@ class ArgsParsingState:
             # promote it as current group
             current_group = current_ctx_command
 
-        elif not (self.is_current_group_chained and is_all_args_not_available):
+        elif not (is_parent_group_chained and is_all_args_not_available):
             # The current command should point to its parent, once it
             # got all of its values, only if the parent has chain=True
             # let current_cmd be None. Or else, let current_command
@@ -256,28 +257,28 @@ class ArgsParsingState:
 
         return current_group, current_command
 
-    def get_current_params(self) -> "Optional[Parameter]":
+    def get_current_params(self, current_command: "Command") -> "Optional[Parameter]":
         self.remaining_params = [
             param
-            for param in self.current_command.params  # type: ignore[union-attr]
+            for param in current_command.params  # type: ignore[union-attr]
             if utils._is_param_value_incomplete(self.current_ctx, param.name)
         ]
 
-        param: "Optional[Parameter]" = self.parse_param_opt()
+        param: "Optional[Parameter]" = self.parse_param_opt(current_command)
         if param is None:
-            param = self.parse_params_arg()
+            param = self.parse_params_arg(current_command)
 
         return param
 
-    def parse_param_opt(self) -> "Optional[click.Option]":
+    def parse_param_opt(self, current_command: "Command") -> "Optional[click.Option]":
         if "--" in self.args:
             # click parses all input strings after "--" as values for click.Argument
             # type parameters. So, we don't check for click.Optional parameters.
             return None
 
-        for param in self.current_command.params:  # type: ignore[union-attr]
+        for param in current_command.params:
             if isinstance(param, click.Argument) or (
-                param.is_flag or param.count  # type: ignore[union-attr]
+                param.is_flag or param.count  # type: ignore[attr-defined]
             ):
                 # We skip the current parameter check if its a click.Argument type
                 # parameter, or its a flag or a counting type option.
@@ -293,18 +294,18 @@ class ArgsParsingState:
 
         return None
 
-    def parse_params_arg(self) -> "Optional[click.Argument]":
+    def parse_params_arg(self, current_command: "Command") -> "Optional[click.Argument]":
         minus_one_param = None
 
         command_argument_params = (
             i
-            for i in self.current_command.params  # type: ignore[union-attr]
+            for i in current_command.params  # type: ignore[union-attr]
             if isinstance(i, click.Argument)
         )
 
         for param in command_argument_params:
             if minus_one_param:
-                raise ArgumentPositionError(self.current_command, param)
+                raise ArgumentPositionError(current_command, param)
 
             if param.nargs == -1:
                 minus_one_param = param
