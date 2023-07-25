@@ -64,9 +64,7 @@ def test_group_command_called(capsys):
         with pytest.raises(SystemExit):
             cli(args=[], prog_name="test_group_called")
 
-    assert capsys.readouterr().out.replace("\r\n", "\n") == (
-        "cli()\ncli()\nFoo!\ncli()\nBar!\n"
-    )
+    assert capsys.readouterr().out.replace("\r\n", "\n") == ("cli()\nFoo!\nBar!\n")
 
 
 @click.group(invoke_without_command=True)
@@ -119,16 +117,10 @@ def foo2():
 @pytest.mark.parametrize(
     "args, expected",
     [
-        (["hi"], "cli(hi, 1, None)\ncli(hi, 1, None)\nFoo!\n"),
-        (
-            ["--option1", "opt1", "hi"],
-            "cli(hi, opt1, None)\ncli(hi, opt1, None)\nFoo!\n",
-        ),
-        (["--option2", "opt2", "hi"], "cli(hi, 1, opt2)\ncli(hi, 1, opt2)\nFoo!\n"),
-        (
-            ["--option1", "opt1", "--option2", "opt2", "hi"],
-            "cli(hi, opt1, opt2)\ncli(hi, opt1, opt2)\nFoo!\n",
-        ),
+        (["hi"], "cli(hi, 1, None)\nFoo!\n"),
+        (["--option1", "opt1", "hi"], "cli(hi, opt1, None)\nFoo!\n"),
+        (["--option2", "opt2", "hi"], "cli(hi, 1, opt2)\nFoo!\n"),
+        (["--option1", "opt1", "--option2", "opt2", "hi"], "cli(hi, opt1, opt2)\nFoo!\n"),
     ],
 )
 def test_group_with_multiple_args(capsys, args, expected):
@@ -188,8 +180,6 @@ def test_subcommand_invocation(capfd):
     assert (
         capfd.readouterr().out.replace("\r\n", "\n")
         == """from level1
-from level1
-from level2
 from level2
 from lvl2 command
 """

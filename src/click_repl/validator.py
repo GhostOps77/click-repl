@@ -111,7 +111,7 @@ class ClickValidator(Validator):
             # Click formats its error messages to provide more detail. Therefore,
             # we can use it to display error messages along with the specific error
             # type.
-            raise ValidationError(0, f"{type(e).__name__}: {e.format_message()}")
+            raise ValidationError(0, f"{type(e).__name__}: ff {e.format_message()}")
 
         except Exception as e:
             if self.display_all_errors:

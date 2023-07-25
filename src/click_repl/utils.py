@@ -159,20 +159,24 @@ def get_info_dict(
 
 
 @lru_cache(maxsize=3)
-def _resolve_context(ctx: "Context", _args: "Tuple[str, ...]") -> "Context":
+def _resolve_context(
+    ctx: "Context", args: "Tuple[str, ...]", max_depth: int = -1
+) -> "Context":
     # Since the resolve_command method only accepts string arguments in a
     # list format, we explicitly convert _args into a list.
-    args = list(_args)
+    _args = list(args)
 
-    while args:
+    while _args and max_depth != 0:
         command = ctx.command
 
         if isinstance(command, click.MultiCommand):
             if not command.chain:
-                name, cmd, args = command.resolve_command(ctx, args)
+                name, cmd, _args = command.resolve_command(ctx, _args)
 
                 if cmd is None:
                     return ctx
+
+                # print(f'\nchained {cmd} {args}')
 
                 # When using click.parser.OptionParser.parse_args, incomplete
                 # string arguments that do not meet the nargs requirement of
@@ -181,33 +185,44 @@ def _resolve_context(ctx: "Context", _args: "Tuple[str, ...]") -> "Context":
                 # achieve this, we use a proxy command object to modify
                 # the command parsing behavior in click.
                 ctx = _create_proxy_command(cmd).make_context(
-                    name, args, parent=ctx, resilient_parsing=True
+                    name, _args, parent=ctx, resilient_parsing=True
                 )
 
-                args = ctx.protected_args + ctx.args
+                _args = ctx.protected_args + ctx.args
+                max_depth -= 1
 
             else:
-                while args:
-                    name, cmd, args = command.resolve_command(ctx, args)
+                while _args and max_depth != 0:
+                    name, cmd, _args = command.resolve_command(ctx, _args)
 
                     if cmd is None:
                         return ctx
+
+                    # print(f'\nnon-chained {cmd} {args}')
 
                     # Similarly to the previous case, we modify the behavior
                     # of the parse_args method for the cmd variable used to
                     # call the make_context method here.
                     sub_ctx = _create_proxy_command(cmd).make_context(
                         name,
-                        args,
+                        _args,
                         parent=ctx,
                         allow_extra_args=True,
                         allow_interspersed_args=False,
                         resilient_parsing=True,
                     )
-                    args = sub_ctx.args
+
+                    max_depth -= 1
+
+                    # if max_depth == 0:
+                    #     ctx = sub_ctx
+
+                    # else:
+                    _args = sub_ctx.args
 
                 ctx = sub_ctx
-                args = sub_ctx.protected_args + sub_ctx.args
+                _args = sub_ctx.protected_args + sub_ctx.args
+
         else:
             break
 

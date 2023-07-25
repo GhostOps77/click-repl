@@ -133,10 +133,15 @@ class ArgumentPositionError(ParserError):
 
     argument : click.Argument
         The argument object that violates the position rule.
+
+    position : int
+        The index of the disarranged nargs=-1 argument in the parameter list of
+        the given command.
     """
 
-    def __init__(self, command: "Command", argument: "Argument") -> None:
+    def __init__(self, command: "Command", argument: "Argument", position: int) -> None:
         super().__init__(
             f"The argument '{argument.name}' with nargs=-1, in command "
-            f"'{command.name}' must be defined at the end of the parameter list."
+            f"'{command.name}' must be defined at the end of the parameter list, "
+            f"but found at position {position}"
         )

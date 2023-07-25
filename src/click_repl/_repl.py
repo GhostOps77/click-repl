@@ -24,6 +24,7 @@ from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
 from .utils import _get_group_ctx
 from .utils import _print_err
+from .utils import _resolve_context
 from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
@@ -44,6 +45,9 @@ class Repl:
 
     Parameters
     ----------
+    ctx : click.Context
+        The click context object of the root/parent/CLI group.
+
     prompt_kwargs : Dictionary of str: Any pairs.
         Keyword arguments to be passed to the `prompt_toolkit.PromptSession` class.
         Do note that you don't have to pass the Completer and Validator class
@@ -321,23 +325,33 @@ class Repl:
             The command string that needs to be parsed and executed.
         """
 
-        args = split_arg_string(command)
+        # args = split_arg_string(command)
 
         # The group command will dispatch based on args.
         # The context object can parse args from the
         # protected_args attribute.
         # To ensure correct parsing, we temporarily store the
         # previously available protected_args in a separate variable.
-        old_protected_args = self.group_ctx.protected_args
 
-        try:
-            self.group_ctx.protected_args = args
-            self.group.invoke(self.group_ctx)
+        # try:
+        ctx = _resolve_context(
+            self.group_ctx, tuple(split_arg_string(command)), max_depth=1
+        )
+        ctx.command.invoke(ctx)
 
-        finally:
-            # After the command invocation, we restore the
-            # protected_args back to the group_ctx.
-            self.group_ctx.protected_args = old_protected_args
+        # finally:
+        #     pass
+
+        # old_protected_args = self.group_ctx.protected_args
+
+        # try:
+        #     self.group_ctx.protected_args = args
+        #     self.group.invoke(self.group_ctx)
+
+        # finally:
+        #     # After the command invocation, we restore the
+        #     # protected_args back to the group_ctx.
+        #     self.group_ctx.protected_args = old_protected_args
 
     def loop(self) -> None:
         """Runs the main REPL loop."""
@@ -395,7 +409,7 @@ class Repl:
 def repl(
     group_ctx: "Context",
     prompt_kwargs: "Dict[str, Any]" = {},
-    repl_cls: "Type[Repl]" = Repl,
+    cls: "Type[Repl]" = Repl,
     **attrs: "Any",
 ) -> None:
     """
@@ -414,7 +428,7 @@ def repl(
         These parameters configure the prompt appearance and behavior,
         such as prompt message, history, completion, etc.
 
-    repl_cls : click_repl._repl.Repl type class.
+    cls : click_repl._repl.Repl type class.
         Repl class to use for the click_repl app. if `None`, the
         `click_repl._repl.Repl` class is used by default. This allows
         customization of the REPL behavior by providing a custom Repl subclass.
@@ -433,4 +447,4 @@ def repl(
     To disable the bottom toolbar, pass `None` as the value for this key.
     """
 
-    repl_cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()
+    cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()

@@ -104,8 +104,8 @@ class ProxyParameter(Proxy, click.Parameter):
 
     def full_process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
         # click v7 has 'full_process_value' instead of 'process_value'.
-        # Therefor, for backwards compatibility with click v7, process_value
-        # method is called within this method.
+        # Therefore, for backwards compatibility with click v7,
+        # 'process_value' method is called within this method.
         return self.process_value(ctx, value)
 
     def process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":

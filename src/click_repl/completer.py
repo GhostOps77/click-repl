@@ -194,7 +194,7 @@ class ClickCompleter(Completer):
             else:
                 yield ReplCompletion(str(autocomplete), incomplete)
 
-    def get_completion_from_choices_click_v7(
+    def get_completion_from_choices_click_le_7(
         self, param_type: "click.Choice", incomplete: "Incomplete"
     ) -> "Generator[Completion, None, None]":
         """
@@ -242,7 +242,7 @@ class ClickCompleter(Completer):
                     style=self.styles["argument"],
                 )
 
-    def get_completion_for_path_types(
+    def get_completion_for_Path_types(
         self, incomplete: "Incomplete"
     ) -> "Generator[Completion, None, None]":
         """
@@ -327,7 +327,7 @@ class ClickCompleter(Completer):
                 display=path.name,
             )
 
-    def get_completion_for_boolean_type(
+    def get_completion_for_Boolean_type(
         self, incomplete: "Incomplete"
     ) -> "Generator[Completion, None, None]":
         """
@@ -453,15 +453,15 @@ class ClickCompleter(Completer):
 
         # shell_complete method for click.Choice class is introduced in click-v8.
         elif not HAS_CLICK8 and isinstance(param_type, click.Choice):
-            yield from self.get_completion_from_choices_click_v7(param_type, incomplete)
+            yield from self.get_completion_from_choices_click_le_7(param_type, incomplete)
 
         elif isinstance(param_type, click.types.BoolParamType):
             # Completion for click.BOOL types.
-            yield from self.get_completion_for_boolean_type(incomplete)
+            yield from self.get_completion_for_Boolean_type(incomplete)
 
         elif isinstance(param_type, (click.Path, click.File)):
             # Both Path and File types are expected to receive input as path strings.
-            yield from self.get_completion_for_path_types(incomplete)
+            yield from self.get_completion_for_Path_types(incomplete)
 
         elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
             # Completions for parameters that have auto-completion functions.
@@ -471,7 +471,7 @@ class ClickCompleter(Completer):
 
         return
 
-    def get_completion_for_command_arguments(
+    def get_completion_for_cmd_args(
         self,
         ctx: "Context",
         state: "ArgsParsingState",
@@ -505,6 +505,14 @@ class ClickCompleter(Completer):
         """
 
         args = state.args
+
+        if state.current_command:
+            current_command = state.current_command
+        elif state.current_group.chain:
+            current_command = state.current_ctx.command
+        else:
+            return
+
         current_param = state.current_param
         is_current_param_not_none = current_param is not None
         _incomplete = incomplete.parsed_str
@@ -513,9 +521,9 @@ class ClickCompleter(Completer):
             isinstance(current_param, click.Argument)
             and ctx.params[current_param.name] is None  # type: ignore[index, union-attr]
         ):
-            for param in state.current_command.params:  # type: ignore[union-attr]
+            for param in current_command.params:  # type: ignore[union-attr]
                 if isinstance(param, click.Argument) or (
-                    param.hidden  # type: ignore[union-attr]
+                    param.hidden  # type: ignore[attr-defined]
                     and not self.show_hidden_params
                 ):
                     # We skip the Arguments and hidden parameters
@@ -622,21 +630,36 @@ class ClickCompleter(Completer):
         """
 
         current_group = state.current_group
-        is_current_command_available = state.current_command is not None
-        is_chain = state.is_current_group_chained
+        current_command = state.current_command
+        is_chain = state.current_group.chain
 
-        if is_current_command_available:
-            # If there's a sub-command found in the state object,
-            # generate completions for its arguments.
-            yield from self.get_completion_for_command_arguments(ctx, state, incomplete)
+        # if state.current_group != state.cli:
+
+        # print(f'{state.remaining_params = }')
+
+        # If there's a sub-command found in the state object,
+        # generate completions for its arguments.
+        if is_chain or current_command:
+            yield from self.get_completion_for_cmd_args(ctx, state, incomplete)
+
+        # if not is_current_command_available:
+        #     return
 
         # To check whether all the parameters in the current command
         # has receieved their values.
-        all_ctx_values_provided = all(
-            not _is_param_value_incomplete(ctx, param_name) for param_name in ctx.params
-        )
+        args_list = [
+            param for param in ctx.command.params if isinstance(param, click.Argument)
+        ]
 
-        if is_current_command_available and not (is_chain and all_ctx_values_provided):
+        if args_list:
+            all_ctx_values_provided = all(
+                not _is_param_value_incomplete(ctx, param.name) for param in args_list
+            )
+
+        else:
+            all_ctx_values_provided = True
+
+        if current_command and not (is_chain and all_ctx_values_provided):
             # If the current command is not a chained multicommand, or it haven't
             # received values for all of its parameters yet, then we can't show
             # its subcommands for auto-completion.
@@ -645,6 +668,9 @@ class ClickCompleter(Completer):
         _incomplete = incomplete.parsed_str
 
         for cmd_name in current_group.list_commands(ctx):
+            if not cmd_name.startswith(_incomplete):
+                continue
+
             command = current_group.get_command(ctx, cmd_name)
 
             if command is None or (command.hidden and not self.show_hidden_commands):
@@ -652,12 +678,11 @@ class ClickCompleter(Completer):
                 # or if there's no command found.
                 continue
 
-            elif cmd_name.startswith(_incomplete):
-                yield ReplCompletion(
-                    cmd_name,
-                    incomplete,
-                    display_meta=getattr(command, "short_help", ""),
-                )
+            yield ReplCompletion(
+                cmd_name,
+                incomplete,
+                display_meta=getattr(command, "short_help", ""),
+            )
 
     def get_completions(
         self, document: "Document", complete_event: "Optional[CompleteEvent]" = None
@@ -718,8 +743,8 @@ class ClickCompleter(Completer):
         #     pass
 
         except Exception as e:
-            if not __debug__:
-                raise e
+            # if not __debug__:
+            raise e
 
 
 class ReplCompletion(Completion):
