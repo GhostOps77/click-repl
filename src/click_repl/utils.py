@@ -16,8 +16,8 @@ from .parser import get_args_and_incomplete_from_args
 from .proxies import _create_proxy_command
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Tuple, Union
-    from click import Command, Context, Parameter
+    from typing import Any, Dict, Optional, Tuple, Union, Generator
+    from click import Command, Context, Parameter, MultiCommand
     from .parser import ArgsParsingState, Incomplete
 
 
@@ -56,6 +56,26 @@ def _get_group_ctx(ctx: "Context") -> "Context":
         return ctx.parent
 
     return ctx
+
+
+def _get_visible_subcommands(
+    ctx: "Context",
+    multicomand: "MultiCommand",
+    incomplete: str,
+    show_hidden_commands: bool = False,
+) -> "Generator[Tuple[str, Command], None, None]":
+    for command_name in multicomand.list_commands(ctx):
+        if not command_name.startswith(incomplete):
+            continue
+
+        subcommand = multicomand.get_command(ctx, command_name)
+
+        if subcommand is None or (subcommand.hidden and not show_hidden_commands):
+            # We skip the hidden command if self.show_hidden_commands is False,
+            # or if there's no command found.
+            continue
+
+        yield command_name, subcommand
 
 
 @lru_cache(maxsize=128)
