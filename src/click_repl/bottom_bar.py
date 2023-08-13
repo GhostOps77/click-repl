@@ -13,7 +13,7 @@ from ._globals import _RANGE_TYPES
 from ._globals import ISATTY
 
 if t.TYPE_CHECKING:
-    from typing import Optional
+    from typing import Optional, List, Union
 
     from click import Parameter
 
@@ -41,6 +41,9 @@ class BottomBar:
         self._formatted_text: "t.Union[str, HTML]" = ""
         self.show_hidden_params = show_hidden_params
 
+    def __call__(self) -> "t.Union[str, HTML]":
+        return self.get_formatted_text()
+
     def reset_state(self) -> None:
         # if not ISATTY:
         #     # We don't have to render the bottom toolbar if the stdin is not
@@ -54,6 +57,7 @@ class BottomBar:
         if not ISATTY:
             return ""
 
+        # return str(self.state)
         return self._formatted_text
 
     def update_state(self, state: "ArgsParsingState") -> None:
@@ -62,8 +66,8 @@ class BottomBar:
 
         self.state = state
 
-        # self._formatted_text = self.make_formatted_text()
-        self._formatted_text = str(state)
+        self._formatted_text = self.make_formatted_text()
+        # self._formatted_text = str(state)
 
     def get_group_metavar_template(self) -> "HTML":
         # Gets the metavar to describe the CLI Group, indicating
@@ -88,27 +92,40 @@ class BottomBar:
         return HTML(f"<b>Group {current_group.name}</b>{metavar}")
 
     def get_param_info(self, param: "Parameter") -> str:
+        param_info: "List[str]" = []
+
         if isinstance(param, click.Argument):
-            param_info: str = param.name  # type: ignore[assignment]
+            param_info.append(param.name)  # type: ignore[arg-type]
 
         else:
             # If its a click.Option type, we print the smallest flag,
             # prioritizing limited space on the bottom bar for
             # other parameters.
-            param_info = min(param.opts + param.secondary_opts, key=len)
+            param_info.append(min(param.opts + param.secondary_opts, key=len))
 
         if self.state.current_param == param:  # type: ignore[union-attr]
             # Displaying detailed information only for the current parameter
             # in the bottom bar, to save space.
-            param_info += self.get_param_type_info(param)
+            type_info = self.get_param_type_info(param, param.type)
+            if isinstance(type_info, list):
+                param_info.extend(type_info)
+            else:
+                param_info.append(type_info)
 
-            if param.nargs != 1:
-                param_info = self.get_param_nargs_info(param, param_info)
+            if param.nargs != 1 and not isinstance(param.type, click.Tuple):
+                param_info = [self.get_param_nargs_info(param, param_info)]
 
-        return param_info
+        return self.format_parsing_state_for_param(param, param_info)
 
-    def get_param_type_info(self, param: "Parameter") -> str:
-        param_type = param.type
+    def get_param_type_info(
+        self, param: "Parameter", param_type: "click.types.ParamType"
+    ) -> "Union[str, List[str]]":
+        if isinstance(param_type, click.Tuple):
+            return [
+                self.get_param_type_info(param, type_) or type_.name  # type: ignore[misc]
+                for type_ in param_type.types
+            ]
+
         type_info = ""
 
         if isinstance(param_type, _RANGE_TYPES):
@@ -117,7 +134,7 @@ class BottomBar:
             # within the representation, which represent the range, are replaced
             # with their URL encoded forms (&lt; and &gt;) to display them
             # correctly in HTML form.
-            type_info += f"{param_type}"[1:-1].replace("<", "&lt;").replace(">", "&gt;")
+            type_info = f"{param_type}"[1:-1]
 
         elif isinstance(param_type, _METAVAR_PARAMS):
             # Here, only the name of the type's class is included in type_info. This
@@ -126,27 +143,29 @@ class BottomBar:
 
             for metavar_param in _METAVAR_PARAMS:
                 if isinstance(param_type, metavar_param):
-                    type_info += metavar_param.__name__
+                    type_info = metavar_param.__name__
                     break
 
-        elif isinstance(param_type, (click.Path, click.File, click.Tuple)):
+        elif isinstance(param_type, (click.Path, click.File)):
             # If the parameter type is an instance of any of these 3 types mentioned
             # above, there is no need to mention anything special about them. The
             # type information is simply added as the name attribute of the
             # respective type.
-            type_info += param_type.name
+            type_info = param_type.name
 
         elif param_type not in (click.STRING, click.UNPROCESSED):
-            type_info += f"{param_type}"
+            type_info = f"{param_type}"
 
         if type_info:
-            type_info = f" &lt;{type_info}&gt;"
+            type_info = f"&lt;{type_info}&gt;".replace("<", "&lt;").replace(">", "&gt;")
 
         return type_info
 
-    def get_param_nargs_info(self, param: "Parameter", param_info: str) -> str:
+    def get_param_nargs_info(self, param: "Parameter", param_info: "List[str]") -> str:
+        _param_info = " ".join(param_info)
+
         if param.nargs == -1:
-            return f"[{param_info} ...]"
+            return f"[{_param_info} ...]"
 
         elif param.nargs > 1:
             # Calculate the number of non-None values received for the parameter.
@@ -160,13 +179,15 @@ class BottomBar:
             else:
                 not_none_vals_count = sum(1 for i in param_values if i is not None)
 
-            return f"[{param_info} ({not_none_vals_count}/{param.nargs})]"
+            return f"[{_param_info} ({not_none_vals_count}/{param.nargs})]"
 
             # return f"[{param_info}x{param.nargs}]"
 
-        return param_info
+        return _param_info
 
-    def format_parsing_state_for_param(self, param: "Parameter", param_info: str) -> str:
+    def format_parsing_state_for_param(
+        self, param: "Parameter", param_info: "List[str]"
+    ) -> str:
         # Formats the given param_info string based on the state of
         # the given param, indicating whether it is the current parameter,
         # whether it is yet to receive values from the REPL, or whether it has
@@ -177,19 +198,40 @@ class BottomBar:
 
         if param == self.state.current_param:  # type: ignore[union-attr]
             # The current parameter is shown in bold and underlined letters.
-            return f"<u><b>{param_info}</b></u>"
+            if not isinstance(param.type, click.Tuple):
+                return f"<u><b>{' '.join(param_info)}</b></u>"
 
-        elif (
+            res = f"<b>{param_info.pop(0)}</b>"
+            type_info = ""
+            stop = False
+
+            for type_str, value in zip(
+                param_info, self.state.current_ctx.params[param.name]  # type: ignore
+            ):
+                if value is not None:
+                    type_info += f" <s>{type_str}</s>"
+                elif not stop:
+                    type_info += f" <u><b>{type_str}</b></u>"
+                    stop = True
+                else:
+                    type_info += f" {type_str}"
+
+            res += f" ({type_info.lstrip()})"
+            return res
+
+        _param_info = " ".join(param_info)
+
+        if (
             any(getattr(param, attr, False) for attr in ("count", "is_flag"))
             or param in self.state.remaining_params  # type: ignore[union-attr]
         ):
             # Counters, Flags, and Parameters that are awaiting for values
             # are displayed without special formatting.
-            return param_info
+            return _param_info
 
         # Parameters that have already received values are displayed
         # with a strikethrough.
-        return f"<s>{param_info}</s>"
+        return f"<s>{_param_info}</s>"
 
     def make_formatted_text(self) -> "t.Union[str, HTML]":
         current_command = self.state.current_command  # type: ignore[union-attr]
@@ -207,7 +249,7 @@ class BottomBar:
 
         formatted_params_info = " ".join(
             [
-                self.format_parsing_state_for_param(param, self.get_param_info(param))
+                self.get_param_info(param)
                 for param in current_command.params
                 if not getattr(param, "hidden", False)
                 or (

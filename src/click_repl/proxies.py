@@ -10,7 +10,7 @@ import click
 from .parser import ReplOptionParser
 
 if t.TYPE_CHECKING:
-    from click import Command, Context, Parameter
+    from click import Command, Context, Parameter, Group
 
     V = t.TypeVar("V")
 
@@ -35,15 +35,15 @@ class Proxy:
     It allows accessing attributes, setting attributes, and deleting attributes on the
     underlying object.
 
-    Notes
-    -----
-    This class is used as a base class for creating proxy objects that customize
-    attribute access behavior.
-
     Parameters
     ----------
     obj
         The object to which attribute access is delegated.
+
+    Notes
+    -----
+    This class is used as a base class for creating proxy objects that customize
+    attribute access behavior.
     """
 
     def __init__(self, obj: "V") -> None:
@@ -90,7 +90,9 @@ class ProxyGroup(ProxyCommand, click.Group):
     `click_repl.parser.ReplOptionParser` in the `make_parser` method.
     """
 
-    pass
+    def __init__(self, obj: "Group") -> None:
+        super().__init__(obj)
+        self.no_args_is_help = False
 
 
 class ProxyParameter(Proxy, click.Parameter):

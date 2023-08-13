@@ -6,6 +6,7 @@ Utilities to facilitate the functionality of the click_repl module.
 import os
 import typing as t
 from functools import lru_cache
+from gettext import gettext as _
 
 import click
 from click.parser import split_opt
@@ -23,6 +24,15 @@ if t.TYPE_CHECKING:
 
 def _expand_envvars(text: str) -> str:
     return os.path.expandvars(os.path.expanduser(text))
+
+
+def _is_help_option(param: "click.Option") -> bool:
+    return (
+        param.is_flag
+        and not param.expose_value
+        and param.is_eager
+        and param.help == _("Show this message and exit.")
+    )
 
 
 def _print_err(text: str) -> None:
@@ -60,15 +70,15 @@ def _get_group_ctx(ctx: "Context") -> "Context":
 
 def _get_visible_subcommands(
     ctx: "Context",
-    multicomand: "MultiCommand",
+    multicommand: "MultiCommand",
     incomplete: str,
     show_hidden_commands: bool = False,
 ) -> "Generator[Tuple[str, Command], None, None]":
-    for command_name in multicomand.list_commands(ctx):
+    for command_name in multicommand.list_commands(ctx):
         if not command_name.startswith(incomplete):
             continue
 
-        subcommand = multicomand.get_command(ctx, command_name)
+        subcommand = multicommand.get_command(ctx, command_name)
 
         if subcommand is None or (subcommand.hidden and not show_hidden_commands):
             # We skip the hidden command if self.show_hidden_commands is False,
@@ -178,70 +188,71 @@ def get_info_dict(
     return info_dict
 
 
-@lru_cache(maxsize=3)
-def _resolve_context(
-    ctx: "Context", args: "Tuple[str, ...]", max_depth: int = -1
-) -> "Context":
+@lru_cache(maxsize=12)
+def _generate_next_click_ctx(
+    command: "MultiCommand",
+    parent_ctx: "Context",
+    args: "Tuple[str, ...]",
+    proxify: bool = False,
+    **ctx_kwargs: "Dict[str, Any]"
+) -> "Tuple[Context, Optional[Command]]":
     # Since the resolve_command method only accepts string arguments in a
     # list format, we explicitly convert _args into a list.
-    _args = list(args)
 
-    while _args and max_depth != 0:
+    _args = list(args)
+    name, cmd, _args = command.resolve_command(parent_ctx, _args)
+
+    if cmd is None:
+        return parent_ctx, None
+
+    if proxify:
+        # When using click.parser.OptionParser.parse_args, incomplete
+        # string arguments that do not meet the nargs requirement of
+        # the current parameter are normally ignored. However, in our
+        # case, we want to handle these incomplete arguments. To
+        # achieve this, we use a proxy command object to modify
+        # the command parsing behavior in click.
+        cmd = _create_proxy_command(cmd)
+
+    ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
+    return ctx, cmd
+
+
+@lru_cache(maxsize=3)
+def _resolve_context(ctx: "Context", args: "Tuple[str, ...]") -> "Context":
+    while args:
         command = ctx.command
 
         if isinstance(command, click.MultiCommand):
             if not command.chain:
-                name, cmd, _args = command.resolve_command(ctx, _args)
+                ctx, cmd = _generate_next_click_ctx(
+                    command, ctx, args, proxify=True, resilient_parsing=True
+                )
 
                 if cmd is None:
                     return ctx
 
-                # print(f'\nchained {cmd} {args}')
-
-                # When using click.parser.OptionParser.parse_args, incomplete
-                # string arguments that do not meet the nargs requirement of
-                # the current parameter are normally ignored. However, in our
-                # case, we want to handle these incomplete arguments. To
-                # achieve this, we use a proxy command object to modify
-                # the command parsing behavior in click.
-                ctx = _create_proxy_command(cmd).make_context(
-                    name, _args, parent=ctx, resilient_parsing=True
-                )
-
-                _args = ctx.protected_args + ctx.args
-                max_depth -= 1
+                args = tuple(ctx.protected_args + ctx.args)
 
             else:
-                while _args and max_depth != 0:
-                    name, cmd, _args = command.resolve_command(ctx, _args)
-
-                    if cmd is None:
-                        return ctx
-
-                    # print(f'\nnon-chained {cmd} {args}')
-
-                    # Similarly to the previous case, we modify the behavior
-                    # of the parse_args method for the cmd variable used to
-                    # call the make_context method here.
-                    sub_ctx = _create_proxy_command(cmd).make_context(
-                        name,
-                        _args,
-                        parent=ctx,
+                while args:
+                    sub_ctx, cmd = _generate_next_click_ctx(
+                        command,
+                        ctx,
+                        args,
+                        proxify=True,
                         allow_extra_args=True,
                         allow_interspersed_args=False,
                         resilient_parsing=True,
                     )
 
-                    max_depth -= 1
+                    if cmd is None:
+                        return ctx
 
-                    # if max_depth == 0:
-                    #     ctx = sub_ctx
-
-                    # else:
-                    _args = sub_ctx.args
+                    args = tuple(sub_ctx.args)
 
                 ctx = sub_ctx
-                _args = sub_ctx.protected_args + sub_ctx.args
+                args = tuple(sub_ctx.protected_args + sub_ctx.args)
 
         else:
             break

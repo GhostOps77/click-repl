@@ -32,8 +32,8 @@ def test_internal_help_commands(capsys, test_input):
   Internal Commands:
     Prefix Internal commands with ":".
     :clear, :cls      Clears screen.
-    :exit, :q, :quit  Exits the REPL.
     :?, :h, :help     Displays general help information.
+    :exit, :q, :quit  Exits the REPL.
 
 """
     )

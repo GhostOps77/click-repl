@@ -68,7 +68,7 @@ def _help_internal_cmd() -> None:
                 f'Prefix Internal commands with "{ics_obj.internal_command_prefix}".'
             )
 
-            info_table = ics_obj._group_commands_by_callback()
+            info_table = ics_obj._group_commands_by_callback_and_description()
             formatter.write_dl(
                 [
                     (
@@ -101,7 +101,8 @@ class InternalCommandSystem:
     Notes
     -----
     The prefixes determine how the commands are recognized and distinguished
-    within the REPL.
+    within the REPL. And both the internal_command_prefix and system_command_prefix
+    should not be same.
     """
 
     def __init__(
@@ -215,11 +216,12 @@ class InternalCommandSystem:
             If the prefix is an empty string.
         """
 
-        if not (isinstance(prefix, str) or prefix is None):
-            raise WrongType(prefix, var_name, "str or None")
+        if prefix is not None:
+            if not isinstance(prefix, str):
+                raise WrongType(prefix, var_name, "str or None")
 
-        elif prefix is not None and prefix.strip() == "":
-            raise ValueError("Prefix string cannot be empty")
+            elif prefix.strip() == "":
+                raise ValueError("Prefix string cannot be empty")
 
     def dispatch_system_commands(self, command: str) -> None:
         """
@@ -340,7 +342,7 @@ class InternalCommandSystem:
             return decorator
         return decorator(target)
 
-    def _group_commands_by_callback(self) -> "InfoTable":
+    def _group_commands_by_callback_and_description(self) -> "InfoTable":
         info_table = defaultdict(list)
 
         for mnemonic, target_info in self._internal_commands.items():
@@ -357,7 +359,7 @@ class InternalCommandSystem:
         A list that contains all the names and aliases of
         each available internal command.
         """
-        return list(self._group_commands_by_callback().values())
+        return list(self._group_commands_by_callback_and_description().values())
 
     def get_command(
         self, name: str, default: "t.Any" = None
@@ -388,7 +390,7 @@ class InternalCommandSystem:
 
         return default
 
-    def get_prefix(self, command: str) -> "t.Tuple[Optional[str], str]":
+    def get_prefix(self, command: str) -> "t.Tuple[str, Optional[str]]":
         """
         Extracts the prefix from the beginning of a command string.
 
@@ -411,9 +413,9 @@ class InternalCommandSystem:
 
         for flag, prefix in self.prefix_table.items():
             if prefix and command.startswith(prefix):  # type: ignore[arg-type]
-                return prefix, flag  # type: ignore[return-value]
+                return flag, prefix  # type: ignore[return-value]
 
-        return None, "Not Found"
+        return "Not Found", None
 
     def execute(self, command: str) -> bool:
         """
@@ -432,12 +434,12 @@ class InternalCommandSystem:
             otherwise.
         """
 
-        prefix, flag = self.get_prefix(command)
+        flag, prefix = self.get_prefix(command.strip())
 
         if prefix is None:
             return False
 
-        command = command[len(prefix) :]
+        command = command[len(prefix) :].lstrip()
 
         if not command:
             _print_err(f"Enter a proper {flag} Command.")
@@ -464,9 +466,9 @@ class InternalCommandSystem:
             description="Clears screen.",
         )
 
-        self.register_command(target=repl_exit, names=("q", "quit", "exit"))
-
         self.register_command(
             target=_help_internal_cmd,
             names=("?", "h", "help"),
         )
+
+        self.register_command(target=repl_exit, names=("q", "quit", "exit"))

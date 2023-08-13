@@ -4,6 +4,7 @@ click_repl.validator
 Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
+import logging
 import typing as t
 
 from click.exceptions import ClickException
@@ -22,6 +23,20 @@ if t.TYPE_CHECKING:
 
 
 __all__ = ["ClickValidator"]
+
+log_format = "%(levelname)s | %(message)s"
+
+logging.basicConfig(format=log_format, level=logging.ERROR)
+
+logger = logging.getLogger("click-repl-err")
+
+log_file = "click-repl-err.log"
+formatter = logging.Formatter(log_format)
+
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 
 class ClickValidator(Validator):
@@ -47,7 +62,7 @@ class ClickValidator(Validator):
         self,
         ctx: "Context",
         internal_commands_system: "InternalCommandSystem",
-        display_all_errors: bool = True,
+        display_all_errors: bool = False,
     ) -> None:
         self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
@@ -91,7 +106,7 @@ class ClickValidator(Validator):
             if the error just needs to be raised normally.
         """
 
-        if self.internal_commands_system.get_prefix(document.text_before_cursor)[0]:
+        if self.internal_commands_system.get_prefix(document.text_before_cursor)[1]:
             # If the input text in the prompt starts with a prefix indicating an internal
             # or system command, it is considered as such. In this case, there is no need
             # to validate the input, so we can simply return and ignore it.
@@ -111,7 +126,7 @@ class ClickValidator(Validator):
             # Click formats its error messages to provide more detail. Therefore,
             # we can use it to display error messages along with the specific error
             # type.
-            raise ValidationError(0, f"{type(e).__name__}: ff {e.format_message()}")
+            raise ValidationError(0, f"{type(e).__name__}: {e.format_message()}")
 
         except Exception as e:
             if self.display_all_errors:
@@ -122,4 +137,5 @@ class ClickValidator(Validator):
 
             # Error tracebacks are displayed during the REPL loop if
             # self.catch_all_errors is set to False.
+            logger.error(f"{type(e).__name__}: {str(e)}")
             raise e

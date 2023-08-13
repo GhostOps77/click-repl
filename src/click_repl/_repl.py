@@ -22,9 +22,9 @@ from .exceptions import ExitReplException
 from .exceptions import InternalCommandException
 from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
+from .utils import _generate_next_click_ctx
 from .utils import _get_group_ctx
 from .utils import _print_err
-from .utils import _resolve_context
 from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
@@ -279,7 +279,7 @@ class Repl:
 
         if self.bottom_bar:
             default_prompt_kwargs.update(
-                bottom_toolbar=self.bottom_bar.get_formatted_text,
+                bottom_toolbar=self.bottom_bar,
                 style=Style.from_dict(
                     {"bottom-toolbar": "fg:lightblue bg:default noreverse"}
                 ),
@@ -334,8 +334,8 @@ class Repl:
         # previously available protected_args in a separate variable.
 
         # try:
-        ctx = _resolve_context(
-            self.group_ctx, tuple(split_arg_string(command)), max_depth=1
+        ctx, _ = _generate_next_click_ctx(
+            self.group, self.group_ctx, tuple(split_arg_string(command))
         )
         ctx.command.invoke(ctx)
 
@@ -392,6 +392,15 @@ class Repl:
 
                 except (ClickExit, SystemExit):
                     continue
+
+                except click.UsageError as e:
+                    # command = e.ctx.command
+                    # command_name = ""
+                    # if command is not None:
+                    #     command_name = f'{command.name}: '
+
+                    # _print_err(f'{command_name} {e.format_message()}')
+                    _print_err(e.format_message())
 
                 except click.ClickException as e:
                     e.show()

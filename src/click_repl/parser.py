@@ -104,7 +104,6 @@ def get_args_and_incomplete_from_args(
 
     if args and cursor_within_command:
         incomplete = args.pop()
-
     else:
         incomplete = ""
 
@@ -218,10 +217,6 @@ class ArgsParsingState:
 
         current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
         is_parent_group_chained = parent_group.chain  # type: ignore[attr-defined]
-        # is_current_multicommand_chained = (
-        #     isinstance(current_ctx_command, click.MultiCommand)
-        #     and current_ctx_command.chain
-        # )
         current_command = None
 
         # Check if not all the required arguments have been assigned a value.
@@ -232,37 +227,34 @@ class ArgsParsingState:
         # is found, is_all_args_available is set to False. This condition check
         # is only performed when the parent group is a non-chained multi-command.
 
-        is_all_args_available = True
+        args_list = [
+            param
+            for param in current_ctx_command.params
+            # if isinstance(param, click.Argument)
+        ]
 
-        for param in current_ctx_command.params:
-            # if ((
-            #     not is_parent_group_chained
-            #     # and not is_current_multicommand_chained
-            #  or isinstance(param, click.Argument))
-            # and utils._is_param_value_incomplete(self.current_ctx, param.name)):
-            # if (
-            #     (
-            #         not is_parent_group_chained
-            #         # and not is_current_multicommand_chained
-            #     )
-            #     or isinstance(param, click.Argument)
-            # ) and utils._is_param_value_incomplete(self.current_ctx, param.name):
-            if utils._is_param_value_incomplete(self.current_ctx, param.name):
-                is_all_args_available = False
-                break
+        all_args_not_incomplete = all(
+            not utils._is_param_value_incomplete(self.current_ctx, param.name)
+            for param in args_list
+        )
 
-        if isinstance(current_ctx_command, click.MultiCommand) and is_all_args_available:
+        no_incomplete_visible_args = args_list and all_args_not_incomplete
+
+        if (
+            isinstance(current_ctx_command, click.MultiCommand)
+            and no_incomplete_visible_args
+        ) and current_ctx_command != self.cli:
             # If all the arguments are passed to the ctx multicommand,
             # promote it as current group.
             current_group = current_ctx_command
 
         elif (
-            not (is_parent_group_chained and is_all_args_available)
+            not (is_parent_group_chained and no_incomplete_visible_args)
             and current_ctx_command != self.cli
         ):
             # The current command should point to its parent, once it
             # got all of its values, only if the parent has chain=True
-            # let current_cmd be None. Or else, let current_command
+            # let current_command be None. Or else, let current_command
             # be the current_ctx_command.
             current_command = current_ctx_command
 
@@ -296,8 +288,6 @@ class ArgsParsingState:
                 continue
 
             opts = param.opts + param.secondary_opts
-
-            # print(f'{param} {opts}')
 
             if any(i in self.args[param.nargs * -1 :] for i in opts):
                 # We want to make sure if this parameter was called
@@ -450,7 +440,7 @@ class ReplOptionParser(OptionParser):
                 value = _flag_needs_value
             else:
                 # Fills up missing values with None.
-                if nargs == 1 or rargs_len == 0:
+                if nargs == 1:
                     value = None
                 else:
                     value = tuple(state.rargs + [None] * (nargs - rargs_len))

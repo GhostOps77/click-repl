@@ -24,10 +24,12 @@ def c1(user):
 c = ClickCompleter(cmd.make_context("", args=["--user", "hi"]))
 
 
-@pytest.mark.parametrize("test_input, expected", [(" ", "c1"), ("c1 ", "--user")])
+@pytest.mark.parametrize(
+    "test_input, expected", [(" ", {"c1", "--user"}), ("c1 ", {"--user"})]
+)
 def test_subcommand_invocation_from_group(test_input, expected):
     completions = c.get_completions(Document(test_input))
-    assert {x.text for x in completions} == {expected}
+    assert {x.text for x in completions} == expected
 
 
 @click.group(invoke_without_command=True)
