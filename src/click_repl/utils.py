@@ -226,7 +226,7 @@ def _resolve_context(ctx: "Context", args: "Tuple[str, ...]") -> "Context":
         if isinstance(command, click.MultiCommand):
             if not command.chain:
                 ctx, cmd = _generate_next_click_ctx(
-                    command, ctx, args, proxify=True, resilient_parsing=True
+                    command, ctx, args, proxify=True  # , resilient_parsing=False
                 )
 
                 if cmd is None:
@@ -242,8 +242,8 @@ def _resolve_context(ctx: "Context", args: "Tuple[str, ...]") -> "Context":
                         args,
                         proxify=True,
                         allow_extra_args=True,
-                        allow_interspersed_args=False,
-                        resilient_parsing=True,
+                        allow_interspersedf_args=False,
+                        # resilient_parsing=False,
                     )
 
                     if cmd is None:

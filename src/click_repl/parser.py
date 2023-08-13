@@ -346,7 +346,7 @@ class Argument(_Argument):
 
 class ReplOptionParser(OptionParser):
     def __init__(self, ctx: "Context") -> None:
-        ctx.resilient_parsing = False
+        # ctx.resilient_parsing = False
 
         super().__init__(ctx)
 
