@@ -394,13 +394,14 @@ class Repl:
                     continue
 
                 except click.UsageError as e:
-                    # command = e.ctx.command
-                    # command_name = ""
-                    # if command is not None:
-                    #     command_name = f'{command.name}: '
+                    if e.ctx is None:
+                        continue
 
-                    # _print_err(f'{command_name} {e.format_message()}')
-                    _print_err(e.format_message())
+                    command_name = e.ctx.command.name
+                    if command_name is not None:
+                        command_name = f"{command_name}: "
+
+                    _print_err(f"{command_name}{e.format_message()}")
 
                 except click.ClickException as e:
                     e.show()
