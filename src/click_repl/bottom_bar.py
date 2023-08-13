@@ -202,21 +202,21 @@ class BottomBar:
                 return f"<u><b>{' '.join(param_info)}</b></u>"
 
             res = f"<b>{param_info.pop(0)}</b>"
-            type_info = ""
+            type_info = []
             stop = False
 
             for type_str, value in zip(
                 param_info, self.state.current_ctx.params[param.name]  # type: ignore
             ):
                 if value is not None:
-                    type_info += f" <s>{type_str}</s>"
+                    type_info.append(f"<s>{type_str}</s>")
                 elif not stop:
-                    type_info += f" <u><b>{type_str}</b></u>"
+                    type_info.append(f"<u><b>{type_str}</b></u>")
                     stop = True
                 else:
-                    type_info += f" {type_str}"
+                    type_info.append(type_str)
 
-            res += f" ({type_info.lstrip()})"
+            res += f" ({' '.join(type_info)})"
             return res
 
         _param_info = " ".join(param_info)
