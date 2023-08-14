@@ -46,7 +46,7 @@ All you have to do in your [click](https://click.palletsprojects.com/en/) app is
   ```
   In the shell:
   ```shell
-  $ my_app
+  $ my_app repl
   Entering REPL...
   >>> hello
   Hello world!
