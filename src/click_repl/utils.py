@@ -17,7 +17,7 @@ from .parser import get_args_and_incomplete_from_args
 from .proxies import _create_proxy_command
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Tuple, Union, Generator
+    from typing import Any, Dict, List, Optional, Tuple, Union, Generator
     from click import Command, Context, Parameter, MultiCommand
     from .parser import ArgsParsingState, Incomplete
 
@@ -50,7 +50,7 @@ def _is_param_value_incomplete(ctx: "Context", param_name: "Optional[str]") -> b
 
 
 def _join_options(options: "t.List[str]") -> "t.Tuple[t.List[str], str]":
-    # Same implementation as in click.formatting.join_options function.
+    # Same implementation as ijoin_options functionn click.formatting..
     any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
     options.sort(key=len)
 
@@ -188,12 +188,12 @@ def get_info_dict(
     return info_dict
 
 
-@lru_cache(maxsize=12)
+@lru_cache(maxsize=6)
 def _generate_next_click_ctx(
     command: "MultiCommand",
     parent_ctx: "Context",
     args: "Tuple[str, ...]",
-    proxify: bool = False,
+    proxy: bool = False,
     **ctx_kwargs: "Dict[str, Any]"
 ) -> "Tuple[Context, Optional[Command]]":
     # Since the resolve_command method only accepts string arguments in a
@@ -205,34 +205,39 @@ def _generate_next_click_ctx(
     if cmd is None:
         return parent_ctx, None
 
-    if proxify:
+    if proxy:
         # When using click.parser.OptionParser.parse_args, incomplete
         # string arguments that do not meet the nargs requirement of
         # the current parameter are normally ignored. However, in our
         # case, we want to handle these incomplete arguments. To
         # achieve this, we use a proxy command object to modify
         # the command parsing behavior in click.
-        cmd = _create_proxy_command(cmd)
+        with _create_proxy_command(cmd) as cmd:
+            ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
+    else:
+        ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
 
-    ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
     return ctx, cmd
 
 
 @lru_cache(maxsize=3)
-def _resolve_context(ctx: "Context", args: "Tuple[str, ...]") -> "Context":
+def _resolve_context(
+    ctx: "Context", args: "Tuple[str, ...]", proxy: bool = False
+) -> "Tuple[Context, Tuple[str, ...]]":
     while args:
         command = ctx.command
 
         if isinstance(command, click.MultiCommand):
             if not command.chain:
                 ctx, cmd = _generate_next_click_ctx(
-                    command, ctx, args, proxify=True  # , resilient_parsing=False
+                    command,
+                    ctx,
+                    args,
+                    proxy=proxy,
                 )
 
                 if cmd is None:
-                    return ctx
-
-                args = tuple(ctx.protected_args + ctx.args)
+                    return ctx, args
 
             else:
                 while args:
@@ -240,24 +245,74 @@ def _resolve_context(ctx: "Context", args: "Tuple[str, ...]") -> "Context":
                         command,
                         ctx,
                         args,
-                        proxify=True,
+                        proxy=proxy,
                         allow_extra_args=True,
-                        allow_interspersedf_args=False,
-                        # resilient_parsing=False,
+                        allow_interspersed_args=False,
                     )
 
                     if cmd is None:
-                        return ctx
+                        return ctx, args
 
                     args = tuple(sub_ctx.args)
 
+                    if args and args[0] == ";":
+                        return sub_ctx, args
+
                 ctx = sub_ctx
-                args = tuple(sub_ctx.protected_args + sub_ctx.args)
+
+            args = tuple(ctx.protected_args + ctx.args)
+
+            if args and args[0] == ";":
+                return ctx, args
 
         else:
             break
 
-    return ctx
+    return ctx, args
+
+
+@lru_cache(maxsize=3)
+def resolve_context(
+    cli_ctx: "Context",
+    args: "Tuple[str, ...]",
+    proxy: bool = False,
+    return_top_level_ctx_only: bool = True,
+) -> "List[Context]":
+    if not args:
+        return [cli_ctx]
+
+    res = []
+    ctx = cli_ctx
+    tmp_ctx = None
+
+    while args:
+        tmp_ctx = None
+        if return_top_level_ctx_only:
+            _ctx, _ = _generate_next_click_ctx(ctx.command, ctx, args, proxy=proxy)
+            res.append(_ctx)
+
+            _args = _ctx.args
+            if isinstance(_ctx.command, click.MultiCommand) and not _ctx.command.chain:
+                _args = _ctx.protected_args + _args
+
+            ctx, args = _resolve_context(_ctx, tuple(_args), proxy=proxy)
+            if args and args[0] == ";":
+                args = args[1:]
+
+        else:
+            ctx, args = _resolve_context(ctx, args, proxy=proxy)
+            res.append(ctx)
+            if args and args[0] == ";":
+                args = args[1:]
+                ctx = cli_ctx
+
+                tmp_ctx = cli_ctx
+
+    if tmp_ctx:
+        res.append(cli_ctx)
+
+    # print(f'{res = }')
+    return res
 
 
 @lru_cache(maxsize=3)
@@ -266,7 +321,10 @@ def _resolve_state(
 ) -> "Tuple[Context, ArgsParsingState, Incomplete]":
     # Resolves the parsing state of the arguments in the REPL prompt.
     args, incomplete = get_args_and_incomplete_from_args(document_text)
-    parsed_ctx = _resolve_context(ctx, args)
+
+    parsed_ctx = resolve_context(ctx, args, proxy=True, return_top_level_ctx_only=False)[
+        -1
+    ]
 
     state = currently_introspecting_args(ctx, parsed_ctx, args)
 

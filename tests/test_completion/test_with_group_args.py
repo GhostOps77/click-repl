@@ -3,30 +3,25 @@ import pytest
 from prompt_toolkit.document import Document
 
 from click_repl import ClickCompleter
-from click_repl import repl
 
 
 @click.group(invoke_without_command=True)
 @click.option("--user", required=True)
 @click.pass_context
 def cmd(ctx, user):
-    if ctx.invoked_subcommand is None:
-        click.echo(f"Top-level user: {user}")
-        repl(ctx)
+    pass
 
 
 @cmd.command()
-@click.option("--user")
+@click.option("--opt")
 def c1(user):
-    click.echo(f"Executed C1 with {user}!")
+    pass
 
 
 c = ClickCompleter(cmd.make_context("", args=["--user", "hi"]))
 
 
-@pytest.mark.parametrize(
-    "test_input, expected", [(" ", {"c1", "--user"}), ("c1 ", {"--user"})]
-)
+@pytest.mark.parametrize("test_input, expected", [(" ", {"c1"}), ("c1 ", {"--opt"})])
 def test_subcommand_invocation_from_group(test_input, expected):
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

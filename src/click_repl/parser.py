@@ -230,7 +230,7 @@ class ArgsParsingState:
         args_list = [
             param
             for param in current_ctx_command.params
-            # if isinstance(param, click.Argument)
+            if isinstance(param, click.Argument)
         ]
 
         all_args_not_incomplete = all(
@@ -238,19 +238,22 @@ class ArgsParsingState:
             for param in args_list
         )
 
-        no_incomplete_visible_args = args_list and all_args_not_incomplete
+        incomplete_args_exist = not args_list or all_args_not_incomplete
+        no_incomplete_args = args_list and all_args_not_incomplete
 
-        if (
-            isinstance(current_ctx_command, click.MultiCommand)
-            and no_incomplete_visible_args
-        ) and current_ctx_command != self.cli:
+        if current_ctx_command == self.cli:
+            return current_group, current_command
+
+        elif (
+            isinstance(current_ctx_command, click.MultiCommand) and incomplete_args_exist
+        ):
             # If all the arguments are passed to the ctx multicommand,
             # promote it as current group.
             current_group = current_ctx_command
 
-        elif (
-            not (is_parent_group_chained and no_incomplete_visible_args)
-            and current_ctx_command != self.cli
+        elif not (
+            is_parent_group_chained
+            and (not current_ctx_command.params or no_incomplete_args)
         ):
             # The current command should point to its parent, once it
             # got all of its values, only if the parent has chain=True
@@ -301,9 +304,9 @@ class ArgsParsingState:
         minus_one_param = None
 
         command_argument_params = (
-            i
-            for i in current_command.params  # type: ignore[union-attr]
-            if isinstance(i, click.Argument)
+            param
+            for param in current_command.params  # type: ignore[union-attr]
+            if isinstance(param, click.Argument)
         )
 
         for idx, param in enumerate(command_argument_params):
@@ -323,10 +326,10 @@ class ArgsParsingState:
 @lru_cache(maxsize=3)
 def currently_introspecting_args(
     cli_ctx: "Context",
-    cmd_ctx: "Context",
-    args: "Tuple[str]",
+    current_ctx: "Context",
+    args: "Tuple[str, ...]",
 ) -> ArgsParsingState:
-    return ArgsParsingState(cli_ctx, cmd_ctx, args)
+    return ArgsParsingState(cli_ctx, current_ctx, args)
 
 
 class Argument(_Argument):
@@ -346,8 +349,6 @@ class Argument(_Argument):
 
 class ReplOptionParser(OptionParser):
     def __init__(self, ctx: "Context") -> None:
-        # ctx.resilient_parsing = False
-
         super().__init__(ctx)
 
         for opt in ctx.command.params:
@@ -357,6 +358,16 @@ class ReplOptionParser(OptionParser):
         self, obj: "CoreArgument", dest: "t.Optional[str]", nargs: int = 1
     ) -> None:
         self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
+
+    def parse_args(
+        self, args: "List[str]"
+    ) -> "Tuple[Dict[str, Any], List[str], List[Parameter]]":
+        opts, args, param_order = super().parse_args(args)
+
+        if args and args[0] == ";":
+            self.ctx.allow_extra_args = True  # type: ignore[union-attr]
+
+        return opts, args, param_order
 
     def _match_long_opt(
         self, opt: str, explicit_value: "t.Optional[str]", state: "ParsingState"

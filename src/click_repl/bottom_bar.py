@@ -66,8 +66,8 @@ class BottomBar:
 
         self.state = state
 
-        self._formatted_text = self.make_formatted_text()
-        # self._formatted_text = str(state)
+        # self._formatted_text = self.make_formatted_text()
+        self._formatted_text = str(state)
 
     def get_group_metavar_template(self) -> "HTML":
         # Gets the metavar to describe the CLI Group, indicating
@@ -101,12 +101,18 @@ class BottomBar:
             # If its a click.Option type, we print the smallest flag,
             # prioritizing limited space on the bottom bar for
             # other parameters.
-            param_info.append(min(param.opts + param.secondary_opts, key=len))
+            param_info.append(
+                max(
+                    param.opts + param.secondary_opts,
+                    key=lambda x: len(click.parser.split_opt(x)[1]),
+                )
+            )
 
         if self.state.current_param == param:  # type: ignore[union-attr]
             # Displaying detailed information only for the current parameter
             # in the bottom bar, to save space.
             type_info = self.get_param_type_info(param, param.type)
+
             if isinstance(type_info, list):
                 param_info.extend(type_info)
             else:

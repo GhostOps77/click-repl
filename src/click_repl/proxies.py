@@ -10,6 +10,7 @@ import click
 from .parser import ReplOptionParser
 
 if t.TYPE_CHECKING:
+    from typing import Any
     from click import Command, Context, Parameter, Group
 
     V = t.TypeVar("V")
@@ -49,17 +50,32 @@ class Proxy:
     def __init__(self, obj: "V") -> None:
         object.__setattr__(self, "_obj", obj)
 
-    def __getattr__(self, name: str) -> "t.Any":
+    def __getattr__(self, name: str) -> "Any":
         """Delegate attribute access to the underlying object."""
         return getattr(object.__getattribute__(self, "_obj"), name)
 
-    def __setattr__(self, name: str, value: "t.Any") -> None:
+    def __setattr__(self, name: str, value: "Any") -> None:
         """Delegate attribute assignment to the underlying object."""
         setattr(object.__getattribute__(self, "_obj"), name, value)
 
     def __delattr__(self, name: str) -> None:
         """Delegate attribute assignment to the underlying object."""
         delattr(object.__getattribute__(self, "_obj"), name)
+
+    def revoke_changes(self) -> None:
+        raise NotImplementedError()
+
+    def get_obj(self) -> "Any":
+        return self.proxy_getattr("_obj")
+
+    def proxy_getattr(self, name: str) -> "Any":
+        return object.__getattribute__(self, name)
+
+    def proxy_setattr(self, name: str, value: "Any") -> "Any":
+        return object.__setattr__(self, name, value)
+
+    def proxy_delattr(self, name: str) -> "Any":
+        return object.__delattr__(self, name)
 
 
 class ProxyCommand(Proxy, click.Command):
@@ -77,8 +93,19 @@ class ProxyCommand(Proxy, click.Command):
 
     def __init__(self, obj: "Command") -> None:
         # Changing the Parameter types to their proxies.
-        obj.params = [_create_proxy_param(param) for param in obj.params]
         super().__init__(obj)
+        self.params = [_create_proxy_param(param) for param in obj.params]
+
+    def __enter__(self) -> "t.Self":
+        return self
+
+    def __exit__(self, *args: "Any") -> None:
+        self.revoke_changes()
+
+    def revoke_changes(self) -> None:
+        self.params = [
+            param.get_obj() for param in self.params  # type: ignore[attr-defined]
+        ]
 
     def make_parser(self, ctx: "Context") -> "ReplOptionParser":
         return ReplOptionParser(ctx)
@@ -92,7 +119,14 @@ class ProxyGroup(ProxyCommand, click.Group):
 
     def __init__(self, obj: "Group") -> None:
         super().__init__(obj)
+        object.__setattr__(
+            self, "_no_args_is_help", self.no_args_is_help  # type: ignore[has-type]
+        )
         self.no_args_is_help = False
+
+    def revoke_changes(self) -> None:
+        super().revoke_changes()
+        self.no_args_is_help = object.__getattribute__(self, "_no_args_is_help")
 
 
 class ProxyParameter(Proxy, click.Parameter):

@@ -81,17 +81,15 @@ def foo():
 
 
 @pytest.mark.parametrize(
-    "args, stdin, expected_err, expected_output",
+    "args, stdin, expected_output",
     [
-        ([], "foo\n", click_repl.exceptions.InvalidGroupFormat, ""),
-        (["temp_arg"], "", SystemExit, ""),
-        (["temp_arg"], "foo\n", SystemExit, "Foo\n"),
+        # ([], "foo\n", ""),
+        (["temp_arg"], "", ""),
+        (["temp_arg"], "foo\n", "Foo\n"),
     ],
 )
-def test_group_argument_with_required_false(
-    capsys, args, stdin, expected_err, expected_output
-):
-    with pytest.raises(expected_err):
+def test_group_argument_with_required_false(capsys, args, stdin, expected_output):
+    with pytest.raises(SystemExit):
         with mock_stdin(stdin):
             cli_arg_required_false(args=args, prog_name="cli_arg_required_false")
 

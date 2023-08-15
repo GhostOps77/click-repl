@@ -8,7 +8,7 @@ import typing as t
 from click.exceptions import Exit as ClickExit
 
 if t.TYPE_CHECKING:
-    from click import Argument, Command, Group
+    from click import Argument, Command
 
 
 __all__ = [
@@ -88,31 +88,31 @@ class ExitReplException(InternalCommandException):
     pass
 
 
-class InvalidGroupFormat(ParserError):
-    """
-    Exception raised when a Group has non-required arguments don't have
-    value assigned to them.
+# class InvalidGroupFormat(ParserError):
+#     """
+#     Exception raised when a Group has non-required arguments don't have
+#     value assigned to them.
 
-    This exception indicates an invalid format in a Group context object
-    where nonrequired arguments are missing values. It typically occurs
-    when attempting to parse command-line input that does not conform
-    to the expected format.
+#     This exception indicates an invalid format in a Group context object
+#     where nonrequired arguments are missing values. It typically occurs
+#     when attempting to parse command-line input that does not conform
+#     to the expected format.
 
-    Parameters
-    ----------
-    group : click.Group
-        The group object representing the group that has the invalid format.
+#     Parameters
+#     ----------
+#     group : click.Group
+#         The group object representing the group that has the invalid format.
 
-    param : click.Argument
-        The argument object representing the non-required argument
-        that is missing a value.
-    """
+#     param : click.Argument
+#         The argument object representing the non-required argument
+#         that is missing a value.
+#     """
 
-    def __init__(self, group: "Group", param: "Argument") -> None:
-        super().__init__(
-            f'Expected some value for the optional argument "{param.name}" of '
-            f'Group "{group.name}" to invoke the REPL, but got None'
-        )
+#     def __init__(self, group: "Group", param: "Argument") -> None:
+#         super().__init__(
+#             f'Expected some value for the optional argument "{param.name}" of '
+#             f'Group "{group.name}" to invoke the REPL, but got None'
+#         )
 
 
 class ArgumentPositionError(ParserError):

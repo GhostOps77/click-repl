@@ -291,40 +291,10 @@ class ClickCompleter(Completer):
         if "*" in _incomplete:
             return
 
-        # print(f'\n{incomplete = }')
-
-        # quoted = incomplete.count('"') % 2
-
-        # print(f"\n{has_space = } {quoted = } {incomplete = }")
-
         search_pattern = _incomplete.strip("\"'") + "*"
-        # if has_space and not quoted:
-        #     incomplete = f'"{incomplete}'
-
         temp_path_obj = Path(search_pattern)
 
-        # quote = ""  # Quote thats used to surround the path in shell
-
-        # if " " in incomplete:
-        #     for i in incomplete:
-        #         if i in ("'", '"'):
-        #             quote = i
-        #             break
-
-        completion_txt_len = -len(incomplete.raw_str)  # - has_space * 2  # + quoted * 2
-
-        # print(f"{temp_path_obj = }")
         for path in temp_path_obj.parent.glob(temp_path_obj.name):
-            #     if " " in path:
-            #         if quote:
-            #             path = quote + path
-            #         else:
-            #             if IS_WINDOWS:
-            #                 path = repr(path).replace("\\\\", "\\")
-            #     else:
-            #         if IS_WINDOWS:
-            #             path = path.replace("\\", "\\\\")
-
             if param_type.name == "directory" and path.is_file():
                 continue
 
@@ -336,20 +306,10 @@ class ClickCompleter(Completer):
             # if path.is_dir():
             #     path_str += os.path.sep
 
-            # if " " in path_str:
-            #     path_str = f'"{path_str}"'
-
-            # if quoted:
-            #     path_str = f'"{path_str}'
-            # else:
-            #     path_str = f'"{path_str}"'
-
-            # completion_txt_len -= 1
-
             yield ReplCompletion(
                 path_str,
                 incomplete,
-                start_position=completion_txt_len,
+                start_position=-len(incomplete.raw_str),
                 display=path.name,
             )
 
@@ -558,7 +518,7 @@ class ClickCompleter(Completer):
 
         if not current_param or (
             isinstance(current_param, click.Argument)
-            and _is_param_value_incomplete(ctx, current_param.name)
+            and ctx.params[current_param.name] is None  # type: ignore[index]
         ):
             for param in command.params:  # type: ignore[union-attr]
                 if isinstance(param, click.Argument) or (
@@ -690,8 +650,9 @@ class ClickCompleter(Completer):
             current_command, click.MultiCommand
         )
 
-        if incomplete_visible_args or not (
-            is_chained_command or is_current_command_a_group_or_none
+        if ctx.command != self.cli and (
+            incomplete_visible_args
+            or not (is_chained_command or is_current_command_a_group_or_none)
         ):
             yield from self.get_completion_for_command_arguments(
                 ctx, ctx.command, state, incomplete
@@ -791,8 +752,8 @@ class ClickCompleter(Completer):
 
         except Exception as e:
             # if not __debug__:
-            if isinstance(e, click.UsageError):
-                print(e.format_message())
+            # if isinstance(e, click.UsageError):
+            #     print(e.format_message())
             raise e
 
 
@@ -844,13 +805,6 @@ class ReplCompletion(Completion):
             incomplete = incomplete.raw_str
 
         kwargs.setdefault("display", display)
-
-        if not ISATTY:
-            # We don't have to pass the style attributes if the completions
-            # are not gonna be displayed.
-            kwargs.pop("style", None)
-            kwargs.pop("selected_style", None)
-        else:
-            kwargs.setdefault("start_position", -len(incomplete))
+        kwargs.setdefault("start_position", -len(incomplete))
 
         super().__init__(text, *args, **kwargs)

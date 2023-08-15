@@ -20,11 +20,10 @@ from .core import ReplContext
 from .exceptions import ClickExit
 from .exceptions import ExitReplException
 from .exceptions import InternalCommandException
-from .exceptions import InvalidGroupFormat
 from .parser import split_arg_string
-from .utils import _generate_next_click_ctx
 from .utils import _get_group_ctx
 from .utils import _print_err
+from .utils import resolve_context
 from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
@@ -110,18 +109,6 @@ class Repl:
         self.group_ctx = _get_group_ctx(ctx)
         self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]
 
-        for param in self.group.params:
-            if (
-                isinstance(param, click.Argument)
-                and not param.required
-                and self.group_ctx.params[param.name] is None  # type: ignore[index]
-            ):
-                # When a click.Argument(required=False) parameter in the CLI Group
-                # does not have a value, it will consume the first few words from
-                # the REPL input. This can cause issues in parsing and
-                # executing the command.
-                raise InvalidGroupFormat(self.group, param)
-
         self.internal_commands_system = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
         )
@@ -154,6 +141,8 @@ class Repl:
             parent=get_current_repl_ctx(silent=True),
         )
 
+        self.startup_check()
+
         if ISATTY:
             # If stdin is a TTY, prompt the user for input using PromptSession.
             def get_command() -> str:
@@ -167,6 +156,20 @@ class Repl:
                 return inp
 
         self.get_command = get_command
+
+    def startup_check(self) -> None:
+        # for param in self.group.params:
+        #     if (
+        #         isinstance(param, click.Argument)
+        #         and not param.required
+        #         and self.group_ctx.params[param.name] is None  # type: ignore[index]
+        #     ):
+        #         # When a click.Argument(required=False) parameter in the CLI Group
+        #         # does not have a value, it will consume the first few words from
+        #         # the REPL input. This can cause issues in parsing and
+        #         # executing the command.
+        #         raise InvalidGroupFormat(self.group, param)
+        pass
 
     def _bootstrap_completer_kwargs(
         self, completer_kwargs: "Dict[str, Any]"
@@ -325,33 +328,10 @@ class Repl:
             The command string that needs to be parsed and executed.
         """
 
-        # args = split_arg_string(command)
-
-        # The group command will dispatch based on args.
-        # The context object can parse args from the
-        # protected_args attribute.
-        # To ensure correct parsing, we temporarily store the
-        # previously available protected_args in a separate variable.
-
-        # try:
-        ctx, _ = _generate_next_click_ctx(
-            self.group, self.group_ctx, tuple(split_arg_string(command))
-        )
-        ctx.command.invoke(ctx)
-
-        # finally:
-        #     pass
-
-        # old_protected_args = self.group_ctx.protected_args
-
-        # try:
-        #     self.group_ctx.protected_args = args
-        #     self.group.invoke(self.group_ctx)
-
-        # finally:
-        #     # After the command invocation, we restore the
-        #     # protected_args back to the group_ctx.
-        #     self.group_ctx.protected_args = old_protected_args
+        for ctx in resolve_context(
+            self.group_ctx, tuple(split_arg_string(command)), proxy=True
+        ):
+            ctx.command.invoke(ctx)
 
     def loop(self) -> None:
         """Runs the main REPL loop."""
@@ -394,12 +374,9 @@ class Repl:
                     continue
 
                 except click.UsageError as e:
-                    if e.ctx is None:
-                        continue
-
-                    command_name = e.ctx.command.name
-                    if command_name is not None:
-                        command_name = f"{command_name}: "
+                    command_name = ""
+                    if e.ctx is not None and e.ctx.command.name is not None:
+                        command_name = f"{e.ctx.command.name}: "
 
                     _print_err(f"{command_name}{e.format_message()}")
 
