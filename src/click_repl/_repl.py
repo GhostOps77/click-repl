@@ -21,9 +21,9 @@ from .exceptions import ClickExit
 from .exceptions import ExitReplException
 from .exceptions import InternalCommandException
 from .parser import split_arg_string
+from .utils import _generate_next_click_ctx
 from .utils import _get_group_ctx
 from .utils import _print_err
-from .utils import resolve_context
 from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
@@ -328,10 +328,10 @@ class Repl:
             The command string that needs to be parsed and executed.
         """
 
-        for ctx in resolve_context(
-            self.group_ctx, tuple(split_arg_string(command)), proxy=True
-        ):
-            ctx.command.invoke(ctx)
+        ctx, _ = _generate_next_click_ctx(
+            self.group, self.group_ctx, tuple(split_arg_string(command))
+        )
+        ctx.command.invoke(ctx)
 
     def loop(self) -> None:
         """Runs the main REPL loop."""

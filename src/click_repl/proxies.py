@@ -52,15 +52,15 @@ class Proxy:
 
     def __getattr__(self, name: str) -> "Any":
         """Delegate attribute access to the underlying object."""
-        return getattr(object.__getattribute__(self, "_obj"), name)
+        return getattr(self.get_obj(), name)
 
     def __setattr__(self, name: str, value: "Any") -> None:
         """Delegate attribute assignment to the underlying object."""
-        setattr(object.__getattribute__(self, "_obj"), name, value)
+        setattr(self.get_obj(), name, value)
 
     def __delattr__(self, name: str) -> None:
         """Delegate attribute assignment to the underlying object."""
-        delattr(object.__getattribute__(self, "_obj"), name)
+        delattr(self.get_obj(), name)
 
     def revoke_changes(self) -> None:
         raise NotImplementedError()
@@ -71,11 +71,11 @@ class Proxy:
     def proxy_getattr(self, name: str) -> "Any":
         return object.__getattribute__(self, name)
 
-    def proxy_setattr(self, name: str, value: "Any") -> "Any":
-        return object.__setattr__(self, name, value)
+    def proxy_setattr(self, name: str, value: "Any") -> None:
+        object.__setattr__(self, name, value)
 
-    def proxy_delattr(self, name: str) -> "Any":
-        return object.__delattr__(self, name)
+    def proxy_delattr(self, name: str) -> None:
+        object.__delattr__(self, name)
 
 
 class ProxyCommand(Proxy, click.Command):
@@ -119,14 +119,14 @@ class ProxyGroup(ProxyCommand, click.Group):
 
     def __init__(self, obj: "Group") -> None:
         super().__init__(obj)
-        object.__setattr__(
-            self, "_no_args_is_help", self.no_args_is_help  # type: ignore[has-type]
+        self.proxy_setattr(
+            "_no_args_is_help_bkp", self.no_args_is_help  # type: ignore[has-type]
         )
         self.no_args_is_help = False
 
     def revoke_changes(self) -> None:
         super().revoke_changes()
-        self.no_args_is_help = object.__getattribute__(self, "_no_args_is_help")
+        self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
 
 
 class ProxyParameter(Proxy, click.Parameter):

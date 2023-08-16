@@ -359,16 +359,6 @@ class ReplOptionParser(OptionParser):
     ) -> None:
         self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
 
-    def parse_args(
-        self, args: "List[str]"
-    ) -> "Tuple[Dict[str, Any], List[str], List[Parameter]]":
-        opts, args, param_order = super().parse_args(args)
-
-        if args and args[0] == ";":
-            self.ctx.allow_extra_args = True  # type: ignore[union-attr]
-
-        return opts, args, param_order
-
     def _match_long_opt(
         self, opt: str, explicit_value: "t.Optional[str]", state: "ParsingState"
     ) -> None:

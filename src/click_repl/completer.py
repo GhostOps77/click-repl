@@ -10,7 +10,6 @@ import click
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.completion import Completion
 
-from ._globals import _RANGE_TYPES
 from ._globals import AUTO_COMPLETION_PARAM
 from ._globals import HAS_CLICK8
 from ._globals import IS_WINDOWS
@@ -344,56 +343,6 @@ class ClickCompleter(Completer):
             if any(alias.startswith(_incomplete) for alias in aliases):
                 yield ReplCompletion(value, incomplete, display_meta="/".join(aliases))
 
-    def get_completion_for_range_types(
-        self,
-        param_type: "Union[click.IntRange, click.FloatRange]",
-        incomplete: "Incomplete",
-    ) -> "Generator[Completion, None, None]":
-        """
-        Generates `prompt_toolkit.completion.Completion` objects
-        based on data from the given parameter type object
-        of a click command's parameter.
-
-        Parameters
-        ----------
-        param_type : click.Parameter
-            The `click.Parameter` object, to which the auto-completion
-            objects should be generated.
-
-        incomplete : Incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
-
-        Yields
-        ------
-        prompt_toolkit.completion.Completion type object.
-            The `prompt_toolkit.completion.Completion` objects thats sent
-            for auto-completion of the incomplete prompt, based on the
-            given parameter type.
-        """
-
-        _incomplete = incomplete._expand_envvars()
-
-        lower_bound = param_type.min or 0
-        upper_bound = param_type.max or 0
-
-        if isinstance(param_type, click.IntRange):
-            display_template = "{}"
-
-        elif HAS_CLICK8 and isinstance(param_type, click.FloatRange):
-            lower_bound = int(lower_bound)
-            upper_bound = int(upper_bound)
-            display_template = "{}."
-
-        lower_bound *= not getattr(param_type, "min_open", False)
-        upper_bound *= (not getattr(param_type, "max_open", False)) + 1
-
-        for i in range(lower_bound, upper_bound):  # type: ignore[arg-type]
-            text = display_template.format(i)
-
-            if text.startswith(_incomplete):
-                yield ReplCompletion(text, incomplete)
-
     def get_completion_from_param_type(
         self,
         param: "Parameter",
@@ -401,10 +350,7 @@ class ClickCompleter(Completer):
         state: "ArgsParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
-        if isinstance(param_type, _RANGE_TYPES):
-            yield from self.get_completion_for_range_types(param_type, incomplete)
-
-        elif isinstance(param_type, click.Tuple):
+        if isinstance(param_type, click.Tuple):
             values = state.current_ctx.params[param.name]  # type: ignore[index]
             if None in values:
                 yield from self.get_completion_from_param_type(
