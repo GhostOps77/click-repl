@@ -542,6 +542,32 @@ class ClickCompleter(Completer):
                 ctx, current_param, state, incomplete
             )
 
+    def check_for_command_arguments_request(
+        self, ctx: "Context", state: "ArgsParsingState", incomplete: "Incomplete"
+    ) -> bool:
+        current_command = state.current_command
+        args_list = [
+            param for param in ctx.command.params if isinstance(param, click.Argument)
+        ]
+
+        incomplete_visible_args = not args_list or any(
+            _is_param_value_incomplete(ctx, param.name) for param in args_list
+        )
+
+        # If there's a sub-command found in the state object,
+        # generate completions for its arguments.
+        is_chained_command = state.current_group.chain or getattr(
+            ctx.command, "chain", False
+        )
+        is_current_command_a_group_or_none = current_command is None or isinstance(
+            current_command, click.MultiCommand
+        )
+
+        return ctx.command != self.cli and (
+            incomplete_visible_args
+            or not (is_chained_command or is_current_command_a_group_or_none)
+        )
+
     def get_completions_for_subcommands(
         self,
         ctx: "Context",
@@ -575,37 +601,16 @@ class ClickCompleter(Completer):
             for auto-completion of the incomplete prompt.
         """
 
-        current_command = state.current_command
-        is_chain = state.current_group.chain
-
-        args_list = [
-            param for param in ctx.command.params if isinstance(param, click.Argument)
-        ]
-
-        any_param_incomplete = any(
-            _is_param_value_incomplete(ctx, param.name) for param in args_list
-        )
-
-        incomplete_visible_args = not args_list or any_param_incomplete
-
-        # If there's a sub-command found in the state object,
-        # generate completions for its arguments.
-        is_chained_command = is_chain or getattr(ctx.command, "chain", False)
-        is_current_command_a_group_or_none = current_command is None or isinstance(
-            current_command, click.MultiCommand
-        )
-
-        if ctx.command != self.cli and (
-            incomplete_visible_args
-            or not (is_chained_command or is_current_command_a_group_or_none)
-        ):
+        if self.check_for_command_arguments_request(ctx, state, incomplete):
             yield from self.get_completion_for_command_arguments(
                 ctx, ctx.command, state, incomplete
             )
 
-        # To check whether all the parameters in the current command
-        # has receieved their values.
-        _incomplete = incomplete.parsed_str
+        any_param_incomplete = any(
+            _is_param_value_incomplete(ctx, param.name)
+            for param in ctx.command.params
+            if isinstance(param, click.Argument)
+        )
 
         if any_param_incomplete or state.current_param:
             return
@@ -613,11 +618,13 @@ class ClickCompleter(Completer):
         if isinstance(ctx.command, click.MultiCommand):
             multicommand = ctx.command
 
-        elif is_chain:
+        elif state.current_group.chain:
             multicommand = state.current_group
 
         else:
             return
+
+        _incomplete = incomplete.parsed_str
 
         for name, command in _get_visible_subcommands(
             ctx, multicommand, _incomplete, self.show_hidden_commands
