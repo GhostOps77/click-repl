@@ -66,8 +66,8 @@ class BottomBar:
 
         self.state = state
 
-        # self._formatted_text = self.make_formatted_text()
-        self._formatted_text = str(state)
+        self._formatted_text = self.make_formatted_text()
+        # self._formatted_text = str(state)
 
     def get_group_metavar_template(self) -> "HTML":
         # Gets the metavar to describe the CLI Group, indicating
