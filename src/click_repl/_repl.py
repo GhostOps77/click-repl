@@ -27,7 +27,7 @@ from .utils import _print_err
 from .validator import ClickValidator
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Type
+    from typing import Any, Dict, Optional, Type, Union, Sequence
 
     from click import Context, Group
     from prompt_toolkit.completion import Completer
@@ -318,7 +318,7 @@ class Repl:
             # executed as a click command.
             self.execute_click_command(command)
 
-    def execute_click_command(self, command: str) -> None:
+    def execute_click_command(self, command: "Union[str, Sequence[str]]") -> None:
         """
         Executes click commands by parsing the given command string.
 
@@ -328,9 +328,10 @@ class Repl:
             The command string that needs to be parsed and executed.
         """
 
-        ctx, _ = _generate_next_click_ctx(
-            self.group, self.group_ctx, tuple(split_arg_string(command))
-        )
+        if isinstance(command, str):
+            command = split_arg_string(command)
+
+        ctx, _ = _generate_next_click_ctx(self.group, self.group_ctx, tuple(command))
         ctx.command.invoke(ctx)
 
     def loop(self) -> None:

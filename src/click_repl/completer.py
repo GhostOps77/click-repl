@@ -512,7 +512,7 @@ class ClickCompleter(Completer):
                 for opt in opts_with_incomplete_prefix:
                     display_meta = getattr(param, "help", "")
 
-                    if not self.shortest_opts_only:
+                    if not self.shortest_opts_only or incomplete:
                         # If shortest_opts_only is False, display the alias
                         # of the option as it is.
                         display = opt

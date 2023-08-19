@@ -63,8 +63,9 @@ def _get_group_ctx(ctx: "Context") -> "Context":
     # available most of the time. If not, then we return the original context object.
 
     if ctx.parent is not None and not isinstance(ctx.command, click.MultiCommand):
-        return ctx.parent
+        ctx = ctx.parent
 
+    ctx.protected_args = []
     return ctx
 
 
@@ -198,6 +199,9 @@ def _generate_next_click_ctx(
 ) -> "Tuple[Context, Optional[Command]]":
     # Since the resolve_command method only accepts string arguments in a
     # list format, we explicitly convert _args into a list.
+
+    if not args:
+        return parent_ctx, None
 
     _args = list(args)
     name, cmd, _args = command.resolve_command(parent_ctx, _args)
