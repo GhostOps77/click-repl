@@ -81,7 +81,7 @@ class Incomplete:
     __slots__ = ("raw_str", "parsed_str")
 
     def __init__(self, raw_str: str, parsed_str: str) -> None:
-        self.raw_str = raw_str
+        self.raw_str = raw_str.strip()
         self.parsed_str = parsed_str
 
     def __str__(self) -> str:
@@ -89,6 +89,9 @@ class Incomplete:
 
     def __repr__(self) -> str:
         return repr(self.parsed_str)
+
+    def __bool__(self) -> bool:
+        return bool(self.raw_str)
 
     def _expand_envvars(self) -> str:
         self.parsed_str = utils._expand_envvars(self.parsed_str)
@@ -169,6 +172,8 @@ class ArgsParsingState:
 
         param = getattr(self.current_param, "name", None)
         if param is not None:
+            if len(res) == 1:
+                res.append("None")
             res.append(param)
 
         return " > ".join(res)
@@ -201,7 +206,7 @@ class ArgsParsingState:
         current_group, current_command = self.get_current_group_and_command()
 
         if current_command is not None:
-            current_param = self.get_current_params(current_command)
+            current_param = self.get_current_param(current_command)
         else:
             current_param = None
 
@@ -263,7 +268,7 @@ class ArgsParsingState:
 
         return current_group, current_command
 
-    def get_current_params(self, current_command: "Command") -> "Optional[Parameter]":
+    def get_current_param(self, current_command: "Command") -> "Optional[Parameter]":
         self.remaining_params = [
             param
             for param in current_command.params
@@ -272,7 +277,7 @@ class ArgsParsingState:
 
         param: "Optional[Parameter]" = self.parse_param_opt(current_command)
         if param is None:
-            param = self.parse_params_arg(current_command)
+            param = self.parse_param_arg(current_command)
 
         return param
 
@@ -300,7 +305,7 @@ class ArgsParsingState:
 
         return None
 
-    def parse_params_arg(self, current_command: "Command") -> "Optional[click.Argument]":
+    def parse_param_arg(self, current_command: "Command") -> "Optional[click.Argument]":
         minus_one_param = None
 
         command_argument_params = (

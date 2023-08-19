@@ -575,7 +575,6 @@ class ClickCompleter(Completer):
             for auto-completion of the incomplete prompt.
         """
 
-        # current_group = state.current_group
         current_command = state.current_command
         is_chain = state.current_group.chain
 
@@ -583,11 +582,11 @@ class ClickCompleter(Completer):
             param for param in ctx.command.params if isinstance(param, click.Argument)
         ]
 
-        any_args_incomplete = any(
+        any_param_incomplete = any(
             _is_param_value_incomplete(ctx, param.name) for param in args_list
         )
 
-        incomplete_visible_args = not args_list or any_args_incomplete
+        incomplete_visible_args = not args_list or any_param_incomplete
 
         # If there's a sub-command found in the state object,
         # generate completions for its arguments.
@@ -604,11 +603,11 @@ class ClickCompleter(Completer):
                 ctx, ctx.command, state, incomplete
             )
 
-        # # To check whether all the parameters in the current command
-        # # has receieved their values.
+        # To check whether all the parameters in the current command
+        # has receieved their values.
         _incomplete = incomplete.parsed_str
 
-        if any_args_incomplete or state.current_param:
+        if any_param_incomplete or state.current_param:
             return
 
         if isinstance(ctx.command, click.MultiCommand):
