@@ -81,19 +81,18 @@ class Repl:
         If there is an empty optional argument in the CLI Group.
     """
 
-    __slots__ = (
-        "prompt_kwargs",
-        "completer_cls",
-        "completer_kwargs",
-        "validator_cls",
-        "validator_kwargs",
-        "internal_commands_system",
-        "bottom_bar",
-        "group_ctx",
-        "group",
-        "repl_ctx",
-        "get_command",
-    )
+    # __slots__ = (
+    #     "prompt_kwargs",
+    #     "completer_cls",
+    #     "completer_kwargs",
+    #     "validator_cls",
+    #     "validator_kwargs",
+    #     "bottom_bar",
+    #     "group_ctx",
+    #     "group",
+    #     "repl_ctx",
+    #     "get_command",
+    # )
 
     def __init__(
         self,
@@ -105,6 +104,7 @@ class Repl:
         validator_kwargs: "Dict[str, Any]" = {},
         internal_command_prefix: "Optional[str]" = ":",
         system_command_prefix: "Optional[str]" = "!",
+        # bottom_bar_kwargs: "Dict[str, Any]" = {},
     ):
         self.group_ctx = _get_group_ctx(ctx)
         self.group: "Group" = self.group_ctx.command  # type: ignore[assignment]

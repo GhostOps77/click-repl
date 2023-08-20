@@ -208,8 +208,8 @@ def _generate_next_click_ctx(
 
     # Since the resolve_command method only accepts string arguments in a
     # list format, we explicitly convert args into a list.
-
     _args = list(args)
+
     name, cmd, _args = command.resolve_command(parent_ctx, _args)
 
     if cmd is None:
