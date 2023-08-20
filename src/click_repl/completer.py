@@ -469,8 +469,6 @@ class ClickCompleter(Completer):
 
                 _, sep = _join_options(opts)
                 display = sep.join(opts_with_incomplete_prefix)
-
-                # Changed for the auto-completion.
                 opts_with_incomplete_prefix = [min(opts_with_incomplete_prefix, key=len)]
 
             for opt in opts_with_incomplete_prefix:
@@ -716,11 +714,9 @@ class ClickCompleter(Completer):
 
             yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)
 
-        except Exception as e:
-            # if not __debug__:
-            #     if isinstance(e, click.UsageError):
-            #         print(e.format_message())
-            raise e
+        except Exception:
+            # raise e
+            pass
 
 
 class ReplCompletion(Completion):

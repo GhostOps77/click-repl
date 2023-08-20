@@ -30,7 +30,8 @@ def _create_proxy_param(obj: "Parameter") -> "ProxyParameter":
 
 class Proxy:
     """
-    A generic proxy class that delegates attribute access to the underlying object.
+    An abstract generic proxy class that delegates attribute access
+    to the underlying object.
 
     This class provides a simple mechanism to proxy attribute access to another object.
     It allows accessing attributes, setting attributes, and deleting attributes on the
@@ -48,7 +49,7 @@ class Proxy:
     """
 
     def __init__(self, obj: "V") -> None:
-        object.__setattr__(self, "_obj", obj)
+        self.proxy_setattr("_obj", obj)
 
     def __getattr__(self, name: str) -> "Any":
         """Delegate attribute access to the underlying object."""
