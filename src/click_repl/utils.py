@@ -75,7 +75,7 @@ def _get_visible_subcommands(
     show_hidden_commands: bool = False,
 ) -> "Generator[Tuple[str, Command], None, None]":
     # Get all the subcommands whose name starts with the given
-    # "incomplete" prefix string
+    # "incomplete" prefix string.
 
     for command_name in multicommand.list_commands(ctx):
         if not command_name.startswith(incomplete):
@@ -85,7 +85,7 @@ def _get_visible_subcommands(
 
         if subcommand is None or (subcommand.hidden and not show_hidden_commands):
             # We skip if there's no command found or it's a hidden command
-            # and self.show_hidden_commands is False.
+            # and show_hidden_commands is False.
             continue
 
         yield command_name, subcommand
@@ -95,9 +95,9 @@ def _get_visible_subcommands(
 def get_info_dict(
     obj: "Union[Context, Command, Parameter, click.ParamType]",
 ) -> "Dict[str, Any]":
-    # Similar to 'get_info_dict' method implementation in the click objects,
-    # but only retrieves the crucial attributes thats required to differentiate
-    # between different ReplParsingState objects.
+    # This function is similar to the 'get_info_dict' method implementation
+    # in click objects, but it only retrieves the essential attributes
+    # required to differentiate between different 'ReplParsingState' objects.
 
     if isinstance(obj, click.Context):
         return {
@@ -222,7 +222,6 @@ def _generate_next_click_ctx(
         # case, we want to handle these incomplete arguments. To
         # achieve this, we use a proxy command object to modify
         # the command parsing behavior in click.
-
         with _create_proxy_command(cmd) as _cmd:
             ctx = _cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
 
@@ -266,9 +265,7 @@ def _resolve_context(
                         return ctx
 
                     args = tuple(sub_ctx.args)
-
                 ctx = sub_ctx
-
             args = tuple(ctx.protected_args + ctx.args)
 
         else:

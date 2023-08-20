@@ -37,7 +37,7 @@ file_handler = logging.FileHandler(log_file)
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
-logging.StreamHandler(stream=None)
+# logging.StreamHandler(stream=None)
 
 
 class ClickValidator(Validator):
@@ -63,7 +63,7 @@ class ClickValidator(Validator):
         self,
         ctx: "Context",
         internal_commands_system: "InternalCommandSystem",
-        display_all_errors: bool = False,
+        display_all_errors: bool = True,
     ) -> None:
         self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
@@ -130,13 +130,14 @@ class ClickValidator(Validator):
             raise ValidationError(0, f"{type(e).__name__}: {e.format_message()}")
 
         except Exception as e:
-            if not self.display_all_errors:
+            if self.display_all_errors:
                 # All other errors raised during input validation are
                 # displayed in the Validator bar, but only if
                 # self.catch_all_errors is set to True.
-                logger.error(f"{type(e).__name__}: {str(e)}")
-                raise e
+                raise ValidationError(0, f"{type(e).__name__}: {e}")
 
             # Error tracebacks are displayed during the REPL loop if
-            # self.catch_all_errors is set to False.
-            raise ValidationError(0, f"{type(e).__name__}: {e}")
+            # self.catch_all_errors is set to False. The short error
+            # messages are also logged into a click-repl-err.log file.
+            logger.error(f"{type(e).__name__}: {str(e)}")
+            raise e

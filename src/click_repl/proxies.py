@@ -64,18 +64,64 @@ class Proxy:
         delattr(self.get_obj(), name)
 
     def revoke_changes(self) -> None:
+        """
+        Revoke any changes made to the underlying object.
+
+        Raises
+        ------
+        NotImplementedError
+            This method is meant to be overridden by subclasses.
+        """
         raise NotImplementedError()
 
     def get_obj(self) -> "Any":
+        """
+        Gets the underlying object.
+
+        Returns
+        -------
+        The underlying object to which attribute access is delegated.
+        """
         return self.proxy_getattr("_obj")
 
     def proxy_getattr(self, name: str) -> "Any":
+        """
+        Proxy attribute access for internal use.
+
+        Parameters
+        ----------
+        name : str
+            The name of the attribute to access.
+
+        Returns
+        -------
+        The value of the accessed attribute.
+        """
         return object.__getattribute__(self, name)
 
-    def proxy_setattr(self, name: str, value: "Any") -> None:
+    def proxy_setattr(self, name: str, value: Any) -> None:
+        """
+        Proxy attribute assignment for internal use.
+
+        Parameters
+        ----------
+        name : str
+            The name of the attribute to assign.
+
+        value : Any
+            The value to assign to the attribute.
+        """
         object.__setattr__(self, name, value)
 
     def proxy_delattr(self, name: str) -> None:
+        """
+        Proxy attribute deletion for internal use.
+
+        Parameters
+        ----------
+        name : str
+            The name of the attribute to delete.
+        """
         object.__delattr__(self, name)
 
 
@@ -117,6 +163,11 @@ class ProxyGroup(ProxyCommand, click.Group):
     """
     A proxy class for `click.Group` objects that changes its parser to
     `click_repl.parser.ReplOptionParser` in the `make_parser` method.
+
+    Parameters
+    ----------
+    obj : click.Group
+        The `click.Group` object to be proxied.
     """
 
     def __init__(self, obj: "Group") -> None:
@@ -138,6 +189,11 @@ class ProxyParameter(Proxy, click.Parameter):
 
     This class overrides the `process_value` method to return missing
     values as they are, even if they are incomplete or not provided.
+
+    Parameters
+    ----------
+    obj : click.Parameter
+        The `click.Parameter` object to be proxied.
     """
 
     def full_process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
@@ -160,6 +216,11 @@ class ProxyArgument(ProxyParameter, click.Argument):
     """
     A proxy class for `click.Argument` objects, allowing modification of their behavior
     during the processing of values based on their type.
+
+    Parameters
+    ----------
+    obj : click.Argument
+        The `click.Argument` object to be proxied.
     """
 
     pass
@@ -169,6 +230,11 @@ class ProxyOption(ProxyParameter, click.Option):
     """
     A proxy class for `click.Option` objects, allowing modification of their behavior
     during the processing of values based on their type.
+
+    Parameters
+    ----------
+    obj : click.Option
+        The `click.Option` object to be proxied.
     """
 
     pass
