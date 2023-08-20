@@ -12,6 +12,7 @@ from threading import local
 import click
 
 if t.TYPE_CHECKING:
+    from typing import Union, NoReturn
     from .core import ReplContext
 
 
@@ -42,9 +43,7 @@ _locals = local()
 _locals.ctx_stack = []
 
 
-def get_current_repl_ctx(
-    silent: bool = False,
-) -> "t.Union[ReplContext, t.NoReturn, None]":
+def get_current_repl_ctx(silent: bool = False) -> "Union[ReplContext, NoReturn, None]":
     """
     Returns the current click-repl Context, providing a way to access
     the context from anywhere in the code  This is a more implicit

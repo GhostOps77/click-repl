@@ -104,7 +104,8 @@ class ProxyCommand(Proxy, click.Command):
 
     def revoke_changes(self) -> None:
         self.params = [
-            param.get_obj() for param in self.params  # type: ignore[attr-defined]
+            param.get_obj() if isinstance(param, ProxyParameter) else param
+            for param in self.params
         ]
 
     def make_parser(self, ctx: "Context") -> "ReplOptionParser":

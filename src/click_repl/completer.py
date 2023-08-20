@@ -30,7 +30,7 @@ if t.TYPE_CHECKING:
 
     from .bottom_bar import BottomBar
     from .core import ReplContext
-    from .parser import ArgsParsingState
+    from .parser import ReplParsingState
 
     Prefix: t.TypeAlias = str
 
@@ -99,9 +99,8 @@ class ClickCompleter(Completer):
         self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
 
-        self.repl_ctx: "Optional[ReplContext]" = None
-
         if ISATTY:
+            self.repl_ctx: "Optional[ReplContext]" = None
             self.bottom_bar = bottom_bar
 
         else:
@@ -148,7 +147,7 @@ class ClickCompleter(Completer):
         self,
         ctx: "Context",
         param: "Parameter",
-        state: "ArgsParsingState",
+        state: "ReplParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         """
@@ -264,7 +263,7 @@ class ClickCompleter(Completer):
     def get_completion_for_path_types(
         self,
         param_type: "Union[click.Path, click.File]",
-        state: "ArgsParsingState",
+        state: "ReplParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         """
@@ -347,7 +346,7 @@ class ClickCompleter(Completer):
         self,
         param: "Parameter",
         param_type: "click.types.ParamType",
-        state: "ArgsParsingState",
+        state: "ReplParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         if isinstance(param_type, click.Tuple):
@@ -376,7 +375,7 @@ class ClickCompleter(Completer):
         self,
         ctx: "Context",
         param: "Parameter",
-        state: "ArgsParsingState",
+        state: "ReplParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         """
@@ -407,7 +406,7 @@ class ClickCompleter(Completer):
             given parameter.
         """
 
-        param_type: "click.ParamType" = param.type  # type: ignore[union-attr]
+        param_type = param.type
 
         if not isinstance(
             param_type, (click.types.StringParamType, click.types.UnprocessedParamType)
@@ -419,16 +418,88 @@ class ClickCompleter(Completer):
         elif getattr(param, AUTO_COMPLETION_PARAM, None) is not None:
             # Completions for parameters that have auto-completion functions.
             yield from self.get_completion_from_autocompletion_functions(
-                ctx, param, state, incomplete  # type: ignore[arg-type]
+                ctx, param, state, incomplete
             )
 
         return
+
+    def get_option_flags_for_completion(
+        self,
+        ctx: "Context",
+        command: "Command",
+        state: "ReplParsingState",
+        incomplete: "Incomplete",
+    ) -> "Generator[Completion, None, None]":
+        args = state.args
+        _incomplete = incomplete.parsed_str
+
+        for param in command.params:
+            if isinstance(param, click.Argument) or (
+                param.hidden and not self.show_hidden_params  # type: ignore[attr-defined]
+            ):
+                # We skip the Arguments and hidden parameters
+                # if self.show_hidden_params is False.
+                continue
+
+            opts = param.opts + param.secondary_opts
+
+            previous_args = args[: param.nargs * -1]
+            already_used = any(opt in previous_args for opt in opts)
+            hide = self.show_only_unused_opts and already_used and not param.multiple
+
+            opts_with_incomplete_prefix = [
+                opt for opt in opts if opt.startswith(_incomplete) and not hide
+            ]
+
+            if (
+                getattr(param, "is_flag", False) and any(i in args for i in opts)
+            ) or not opts_with_incomplete_prefix:
+                # Skip the current iteration, if param is a flag,
+                # and its already in args, or the param is called
+                # recently within its nargs length.
+                continue
+
+            display = ""
+
+            if self.shortest_opts_only and not _incomplete:
+                # Displays all the aliases of the option in the completion,
+                # only if the incomplete string is empty.
+                # It provides only the shortest one for auto-completion,
+                # by joining all the aliases into a single string.
+
+                _, sep = _join_options(opts)
+                display = sep.join(opts_with_incomplete_prefix)
+
+                # Changed for the auto-completion.
+                opts_with_incomplete_prefix = [min(opts_with_incomplete_prefix, key=len)]
+
+            for opt in opts_with_incomplete_prefix:
+                display_meta = getattr(param, "help", "")
+
+                if not self.shortest_opts_only or _incomplete:
+                    # If shortest_opts_only is False, display the alias
+                    # of the option as it is.
+                    display = opt
+
+                if not (getattr(param, "count", False) or param.default is None):
+                    # Display the default value of the option, only if
+                    # the option is not a counting option, and
+                    # the default value is not None.
+                    display += f" [Default: {param.default}]"
+
+                yield ReplCompletion(
+                    opt,
+                    incomplete,
+                    display=display,
+                    display_meta=display_meta,
+                    style=self.styles["option"],
+                )
 
     def get_completion_for_command_arguments(
         self,
         ctx: "Context",
         command: "Command",
-        state: "ArgsParsingState",
+        state: "ReplParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         """
@@ -458,92 +529,29 @@ class ClickCompleter(Completer):
             for auto-completion of the incomplete prompt.
         """
 
-        args = state.args
         current_param = state.current_param
-        _incomplete = incomplete.parsed_str
 
         if not current_param or (
             isinstance(current_param, click.Argument)
             and ctx.params[current_param.name] is None  # type: ignore[index]
         ):
-            for param in command.params:  # type: ignore[union-attr]
-                if isinstance(param, click.Argument) or (
-                    param.hidden  # type: ignore[attr-defined]
-                    and not self.show_hidden_params
-                ):
-                    # We skip the Arguments and hidden parameters
-                    # if self.show_hidden_params is False.
-                    continue
-
-                opts = param.opts + param.secondary_opts
-
-                previous_args = args[: param.nargs * -1]  # type: ignore[index]
-                already_used = any(opt in previous_args for opt in opts)
-                hide = self.show_only_unused_opts and already_used and not param.multiple
-
-                opts_with_incomplete_prefix = [
-                    opt for opt in opts if opt.startswith(_incomplete) and not hide
-                ]
-
-                if (
-                    getattr(param, "is_flag", False) and any(i in args for i in opts)
-                ) or not opts_with_incomplete_prefix:
-                    # Skip the current iteration, if param is a flag,
-                    # and its already in args, or the param is called
-                    # recently within its nargs length.
-                    continue
-
-                display = ""
-
-                if self.shortest_opts_only and not _incomplete:
-                    # Displays all the aliases of the option in the completion,
-                    # only if the incomplete string is empty.
-                    # It provides only the shortest one for auto-completion,
-                    # by joining all the aliases into a single string.
-
-                    _, sep = _join_options(opts)
-                    display = sep.join(opts_with_incomplete_prefix)
-
-                    # Changed for the auto-completion.
-                    opts_with_incomplete_prefix = [
-                        min(opts_with_incomplete_prefix, key=len)
-                    ]
-
-                for opt in opts_with_incomplete_prefix:
-                    display_meta = getattr(param, "help", "")
-
-                    if not self.shortest_opts_only or incomplete:
-                        # If shortest_opts_only is False, display the alias
-                        # of the option as it is.
-                        display = opt
-
-                    if not (getattr(param, "count", False) or param.default is None):
-                        # Display the default value of the option, only if
-                        # the option is not a counting option, and
-                        # the default value is not None.
-                        display += f" [Default: {param.default}]"
-
-                    yield ReplCompletion(
-                        opt,
-                        incomplete,
-                        display=display,
-                        display_meta=display_meta,
-                        style=self.styles["option"],
-                    )
+            yield from self.get_option_flags_for_completion(
+                ctx, command, state, incomplete
+            )
 
         if current_param and (
             not getattr(current_param, "hidden", False) or self.show_hidden_params
         ):
             # If the current param is not None and it's not a hidden param,
             # or if the current param is a hidden param and
-            # self.show_completions_for_hidden_param is true, generate
-            # auto-completion for it.
+            # self.show_completions_for_hidden_param is true,
+            # generate auto-completion for it.
             yield from self.get_completion_from_param(
                 ctx, current_param, state, incomplete
             )
 
     def check_for_command_arguments_request(
-        self, ctx: "Context", state: "ArgsParsingState", incomplete: "Incomplete"
+        self, ctx: "Context", state: "ReplParsingState", incomplete: "Incomplete"
     ) -> bool:
         current_command = state.current_command
         args_list = [
@@ -568,10 +576,30 @@ class ClickCompleter(Completer):
             or not (is_chained_command or is_current_command_a_group_or_none)
         )
 
+    def get_multicommand_for_generating_subcommand_completions(
+        self, ctx: "Context", state: "ReplParsingState", incomplete: "Incomplete"
+    ) -> "Optional[MultiCommand]":
+        any_argument_param_incomplete = any(
+            _is_param_value_incomplete(ctx, param.name)
+            for param in ctx.command.params
+            if isinstance(param, click.Argument)
+        )
+
+        if any_argument_param_incomplete or state.current_param:
+            return None
+
+        if isinstance(ctx.command, click.MultiCommand):
+            return ctx.command
+
+        if state.current_group.chain:
+            return state.current_group
+
+        return None
+
     def get_completions_for_subcommands(
         self,
         ctx: "Context",
-        state: "ArgsParsingState",
+        state: "ReplParsingState",
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         """
@@ -606,22 +634,11 @@ class ClickCompleter(Completer):
                 ctx, ctx.command, state, incomplete
             )
 
-        any_param_incomplete = any(
-            _is_param_value_incomplete(ctx, param.name)
-            for param in ctx.command.params
-            if isinstance(param, click.Argument)
+        multicommand = self.get_multicommand_for_generating_subcommand_completions(
+            ctx, state, incomplete
         )
 
-        if any_param_incomplete or state.current_param:
-            return
-
-        if isinstance(ctx.command, click.MultiCommand):
-            multicommand = ctx.command
-
-        elif state.current_group.chain:
-            multicommand = state.current_group
-
-        else:
+        if multicommand is None:
             return
 
         _incomplete = incomplete.parsed_str
@@ -699,13 +716,10 @@ class ClickCompleter(Completer):
 
             yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)
 
-        # except Exception:
-        #     pass
-
         except Exception as e:
             # if not __debug__:
-            # if isinstance(e, click.UsageError):
-            #     print(e.format_message())
+            #     if isinstance(e, click.UsageError):
+            #         print(e.format_message())
             raise e
 
 

@@ -152,7 +152,7 @@ class Repl:
             # If stdin is not a TTY, read input from stdin directly.
             def get_command() -> str:
                 inp = sys.stdin.readline().strip()
-                self.repl_ctx._history.append(inp)  # type: ignore[union-attr]
+                self.repl_ctx._history.append(inp)
                 return inp
 
         self.get_command = get_command

@@ -12,14 +12,14 @@ import click
 from click.parser import split_opt
 
 from ._globals import _RANGE_TYPES
-from .parser import currently_introspecting_args
 from .parser import get_args_and_incomplete_from_args
+from .parser import get_current_repl_parsing_state
 from .proxies import _create_proxy_command
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Tuple, Union, Generator
+    from typing import Any, Dict, Optional, Tuple, Union, Generator, List
     from click import Command, Context, Parameter, MultiCommand
-    from .parser import ArgsParsingState, Incomplete
+    from .parser import ReplParsingState, Incomplete
 
 
 def _expand_envvars(text: str) -> str:
@@ -36,25 +36,24 @@ def _is_help_option(param: "click.Option") -> bool:
 
 
 def _print_err(text: str) -> None:
-    # Prints the given text to the stderr, in red colour.
+    # Prints the given text to stderr, in red colour.
     click.secho(text, color=True, err=True, fg="red")
 
 
 def _is_param_value_incomplete(ctx: "Context", param_name: "Optional[str]") -> bool:
-    # Checks whether the given value of the parameter contains `None` values.
+    # Checks whether the given name of that parameter
+    # doesn't recieve it's values completely.
     if param_name is None:
         return False
 
-    value = ctx.params.get(param_name, None)  # type: ignore[arg-type]
+    value = ctx.params.get(param_name, None)
     return value in (None, ()) or (isinstance(value, tuple) and None in value)
 
 
-def _join_options(options: "t.List[str]") -> "t.Tuple[t.List[str], str]":
-    # Same implementation as ijoin_options functionn click.formatting..
+def _join_options(options: "List[str]") -> "Tuple[List[str], str]":
+    # Same implementation as click.formatting.join_options function, but much simpler.
     any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
-    options.sort(key=len)
-
-    return options, ";" if any_prefix_is_slash else "/"
+    return sorted(options, key=len), ";" if any_prefix_is_slash else "/"
 
 
 def _get_group_ctx(ctx: "Context") -> "Context":
@@ -75,6 +74,9 @@ def _get_visible_subcommands(
     incomplete: str,
     show_hidden_commands: bool = False,
 ) -> "Generator[Tuple[str, Command], None, None]":
+    # Get all the subcommands whose name starts with the given
+    # "incomplete" prefix string
+
     for command_name in multicommand.list_commands(ctx):
         if not command_name.startswith(incomplete):
             continue
@@ -82,8 +84,8 @@ def _get_visible_subcommands(
         subcommand = multicommand.get_command(ctx, command_name)
 
         if subcommand is None or (subcommand.hidden and not show_hidden_commands):
-            # We skip the hidden command if self.show_hidden_commands is False,
-            # or if there's no command found.
+            # We skip if there's no command found or it's a hidden command
+            # and self.show_hidden_commands is False.
             continue
 
         yield command_name, subcommand
@@ -93,13 +95,17 @@ def _get_visible_subcommands(
 def get_info_dict(
     obj: "Union[Context, Command, Parameter, click.ParamType]",
 ) -> "Dict[str, Any]":
+    # Similar to 'get_info_dict' method implementation in the click objects,
+    # but only retrieves the crucial attributes thats required to differentiate
+    # between different ReplParsingState objects.
+
     if isinstance(obj, click.Context):
         return {
             "command": get_info_dict(obj.command),
             "params": obj.params,
         }
 
-    info_dict: "Dict[str, Any]" = {}  # type: ignore[no-redef]
+    info_dict: "Dict[str, Any]" = {}
 
     if isinstance(obj, click.Command):
         ctx = click.Context(obj)
@@ -189,7 +195,7 @@ def get_info_dict(
     return info_dict
 
 
-@lru_cache(maxsize=6)
+@lru_cache(maxsize=3)
 def _generate_next_click_ctx(
     command: "MultiCommand",
     parent_ctx: "Context",
@@ -197,11 +203,11 @@ def _generate_next_click_ctx(
     proxy: bool = False,
     **ctx_kwargs: "Dict[str, Any]"
 ) -> "Tuple[Context, Optional[Command]]":
-    # Since the resolve_command method only accepts string arguments in a
-    # list format, we explicitly convert _args into a list.
-
     if not args:
         return parent_ctx, None
+
+    # Since the resolve_command method only accepts string arguments in a
+    # list format, we explicitly convert args into a list.
 
     _args = list(args)
     name, cmd, _args = command.resolve_command(parent_ctx, _args)
@@ -216,8 +222,10 @@ def _generate_next_click_ctx(
         # case, we want to handle these incomplete arguments. To
         # achieve this, we use a proxy command object to modify
         # the command parsing behavior in click.
+
         with _create_proxy_command(cmd) as _cmd:
             ctx = _cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
+
     else:
         ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
 
@@ -272,11 +280,11 @@ def _resolve_context(
 @lru_cache(maxsize=3)
 def _resolve_state(
     ctx: "Context", document_text: str
-) -> "Tuple[Context, ArgsParsingState, Incomplete]":
+) -> "Tuple[Context, ReplParsingState, Incomplete]":
     # Resolves the parsing state of the arguments in the REPL prompt.
     args, incomplete = get_args_and_incomplete_from_args(document_text)
 
     parsed_ctx = _resolve_context(ctx, args, proxy=True)
-    state = currently_introspecting_args(ctx, parsed_ctx, args)
+    state = get_current_repl_parsing_state(ctx, parsed_ctx, args)
 
     return parsed_ctx, state, incomplete

@@ -17,7 +17,7 @@ if t.TYPE_CHECKING:
 
     from click import Parameter
 
-    from .parser import ArgsParsingState
+    from .parser import ReplParsingState
 
 
 __all__ = ["BottomBar"]
@@ -37,7 +37,7 @@ class BottomBar:
         show_hidden_params : bool, default: False
             Determines whether to display hidden params at bottom bar.
         """
-        self.state: "Optional[ArgsParsingState]" = None
+        self.state: "Optional[ReplParsingState]" = None
         self._formatted_text: "t.Union[str, HTML]" = ""
         self.show_hidden_params = show_hidden_params
 
@@ -60,7 +60,7 @@ class BottomBar:
         # return str(self.state)
         return self._formatted_text
 
-    def update_state(self, state: "ArgsParsingState") -> None:
+    def update_state(self, state: "ReplParsingState") -> None:
         if not ISATTY or state is None or state == self.state:
             return
 
@@ -73,11 +73,10 @@ class BottomBar:
         # Gets the metavar to describe the CLI Group, indicating
         # whether it is a chained Group or not.
 
-        current_group = self.state.current_group  # type: ignore[union-attr]
+        state = self.state
+        current_group = state.current_group  # type: ignore[union-attr]
 
-        if not current_group.list_commands(
-            self.state.current_ctx  # type: ignore[union-attr]
-        ):
+        if not current_group.list_commands(state.current_ctx):  # type: ignore[union-attr]
             # Empty string if there are no subcommands.
             metavar = ""
 
@@ -202,7 +201,9 @@ class BottomBar:
         if not param_info:
             return ""
 
-        if param == self.state.current_param:  # type: ignore[union-attr]
+        state = self.state
+
+        if param == state.current_param:  # type: ignore[union-attr]
             # The current parameter is shown in bold and underlined letters.
             if not isinstance(param.type, click.Tuple):
                 return f"<u><b>{' '.join(param_info)}</b></u>"
@@ -212,7 +213,7 @@ class BottomBar:
             stop = False
 
             for type_str, value in zip(
-                param_info, self.state.current_ctx.params[param.name]  # type: ignore
+                param_info, state.current_ctx.params[param.name]  # type: ignore
             ):
                 if value is not None:
                     type_info.append(f"<s>{type_str}</s>")
@@ -229,7 +230,7 @@ class BottomBar:
 
         if (
             any(getattr(param, attr, False) for attr in ("count", "is_flag"))
-            or param in self.state.remaining_params  # type: ignore[union-attr]
+            or param in state.remaining_params  # type: ignore[union-attr]
         ):
             # Counters, Flags, and Parameters that are awaiting for values
             # are displayed without special formatting.
@@ -240,7 +241,9 @@ class BottomBar:
         return f"<s>{_param_info}</s>"
 
     def make_formatted_text(self) -> "t.Union[str, HTML]":
-        current_command = self.state.current_command  # type: ignore[union-attr]
+        state = self.state
+
+        current_command = state.current_command  # type: ignore[union-attr]
 
         if current_command is None:
             # If there is no command currently entered in the REPL,
@@ -259,7 +262,7 @@ class BottomBar:
                 for param in current_command.params
                 if not getattr(param, "hidden", False)
                 or (
-                    param == self.state.current_param  # type: ignore[union-attr]
+                    param == state.current_param  # type: ignore[union-attr]
                     and self.show_hidden_params
                 )
             ]

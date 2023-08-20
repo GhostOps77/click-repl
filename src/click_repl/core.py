@@ -14,10 +14,10 @@ from ._globals import _push_context
 from ._globals import ISATTY
 
 if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Generator, List, Optional
+    from typing import Any, Callable, Dict, Generator, List, Optional, Final
 
     from ._internal_cmds import InternalCommandSystem
-    from .parser import ArgsParsingState
+    from .parser import ReplParsingState
 
     InfoDict = t.TypedDict(
         "InfoDict",
@@ -28,7 +28,7 @@ if t.TYPE_CHECKING:
             "internal_command_system": InternalCommandSystem,
             "parent": Optional[ReplContext],  # type: ignore[used-before-def] # noqa: F821
             "_history": List[str],
-            "current_state": Optional[ArgsParsingState],
+            "current_state": Optional[ReplParsingState],
         },
     )
 
@@ -86,18 +86,15 @@ class ReplContext:
 
         if ISATTY:
             prompt_kwargs["completer"].repl_ctx = self
-            self.session: "Optional[PromptSession[Dict[str, Any]]]" = PromptSession(
+            self.session: "PromptSession[Dict[str, Any]]" = PromptSession(
                 **prompt_kwargs,
             )
 
-        else:
-            self.session = None
-
         self.internal_command_system = internal_command_system
-        self.group_ctx: "t.Final[click.Context]" = group_ctx
+        self.group_ctx: "Final[click.Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
-        self.parent: "t.Final[Optional[ReplContext]]" = parent
-        self.current_state: "Optional[ArgsParsingState]" = None
+        self.parent: "Final[Optional[ReplContext]]" = parent
+        self.current_state: "Optional[ReplParsingState]" = None
 
     def __enter__(self) -> "ReplContext":
         _push_context(self)
@@ -116,13 +113,13 @@ class ReplContext:
         str or None
             string if `sys.stdin.isatty()` is `True`, else `None`
         """
-        if isinstance(self.session, PromptSession):
+        if ISATTY:
             return str(self.session.message)
         return None
 
     @prompt_message.setter
     def prompt_message(self, value: str) -> None:
-        if isinstance(self.session, PromptSession):
+        if ISATTY:
             self.session.message = value
 
     def to_info_dict(self) -> "InfoDict":
@@ -134,15 +131,20 @@ class ReplContext:
         A dictionary that has the instance variables and its values.
         """
 
-        return {
+        res: "InfoDict" = {
             "group_ctx": self.group_ctx,
             "prompt_kwargs": self.prompt_kwargs,
-            "session": self.session,
             "internal_command_system": self.internal_command_system,
+            "session": None,
             "parent": self.parent,
             "_history": self._history,
             "current_state": self.current_state,
         }
+
+        if ISATTY:
+            res.update({"session": self.session})
+
+        return res
 
     def session_reset(self) -> None:
         """
@@ -151,7 +153,7 @@ class ReplContext:
         `prompt_toolkit.session.PromptSession` object
         """
 
-        if self.session is not None:
+        if ISATTY:
             self.session = PromptSession(**self.prompt_kwargs)
 
     def history(self) -> "Generator[str, None, None]":
@@ -165,7 +167,7 @@ class ReplContext:
             in chronological order from most recent to oldest.
         """
 
-        if self.session is not None:
+        if ISATTY:
             yield from self.session.history.load_history_strings()
 
         else:

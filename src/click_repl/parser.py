@@ -22,7 +22,7 @@ from ._globals import HAS_CLICK8
 from .exceptions import ArgumentPositionError
 
 if t.TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Sequence, Tuple
+    from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
     from click import Argument as CoreArgument
     from click import Command, Context, MultiCommand, Parameter
@@ -138,7 +138,7 @@ def get_args_and_incomplete_from_args(
     return _args, Incomplete(raw_incomplete, incomplete)
 
 
-class ArgsParsingState:
+class ReplParsingState:
     __slots__ = (
         "cli",
         "current_ctx",
@@ -151,7 +151,10 @@ class ArgsParsingState:
     )
 
     def __init__(
-        self, cli_ctx: "Context", current_ctx: "Context", args: "Sequence[str]"
+        self,
+        cli_ctx: "Context",
+        current_ctx: "Context",
+        args: "Tuple[str, ...]",
     ) -> None:
         self.cli_ctx = cli_ctx
         self.cli: "MultiCommand" = self.cli_ctx.command  # type: ignore[assignment]
@@ -198,7 +201,7 @@ class ArgsParsingState:
         )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ArgsParsingState):
+        if not isinstance(other, ReplParsingState):
             return NotImplemented
         return self.__key() == other.__key()
 
@@ -329,18 +332,18 @@ class ArgsParsingState:
 
 
 @lru_cache(maxsize=3)
-def currently_introspecting_args(
+def get_current_repl_parsing_state(
     cli_ctx: "Context",
     current_ctx: "Context",
     args: "Tuple[str, ...]",
-) -> ArgsParsingState:
-    return ArgsParsingState(cli_ctx, current_ctx, args)
+) -> "ReplParsingState":
+    return ReplParsingState(cli_ctx, current_ctx, args)
 
 
 class Argument(_Argument):
     def process(
         self,
-        value: "t.Union[t.Optional[str], t.Sequence[t.Optional[str]]]",
+        value: "Union[Optional[str], Sequence[Optional[str]]]",
         state: "ParsingState",
     ) -> None:
         if self.nargs > 1 and value is not None:
@@ -360,12 +363,12 @@ class ReplOptionParser(OptionParser):
             opt.add_to_parser(self, ctx)
 
     def add_argument(
-        self, obj: "CoreArgument", dest: "t.Optional[str]", nargs: int = 1
+        self, obj: "CoreArgument", dest: "Optional[str]", nargs: int = 1
     ) -> None:
         self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
 
     def _match_long_opt(
-        self, opt: str, explicit_value: "t.Optional[str]", state: "ParsingState"
+        self, opt: str, explicit_value: "Optional[str]", state: "ParsingState"
     ) -> None:
         if opt not in self._long_opt:
             from difflib import get_close_matches
@@ -436,7 +439,7 @@ class ReplOptionParser(OptionParser):
 
     def _get_value_from_state(
         self, option_name: str, option: "Option", state: "ParsingState"
-    ) -> t.Any:
+    ) -> "Any":
         nargs = option.nargs
         rargs_len = len(state.rargs)
 

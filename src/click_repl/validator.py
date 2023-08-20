@@ -62,8 +62,7 @@ class ClickValidator(Validator):
         self,
         ctx: "Context",
         internal_commands_system: "InternalCommandSystem",
-        # display_all_errors: bool = True,
-        display_all_errors: bool = False,
+        display_all_errors: bool = True,
     ) -> None:
         self.cli_ctx: "Final[Context]" = ctx
         self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
