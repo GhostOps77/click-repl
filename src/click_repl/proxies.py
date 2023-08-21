@@ -99,7 +99,7 @@ class Proxy:
         """
         return object.__getattribute__(self, name)
 
-    def proxy_setattr(self, name: str, value: Any) -> None:
+    def proxy_setattr(self, name: str, value: "Any") -> None:
         """
         Proxy attribute assignment for internal use.
 
