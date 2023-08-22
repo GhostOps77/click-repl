@@ -22,6 +22,14 @@ if t.TYPE_CHECKING:
     from .parser import ReplParsingState, Incomplete
 
 
+def _quotes(text: str) -> str:
+    if " " in text and text[0] != '"' != text[-1]:
+        text = text.strip('"').replace('"', '\\"')
+        return f'"{text}"'
+
+    return text
+
+
 def _expand_envvars(text: str) -> str:
     return os.path.expandvars(os.path.expanduser(text))
 
@@ -95,7 +103,7 @@ def _get_visible_subcommands(
 def get_info_dict(
     obj: "Union[Context, Command, Parameter, click.ParamType]",
 ) -> "Dict[str, Any]":
-    # This function is similar to the 'get_info_dict' method implementation
+    # Similar to the 'get_info_dict' method implementation
     # in click objects, but it only retrieves the essential attributes
     # required to differentiate between different 'ReplParsingState' objects.
 
@@ -201,7 +209,7 @@ def _generate_next_click_ctx(
     parent_ctx: "Context",
     args: "Tuple[str, ...]",
     proxy: bool = False,
-    **ctx_kwargs: "Dict[str, Any]"
+    **ctx_kwargs: "Dict[str, Any]",
 ) -> "Tuple[Context, Optional[Command]]":
     if not args:
         return parent_ctx, None

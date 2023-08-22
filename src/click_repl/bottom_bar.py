@@ -37,6 +37,7 @@ class BottomBar:
         show_hidden_params : bool, default: False
             Determines whether to display hidden params at bottom bar.
         """
+
         self.state: "Optional[ReplParsingState]" = None
         self._formatted_text: "t.Union[str, HTML]" = ""
         self.show_hidden_params = show_hidden_params
@@ -58,8 +59,8 @@ class BottomBar:
         self._formatted_text = ""
 
     def get_formatted_text(self) -> "t.Union[str, HTML]":
-        if not ISATTY:
-            return ""
+        # if not ISATTY:
+        #     return ""
 
         # return str(self.state)
         return self._formatted_text

@@ -17,7 +17,7 @@ from .exceptions import WrongType
 from .utils import _print_err
 
 if t.TYPE_CHECKING:
-    from typing import Callable, Optional, Union, List, Tuple, Dict
+    from typing import Callable, Optional, Union, List, Tuple, Dict, NoReturn
 
     CallableNone: t.TypeAlias = "Callable[[], None]"
     InternalCommandDict: t.TypeAlias = "Dict[str, Tuple[CallableNone, str]]"
@@ -31,11 +31,11 @@ if t.TYPE_CHECKING:
 __all__ = ["repl_exit", "InternalCommandSystem"]
 
 
-def _exit_internal() -> "t.NoReturn":
+def _exit_internal() -> "NoReturn":
     raise ExitReplException()
 
 
-def repl_exit() -> "t.NoReturn":
+def repl_exit() -> "NoReturn":
     """Exits the REPL."""
     _exit_internal()
 
@@ -84,24 +84,24 @@ def _help_internal_cmd() -> None:
 
 class InternalCommandSystem:
     """
-    A utility for managing and executing Internal/System commands
+    A utility for managing and executing internal/system commands
     from the REPL. Commands are triggered by their respective prefix.
 
     Parameters
     ----------
     internal_command_prefix : str
-        Prefix to trigger Internal Commands.
+        Prefix to trigger internal commands.
 
     system_command_prefix : str
-        Prefix to execute Bash/Other Command-line scripts.
+        Prefix to execute bash/other command-line scripts.
 
     shell : bool, default: True
-        Whether the System commands should be executed in Shell or not.
+        Determines whether the system commands should be executed in shell or not.
 
     Notes
     -----
     The prefixes determine how the commands are recognized and distinguished
-    within the REPL. And both the internal_command_prefix and system_command_prefix
+    within the REPL. And both the `internal_command_prefix` and `system_command_prefix`
     should not be same.
     """
 
@@ -138,7 +138,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        prefix: str or None
+        prefix : str or None
             The prefix for internal commands.
 
         Raises
@@ -251,7 +251,7 @@ class InternalCommandSystem:
             String containing the Internal command to be executed.
         """
 
-        target = self.get_command(command, default=None)
+        target = self.get_command(command.lower(), default=None)
         if target is None:
             _print_err(f"{command!r}, command not found")
 
@@ -277,14 +277,14 @@ class InternalCommandSystem:
 
         Parameters
         ----------
-        target : None, or a function that takes no arguments and returns None.
+        target : A function that takes no arguments and returns None, optional
             The callback function for the Internal Command.
 
-        names : It's a string, or a sequence of strings.
+        names : It's a string, or a sequence of strings, optional
             A string or a sequence of strings representing the
             command names and aliases.
 
-        description : str or None.
+        description : str, optional
             A string displayed in the help text for the Internal Command.
 
         Returns
@@ -383,6 +383,7 @@ class InternalCommandSystem:
         The callback function of the Internal Command if found. If not
         found, it returns the value specified in the `default` parameter.
         """
+
         target_info = self._internal_commands.get(name, None)
 
         if target_info:

@@ -51,13 +51,13 @@ def get_current_repl_ctx(silent: bool = False) -> "Union[ReplContext, NoReturn, 
 
     Parameters
     ----------
-    silent :  bool
+    silent : bool
         If set to True the return value is None if no context
         is available. The default behavior is to raise a `RuntimeError`.
 
     Returns
     -------
-    ctx : click_repl.core.ReplContext
+    ctx : `ReplContext`
         ReplContext object if available.
 
     Raises
@@ -81,7 +81,7 @@ def _push_context(ctx: "ReplContext") -> None:
 
     Parameters
     ----------
-    ctx : click_repl.core.ReplContext
+    ctx : `ReplContext`
         ReplContext object that should be added to the repl context stack.
     """
     _locals.ctx_stack.append(ctx)
