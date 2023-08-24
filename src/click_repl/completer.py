@@ -10,6 +10,7 @@ import click
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.completion import Completion
 
+from ._globals import _PATH_TYPES
 from ._globals import AUTO_COMPLETION_PARAM
 from ._globals import HAS_CLICK8
 from ._globals import IS_WINDOWS
@@ -404,7 +405,7 @@ class ClickCompleter(Completer):
             # Completion for click.BOOL types.
             yield from self.get_completion_for_boolean_type(incomplete)
 
-        elif isinstance(param_type, (click.Path, click.File)):
+        elif isinstance(param_type, _PATH_TYPES):
             # Both click.Path and click.File types are expected
             # to receive input as path strings.
             yield from self.get_completion_for_path_types(param_type, incomplete)
@@ -786,7 +787,7 @@ class ClickCompleter(Completer):
 
         Parameters
         ----------
-        document: `prompt_toolkit.document.Document`
+        document : `prompt_toolkit.document.Document`
             The `Document` object containing the incomplete command line string.
 
         complete_event : `prompt_toolkit.completion.CompleteEvent`

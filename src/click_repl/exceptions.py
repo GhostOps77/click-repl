@@ -20,13 +20,10 @@ __all__ = [
 
 class InternalCommandException(Exception):
     """
-    Base Class for all Exceptions raised by the
-    `click_repl._internal_cmds.InternalCommandSystem`.
+    Base Class for all Exceptions raised by the `InternalCommandSystem`.
 
-    This class is used to replace errors raised inside the
-    `click_repl._internal_cmds.InternalCommandSystem`
-    class in order to display their error messages separately
-    in the REPL.
+    This class is used to replace errors raised inside the `InternalCommandSystem`
+    class in order to display their error messages separately in the REPL.
     """
 
     pass
@@ -43,7 +40,7 @@ class ParserError(Exception):
 class WrongType(InternalCommandException):
     """
     Exception raised when an object with an invalid type is passed to one of
-    the methods in `click_repl._internal_cmds.InternalCommandSystem`.
+    the methods in `InternalCommandSystem`.
 
     Parameters
     ----------
@@ -128,11 +125,11 @@ class ArgumentPositionError(ParserError):
 
     Parameters
     ----------
-    command : click.Command
-        The command object that contains the argument.
+    command : `click.Command`
+        The click command object that contains the argument.
 
-    argument : click.Argument
-        The argument object that violates the position rule.
+    argument : `click.Argument`
+        The click argument object that violates the position rule.
 
     position : int
         The index of the disarranged nargs=-1 argument in the parameter list of

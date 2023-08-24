@@ -61,8 +61,8 @@ def register_repl(
 
     Parameters
     ----------
-    group : click.Group
-        The Group (current CLI) object to which the repl command will be registered.
+    group : `click.Group`
+        The click group (current CLI) object to which the repl command will be registered.
 
     name : str
         The name of the repl command in the given Group.

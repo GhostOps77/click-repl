@@ -46,11 +46,11 @@ class ClickValidator(Validator):
 
     Parameters
     ----------
-    ctx : click.Context
+    ctx : `click.Context`
         The current `click.Context` object.
 
-    internal_commands_system : click_repl._internal_cmds.InternalCommandSystem
-        The `click_repl._internal_cmds.InternalCommandSystem` object
+    internal_commands_system : `InternalCommandSystem`
+        The `InternalCommandSystem` object
         that holds information about the internal commands and their prefixes.
 
     display_all_errors : bool
@@ -93,18 +93,18 @@ class ClickValidator(Validator):
 
         Parameters
         ----------
-        document : prompt_toolkit.document.Document
+        document : `prompt_toolkit.document.Document`
             A `prompt_toolkit.document.Document` object
             containing the incomplete string from the REPL.
 
         Raises
         ------
-        prompt_toolkit.validation.ValidationError
-            if there's any error occurred during argument parsing, and it needs
+        `prompt_toolkit.validation.ValidationError`
+            If there's any error occurred during argument parsing, and it needs
             to be displayed in the validation bar.
 
         Exception
-            if the error just needs to be raised normally.
+            If the error just needs to be raised normally.
         """
 
         if self.internal_commands_system.get_prefix(document.text_before_cursor)[1]:

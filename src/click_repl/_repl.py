@@ -40,7 +40,7 @@ __all__ = ["Repl", "repl"]
 class Repl:
     """
     Responsible for executing and maintaining the REPL
-    in the click_repl app.
+    in a click_repl app.
 
     Parameters
     ----------
@@ -53,15 +53,12 @@ class Repl:
         via this dictionary.
 
     completer_cls : `prompt_toolkit.completion.Completer` type class, optional
-        `prompt_toolkit.completion.Completer` class to generate
-        `prompt_toolkit.completion.Completion` objects for
-        auto-completion. `click_repl.completer.ClickCompleter` class
-        is used by default.
+        `Completer` class to generate `prompt_toolkit.completion.Completion`
+        objects for auto-completion. `ClickCompleter` class is used by default.
 
     validator_cls : `prompt_toolkit.validation.Validator` type class, optional
-        `prompt_toolkit.validation.Validator` class to display error
-        messages in the bottom bar during auto-completion.
-        `click_repl.validator.ClickValidator` class is used by default.
+        `Validator` class to display error messages in the bottom bar
+        during auto-completion. `ClickValidator` class is used by default.
 
     completer_kwargs : Dictionary of `str: Any` pairs
         Keyword arguments thats sent to the `completer_cls` class constructor.
@@ -74,11 +71,6 @@ class Repl:
 
     system_command_prefix : str or None
         Prefix that triggers system commands within the click_repl app.
-
-    Raises
-    ------
-    InvalidGroupFormat
-        If there is an empty optional argument in the CLI Group.
     """
 
     # __slots__ = (
@@ -243,7 +235,7 @@ class Repl:
     ) -> "Dict[str, Any]":
         """
         Generates bootstrap keyword arguments for initializing a
-        `prompt_toolkit.PromptSession`object, either
+        `prompt_toolkit.PromptSession` object, either
         using default values or user-defined values, if available.
 
         Parameters

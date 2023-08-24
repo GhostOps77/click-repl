@@ -9,6 +9,7 @@ import click
 from prompt_toolkit.formatted_text import HTML
 
 from ._globals import _METAVAR_PARAMS
+from ._globals import _PATH_TYPES
 from ._globals import _RANGE_TYPES
 from ._globals import ISATTY
 
@@ -83,17 +84,18 @@ class BottomBar:
 
         if not current_group.list_commands(state.current_ctx):  # type: ignore[union-attr]
             # Empty string if there are no subcommands.
-            metavar = ""
+            return ""
 
         elif getattr(current_group, "chain", False):
             # Metavar for chained group.
-            metavar = ": COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
+            return (
+                f"<b>Group {current_group.name}:</b> "
+                "COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
+            )
 
         else:
             # Metavar for chained group.
-            metavar = ": COMMAND [ARGS]..."
-
-        return HTML(f"<b>Group {current_group.name}</b>{metavar}")
+            return f"<b>Group {current_group.name}:</b> COMMAND [ARGS]..."
 
     def get_param_info(self, param: "Parameter") -> str:
         param_info: "List[str]" = []
@@ -155,7 +157,7 @@ class BottomBar:
                     type_info = metavar_param.__name__
                     break
 
-        elif isinstance(param_type, (click.Path, click.File)):
+        elif isinstance(param_type, _PATH_TYPES):
             # If the parameter type is an instance of any of these 3 types mentioned
             # above, there is no need to mention anything special about them. The
             # type information is simply added as the name attribute of the

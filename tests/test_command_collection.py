@@ -68,3 +68,48 @@ c3 = ClickCompleter(click.Context(root_group))
 def test_completion_multilevel_command(test_input, expected):
     completions = c3.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.group(chain=True)
+@click.argument("arg", type=click.Choice(["hi", "hi2", "hi3"]))
+def chained_group(arg):
+    pass
+
+
+@chained_group.command("subcommand1")
+@click.argument("arg1", type=click.Choice(["hlllo", "hello2", "hello3"]))
+@click.option("--opt1")
+def subcommand1(arg1, opt1):
+    pass
+
+
+@chained_group.command("subcommand2")
+@click.option("--opt2")
+def subcommand2(opt2):
+    pass
+
+
+c4 = ClickCompleter(click.Context(cli))
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        ("chained-group ", {"hi", "hi2", "hi3"}),
+        ("chained-group hi ", {"subcommand1", "subcommand2"}),
+        ("chained-group hi subcommand1 ", {"hlllo", "hello2", "hello3", "--opt1"}),
+        ("chained-group hi subcommand1 hlllo ", {"subcommand1", "subcommand2"}),
+        (
+            "chained-group hi subcommand1 hlllo subcommand2 ",
+            {"--opt2", "subcommand1", "subcommand2"},
+        ),
+    ],
+)
+def test_chained_group(test_input, expected):
+    completions = c4.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected

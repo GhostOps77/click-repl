@@ -56,7 +56,7 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
         The string to be split into tokens.
 
     posix : bool, default: True
-        Split the string in POSIX style.
+        Determines whether to split the string in POSIX style.
 
     Returns
     -------
@@ -232,7 +232,7 @@ class ReplParsingState:
         # have an incomplete value. Only click.Argument type parameters require
         # values (they have required=True by default), so they consume any
         # incoming string value they receive. If any incomplete argument value
-        # is found, is_all_args_available is set to False. This condition check
+        # is found, not_all_args_got_values is set to False. This condition check
         # is only performed when the parent group is a non-chained multi-command.
 
         args_list = [
@@ -241,13 +241,13 @@ class ReplParsingState:
             if isinstance(param, click.Argument)
         ]
 
-        all_args_not_incomplete = all(
+        not_all_args_got_values = all(
             not utils._is_param_value_incomplete(self.current_ctx, param.name)
             for param in args_list
         )
 
-        incomplete_args_exist = not args_list or all_args_not_incomplete
-        no_incomplete_args = args_list and all_args_not_incomplete
+        incomplete_args_exist = not args_list or not_all_args_got_values
+        no_incomplete_args = args_list and not_all_args_got_values
 
         if current_ctx_command == self.cli:
             return current_group, current_command
@@ -378,10 +378,6 @@ class ReplOptionParser(OptionParser):
 
         option = self._long_opt[opt]
         if option.takes_value:
-            # At this point it's safe to modify rargs by injecting the
-            # explicit value, because no exception is raised in this
-            # branch.  This means that the inserted value will be fully
-            # consumed.
             if explicit_value is not None:
                 state.rargs.insert(0, explicit_value)
 
@@ -430,10 +426,6 @@ class ReplOptionParser(OptionParser):
             if stop:
                 break
 
-        # If we got any unknown options we re-combinate the string of the
-        # remaining options and re-attach the prefix, then report that
-        # to the state as new larg.  This way there is basic combinatorics
-        # that can be achieved while still ignoring unknown arguments.
         if self.ignore_unknown_options and unknown_options:
             state.largs.append(f"{prefix}{''.join(unknown_options)}")
 
@@ -465,8 +457,6 @@ class ReplOptionParser(OptionParser):
                 and next_rarg[:1] in self._opt_prefixes
                 and len(next_rarg) > 1
             ):
-                # The next arg looks like the start of an option, don't
-                # use it as the value if omitting the value is allowed.
                 value = _flag_needs_value
             else:
                 value = state.rargs.pop(0)

@@ -26,6 +26,8 @@ _RANGE_TYPES = (click.IntRange, click.FloatRange)
 _METAVAR_PARAMS = (click.Choice, click.DateTime)
 HAS_CLICK8 = click.__version__[0] == "8"
 
+_PATH_TYPES = (click.Path, click.File)
+
 # If ISATTY is False, then we're not gonna run any code
 # to generate auto-completions. Most of the code will be inactive
 ISATTY = sys.stdin.isatty()

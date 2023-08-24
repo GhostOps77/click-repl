@@ -134,8 +134,8 @@ class ProxyCommand(Proxy, click.Command):
 
     Parameters
     ----------
-    obj : click.Command
-        The `click.Command` object to be proxied.
+    obj : `click.Command`
+        The click command object that has to be proxied.
     """
 
     def __init__(self, obj: "Command") -> None:
@@ -166,8 +166,8 @@ class ProxyGroup(ProxyCommand, click.Group):
 
     Parameters
     ----------
-    obj : click.Group
-        The `click.Group` object to be proxied.
+    obj : `click.Group`
+        The click group object that has to be proxied.
     """
 
     def __init__(self, obj: "Group") -> None:
@@ -192,8 +192,8 @@ class ProxyParameter(Proxy, click.Parameter):
 
     Parameters
     ----------
-    obj : click.Parameter
-        The `click.Parameter` object to be proxied.
+    obj : `click.Parameter`
+        The click parameter object that has to be proxied.
     """
 
     def full_process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
@@ -219,8 +219,8 @@ class ProxyArgument(ProxyParameter, click.Argument):
 
     Parameters
     ----------
-    obj : click.Argument
-        The `click.Argument` object to be proxied.
+    obj : `click.Argument`
+        The click argument object that has to be proxied.
     """
 
     pass
@@ -233,8 +233,8 @@ class ProxyOption(ProxyParameter, click.Option):
 
     Parameters
     ----------
-    obj : click.Option
-        The `click.Option` object to be proxied.
+    obj : `click.Option`
+        The click option object that has to be proxied.
     """
 
     pass

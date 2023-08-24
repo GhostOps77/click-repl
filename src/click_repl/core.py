@@ -51,17 +51,17 @@ class ReplContext:
 
     Parameters
     ----------
-    group_ctx : click.Context
+    group_ctx : `click.Context`
         The click context object that belong to the CLI/parent Group.
 
-    internal_command_system : click_repl._internal_cmds.InternalCommandSystem
+    internal_command_system : `InternalCommandSystem`
         The `InternalCommandSystem` object that holds information about
         the internal commands and their prefixes.
 
-    prompt_kwargs : A dictionary of str: Any pairs.
+    prompt_kwargs : A dSictionary of `str: Any` pairs
         The extra Keyword arguments for `prompt_toolkit.PromptSession` class.
 
-    styles : A dictionary of str: str pairs.
+    styles : A dictionary of `str: str` pairs
         A dictionary that denote the style schema of the prompt.
     """
 
@@ -111,7 +111,7 @@ class ReplContext:
         Returns
         -------
         str or None
-            string if `sys.stdin.isatty()` is `True`, else `None`
+            String if `sys.stdin.isatty()` is `True`, else `None`
         """
         if ISATTY:
             return str(self.session.message)
@@ -188,15 +188,14 @@ class ReplCli(click.Group):
     prompt : str, default: "> "
         The message that should be displayed for every prompt input.
 
-    startup : A function that takes and returns nothing, optional.
+    startup : A function that takes and returns nothing, optional
         The function that gets called before invoking the REPL.
 
-    cleanup : A function that takes and returns nothing, optional.
+    cleanup : A function that takes and returns nothing, optional
         The function that gets invoked after exiting out of the REPL.
 
-    repl_kwargs : A dictionary of str: Any pairs
-        The keyword arguments that needs to be sent to the
-        `click_repl._repl.repl()` function.
+    repl_kwargs : A dictionary of `str: Any` pairs
+        The keyword arguments that needs to be sent to the `repl()` function.
 
     **attrs : dict, optional
         Extra keyword arguments that need to be passed to the `click.Group` class.

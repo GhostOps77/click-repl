@@ -103,9 +103,9 @@ def _get_visible_subcommands(
 def get_info_dict(
     obj: "Union[Context, Command, Parameter, click.ParamType]",
 ) -> "Dict[str, Any]":
-    # Similar to the 'get_info_dict' method implementation
-    # in click objects, but it only retrieves the essential attributes
-    # required to differentiate between different 'ReplParsingState' objects.
+    # Similar to the 'get_info_dict' method implementation # in click objects,
+    # but it only retrieves the essential attributes # required to
+    # differentiate between different 'ReplParsingState' objects.
 
     if isinstance(obj, click.Context):
         return {
