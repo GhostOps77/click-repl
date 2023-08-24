@@ -89,7 +89,7 @@ def subcommand1(arg1, opt1):
 
 
 @chained_group.command("subcommand2")
-@click.option("--opt2")
+@click.option("--opt2", type=click.Choice(["1944", "2018", "2005"]))
 def subcommand2(opt2):
     pass
 
@@ -107,6 +107,10 @@ c4 = ClickCompleter(click.Context(cli))
         (
             "chained-group hi subcommand1 hlllo subcommand2 ",
             {"--opt2", "subcommand1", "subcommand2"},
+        ),
+        (
+            "chained-group hi subcommand1 hlllo subcommand2 --opt2 ",
+            {"1944", "2018", "2005"},
         ),
     ],
 )
