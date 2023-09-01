@@ -8,17 +8,30 @@ import typing as t
 import click
 from prompt_toolkit.formatted_text import HTML
 
+from ._formatting import Bold
+from ._formatting import Color
+from ._formatting import StrikeThrough
+from ._formatting import Underline
 from ._globals import _METAVAR_PARAMS
-from ._globals import _PATH_TYPES
 from ._globals import _RANGE_TYPES
+from ._globals import HAS_CLICK8
 from ._globals import ISATTY
+from .utils import _join_options
+
+# from ._formatting import FormattedString
 
 if t.TYPE_CHECKING:
     from typing import Optional, List, Union
 
     from click import Parameter
+    from click.types import ParamType
 
     from .parser import ReplParsingState
+    from ._formatting import HTMLTag
+
+    ParamInfo = t.TypedDict(
+        "ParamInfo", {"name": str, "type info": List[str], "desc str": str}
+    )
 
 
 __all__ = ["BottomBar"]
@@ -29,7 +42,7 @@ class BottomBar:
 
     # __slots__ = ("state", "_formatted_text", "show_hidden_params", "marquee")
 
-    def __init__(self, show_hidden_params: bool = False, marquee: bool = False) -> None:
+    def __init__(self, show_hidden_params: bool = False, marquee: bool = True) -> None:
         """
         Initialize the `BottomBar` class.
 
@@ -37,45 +50,44 @@ class BottomBar:
         ----------
         show_hidden_params : bool, default: False
             Determines whether to display hidden params at bottom bar.
+
+        marquee : bool, default: True
+            Displays the text in marquee style if it's content exceeds the
+            terminal's display.
         """
 
         self.state: "Optional[ReplParsingState]" = None
-        self._formatted_text: "t.Union[str, HTML]" = ""
+        self._formatted_text: "Union[str, HTML]" = ""
         self.show_hidden_params = show_hidden_params
         self.marquee = marquee
+        self.marquee_pointer_position = 0
 
-    def marquee_text(self) -> str:
-        return ""
+    def marquee_text(self) -> "Union[str, HTML]":
+        return self._formatted_text
 
-    def __call__(self) -> "t.Union[str, HTML]":
+    def __call__(self) -> "Union[str, HTML]":
         return self.get_formatted_text()
 
     def reset_state(self) -> None:
-        # if not ISATTY:
-        #     # We don't have to render the bottom toolbar if the stdin is not
-        #     # connected to a TTY device.
-        #     return
-
         self.state = None
         self._formatted_text = ""
 
-    def get_formatted_text(self) -> "t.Union[str, HTML]":
-        # if not ISATTY:
-        #     return ""
-
+    def get_formatted_text(self) -> "Union[str, HTML]":
         # return str(self.state)
+        # if len(self._formatted_text) <= os.get_terminal_size().columns:
         return self._formatted_text
+
+        # return self._formatted_text.get_text()
 
     def update_state(self, state: "ReplParsingState") -> None:
         if not ISATTY or state is None or state == self.state:
             return
 
         self.state = state
-
         self._formatted_text = self.make_formatted_text()
         # self._formatted_text = str(state)
 
-    def get_group_metavar_template(self) -> "HTML":
+    def get_group_metavar_template(self) -> "Union[str, HTML]":
         # Gets the metavar to describe the CLI Group, indicating
         # whether it is a chained Group or not.
 
@@ -86,51 +98,64 @@ class BottomBar:
             # Empty string if there are no subcommands.
             return ""
 
-        elif getattr(current_group, "chain", False):
+        if getattr(current_group, "chain", False):
             # Metavar for chained group.
-            return (
-                f"<b>Group {current_group.name}:</b> "
+            res = (
+                f"{Bold(f'Group {current_group.name}:')} "
                 "COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
             )
 
         else:
-            # Metavar for chained group.
-            return f"<b>Group {current_group.name}:</b> COMMAND [ARGS]..."
+            # Metavar for non-chained group.
+            res = f"{Bold(f'Group {current_group.name}:')} COMMAND [ARGS]..."
+
+        return HTML(res)
 
     def get_param_info(self, param: "Parameter") -> str:
-        param_info: "List[str]" = []
-
-        if isinstance(param, click.Argument):
-            param_info.append(param.name)  # type: ignore[arg-type]
-
-        else:
-            # If its a click.Option type, we print the smallest flag,
-            # prioritizing limited space on the bottom bar for
-            # other parameters.
-            param_info.append(
-                max(
-                    param.opts + param.secondary_opts,
-                    key=lambda x: len(click.parser.split_opt(x)[1]),
-                )
-            )
+        param_info: "ParamInfo" = {
+            "name": self.get_param_name(param),
+            "type info": [],
+            "desc str": "",
+        }
 
         if self.state.current_param == param:  # type: ignore[union-attr]
             # Displaying detailed information only for the current parameter
             # in the bottom bar, to save space.
+
             type_info = self.get_param_type_info(param, param.type)
 
-            if isinstance(type_info, list):
-                param_info.extend(type_info)
-            else:
-                param_info.append(type_info)
+            if not isinstance(type_info, list):
+                type_info = [type_info]
 
-            if param.nargs != 1 and not isinstance(param.type, click.Tuple):
-                param_info = [self.get_param_nargs_info(param, param_info)]
+            param_info["type info"] = type_info
+            param_info["desc str"] = self.get_param_nargs_info(param, param_info)
 
         return self.format_parsing_state_for_param(param, param_info)
 
+    def get_param_name(self, param: "Parameter") -> str:
+        if isinstance(param, click.Argument):
+            return param.name  # type: ignore
+
+        else:
+            if not param.is_bool_flag:  # type: ignore[attr-defined]
+                return max(  # type: ignore
+                    param.opts + param.secondary_opts,
+                    key=lambda x: len(click.parser.split_opt(x)[1]),
+                )
+
+            opts, split_char = _join_options(param.opts)
+            opts_html_tag = Color(split_char.join(opts), "green")
+
+            if not param.secondary_opts:
+                return str(opts_html_tag)
+
+            secondary_opts, split_char = _join_options(param.secondary_opts)
+            secondary_opts_html_tag = Color(split_char.join(secondary_opts), "red")
+
+            return f"{opts_html_tag}|{secondary_opts_html_tag}"
+
     def get_param_type_info(
-        self, param: "Parameter", param_type: "click.types.ParamType"
+        self, param: "Parameter", param_type: "ParamType"
     ) -> "Union[str, List[str]]":
         if isinstance(param_type, click.Tuple):
             return [
@@ -146,7 +171,16 @@ class BottomBar:
             # within the representation, which represent the range, are replaced
             # with their URL encoded forms (&lt; and &gt;) to display them
             # correctly in HTML form.
-            type_info = f"{param_type}"[1:-1]
+            type_info = param_type.name  # [1:-1]
+
+            if HAS_CLICK8:
+                clamp = " clamped" if param_type.clamp else ""
+                type_info += f" {param_type._describe_range()}{clamp}"
+
+            else:
+                lop = "<" if param_type.min_open else "<="
+                rop = "<" if param_type.max_open else "<="
+                type_info += f" {param_type.min}{lop}x{rop}{param_type.max}"
 
         elif isinstance(param_type, _METAVAR_PARAMS):
             # Here, only the name of the type's class is included in type_info. This
@@ -157,26 +191,29 @@ class BottomBar:
                     type_info = metavar_param.__name__
                     break
 
-        elif isinstance(param_type, _PATH_TYPES):
-            # If the parameter type is an instance of any of these 3 types mentioned
-            # above, there is no need to mention anything special about them. The
-            # type information is simply added as the name attribute of the
-            # respective type.
-            type_info = param_type.name
+        # elif isinstance(param_type, _PATH_TYPES):
+        #     # If the parameter type is an instance of any of these 3 types mentioned
+        #     # above, there is no need to mention anything special about them. The
+        #     # type information is simply added as the name attribute of the
+        #     # respective type.
+        #     type_info = param_type.name
 
         elif param_type not in (click.STRING, click.UNPROCESSED):
-            type_info = f"{param_type}"
+            type_info = getattr(param_type, "name", f"{param_type}")
 
         if type_info:
-            type_info = f"&lt;{type_info}&gt;".replace("<", "&lt;").replace(">", "&gt;")
+            type_info = f"<{type_info}>"
 
         return type_info
 
-    def get_param_nargs_info(self, param: "Parameter", param_info: "List[str]") -> str:
-        _param_info = " ".join(param_info)
+    def get_param_nargs_info(self, param: "Parameter", param_info: "ParamInfo") -> str:
+        param_info_desc = f"{param_info['name']} {' '.join(param_info['type info'])}"
 
-        if param.nargs == -1:
-            return f"[{_param_info} ...]"
+        if param.nargs == 1 or isinstance(param.type, click.Tuple):
+            return param_info_desc
+
+        elif param.nargs == -1:
+            return f"[{param_info_desc} ...]"
 
         elif param.nargs > 1:
             # Calculate the number of non-None values received for the parameter.
@@ -190,49 +227,50 @@ class BottomBar:
             else:
                 not_none_vals_count = sum(1 for i in param_values if i is not None)
 
-            return f"[{_param_info} ({not_none_vals_count}/{param.nargs})]"
+            return f"[{param_info_desc} ({not_none_vals_count}/{param.nargs})]"
 
-            # return f"[{param_info}x{param.nargs}]"
-
-        return _param_info
+        return param_info_desc
 
     def format_parsing_state_for_param(
-        self, param: "Parameter", param_info: "List[str]"
+        self, param: "Parameter", param_info: "ParamInfo"
     ) -> str:
-        # Formats the given param_info string based on the state of
-        # the given param, indicating whether it is the current parameter,
-        # whether it is yet to receive values from the REPL, or whether it has
-        # already received its values.
-
-        if not param_info:
-            return ""
+        # Formats the provided param_info string using HTML to indicate whether
+        # the parameter is current, awaiting REPL input, or has received values.
 
         state = self.state
 
         if param == state.current_param:  # type: ignore[union-attr]
             # The current parameter is shown in bold and underlined letters.
             if not isinstance(param.type, click.Tuple):
-                return f"<u><b>{' '.join(param_info)}</b></u>"
+                return str(Underline(Bold(param_info["desc str"])))
 
-            res = f"<b>{param_info.pop(0)}</b>"
-            type_info = []
+            res = str(Bold(param_info["name"]))
+            type_info: "List[Union[str, HTMLTag]]" = []
             stop = False
 
             for type_str, value in zip(
-                param_info, state.current_ctx.params[param.name]  # type: ignore
+                param_info["type info"],
+                state.current_ctx.params[param.name],  # type: ignore
             ):
                 if value is not None:
-                    type_info.append(f"<s>{type_str}</s>")
+                    # To display that this paramtype has recieved its value,
+                    # by strikethrough.
+                    type_info.append(StrikeThrough(type_str))
+
                 elif not stop:
-                    type_info.append(f"<u><b>{type_str}</b></u>")
+                    # To display the current paramtype that requires a value.
+                    type_info.append(Underline(Bold(type_str)))
                     stop = True
+
                 else:
+                    # To display it as it is, denoting that it still haven't recieved its
+                    # value, and it's not the current paramtype in the given tuple type.
                     type_info.append(type_str)
 
-            res += f" ({' '.join(type_info)})"
+            res += f" ({' '.join(type_info)})"  # type: ignore[arg-type]
             return res
 
-        _param_info = " ".join(param_info)
+        param_info_str = param_info["name"]
 
         if (
             any(getattr(param, attr, False) for attr in ("count", "is_flag"))
@@ -240,13 +278,13 @@ class BottomBar:
         ):
             # Counters, Flags, and Parameters that are awaiting for values
             # are displayed without special formatting.
-            return _param_info
+            return param_info_str
 
         # Parameters that have already received values are displayed
         # with a strikethrough.
-        return f"<s>{_param_info}</s>"
+        return str(StrikeThrough(param_info_str))
 
-    def make_formatted_text(self) -> "t.Union[str, HTML]":
+    def make_formatted_text(self) -> "Union[str, HTML]":
         state = self.state
 
         current_command = state.current_command  # type: ignore[union-attr]
@@ -257,25 +295,27 @@ class BottomBar:
             # parent/CLI/current Group.
             return self.get_group_metavar_template()
 
-        output_text = current_command.name
-
         if isinstance(current_command, click.Group):
-            output_text = f"Group {output_text}"  # type: ignore[no-redef]
+            command_type = "Group"
+        else:
+            command_type = "Command"
 
-        formatted_params_info = " ".join(
-            [
-                self.get_param_info(param)
-                for param in current_command.params
-                if not getattr(param, "hidden", False)
-                or (
-                    param == state.current_param  # type: ignore[union-attr]
-                    and self.show_hidden_params
-                )
-            ]
-        )
+        output_text = f"{command_type} {current_command.name}"
+
+        formatted_params_info = [
+            self.get_param_info(param)
+            for param in current_command.params
+            if not getattr(param, "hidden", False)
+            or (
+                param == state.current_param  # type: ignore[union-attr]
+                and self.show_hidden_params
+            )
+        ]
 
         if formatted_params_info:
-            return HTML(f"<b>{output_text}:</b> {formatted_params_info}")
+            formatted_params_info.insert(0, str(Bold(f"{output_text}: ")))
+            return " ".join(formatted_params_info)
+        else:
+            output_text = str(Bold(output_text))
 
-        # Here, It's most likely to be a click.Command object that has no parameters.
-        return HTML(f"<b>Command {output_text}</b>")
+        return output_text

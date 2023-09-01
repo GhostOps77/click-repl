@@ -16,13 +16,14 @@ from ._globals import ISATTY
 if t.TYPE_CHECKING:
     from typing import Any, Callable, Dict, Generator, List, Optional, Final
 
+    from click import Context
     from ._internal_cmds import InternalCommandSystem
     from .parser import ReplParsingState
 
     InfoDict = t.TypedDict(
         "InfoDict",
         {
-            "group_ctx": click.Context,
+            "group_ctx": Context,
             "prompt_kwargs": Dict[str, Any],
             "session": Optional[PromptSession[Dict[str, Any]]],
             "internal_command_system": InternalCommandSystem,
@@ -77,7 +78,7 @@ class ReplContext:
 
     def __init__(
         self,
-        group_ctx: "click.Context",
+        group_ctx: "Context",
         internal_command_system: "InternalCommandSystem",
         prompt_kwargs: "Dict[str, Any]",
         parent: "Optional[ReplContext]" = None,
@@ -91,7 +92,7 @@ class ReplContext:
             )
 
         self.internal_command_system = internal_command_system
-        self.group_ctx: "Final[click.Context]" = group_ctx
+        self.group_ctx: "Final[Context]" = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.parent: "Final[Optional[ReplContext]]" = parent
         self.current_state: "Optional[ReplParsingState]" = None
@@ -220,12 +221,7 @@ class ReplCli(click.Group):
 
         self.repl_kwargs = repl_kwargs
 
-    def invoke(self, ctx: "click.Context") -> "Any":
-        return_val = super().invoke(ctx)
-
-        if ctx.invoked_subcommand or ctx.protected_args:
-            return return_val
-
+    def invoke_repl(self, ctx: "Context") -> None:
         try:
             if self.startup is not None:
                 self.startup()
@@ -235,5 +231,13 @@ class ReplCli(click.Group):
         finally:
             if self.cleanup is not None:
                 self.cleanup()
+
+    def invoke(self, ctx: "Context") -> "Any":
+        return_val = super().invoke(ctx)
+
+        if ctx.invoked_subcommand or ctx.protected_args:
+            return return_val
+
+        self.invoke_repl(ctx)
 
         return return_val

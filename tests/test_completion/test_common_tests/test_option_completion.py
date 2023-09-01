@@ -13,18 +13,23 @@ def root_command():
 c = ClickCompleter(click.Context(root_command))
 
 
-def test_option_choices():
-    @root_command.command()
-    @click.option("--handler", type=click.Choice(("foo", "bar")))
-    @click.option("--wrong", type=click.Choice(("bogged", "bogus")))
-    def option_choices(handler):
-        pass
+@root_command.command()
+@click.option("--handler", type=click.Choice(("foo", "bar")))
+@click.option("--wrong", type=click.Choice(("bogged", "bogus")))
+def option_choices(handler):
+    pass
 
-    completions = list(c.get_completions(Document("option-choices --handler ")))
-    assert {x.text for x in completions} == {"foo", "bar"}
 
-    completions = list(c.get_completions(Document("option-choices --wrong ")))
-    assert {x.text for x in completions} == {"bogged", "bogus"}
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("option-choices --handler ", {"foo", "bar"}),
+        ("option-choices --wrong ", {"bogged", "bogus"}),
+    ],
+)
+def test_option_choices(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
 
 
 @root_command.command()

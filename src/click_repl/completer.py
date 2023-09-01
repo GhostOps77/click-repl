@@ -3,12 +3,14 @@
 
 Configuration for auto-completion for REPL.
 """
+import traceback
 import typing as t
 from pathlib import Path
 
 import click
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.completion import Completion
+from prompt_toolkit.formatted_text import HTML
 
 from ._globals import _PATH_TYPES
 from ._globals import AUTO_COMPLETION_PARAM
@@ -61,6 +63,9 @@ class ClickCompleter(Completer):
     shortest_opts_only : bool, default: False
         Determines whether only the shortest flag of an option parameter
         is used for auto-completion.
+
+        It is utilized when the user is requesting option flags without
+        providing any text. They are not considered for flag options.
 
     show_only_unused_opts : bool, default: False
         Determines whether the options that are already mentioned or
@@ -474,7 +479,7 @@ class ClickCompleter(Completer):
         incomplete: "Incomplete",
     ) -> "Generator[Completion, None, None]":
         """
-        _summary_
+        Generates auto-completions for option flags based on the given command.
 
         Parameters
         ----------
@@ -516,6 +521,7 @@ class ClickCompleter(Completer):
 
             opts = param.opts + param.secondary_opts
 
+            # To display ununsed option flags only.
             previous_args = args[: param.nargs * -1]
             already_used = any(opt in previous_args for opt in opts)
             hide = self.show_only_unused_opts and already_used and not param.multiple
@@ -525,7 +531,8 @@ class ClickCompleter(Completer):
             ]
 
             if (
-                getattr(param, "is_flag", False) and any(i in args for i in opts)
+                param.is_flag  # type: ignore[attr-defined]
+                and any(i in args for i in opts)
             ) or not opts_with_incomplete_prefix:
                 # Skip the current iteration, if param is a flag,
                 # and its already in args, or the param is called
@@ -534,7 +541,16 @@ class ClickCompleter(Completer):
 
             display = ""
 
-            if self.shortest_opts_only and not _incomplete:
+            # To display the shortest options only.
+            is_shortest_opts_only = self.shortest_opts_only and not (
+                _incomplete
+                or (
+                    param.is_bool_flag  # type: ignore[attr-defined]
+                    and param.secondary_opts  # type: ignore[attr-defined]
+                )
+            )
+
+            if is_shortest_opts_only:
                 # Displays all the aliases of the option in the completion,
                 # only if the incomplete string is empty.
                 # It provides only the shortest one for auto-completion,
@@ -547,16 +563,30 @@ class ClickCompleter(Completer):
             for opt in opts_with_incomplete_prefix:
                 display_meta = getattr(param, "help", "")
 
-                if not self.shortest_opts_only or _incomplete:
+                if not is_shortest_opts_only:
                     # If shortest_opts_only is False, display the alias
                     # of the option as it is.
                     display = opt
 
-                if not (getattr(param, "count", False) or param.default is None):
-                    # Display the default value of the option, only if
-                    # the option is not a counting option, and
-                    # the default value is not None.
-                    display += f" [Default: {param.default}]"
+                if not (
+                    param.count or param.default is None  # type: ignore[attr-defined]
+                ):
+                    if (
+                        param.is_bool_flag  # type: ignore[attr-defined]
+                        and param.secondary_opts
+                    ):
+                        bool_val = "true" if opt in param.opts else "false"
+                        default_val_display = f"flag value: {bool_val}"
+
+                    else:
+                        # Display the default value of the option, only if
+                        # the option is not a counting option, and
+                        # the default value is not None.
+                        default_val_display = f"Default: {param.default}"
+
+                    display = HTML(  # type: ignore[assignment]
+                        f"{display} <b><i>({default_val_display})</i></b>"
+                    )
 
                 yield ReplCompletion(
                     opt,
@@ -606,9 +636,13 @@ class ClickCompleter(Completer):
 
         current_param = state.current_param
 
-        if not current_param or (
-            isinstance(current_param, click.Argument)
-            and ctx.params[current_param.name] is None  # type: ignore[index]
+        if (
+            not current_param
+            or (
+                isinstance(current_param, click.Argument)
+                and ctx.params[current_param.name] is None  # type: ignore[index]
+            )
+            and not state.double_dash_found
         ):
             yield from self.get_option_flags_for_completion(
                 ctx, command, state, incomplete
@@ -717,7 +751,7 @@ class ClickCompleter(Completer):
             return None
 
         if isinstance(ctx.command, click.MultiCommand):
-            return ctx.command
+            return ctx.command  # type: ignore[return-value]
 
         if state.current_group.chain:
             return state.current_group
@@ -838,8 +872,8 @@ class ClickCompleter(Completer):
 
             yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)
 
-        except Exception as e:
-            raise e
+        except Exception:
+            traceback.print_exc()
             # pass
 
 
@@ -889,6 +923,10 @@ class ReplCompletion(Completion):
 
         if isinstance(incomplete, Incomplete):
             incomplete = incomplete.raw_str
+
+        diff = len(incomplete) - len(text)
+        if diff > 0:
+            text += " " * diff + "\b" * diff
 
         kwargs.setdefault("display", display)
         kwargs.setdefault("start_position", -len(incomplete))

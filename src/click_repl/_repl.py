@@ -382,6 +382,7 @@ class Repl:
 
                 except Exception:
                     traceback.print_exc()
+                    # pass
 
 
 def repl(

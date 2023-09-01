@@ -59,7 +59,7 @@ def get_current_repl_ctx(silent: bool = False) -> "Union[ReplContext, NoReturn, 
 
     Returns
     -------
-    ctx : `ReplContext`
+    ctx : `ReplContext`, optional
         ReplContext object if available.
 
     Raises

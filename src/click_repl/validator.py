@@ -5,6 +5,7 @@ Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
 import logging
+import traceback
 import typing as t
 
 from click.exceptions import ClickException
@@ -140,4 +141,5 @@ class ClickValidator(Validator):
             # self.catch_all_errors is set to False. The short error
             # messages are also logged into a click-repl-err.log file.
             logger.error(f"{type(e).__name__}: {str(e)}")
-            raise e
+            traceback.print_exc()
+            # raise e

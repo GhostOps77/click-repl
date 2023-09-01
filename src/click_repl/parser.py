@@ -25,7 +25,7 @@ if t.TYPE_CHECKING:
     from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
     from click import Argument as CoreArgument
-    from click import Command, Context, MultiCommand, Parameter
+    from click import Command, Context, MultiCommand, Parameter, Group
     from click.parser import Option
 
     _KEY: t.TypeAlias = Tuple[
@@ -148,6 +148,7 @@ class ReplParsingState:
         "current_command",
         "current_param",
         "remaining_params",
+        "double_dash_found",
     )
 
     def __init__(
@@ -163,6 +164,7 @@ class ReplParsingState:
         self.args = args
 
         self.remaining_params: "List[Parameter]" = []
+        self.double_dash_found = getattr(current_ctx, "__double_dash_found", False)
 
         self.current_group, self.current_command, self.current_param = self.parse()
 
@@ -205,7 +207,7 @@ class ReplParsingState:
             return NotImplemented
         return self.__key() == other.__key()
 
-    def parse(self) -> "Tuple[MultiCommand, Optional[Command], Optional[Parameter]]":
+    def parse(self) -> "Tuple[Group, Optional[Command], Optional[Parameter]]":
         current_group, current_command = self.get_current_group_and_command()
 
         if current_command is not None:
@@ -215,7 +217,7 @@ class ReplParsingState:
 
         return current_group, current_command, current_param
 
-    def get_current_group_and_command(self) -> "Tuple[MultiCommand, Optional[Command]]":
+    def get_current_group_and_command(self) -> "Tuple[Group, Optional[Command]]":
         current_ctx_command = self.current_ctx.command
         parent_group = current_ctx_command
 
@@ -223,7 +225,7 @@ class ReplParsingState:
         if self.current_ctx.parent is not None:
             parent_group = self.current_ctx.parent.command
 
-        current_group: "MultiCommand" = parent_group  # type: ignore[assignment]
+        current_group: "Group" = parent_group  # type: ignore[assignment]
         is_parent_group_chained = parent_group.chain  # type: ignore[attr-defined]
         current_command = None
 
@@ -257,7 +259,7 @@ class ReplParsingState:
         ):
             # If all the arguments are passed to the ctx multicommand,
             # promote it as current group.
-            current_group = current_ctx_command
+            current_group = current_ctx_command  # type: ignore[assignment]
 
         elif not (
             is_parent_group_chained
@@ -366,6 +368,25 @@ class ReplOptionParser(OptionParser):
         self, obj: "CoreArgument", dest: "Optional[str]", nargs: int = 1
     ) -> None:
         self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
+
+    def _process_args_for_options(self, state: "ParsingState") -> None:
+        while state.rargs:
+            arg = state.rargs.pop(0)
+            arglen = len(arg)
+            # Double dashes always handled explicitly regardless of what
+            # prefixes are valid.
+            if arg == "--":
+                # Helps to denote to the completer class to stop generating
+                # completions for option flags.
+                self.ctx.__double_dash_found = True  # type: ignore[union-attr]
+                return
+            elif arg[:1] in self._opt_prefixes and arglen > 1:
+                self._process_opts(arg, state)
+            elif self.allow_interspersed_args:
+                state.largs.append(arg)
+            else:
+                state.rargs.insert(0, arg)
+                return
 
     def _match_long_opt(
         self, opt: str, explicit_value: "Optional[str]", state: "ParsingState"
