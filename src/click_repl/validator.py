@@ -4,41 +4,42 @@ click_repl.validator
 Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
-import logging
-import traceback
-import typing as t
+from __future__ import annotations
 
+import logging
+from typing import Final
+
+from click import Context
+from click import MultiCommand
 from click.exceptions import ClickException
 from click.exceptions import UsageError
+from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.validation import Validator
 
+from ._globals import CLICK_REPL_DEV_ENV
 from ._internal_cmds import InternalCommandSystem
 from .utils import _resolve_state
-
-if t.TYPE_CHECKING:
-    from typing import Final
-
-    from click import Context, MultiCommand
-    from prompt_toolkit.document import Document
 
 
 __all__ = ["ClickValidator"]
 
-log_format = "%(levelname)s | %(message)s"
+logger = logging.getLogger(f"click_repl-{__name__}")
 
-logging.basicConfig(format=log_format, level=logging.ERROR)
+if CLICK_REPL_DEV_ENV:
+    logger_level = logging.DEBUG
+else:
+    logger_level = logging.WARNING
 
-logger = logging.getLogger("click-repl-err")
+logger.setLevel(logger_level)
 
-log_file = "click-repl-err.log"
+log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
 formatter = logging.Formatter(log_format)
 
+log_file = "click-repl-err.log"
 file_handler = logging.FileHandler(log_file)
 file_handler.setFormatter(formatter)
-
 logger.addHandler(file_handler)
-# logging.StreamHandler(stream=None)
 
 
 class ClickValidator(Validator):
@@ -57,17 +58,17 @@ class ClickValidator(Validator):
     display_all_errors : bool
         If `False`, all generic Python Exceptions that are raised, will not be
         displayed in the Validator bar, resulting in the full error traceback
-        being displayed in the REPL mode.
+        being redirected to a log file in the REPL mode.
     """
 
     def __init__(
         self,
-        ctx: "Context",
-        internal_commands_system: "InternalCommandSystem",
+        ctx: Context,
+        internal_commands_system: InternalCommandSystem,
         display_all_errors: bool = True,
     ) -> None:
-        self.cli_ctx: "Final[Context]" = ctx
-        self.cli: "Final[MultiCommand]" = self.cli_ctx.command  # type: ignore[assignment]
+        self.cli_ctx: Final[Context] = ctx
+        self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system
 
@@ -86,7 +87,7 @@ class ClickValidator(Validator):
 
         _resolve_state(self.cli_ctx, document_text)
 
-    def validate(self, document: "Document") -> None:
+    def validate(self, document: Document) -> None:
         """
         Validates the input from the prompt by raising a
         `prompt_toolkit.validation.ValidationError` if it is invalid.
@@ -135,11 +136,9 @@ class ClickValidator(Validator):
                 # All other errors raised during input validation are
                 # displayed in the Validator bar, but only if
                 # self.catch_all_errors is set to True.
-                raise ValidationError(0, f"{type(e).__name__}: {e}")
+                raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
             # Error tracebacks are displayed during the REPL loop if
             # self.catch_all_errors is set to False. The short error
             # messages are also logged into a click-repl-err.log file.
-            logger.error(f"{type(e).__name__}: {str(e)}")
-            traceback.print_exc()
-            # raise e
+            logger.exception("%s: %s", type(e).__name__, e)

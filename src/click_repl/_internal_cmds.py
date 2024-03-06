@@ -3,39 +3,45 @@
 
 Utilities to manage the REPL's internal commands.
 """
+from __future__ import annotations
+
 import subprocess
 import typing as t
 from collections import defaultdict
+from collections.abc import Generator
+from collections.abc import Iterator
 from collections.abc import Sequence
+from typing import Any
+from typing import Callable
+from typing import NoReturn
 
 import click
 
 from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException
+from .exceptions import PrefixNotFound
 from .exceptions import SamePrefixError
 from .exceptions import WrongType
-from .utils import _print_err
+from .utils import print_error
 
-if t.TYPE_CHECKING:
-    from typing import Callable, Optional, Union, List, Tuple, Dict, NoReturn
+CallableNone: t.TypeAlias = Callable[[], None]
+InternalCommandDict: t.TypeAlias = dict[str, tuple[CallableNone, str]]
+InfoTable: t.TypeAlias = dict[tuple[CallableNone, str], list[str]]
 
-    CallableNone: t.TypeAlias = "Callable[[], None]"
-    InternalCommandDict: t.TypeAlias = "Dict[str, Tuple[CallableNone, str]]"
-    InfoTable: t.TypeAlias = "Dict[Tuple[CallableNone, str], List[str]]"
 
-    class PrefixTable(t.TypedDict):
-        Internal: "Optional[str]"
-        System: "Optional[str]"
+class PrefixTable(t.TypedDict):
+    Internal: str | None
+    System: str | None
 
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
 
 
-def _exit_internal() -> "NoReturn":
+def _exit_internal() -> NoReturn:
     raise ExitReplException()
 
 
-def repl_exit() -> "NoReturn":
+def repl_exit() -> NoReturn:
     """Exits the REPL."""
     _exit_internal()
 
@@ -95,7 +101,7 @@ class InternalCommandSystem:
     system_command_prefix : str
         Prefix to execute bash/other command-line scripts.
 
-    shell : bool, default: True
+    shell : bool, default=True
         Determines whether the system commands should be executed in shell or not.
 
     Notes
@@ -107,8 +113,8 @@ class InternalCommandSystem:
 
     def __init__(
         self,
-        internal_command_prefix: "Optional[str]" = ":",
-        system_command_prefix: "Optional[str]" = "!",
+        internal_command_prefix: str | None = ":",
+        system_command_prefix: str | None = "!",
         shell: bool = True,
     ) -> None:
         if (
@@ -121,18 +127,18 @@ class InternalCommandSystem:
         self._check_prefix_validity(internal_command_prefix, "internal_command_prefix")
         self._check_prefix_validity(system_command_prefix, "system_command_prefix")
 
-        self.prefix_table: "PrefixTable" = {
+        self.prefix_table: PrefixTable = {
             "Internal": internal_command_prefix,
             "System": system_command_prefix,
         }
 
         self.shell = shell
-        self._internal_commands: "InternalCommandDict" = {}
+        self._internal_commands: InternalCommandDict = {}
 
         self._register_default_internal_commands()
 
     @property
-    def internal_command_prefix(self) -> "Optional[str]":
+    def internal_command_prefix(self) -> str | None:
         """
         Prefix used to trigger internal commands.
 
@@ -152,7 +158,7 @@ class InternalCommandSystem:
         return self.prefix_table["Internal"]
 
     @internal_command_prefix.setter
-    def internal_command_prefix(self, value: "Optional[str]") -> None:
+    def internal_command_prefix(self, value: str | None) -> None:
         self._check_prefix_validity(value, "internal_command_prefix")
 
         if value is not None and value == self.prefix_table["System"]:
@@ -161,7 +167,7 @@ class InternalCommandSystem:
         self.prefix_table["Internal"] = value
 
     @property
-    def system_command_prefix(self) -> "Optional[str]":
+    def system_command_prefix(self) -> str | None:
         """
         Prefix used to execute system commands.
 
@@ -181,7 +187,7 @@ class InternalCommandSystem:
         return self.prefix_table["System"]
 
     @system_command_prefix.setter
-    def system_command_prefix(self, value: "Optional[str]") -> None:
+    def system_command_prefix(self, value: str | None) -> None:
         self._check_prefix_validity(value, "system_command_prefix")
 
         if value is not None and value == self.prefix_table["Internal"]:
@@ -189,7 +195,7 @@ class InternalCommandSystem:
 
         self.prefix_table["System"] = value
 
-    def _check_prefix_validity(self, prefix: "Optional[str]", var_name: str) -> None:
+    def _check_prefix_validity(self, prefix: str | None, var_name: str) -> None:
         """
         Check the validity of the prefix.
 
@@ -238,7 +244,7 @@ class InternalCommandSystem:
             subprocess.run(command, shell=self.shell)
 
         except Exception as e:
-            _print_err(f"{type(e).__name__}: {e}")
+            print_error(f"{type(e).__name__}: {e}")
 
     def handle_internal_commands(self, command: str) -> None:
         """
@@ -251,20 +257,20 @@ class InternalCommandSystem:
             String containing the Internal command to be executed.
         """
 
-        target = self.get_command(command.lower(), default=None)
+        target = self.get_command(command, default=None)
         if target is None:
-            _print_err(f"{command!r}, command not found")
+            print_error(f"{command!r}, command not found")
 
         else:
             target()
 
     def register_command(
         self,
-        target: "Optional[CallableNone]" = None,
+        target: CallableNone | None = None,
         *,
-        names: "Union[str, Sequence[str], None]" = None,
-        description: "Optional[str]" = None,
-    ) -> "Union[Callable[[CallableNone], CallableNone], CallableNone]":
+        names: str | None | Sequence[str] = None,
+        description: str | None = None,
+    ) -> Callable[[CallableNone], CallableNone] | CallableNone:
         """
         A decorator used to register a new Internal Command from a
         given function.
@@ -312,7 +318,7 @@ class InternalCommandSystem:
         ```
         """
 
-        def decorator(func: "CallableNone") -> "CallableNone":
+        def decorator(func: CallableNone) -> CallableNone:
             nonlocal target, names, description
 
             if target is None:
@@ -330,7 +336,7 @@ class InternalCommandSystem:
             if isinstance(names, str):
                 names = [names]
 
-            elif not isinstance(names, (t.Sequence, t.Generator)):
+            elif not isinstance(names, (Sequence, Generator, Iterator)):
                 raise WrongType(names, "names", "string, or a Sequence of strings")
 
             for name in names:
@@ -342,7 +348,7 @@ class InternalCommandSystem:
             return decorator
         return decorator(target)
 
-    def _group_commands_by_callback_and_description(self) -> "InfoTable":
+    def _group_commands_by_callback_and_description(self) -> InfoTable:
         info_table = defaultdict(list)
 
         for mnemonic, target_info in self._internal_commands.items():
@@ -350,7 +356,7 @@ class InternalCommandSystem:
 
         return info_table
 
-    def list_commands(self) -> "List[List[str]]":
+    def list_commands(self) -> list[list[str]]:
         """
         List of internal commands that are available.
 
@@ -361,9 +367,7 @@ class InternalCommandSystem:
         """
         return list(self._group_commands_by_callback_and_description().values())
 
-    def get_command(
-        self, name: str, default: "t.Any" = None
-    ) -> "Union[CallableNone, t.Any]":
+    def get_command(self, name: str, default: Any = None) -> CallableNone | Any:
         """
         Retrieves the callback function of the internal command,
         if available. Otherwise, returns the provided sentinel value
@@ -391,7 +395,7 @@ class InternalCommandSystem:
 
         return default
 
-    def get_prefix(self, command: str) -> "t.Tuple[str, Optional[str]]":
+    def get_prefix(self, command: str) -> tuple[str, str | None]:
         """
         Extracts the prefix from the beginning of a command string.
 
@@ -418,7 +422,7 @@ class InternalCommandSystem:
 
         return "Not Found", None
 
-    def execute(self, command: str) -> bool:
+    def execute(self, command: str) -> None:
         """
         Executes incoming Internal and System commands.
 
@@ -438,20 +442,20 @@ class InternalCommandSystem:
         flag, prefix = self.get_prefix(command.strip())
 
         if prefix is None:
-            return False
+            raise PrefixNotFound(
+                "Cannot find Internal Command Prefix in the given query."
+            )
 
         command = command[len(prefix) :].lstrip()
 
         if not command:
-            _print_err(f"Enter a proper {flag} Command.")
+            print_error(f"Enter a proper {flag} Command.")
 
         elif flag == "Internal":
             self.handle_internal_commands(command)
 
         elif flag == "System":
             self.dispatch_system_commands(command)
-
-        return True
 
     def _register_default_internal_commands(self) -> None:
         """

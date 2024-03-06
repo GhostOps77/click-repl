@@ -3,23 +3,89 @@
 
 Utilities to facilitate the functionality of the click_repl module.
 """
+from __future__ import annotations
+
 import os
 import typing as t
+from collections.abc import Iterator
 from functools import lru_cache
-from gettext import gettext as _
+from typing import Any
+from typing import Iterable
+from typing import Literal
 
 import click
-from click.parser import split_opt
+from click import Command
+from click import Context
+from click import MultiCommand
+from click import Parameter
 
-from ._globals import _RANGE_TYPES
-from .parser import get_args_and_incomplete_from_args
-from .parser import get_current_repl_parsing_state
-from .proxies import _create_proxy_command
+from ._globals import ISATTY
+from ._globals import StyleAndTextTuples
 
-if t.TYPE_CHECKING:
-    from typing import Any, Dict, Optional, Tuple, Union, Generator, List
-    from click import Command, Context, Parameter, MultiCommand
-    from .parser import ReplParsingState, Incomplete
+
+if t.TYPE_CHECKING or ISATTY:
+    from click.parser import split_opt
+
+    from ._globals import _RANGE_TYPES
+    from .parser import _resolve_incomplete
+    from .parser import _resolve_repl_parsing_state
+    from .parser import Incomplete
+    from .parser import ReplParsingState
+    from .proxies import _create_proxy_command
+
+    CompletionStyleDictKeys = Literal[
+        "internal-command", "command", "multicommand", "argument", "option", "parameter"
+    ]
+
+
+def append_classname_to_all_tokens(
+    tokens_list: StyleAndTextTuples, classes: list[str] = []
+) -> StyleAndTextTuples:
+    if not classes:
+        return tokens_list
+
+    res: StyleAndTextTuples = []
+
+    for token, value, *_ in tokens_list:
+        token = f"{token},{','.join(classes)}"
+        res.append((token, value, *_))
+
+    return res
+
+
+def options_flags_joiner(
+    items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
+) -> StyleAndTextTuples:
+    if not items:
+        return []
+
+    sep_elem = (sep_token, sep)
+    iterator = iter(items)
+    res: StyleAndTextTuples = [(item_token, next(iterator))]
+
+    for item in iterator:
+        res.append(sep_elem)
+        res.append((item_token, item))
+
+    return res
+
+
+def get_token_type(obj: click.Command | click.Parameter) -> CompletionStyleDictKeys:
+    if isinstance(obj, click.Parameter):
+        if isinstance(obj, click.Argument):
+            return "argument"
+
+        elif isinstance(obj, click.Option):
+            return "option"
+
+        else:
+            return "parameter"
+
+    elif isinstance(obj, click.MultiCommand):
+        return "multicommand"
+
+    # elif isinstance(obj, click.Command):
+    return "command"
 
 
 def _quotes(text: str) -> str:
@@ -34,37 +100,45 @@ def _expand_envvars(text: str) -> str:
     return os.path.expandvars(os.path.expanduser(text))
 
 
-def _is_help_option(param: "click.Option") -> bool:
-    return (
-        param.is_flag
-        and not param.expose_value
-        and param.is_eager
-        and param.help == _("Show this message and exit.")
-    )
+# def _is_help_option(param: click.Option) -> bool:
+#     return (
+#         param.is_flag
+#         and not param.expose_value
+#         and param.is_eager
+#         and param.help == _("Show this message and exit.")
+#     )
 
 
-def _print_err(text: str) -> None:
+def print_error(text: str) -> None:
     # Prints the given text to stderr, in red colour.
     click.secho(text, color=True, err=True, fg="red")
 
 
-def _is_param_value_incomplete(ctx: "Context", param_name: "Optional[str]") -> bool:
+def is_param_value_incomplete(
+    ctx: Context, param_name: str | None, check_if_tuple_has_none: bool = True
+) -> bool:
     # Checks whether the given name of that parameter
     # doesn't recieve it's values completely.
     if param_name is None:
         return False
 
     value = ctx.params.get(param_name, None)
-    return value in (None, ()) or (isinstance(value, tuple) and None in value)
+    return value in (None, ()) or (
+        check_if_tuple_has_none and isinstance(value, tuple) and None in value
+    )
 
 
-def _join_options(options: "List[str]") -> "Tuple[List[str], str]":
-    # Same implementation as click.formatting.join_options function, but much simpler.
+def get_option_flag_sep(options: list[str]) -> str:
     any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
-    return sorted(options, key=len), ";" if any_prefix_is_slash else "/"
+    return ";" if any_prefix_is_slash else "/"
 
 
-def _get_group_ctx(ctx: "Context") -> "Context":
+def join_options(options: list[str]) -> tuple[list[str], str]:
+    # Same implementation as click.formatting.join_options function, but much simpler.
+    return sorted(options, key=len), get_option_flag_sep(options)
+
+
+def _get_group_ctx(ctx: Context) -> Context:
     # If there's a parent context object and its command type is click.MultiCommand,
     # we return its parent context object. A parent context object should be
     # available most of the time. If not, then we return the original context object.
@@ -77,11 +151,11 @@ def _get_group_ctx(ctx: "Context") -> "Context":
 
 
 def _get_visible_subcommands(
-    ctx: "Context",
-    multicommand: "MultiCommand",
+    ctx: Context,
+    multicommand: MultiCommand,
     incomplete: str,
     show_hidden_commands: bool = False,
-) -> "Generator[Tuple[str, Command], None, None]":
+) -> Iterator[tuple[str, Command]]:
     # Get all the subcommands whose name starts with the given
     # "incomplete" prefix string.
 
@@ -101,8 +175,8 @@ def _get_visible_subcommands(
 
 @lru_cache(maxsize=128)
 def get_info_dict(
-    obj: "Union[Context, Command, Parameter, click.ParamType]",
-) -> "Dict[str, Any]":
+    obj: Context | Command | Parameter | click.ParamType,
+) -> dict[str, Any]:
     # Similar to the 'get_info_dict' method implementation # in click objects,
     # but it only retrieves the essential attributes # required to
     # differentiate between different 'ReplParsingState' objects.
@@ -113,7 +187,7 @@ def get_info_dict(
             "params": obj.params,
         }
 
-    info_dict: "Dict[str, Any]" = {}
+    info_dict: dict[str, Any] = {}
 
     if isinstance(obj, click.Command):
         ctx = click.Context(obj)
@@ -205,18 +279,18 @@ def get_info_dict(
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    command: "MultiCommand",
-    parent_ctx: "Context",
-    args: "Tuple[str, ...]",
+    command: MultiCommand,
+    parent_ctx: Context,
+    args: tuple[str, ...],
     proxy: bool = False,
-    **ctx_kwargs: "Dict[str, Any]",
-) -> "Tuple[Context, Optional[Command]]":
+    **ctx_kwargs: dict[str, Any],
+) -> tuple[Context, Command | None]:
     if not args:
         return parent_ctx, None
 
     # Since the resolve_command method only accepts string arguments in a
     # list format, we explicitly convert args into a list.
-    _args = list(args)
+    _args = list(_expand_envvars(i) for i in args)
 
     name, cmd, _args = command.resolve_command(parent_ctx, _args)
 
@@ -240,9 +314,7 @@ def _generate_next_click_ctx(
 
 
 @lru_cache(maxsize=3)
-def _resolve_context(
-    ctx: "Context", args: "Tuple[str, ...]", proxy: bool = False
-) -> "Context":
+def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
     while args:
         command = ctx.command
 
@@ -284,12 +356,16 @@ def _resolve_context(
 
 @lru_cache(maxsize=3)
 def _resolve_state(
-    ctx: "Context", document_text: str
-) -> "Tuple[Context, ReplParsingState, Incomplete]":
+    ctx: Context, document_text: str
+) -> tuple[Context, ReplParsingState, Incomplete]:
     # Resolves the parsing state of the arguments in the REPL prompt.
-    args, incomplete = get_args_and_incomplete_from_args(document_text)
-
+    # try:
+    args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args, proxy=True)
-    state = get_current_repl_parsing_state(ctx, parsed_ctx, args)
+    state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
 
     return parsed_ctx, state, incomplete
+
+
+# except Exception as e:
+#     raise ParserError(str(e)) from e

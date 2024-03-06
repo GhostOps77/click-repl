@@ -3,83 +3,98 @@
 
 Utility for the Bottom bar of the REPL.
 """
+from __future__ import annotations
+
 import typing as t
 
 import click
-from prompt_toolkit.formatted_text import HTML
+from click import Parameter
+from click.types import FloatRange
+from click.types import IntRange
+from click.types import ParamType
 
-from ._formatting import Bold
-from ._formatting import Color
-from ._formatting import StrikeThrough
-from ._formatting import Underline
-from ._globals import _METAVAR_PARAMS
+from ._formatting import Marquee
+from ._formatting import TokenizedFormattedText
 from ._globals import _RANGE_TYPES
 from ._globals import HAS_CLICK8
 from ._globals import ISATTY
-from .utils import _join_options
+from ._globals import StyleAndTextTuples
+from .parser import ReplParsingState
+from .utils import append_classname_to_all_tokens
+from .utils import is_param_value_incomplete
 
-# from ._formatting import FormattedString
 
 if t.TYPE_CHECKING:
-    from typing import Optional, List, Union
-
-    from click import Parameter
-    from click.types import ParamType
-
-    from .parser import ReplParsingState
-    from ._formatting import HTMLTag
-
-    ParamInfo = t.TypedDict(
-        "ParamInfo", {"name": str, "type info": List[str], "desc str": str}
-    )
+    from .core import ReplContext
 
 
 __all__ = ["BottomBar"]
 
 
+class ParamInfo(t.TypedDict):
+    name: tuple[str, str]
+    type_info: StyleAndTextTuples
+    nargs_info: StyleAndTextTuples
+
+
+def _describe_range_click(param_type: IntRange | FloatRange) -> str:
+    if HAS_CLICK8:
+        res = param_type._describe_range()
+
+    elif param_type.min is None:
+        res = f"x<={param_type.max}"
+
+    elif param_type.max is None:
+        res = f"x>={param_type.min}"
+
+    else:
+        res = f"{param_type.min}<=x<={param_type.max}"
+
+    clamp = " clamped" if param_type.clamp else ""
+    return res + clamp  # type:ignore[no-any-return]
+
+
 class BottomBar:
     """Toolbar class to manage the text in the bottom toolbar."""
 
-    # __slots__ = ("state", "_formatted_text", "show_hidden_params", "marquee")
-
-    def __init__(self, show_hidden_params: bool = False, marquee: bool = True) -> None:
+    def __init__(
+        self,
+        show_hidden_params: bool = False,
+        marquee: bool = True,
+    ) -> None:
         """
         Initialize the `BottomBar` class.
 
         Parameters
         ----------
-        show_hidden_params : bool, default: False
+        show_hidden_params : bool, default=False
             Determines whether to display hidden params at bottom bar.
 
-        marquee : bool, default: True
+        marquee : bool, default=True
             Displays the text in marquee style if it's content exceeds the
             terminal's display.
         """
 
-        self.state: "Optional[ReplParsingState]" = None
-        self._formatted_text: "Union[str, HTML]" = ""
+        self.state: ReplParsingState | None = None
+        self._formatted_text: StyleAndTextTuples | Marquee = []
         self.show_hidden_params = show_hidden_params
         self.marquee = marquee
-        self.marquee_pointer_position = 0
+        self.current_repl_ctx: ReplContext | None = None
 
-    def marquee_text(self) -> "Union[str, HTML]":
-        return self._formatted_text
-
-    def __call__(self) -> "Union[str, HTML]":
+    def __call__(self) -> StyleAndTextTuples:
         return self.get_formatted_text()
 
     def reset_state(self) -> None:
         self.state = None
-        self._formatted_text = ""
+        self._formatted_text = []
 
-    def get_formatted_text(self) -> "Union[str, HTML]":
-        # return str(self.state)
-        # if len(self._formatted_text) <= os.get_terminal_size().columns:
+    def get_formatted_text(self) -> StyleAndTextTuples:
+        if isinstance(self._formatted_text, Marquee):
+            return self._formatted_text.get_current_text_chunk()
+
         return self._formatted_text
 
-        # return self._formatted_text.get_text()
-
-    def update_state(self, state: "ReplParsingState") -> None:
+    def update_state(self, state: ReplParsingState) -> None:
         if not ISATTY or state is None or state == self.state:
             return
 
@@ -87,235 +102,335 @@ class BottomBar:
         self._formatted_text = self.make_formatted_text()
         # self._formatted_text = str(state)
 
-    def get_group_metavar_template(self) -> "Union[str, HTML]":
+    def clear(self) -> None:
+        self._formatted_text = []
+
+    def get_group_metavar_template(self) -> StyleAndTextTuples:
         # Gets the metavar to describe the CLI Group, indicating
         # whether it is a chained Group or not.
 
         state = self.state
-        current_group = state.current_group  # type: ignore[union-attr]
 
-        if not current_group.list_commands(state.current_ctx):  # type: ignore[union-attr]
+        assert state is not None, "state cannot be None"
+
+        current_group = state.current_group
+
+        if not current_group.list_commands(state.current_ctx):
             # Empty string if there are no subcommands.
-            return ""
+            return [("space", "")]
+
+        current_group_name = current_group.name
+        if current_group_name is None:
+            current_group_name = "..."
+
+        res: StyleAndTextTuples = [
+            ("multicommand.type", "Group"),
+            ("space", " "),
+            ("multicommand.name", current_group_name),
+            ("symbol", ":"),
+            ("space", " "),
+        ]
 
         if getattr(current_group, "chain", False):
             # Metavar for chained group.
-            res = (
-                f"{Bold(f'Group {current_group.name}:')} "
-                "COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
-            )
+            res += [
+                ("multicommand.metavar", "COMMAND1"),
+                ("space", " "),
+                ("symbol.bracket", "["),
+                ("multicommand.metavar", "ARGS"),
+                ("symbol.bracket", "]"),
+                ("symbol.ellipsis", "..."),
+                ("space", " "),
+                ("symbol.bracket", "["),
+                ("multicommand.metavar", "COMMAND2"),
+                ("space", " "),
+                ("symbol.bracket", "["),
+                ("multicommand.metavar", "ARGS"),
+                ("symbol.bracket", "]"),
+                ("symbol.ellipsis", "..."),
+                ("symbol.bracket", "]"),
+                ("symbol.ellipsis", "..."),
+            ]
 
         else:
             # Metavar for non-chained group.
-            res = f"{Bold(f'Group {current_group.name}:')} COMMAND [ARGS]..."
-
-        return HTML(res)
-
-    def get_param_info(self, param: "Parameter") -> str:
-        param_info: "ParamInfo" = {
-            "name": self.get_param_name(param),
-            "type info": [],
-            "desc str": "",
-        }
-
-        if self.state.current_param == param:  # type: ignore[union-attr]
-            # Displaying detailed information only for the current parameter
-            # in the bottom bar, to save space.
-
-            type_info = self.get_param_type_info(param, param.type)
-
-            if not isinstance(type_info, list):
-                type_info = [type_info]
-
-            param_info["type info"] = type_info
-            param_info["desc str"] = self.get_param_nargs_info(param, param_info)
-
-        return self.format_parsing_state_for_param(param, param_info)
-
-    def get_param_name(self, param: "Parameter") -> str:
-        if isinstance(param, click.Argument):
-            return param.name  # type: ignore
-
-        else:
-            if not param.is_bool_flag:  # type: ignore[attr-defined]
-                return max(  # type: ignore
-                    param.opts + param.secondary_opts,
-                    key=lambda x: len(click.parser.split_opt(x)[1]),
-                )
-
-            opts, split_char = _join_options(param.opts)
-            opts_html_tag = Color(split_char.join(opts), "green")
-
-            if not param.secondary_opts:
-                return str(opts_html_tag)
-
-            secondary_opts, split_char = _join_options(param.secondary_opts)
-            secondary_opts_html_tag = Color(split_char.join(secondary_opts), "red")
-
-            return f"{opts_html_tag}|{secondary_opts_html_tag}"
-
-    def get_param_type_info(
-        self, param: "Parameter", param_type: "ParamType"
-    ) -> "Union[str, List[str]]":
-        if isinstance(param_type, click.Tuple):
-            return [
-                self.get_param_type_info(param, type_) or type_.name  # type: ignore[misc]
-                for type_ in param_type.types
+            res += [
+                ("multicommand.metavar", "COMMAND"),
+                ("space", " "),
+                ("symbol.bracket", "["),
+                ("multicommand.metavar", "ARGS"),
+                ("symbol.bracket", "]"),
+                ("symbol.ellipsis", "..."),
             ]
 
-        type_info = ""
+        return res
+
+    def get_param_usage_state_token(self, param: Parameter) -> str:
+        state = self.state
+
+        assert state is not None, "state cannot be None"
+
+        if param == state.current_param:
+            usage_state = "inuse"
+
+        elif not is_param_value_incomplete(state.current_ctx, param.name):
+            usage_state = "used"
+
+        else:
+            usage_state = "unused"
+
+        if (
+            any(getattr(param, attr, False) for attr in ("count", "multiple"))
+            # or param in state.remaining_params
+        ):
+            # Counters, and Multiple-type Options can be supplied multiple times.
+            # So they're displayed without special formatting.
+            # # Same goes for Parameters awaiting for values.
+            usage_state = "unused"
+
+        return "parameter." + usage_state
+
+    def get_param_name(self, param: Parameter) -> tuple[str, str]:
+        if isinstance(param, click.Argument):
+            token_name = "parameter.argument.name"
+
+        elif isinstance(param, click.Option):
+            token_name = "parameter.option.name"
+
+        else:
+            token_name = f"parameter.{type(param).__name__.lower()}.name"
+
+        param_name = param.name
+
+        if param_name is None:
+            param_name = "..."
+
+        return (f"{token_name},{self.get_param_usage_state_token(param)}", param_name)
+
+    def get_param_type_info(
+        self, param: Parameter, param_type: ParamType
+    ) -> StyleAndTextTuples:
+        assert self.state is not None, "state cannot be None"
+
+        type_info: StyleAndTextTuples = []
+
+        if isinstance(param_type, click.Tuple):
+            found_current_type_in_tuple = False
+
+            for type_, value_in_ctx in zip(
+                param_type.types,
+                self.state.current_ctx.params[param.name],  # type:ignore[index]
+            ):
+                res = self.get_param_type_info(param, type_)
+
+                if not res:
+                    res = [
+                        ("symbol.bracket", "<"),
+                        ("parameter.type.string", "text"),
+                        ("symbol.bracket", ">"),
+                    ]
+
+                if value_in_ctx is not None:
+                    usage_state = "parameter.type.used"
+
+                elif not found_current_type_in_tuple:
+                    usage_state = "parameter.type.inuse"
+                    found_current_type_in_tuple = True
+
+                else:
+                    usage_state = "parameter.type.unused"
+
+                type_info += [
+                    (f"{token.rsplit(',', 1)[0]},{usage_state}", val, *_)
+                    for token, val, *_ in res
+                ]
+                type_info.append(("space", " "))
+
+            type_info.pop()
+            return type_info
+
+        if not is_param_value_incomplete(self.state.current_ctx, param.name):
+            usage_state = "parameter.type.used"
+
+        else:
+            usage_state = "parameter.type.inuse"
 
         if isinstance(param_type, _RANGE_TYPES):
-            # The < and > symbols at the beginning and end of the repr of the
-            # class are removed by slicing it with [1:-1]. The < and > symbols
-            # within the representation, which represent the range, are replaced
-            # with their URL encoded forms (&lt; and &gt;) to display them
-            # correctly in HTML form.
-            type_info = param_type.name  # [1:-1]
+            range_num_type = (
+                "integer" if isinstance(param_type, click.IntRange) else "float"
+            )
 
-            if HAS_CLICK8:
-                clamp = " clamped" if param_type.clamp else ""
-                type_info += f" {param_type._describe_range()}{clamp}"
-
-            else:
-                lop = "<" if param_type.min_open else "<="
-                rop = "<" if param_type.max_open else "<="
-                type_info += f" {param_type.min}{lop}x{rop}{param_type.max}"
-
-        elif isinstance(param_type, _METAVAR_PARAMS):
-            # Here, only the name of the type's class is included in type_info. This
-            # is because metavar of classes generated by click itself can have
-            # potentially longer strings.
-            for metavar_param in _METAVAR_PARAMS:
-                if isinstance(param_type, metavar_param):
-                    type_info = metavar_param.__name__
-                    break
-
-        # elif isinstance(param_type, _PATH_TYPES):
-        #     # If the parameter type is an instance of any of these 3 types mentioned
-        #     # above, there is no need to mention anything special about them. The
-        #     # type information is simply added as the name attribute of the
-        #     # respective type.
-        #     type_info = param_type.name
+            type_info += [
+                (f"parameter.type.range.{range_num_type}", param_type.name),
+                ("space", " "),
+                ("parameter.type.range.descriptor", _describe_range_click(param_type)),
+            ]
 
         elif param_type not in (click.STRING, click.UNPROCESSED):
-            type_info = getattr(param_type, "name", f"{param_type}")
+            param_type_name = param_type.name or type(param_type).__name__.lower()
+
+            type_info.append(
+                (f"parameter.type.{param_type_name}", param_type.name or f"{param_type}")
+            )
 
         if type_info:
-            type_info = f"<{type_info}>"
+            type_info = [("symbol.bracket", "<"), *type_info, ("symbol.bracket", ">")]
+
+            type_info = append_classname_to_all_tokens(type_info, [usage_state])
 
         return type_info
 
-    def get_param_nargs_info(self, param: "Parameter", param_info: "ParamInfo") -> str:
-        param_info_desc = f"{param_info['name']} {' '.join(param_info['type info'])}"
+    def get_param_nargs_info(
+        self, param: Parameter, param_info: ParamInfo
+    ) -> StyleAndTextTuples:
+        type_info = param_info["type_info"]
 
-        if param.nargs == 1 or isinstance(param.type, click.Tuple):
-            return param_info_desc
+        if param.nargs == 1:
+            return type_info
+
+        usage_state = self.get_param_usage_state_token(param)
+
+        if isinstance(param.type, click.Tuple):
+            nargs_info = [("symbol.bracket", "("), *type_info, ("symbol.bracket", ")")]
 
         elif param.nargs == -1:
-            return f"[{param_info_desc} ...]"
+            nargs_info = [
+                *type_info,
+                (f"space,{usage_state}", " "),
+                (f"ellipsis,{usage_state}", "..."),
+            ]
 
         elif param.nargs > 1:
+            assert self.state is not None, "state cannot be None"
+
             # Calculate the number of non-None values received for the parameter.
-            param_values = self.state.current_ctx.params.get(  # type: ignore[union-attr]
-                param.name, []  # type: ignore[arg-type]
+            param_values: list[str] = (
+                self.state.current_ctx.params[param.name] or []  # type:ignore[index]
             )
 
-            if param_values is None:
-                not_none_vals_count = 0
+            no_of_values_received = sum(1 for i in param_values if i is not None)
 
-            else:
-                not_none_vals_count = sum(1 for i in param_values if i is not None)
+            nargs_info = [
+                *type_info,
+                (f"space,{usage_state}", " "),
+                (f"symbol,{usage_state}", "("),
+                (f"parameter.nargs.counter,{usage_state}", f"{no_of_values_received}"),
+                (f"symbol,{usage_state}", "/"),
+                (f"parameter.nargs.counter,{usage_state}", f"{param.nargs}"),
+                (f"symbol,{usage_state}", ")"),
+            ]
 
-            return f"[{param_info_desc} ({not_none_vals_count}/{param.nargs})]"
+        return nargs_info
 
-        return param_info_desc
+    def format_metavar_for_param_with_nargs(
+        self, param: Parameter, param_info: ParamInfo
+    ) -> StyleAndTextTuples:
+        param_name = param_info["name"]
+        nargs_info = param_info["nargs_info"]
 
-    def format_parsing_state_for_param(
-        self, param: "Parameter", param_info: "ParamInfo"
-    ) -> str:
-        # Formats the provided param_info string using HTML to indicate whether
-        # the parameter is current, awaiting REPL input, or has received values.
+        if not nargs_info:
+            return [param_name]
 
+        usage_state = self.get_param_usage_state_token(param)
+
+        res: StyleAndTextTuples = [param_name, (f"space,{usage_state}", " ")]
+
+        if param.nargs == 1 or isinstance(param.type, click.Tuple):
+            res += nargs_info
+
+        else:
+            res += [
+                (f"symbol.bracket,{usage_state}", "["),
+                *nargs_info,
+                (f"symbol.bracket,{usage_state}", "]"),
+            ]
+
+        return res
+
+    def get_param_info(self, param: Parameter) -> StyleAndTextTuples:
+        assert self.state is not None, "state cannot be None"
+
+        param_info: ParamInfo = {
+            "name": self.get_param_name(param),
+            "type_info": [],
+            "nargs_info": [],
+        }
+
+        if self.state.current_param == param:
+            # Displaying detailed information only for the current parameter
+            # in the bottom bar, to save space.
+
+            param_info["type_info"] = self.get_param_type_info(param, param.type)
+            param_info["nargs_info"] = self.get_param_nargs_info(param, param_info)
+
+        return self.format_metavar_for_param_with_nargs(param, param_info)
+
+    def make_formatted_text(self) -> StyleAndTextTuples | Marquee:
         state = self.state
 
-        if param == state.current_param:  # type: ignore[union-attr]
-            # The current parameter is shown in bold and underlined letters.
-            if not isinstance(param.type, click.Tuple):
-                return str(Underline(Bold(param_info["desc str"])))
+        if state is None:
+            return []
 
-            res = str(Bold(param_info["name"]))
-            type_info: "List[Union[str, HTMLTag]]" = []
-            stop = False
-
-            for type_str, value in zip(
-                param_info["type info"],
-                state.current_ctx.params[param.name],  # type: ignore
-            ):
-                if value is not None:
-                    # To display that this paramtype has recieved its value,
-                    # by strikethrough.
-                    type_info.append(StrikeThrough(type_str))
-
-                elif not stop:
-                    # To display the current paramtype that requires a value.
-                    type_info.append(Underline(Bold(type_str)))
-                    stop = True
-
-                else:
-                    # To display it as it is, denoting that it still haven't recieved its
-                    # value, and it's not the current paramtype in the given tuple type.
-                    type_info.append(type_str)
-
-            res += f" ({' '.join(type_info)})"  # type: ignore[arg-type]
-            return res
-
-        param_info_str = param_info["name"]
-
-        if (
-            any(getattr(param, attr, False) for attr in ("count", "is_flag"))
-            or param in state.remaining_params  # type: ignore[union-attr]
-        ):
-            # Counters, Flags, and Parameters that are awaiting for values
-            # are displayed without special formatting.
-            return param_info_str
-
-        # Parameters that have already received values are displayed
-        # with a strikethrough.
-        return str(StrikeThrough(param_info_str))
-
-    def make_formatted_text(self) -> "Union[str, HTML]":
-        state = self.state
-
-        current_command = state.current_command  # type: ignore[union-attr]
+        current_command = state.current_command
 
         if current_command is None:
             # If there is no command currently entered in the REPL,
             # the function returns the metavar template of the
             # parent/CLI/current Group.
-            return self.get_group_metavar_template()
+            return TokenizedFormattedText(self.get_group_metavar_template(), "bottom-bar")
 
-        if isinstance(current_command, click.Group):
-            command_type = "Group"
+        if isinstance(current_command, click.MultiCommand):
+            command_type = "multicommand"
+            command_type_metavar = type(current_command).__name__
+
         else:
-            command_type = "Command"
+            command_type = "command"
+            command_type_metavar = "Command"
 
-        output_text = f"{command_type} {current_command.name}"
+        current_command_name = current_command.name
+        if current_command_name is None:
+            current_command_name = "..."
 
-        formatted_params_info = [
-            self.get_param_info(param)
-            for param in current_command.params
-            if not getattr(param, "hidden", False)
-            or (
-                param == state.current_param  # type: ignore[union-attr]
-                and self.show_hidden_params
-            )
+        prefix: StyleAndTextTuples = [
+            (f"{command_type}.type", command_type_metavar),
+            ("space", " "),
+            (f"{command_type}.name", current_command_name),
         ]
 
-        if formatted_params_info:
-            formatted_params_info.insert(0, str(Bold(f"{output_text}: ")))
-            return " ".join(formatted_params_info)
-        else:
-            output_text = str(Bold(output_text))
+        formatted_params_info = []
+        unique_params = {param.name: param for param in current_command.params}.values()
 
-        return output_text
+        for param in unique_params:
+            if not getattr(param, "hidden", False) or (
+                param == state.current_param and self.show_hidden_params
+            ):
+                # Display all the non-hidden parameters, except if the hidden param
+                # is the current parameter.
+
+                formatted_params_info += self.get_param_info(param)
+                formatted_params_info.append(("space", " "))
+
+        if formatted_params_info:
+            formatted_params_info.pop()
+            prefix += [
+                ("symbol,misc.bold", ":"),
+                ("space", " "),
+            ]
+
+        return Marquee(
+            TokenizedFormattedText(formatted_params_info, "bottom-bar"),
+            prefix=TokenizedFormattedText(prefix, "bottom-bar"),
+        )
+
+    def display_exception(self, err: Exception) -> None:
+        self._formatted_text = Marquee(
+            TokenizedFormattedText(
+                [
+                    ("error.exception-class-name", type(err).__name__),
+                    ("symbol,error", ":"),
+                    ("space,error", " "),
+                    ("error.message", str(err)),
+                ],
+                "bottom-bar",
+            )
+        )

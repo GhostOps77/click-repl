@@ -3,12 +3,13 @@
 
 Exceptional classes required for the click_repl module.
 """
-import typing as t
+from __future__ import annotations
 
+from typing import Any
+
+from click import Argument
+from click import Command
 from click.exceptions import Exit as ClickExit
-
-if t.TYPE_CHECKING:
-    from click import Argument, Command
 
 
 __all__ = [
@@ -37,6 +38,15 @@ class ParserError(Exception):
     pass
 
 
+class PrefixNotFound(InternalCommandException):
+    """
+    Exception raised when the Internal Command's prefix is not found while
+    trying to execute a query.
+    """
+
+    pass
+
+
 class WrongType(InternalCommandException):
     """
     Exception raised when an object with an invalid type is passed to one of
@@ -52,7 +62,7 @@ class WrongType(InternalCommandException):
         A string that describes the expected type.
     """
 
-    def __init__(self, var: "t.Any", var_name: str, expected_type: str) -> None:
+    def __init__(self, var: Any, var_name: str, expected_type: str) -> None:
         super().__init__(
             f"Expected '{var_name}' to be a {expected_type}, "
             f"but got {type(var).__name__}"
@@ -85,33 +95,6 @@ class ExitReplException(InternalCommandException):
     pass
 
 
-# class InvalidGroupFormat(ParserError):
-#     """
-#     Exception raised when a Group has non-required arguments don't have
-#     value assigned to them.
-
-#     This exception indicates an invalid format in a Group context object
-#     where nonrequired arguments are missing values. It typically occurs
-#     when attempting to parse command-line input that does not conform
-#     to the expected format.
-
-#     Parameters
-#     ----------
-#     group : click.Group
-#         The group object representing the group that has the invalid format.
-
-#     param : click.Argument
-#         The argument object representing the non-required argument
-#         that is missing a value.
-#     """
-
-#     def __init__(self, group: "Group", param: "Argument") -> None:
-#         super().__init__(
-#             f'Expected some value for the optional argument "{param.name}" of '
-#             f'Group "{group.name}" to invoke the REPL, but got None'
-#         )
-
-
 class ArgumentPositionError(ParserError):
     """
     Exception raised when an argument with `nargs=-1` is not defined at the rightmost
@@ -136,7 +119,7 @@ class ArgumentPositionError(ParserError):
         the given command.
     """
 
-    def __init__(self, command: "Command", argument: "Argument", position: int) -> None:
+    def __init__(self, command: Command, argument: Argument, position: int) -> None:
         super().__init__(
             f"The argument '{argument.name}' with nargs=-1, in command "
             f"'{command.name}' must be defined at the end of the parameter list, "

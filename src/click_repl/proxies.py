@@ -3,29 +3,66 @@
 
 Proxy objects to modify the parsing method of click objects.
 """
-import typing as t
+from __future__ import annotations
 
-import click
+import typing as t
+from typing import Any
+
+from click import Argument
+from click import Command
+from click import CommandCollection
+from click import Context
+from click import Group
+from click import MultiCommand
+from click import Option
+from click import Parameter
+from click.core import ParameterSource
+from typing_extensions import Self
 
 from .parser import ReplOptionParser
 
-if t.TYPE_CHECKING:
-    from typing import Any
-    from click import Command, Context, Parameter, Group
-
-    V = t.TypeVar("V")
+T = t.TypeVar("T")
 
 
-def _create_proxy_command(obj: "Command") -> "ProxyCommand":
-    if isinstance(obj, click.Group):
+@t.overload
+def _create_proxy_command(obj: Group) -> ProxyGroup:
+    ...
+
+
+@t.overload
+def _create_proxy_command(obj: Command) -> ProxyCommand:  # type:ignore[misc]
+    ...
+
+
+def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
+    if isinstance(obj, Group):
         return ProxyGroup(obj)
     return ProxyCommand(obj)
 
 
-def _create_proxy_param(obj: "Parameter") -> "ProxyParameter":
-    if isinstance(obj, click.Option):
+@t.overload
+def _create_proxy_param(obj: Parameter) -> Parameter:
+    ...
+
+
+@t.overload
+def _create_proxy_param(obj: Option) -> ProxyOption:  # type:ignore[misc]
+    ...
+
+
+@t.overload
+def _create_proxy_param(obj: Argument) -> ProxyArgument:  # type:ignore[misc]
+    ...
+
+
+def _create_proxy_param(obj: Parameter) -> Parameter:
+    if isinstance(obj, Option):
         return ProxyOption(obj)
-    return ProxyArgument(obj)
+
+    elif isinstance(obj, Argument):
+        return ProxyArgument(obj)
+
+    return ProxyParameter(obj)
 
 
 class Proxy:
@@ -48,14 +85,14 @@ class Proxy:
     attribute access behavior.
     """
 
-    def __init__(self, obj: "V") -> None:
+    def __init__(self, obj: T) -> None:
         self.proxy_setattr("_obj", obj)
 
-    def __getattr__(self, name: str) -> "Any":
+    def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to the underlying object."""
         return getattr(self.get_obj(), name)
 
-    def __setattr__(self, name: str, value: "Any") -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         """Delegate attribute assignment to the underlying object."""
         setattr(self.get_obj(), name, value)
 
@@ -74,7 +111,7 @@ class Proxy:
         """
         raise NotImplementedError()
 
-    def get_obj(self) -> "Any":
+    def get_obj(self) -> Any:
         """
         Gets the underlying object.
 
@@ -84,7 +121,7 @@ class Proxy:
         """
         return self.proxy_getattr("_obj")
 
-    def proxy_getattr(self, name: str) -> "Any":
+    def proxy_getattr(self, name: str) -> Any:
         """
         Proxy attribute access for internal use.
 
@@ -99,7 +136,7 @@ class Proxy:
         """
         return object.__getattribute__(self, name)
 
-    def proxy_setattr(self, name: str, value: "Any") -> None:
+    def proxy_setattr(self, name: str, value: Any) -> None:
         """
         Proxy attribute assignment for internal use.
 
@@ -125,7 +162,7 @@ class Proxy:
         object.__delattr__(self, name)
 
 
-class ProxyCommand(Proxy, click.Command):
+class ProxyCommand(Proxy, Command):
     """
     A proxy class for `click.Command` objects to modify their
     options parser, by overriding its `make_parser` method to
@@ -138,15 +175,15 @@ class ProxyCommand(Proxy, click.Command):
         The click command object that has to be proxied.
     """
 
-    def __init__(self, obj: "Command") -> None:
+    def __init__(self, obj: Command) -> None:
         # Changing the Parameter types to their proxies.
         super().__init__(obj)
         self.params = [_create_proxy_param(param) for param in obj.params]
 
-    def __enter__(self) -> "t.Self":
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *args: "Any") -> None:
+    def __exit__(self, *args: Any) -> None:
         self.revoke_changes()
 
     def revoke_changes(self) -> None:
@@ -155,25 +192,25 @@ class ProxyCommand(Proxy, click.Command):
             for param in self.params
         ]
 
-    def make_parser(self, ctx: "Context") -> "ReplOptionParser":
+    def make_parser(self, ctx: Context) -> ReplOptionParser:
         return ReplOptionParser(ctx)
 
 
-class ProxyGroup(ProxyCommand, click.Group):
+class ProxyMultiCommand(ProxyCommand, MultiCommand):
     """
-    A proxy class for `click.Group` objects that changes its parser to
+    A proxy class for `click.MultiCommand` objects that changes its parser to
     `click_repl.parser.ReplOptionParser` in the `make_parser` method.
 
     Parameters
     ----------
-    obj : `click.Group`
-        The click group object that has to be proxied.
+    obj : `click.MultiCommand`
+        The click multicommand object that has to be proxied.
     """
 
-    def __init__(self, obj: "Group") -> None:
+    def __init__(self, obj: MultiCommand) -> None:
         super().__init__(obj)
         self.proxy_setattr(
-            "_no_args_is_help_bkp", self.no_args_is_help  # type: ignore[has-type]
+            "_no_args_is_help_bkp", self.no_args_is_help  # type:ignore[has-type]
         )
         self.no_args_is_help = False
 
@@ -182,7 +219,15 @@ class ProxyGroup(ProxyCommand, click.Group):
         self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
 
 
-class ProxyParameter(Proxy, click.Parameter):
+class ProxyGroup(ProxyMultiCommand, Group):
+    pass
+
+
+class ProxyCommandCollection(ProxyMultiCommand, CommandCollection):
+    pass
+
+
+class ProxyParameter(Proxy, Parameter):
     """
     A generic proxy class for `click.Parameter` objects that modifies
     its behavior for missing values.
@@ -196,13 +241,21 @@ class ProxyParameter(Proxy, click.Parameter):
         The click parameter object that has to be proxied.
     """
 
-    def full_process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
+    def full_process_value(self, ctx: Context, value: Any) -> Any:
         # click v7 has 'full_process_value' instead of 'process_value'.
         # Therefore, for backwards compatibility with click v7,
         # 'process_value' method is called within this method.
         return self.process_value(ctx, value)
 
-    def process_value(self, ctx: "Context", value: "t.Any") -> "t.Any":
+    def consume_value(
+        self, ctx: Context, opts: t.Mapping[str, t.Any]
+    ) -> t.Tuple[t.Any, ParameterSource]:
+        return (
+            opts.get(self.name, None),  # type:ignore[arg-type]
+            ParameterSource.COMMANDLINE,
+        )
+
+    def process_value(self, ctx: Context, value: Any) -> Any:
         if value is not None:
             value = self.type_cast_value(ctx, value)
 
@@ -212,7 +265,7 @@ class ProxyParameter(Proxy, click.Parameter):
         return value
 
 
-class ProxyArgument(ProxyParameter, click.Argument):
+class ProxyArgument(ProxyParameter, Argument):
     """
     A proxy class for `click.Argument` objects, allowing modification of their behavior
     during the processing of values based on their type.
@@ -226,7 +279,7 @@ class ProxyArgument(ProxyParameter, click.Argument):
     pass
 
 
-class ProxyOption(ProxyParameter, click.Option):
+class ProxyOption(ProxyParameter, Option):
     """
     A proxy class for `click.Option` objects, allowing modification of their behavior
     during the processing of values based on their type.
@@ -237,4 +290,7 @@ class ProxyOption(ProxyParameter, click.Option):
         The click option object that has to be proxied.
     """
 
-    pass
+    def prompt_for_value(self, ctx: Context) -> Any:
+        return
+
+    # pass

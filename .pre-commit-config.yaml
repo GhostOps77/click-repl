@@ -17,6 +17,8 @@ repos:
       - id: reorder-python-imports
         args:
           - "--py37-plus"
+          - "--add-import"
+          - "from __future__ import annotations"
           - "--application-directories"
           - ".:src"
 

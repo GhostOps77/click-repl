@@ -1,217 +1,220 @@
+from __future__ import annotations
+
+import os
 import typing as t
-from html import escape
 
-# from time import sleep
+from prompt_toolkit.formatted_text import FormattedText
 
-if t.TYPE_CHECKING:
-    from typing import Union, Optional, SupportsIndex
+from ._globals import StyleAndTextTuples
 
 
-__all__ = ["HTMLTag", "Bold", "Italics", "Underline", "StrikeThrough"]
+__all__ = ["TokenizedFormattedText", "Marquee"]
 
 
-class HTMLTag:
-    name = "htmltag"
+class TokenizedFormattedText(FormattedText):
+    __slots__ = ("parent_token_class",)
 
-    def __init__(
-        self, text: "Union[str, HTMLTag]", tag_name: "Optional[str]" = None, **attrs: str
-    ) -> None:
-        if isinstance(text, str):
-            text = escape(text)
+    def __init__(self, tokens_list: StyleAndTextTuples, parent_token_class: str) -> None:
+        is_not_formatted_text = not isinstance(
+            tokens_list, (TokenizedFormattedText, FormattedText)
+        )
 
-        self.text = text
+        if is_not_formatted_text and parent_token_class:
+            for index, token_tuple in enumerate(tokens_list):
+                class_names_str = token_tuple[0]
 
-        tag_name_extras = ""
-        if tag_name is not None and " " in tag_name:
-            tag_name, tag_name_extras = tag_name.split(" ", 1)
-            tag_name_extras = tag_name_extras.strip()
+                if class_names_str and not class_names_str.startswith("class:"):
+                    class_names_str = "class:" + ",".join(
+                        f"{parent_token_class}.{class_name}"
+                        for class_name in class_names_str.split(",")
+                    )
 
-        if tag_name_extras:
-            for i in tag_name_extras.split():
-                attr_info = i.split("=")
+                tokens_list[index] = (class_names_str, token_tuple[1])
 
-                if len(attr_info) == 1:
-                    attrs[attr_info[0]] = None  # type: ignore[assignment]
-                    continue
-
-                for attr, val in attrs.items():
-                    if val.startswith('"') and val.endswith('"'):
-                        val = val[1:-1]
-                    attrs[attr] = val
-
-        self.tag_name = tag_name
-        self.attrs = attrs
-
-    def __str__(self) -> str:
-        return self.to_formatted_text()
-
-    def __repr__(self) -> str:
-        return f"<{self.name} {self.text!r}>"
-        # return str(self)
+        super().__init__(tokens_list)
+        self.parent_token_class = parent_token_class
 
     def __len__(self) -> int:
-        return len(self.text)
+        length = 0
 
-    def __getitem__(self, key: "Union[SupportsIndex, slice]") -> "Union[str, HTMLTag]":
-        res = self.text[key]
-        tag_name = self.tag_name
+        for _, value, *_ in self:
+            length += len(value)
 
-        if tag_name is None:
-            return res
+        return length
 
-        obj = type(self)(res, **self.attrs)
-        obj.tag_name = tag_name
+    @t.overload  # type:ignore[override]
+    def __getitem__(self, key: slice) -> TokenizedFormattedText:
+        ...
 
-        return obj
+    @t.overload
+    def __getitem__(self, key: int) -> str:
+        ...
 
-    def to_formatted_text(self) -> str:
-        attrs_str = ""
-        if self.attrs:
-            attrs_str = " " + " ".join("=".join(k_v) for k_v in self.attrs.items())
+    def __getitem__(self, key: int | slice) -> TokenizedFormattedText | str:
+        if isinstance(key, slice):
+            if key.start >= key.stop:
+                return []  # type:ignore[return-value]
 
-        return f"<{self.tag_name}{attrs_str}>{self.text}</{self.tag_name}>"
+            result = []
 
-    def get_text(self) -> str:
-        text = self.text
-        if isinstance(text, str):
-            return text
+            for token, value, *_ in self:
+                if key.stop <= 0:
+                    break
 
-        elif isinstance(text, HTMLTag):
-            return text.get_text()
+                length = len(value)
 
-        # elif isinstance(text, FormattedString):
-        #     res = []
-        #     for i in text.args:
-        #         if isinstance(i, str):
-        #             res.append(i)
+                if key.start < length:
+                    string = value[key]
 
-        #         elif isinstance(i, HTMLTag):
-        #             res.append(i.get_text())
+                    if string:
+                        result.append((token, string, *_))
 
-        #     return ''.join(res)
+                key = slice(max(0, key.start - length), key.stop - length)
 
+            return TokenizedFormattedText(result, self.parent_token_class)
 
-class Color(HTMLTag):
-    def __init__(self, text: "Union[str, HTMLTag]", color: str, **attrs: str) -> None:
-        super().__init__(text, color, **attrs)
+        elif isinstance(key, int):
+            for _, value, *_ in self:
+                length = len(value)
 
+                if key < length:
+                    return value[key]  # type:ignore[no-any-return]
 
-class StrikeThrough(HTMLTag):
-    name = "strikethrough"
+                key -= length
 
-    def __init__(self, text: "Union[str, HTMLTag]", **attrs: str) -> None:
-        super().__init__(text, "s", **attrs)
-
-
-class Bold(HTMLTag):
-    name = "bold"
-
-    def __init__(self, text: "Union[str, HTMLTag]", **attrs: str) -> None:
-        super().__init__(text, "b", **attrs)
+        raise TypeError(
+            f"Expected key to be an integer or slice, but got {type(key).__name__}"
+        )
 
 
-class Underline(HTMLTag):
-    name = "underline"
+class Marquee:
+    """
+    Displays the given text in the form of Marquee in terminal.
 
-    def __init__(self, text: "Union[str, HTMLTag]", **attrs: str) -> None:
-        super().__init__(text, "u", **attrs)
+    Parameters
+    ----------
+    text : TokensList
+        The text that should be displayed in the marquee style.
 
+    prefix : TokensList, default=`[]`
+        The text that should be displayed before the given text.
+    """
 
-class Italics(HTMLTag):
-    name = "italics"
+    __slots__ = (
+        "text",
+        "prefix",
+        "terminal_width",
+        "is_pointer_direction_left",
+        "hit_boundary",
+        "pointer_position",
+        "_recent_text",
+        "waited_for_in_iterations",
+        "is_chunk_size_le_terminal_size",
+    )
 
-    def __init__(self, text: "Union[str, HTMLTag]", **attrs: str) -> None:
-        super().__init__(text, "i", **attrs)
+    def __init__(
+        self,
+        text: StyleAndTextTuples,
+        prefix: StyleAndTextTuples = [],
+    ) -> None:
+        self.text = text
+        self.prefix = prefix
+        self.pointer_position = 0
+        self.terminal_width = 0
+        self.is_pointer_direction_left = True
+        self.hit_boundary = True
+        self.waited_for_in_iterations = 5
+        self.is_chunk_size_le_terminal_size = False
 
+        # This attribute is used to cache recently generated string.
+        self._recent_text: StyleAndTextTuples = []
 
-# class FormattedString:
-#     name = "formattedstring"
+    def adjust_pointer_position(self) -> None:
+        """
+        Updates the pointer position for the next iteration.
+        """
+        # Last position of the pointer that would ever reach in the
+        # given string object, in right side of it.
+        pointer_max_pos_in_right = (
+            len(self.text) - self.terminal_width + len(self.prefix) + 1
+        )
 
-#     def __init__(self, *args: "Union[str, HTMLTag]", sep: str = '') -> None:
-#         self.args = args
-#         self.sep = sep
+        # Reset the waiting counter when the pointer hits
+        # either of the ends of the text.
 
-#     def __str__(self) -> str:
-#         return self.to_formatted_text()
+        if self.pointer_position == pointer_max_pos_in_right:
+            # If the pointer has reached it's right most end...
+            self.is_pointer_direction_left = False
+            self.hit_boundary = True
+            self.waited_for_in_iterations = 0
 
-#     def __repr__(self) -> str:
-#         return f'<{self.name} {self.args}>'
+        elif self.pointer_position == 0:
+            # If the pointer has reached it's left most end or starting point...
+            self.is_pointer_direction_left = True
+            self.hit_boundary = True
+            self.waited_for_in_iterations = 0
 
-#     def __len__(self) -> int:
-#         return sum(len(i) for i in self.args)
+        if self.is_pointer_direction_left:
+            self.pointer_position += 1
+        else:
+            self.pointer_position -= 1
 
-#     def __format__(self, __format_spec: str) -> str:
-#         return str(self).__format__(__format_spec)
+    def get_full_formatted_text(self) -> StyleAndTextTuples:
+        """
+        Get the whole text along with the prefix, without being sliced.
+        """
+        return TokenizedFormattedText(self.prefix + self.text, "bottom-bar")
 
-#     def __getitem__(
-#         self, key: "Union[SupportsIndex, slice]"
-#     ) -> "Union[str, FormattedString]":
-#         if isinstance(key, int):
-#             for i in self.args:
-#                 i_len = len(i)
+    def get_current_text_chunk(self) -> StyleAndTextTuples:
+        """
+        Returns the updated text chunk, along with the prefix,
+        that currently should be displayed in the bottom bar.
 
-#                 if i_len <= key:
-#                     key -= i_len
+        Returns the whole text with the prefix, if the length of the
+        terminal window is greater than or equal to the length of
+        text and prefix objects altogether.
+        """
 
-#                 else:
-#                     if isinstance(i, HTMLTag):
-#                         return i.get_text()[key]
-#                     return i[key]
+        # os.get_terminal_size() is called for every iteration to handle
+        # the change in terminal size.
+        self.terminal_width = os.get_terminal_size().columns
+        chunk_size = self.terminal_width - len(self.prefix)
 
-#             raise IndexError("FormattedString index out of range")
+        if len(self.text) <= chunk_size:
+            if self.is_chunk_size_le_terminal_size:
+                return self._recent_text
 
-#         elif isinstance(key, slice):
-#             start = key.start
-#             stop = key.stop
+            self.is_chunk_size_le_terminal_size = True
+            self._recent_text = self.get_full_formatted_text()
 
-#             if key.start is None:
-#                 start = 0
+            if self.pointer_position != 0:
+                self.pointer_position = 0
+                self.hit_boundary = True
+                self.waited_for_in_iterations = 0
+                self.is_pointer_direction_left = True
 
-#             if key.stop is None:
-#                 stop = len(self)
+        else:
+            self.is_chunk_size_le_terminal_size = False
 
-#             if key.stop < 0:
-#                 stop = len(self) + key.stop
+        if self.hit_boundary:
+            # The string stored/cached in self._recent_text is used only here again
+            # without slicing it from the original string, to avoid re-evaluation
+            # for the next 5 iterations.
+            if self.is_chunk_size_le_terminal_size:
+                return self._recent_text
 
-#             key = slice(start, stop)
+            if self.waited_for_in_iterations < 5:
+                # Wait for the next 5 iterations if you've hit boundary.
+                self.waited_for_in_iterations += 1
+                return self._recent_text
 
-#             if key.start > key.stop:
-#                 raise ValueError(
-#                     "Start value must be less than stop value"
-#                     f" for slicing in {self.name}."
-#                 )
+            self.hit_boundary = False
 
-#             res = []
+        chunk_end_pos = self.pointer_position + chunk_size
+        text = self.text[self.pointer_position : chunk_end_pos]
+        self.adjust_pointer_position()
 
-#             for elem in self.args:
-#                 if key.start >= key.stop:
-#                     break
+        # Storing/caching the recently generated string.
+        self._recent_text = TokenizedFormattedText(self.prefix + text, "bottom-bar")
 
-#                 val = elem[key]
-#                 sliced_elem_len = len(val)
-
-#                 if sliced_elem_len != 0:
-#                     res.append(val)
-#                     next_start = 0
-#                     next_stop = key.stop - key.start - sliced_elem_len
-
-#                 else:
-#                     elem_len = len(elem)
-#                     next_start = key.start - elem_len
-#                     next_stop = key.stop - elem_len
-
-#                 key = slice(next_start, next_stop)
-
-#             return FormattedString(*res)
-
-#     def get_text(self) -> str:
-#         return "".join(
-#             i if isinstance(i, str) else i.get_text()
-#             for i in self.args
-#         )
-
-#     def to_formatted_text(self) -> str:
-#         return self.sep.join(
-#             i if isinstance(i, str) else str(i)
-#             for i in self.args
-#         )
+        return self._recent_text

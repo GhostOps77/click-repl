@@ -3,17 +3,27 @@
 
 Parsing functionalities for the click_repl module.
 """
+from __future__ import annotations
+
 import re
 import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
+from typing import Any
+from typing import Sequence
 
 import click
+from click import Argument as CoreArgument
+from click import Command
+from click import Context
+from click import MultiCommand
+from click import Parameter
 from click.exceptions import BadOptionUsage
 from click.exceptions import NoSuchOption
 from click.parser import Argument as _Argument
 from click.parser import normalize_opt
+from click.parser import Option
 from click.parser import OptionParser
 from click.parser import ParsingState
 
@@ -21,27 +31,19 @@ from . import utils
 from ._globals import HAS_CLICK8
 from .exceptions import ArgumentPositionError
 
-if t.TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
-
-    from click import Argument as CoreArgument
-    from click import Command, Context, MultiCommand, Parameter, Group
-    from click.parser import Option
-
-    _KEY: t.TypeAlias = Tuple[
-        Optional[Dict[str, Any]],
-        Optional[Dict[str, Any]],
-        Optional[Dict[str, Any]],
-        Tuple[Dict[str, Any], ...],
-    ]
-
+_KEY: t.TypeAlias = tuple[
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    tuple[dict[str, Any], ...],
+]
 
 _flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(r"^([^a-z\d\s]+[^=\s]+)=(.+)$", re.I)
 
 
-def split_arg_string(string: str, posix: bool = True) -> "List[str]":
+def split_arg_string(string: str, posix: bool = True) -> list[str]:
     """
     Split a command line string into a list of tokens.
     Using the same implementation as in `click.parser.split_arg_string`
@@ -55,7 +57,7 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
     string : str
         The string to be split into tokens.
 
-    posix : bool, default: True
+    posix : bool, default=True
         Determines whether to split the string in POSIX style.
 
     Returns
@@ -65,9 +67,9 @@ def split_arg_string(string: str, posix: bool = True) -> "List[str]":
 
     lex = shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
-    lex.commenters = ""
+    # lex.commenters = ""
     lex.escape = ""
-    out: "List[str]" = []
+    out: list[str] = []
 
     try:
         out.extend(lex)
@@ -93,15 +95,21 @@ class Incomplete:
     def __bool__(self) -> bool:
         return bool(self.raw_str)
 
-    def _expand_envvars(self) -> str:
-        self.parsed_str = utils._expand_envvars(self.parsed_str)
+    def expand_envvars(self) -> str:
+        self.parsed_str = utils._expand_envvars(self.parsed_str).strip()
         return self.parsed_str
+
+    def reverse_prefix_envvars(self, value: str) -> str:
+        expanded_incomplete = self.expand_envvars()
+
+        if value.startswith(expanded_incomplete):
+            value = self.parsed_str + value[len(expanded_incomplete) :]
+
+        return value
 
 
 @lru_cache(maxsize=3)
-def get_args_and_incomplete_from_args(
-    document_text: str,
-) -> "Tuple[Tuple[str, ...], Incomplete]":
+def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
     args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
 
@@ -121,11 +129,11 @@ def get_args_and_incomplete_from_args(
     if not incomplete:
         return _args, Incomplete("", "")
 
-    raw_incomplete = ""
+    raw_incomplete_with_quotes = ""
     secondary_check = False
 
     for token in reversed(document_text.split(" ")):
-        _tmp = f"{token} {raw_incomplete}".rstrip()
+        _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
 
         if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
             secondary_check = True
@@ -133,9 +141,9 @@ def get_args_and_incomplete_from_args(
         elif secondary_check:
             break
 
-        raw_incomplete = _tmp
+        raw_incomplete_with_quotes = _tmp
 
-    return _args, Incomplete(raw_incomplete, incomplete)
+    return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
 
 
 class ReplParsingState:
@@ -153,18 +161,18 @@ class ReplParsingState:
 
     def __init__(
         self,
-        cli_ctx: "Context",
-        current_ctx: "Context",
-        args: "Tuple[str, ...]",
+        cli_ctx: Context,
+        current_ctx: Context,
+        args: tuple[str, ...],
     ) -> None:
         self.cli_ctx = cli_ctx
-        self.cli: "MultiCommand" = self.cli_ctx.command  # type: ignore[assignment]
+        self.cli = t.cast(MultiCommand, self.cli_ctx.command)
 
         self.current_ctx = current_ctx
         self.args = args
 
-        self.remaining_params: "List[Parameter]" = []
-        self.double_dash_found = getattr(current_ctx, "__double_dash_found", False)
+        self.remaining_params: list[Parameter] = []
+        self.double_dash_found = getattr(current_ctx, "_double_dash_found", False)
 
         self.current_group, self.current_command, self.current_param = self.parse()
 
@@ -186,8 +194,8 @@ class ReplParsingState:
     def __repr__(self) -> str:
         return f'"{str(self)}"'
 
-    def __key(self) -> "_KEY":
-        keys: "List[Optional[Dict[str, Any]]]" = []
+    def __key(self) -> _KEY:
+        keys: list[dict[str, Any] | None] = []
 
         for i in (
             self.current_group,
@@ -207,7 +215,7 @@ class ReplParsingState:
             return NotImplemented
         return self.__key() == other.__key()
 
-    def parse(self) -> "Tuple[Group, Optional[Command], Optional[Parameter]]":
+    def parse(self) -> tuple[MultiCommand, Command | None, Parameter | None]:
         current_group, current_command = self.get_current_group_and_command()
 
         if current_command is not None:
@@ -217,7 +225,7 @@ class ReplParsingState:
 
         return current_group, current_command, current_param
 
-    def get_current_group_and_command(self) -> "Tuple[Group, Optional[Command]]":
+    def get_current_group_and_command(self) -> tuple[MultiCommand, Command | None]:
         current_ctx_command = self.current_ctx.command
         parent_group = current_ctx_command
 
@@ -225,8 +233,8 @@ class ReplParsingState:
         if self.current_ctx.parent is not None:
             parent_group = self.current_ctx.parent.command
 
-        current_group: "Group" = parent_group  # type: ignore[assignment]
-        is_parent_group_chained = parent_group.chain  # type: ignore[attr-defined]
+        current_group = t.cast(MultiCommand, parent_group)
+        is_parent_group_chained = current_group.chain
         current_command = None
 
         # Check if not all the required arguments have been assigned a value.
@@ -244,7 +252,7 @@ class ReplParsingState:
         ]
 
         not_all_args_got_values = all(
-            not utils._is_param_value_incomplete(self.current_ctx, param.name)
+            not utils.is_param_value_incomplete(self.current_ctx, param.name)
             for param in args_list
         )
 
@@ -259,7 +267,7 @@ class ReplParsingState:
         ):
             # If all the arguments are passed to the ctx multicommand,
             # promote it as current group.
-            current_group = current_ctx_command  # type: ignore[assignment]
+            current_group = current_ctx_command
 
         elif not (
             is_parent_group_chained
@@ -273,83 +281,79 @@ class ReplParsingState:
 
         return current_group, current_command
 
-    def get_current_param(self, current_command: "Command") -> "Optional[Parameter]":
+    def get_current_param(self, current_command: Command) -> Parameter | None:
         self.remaining_params = [
             param
             for param in current_command.params
-            if utils._is_param_value_incomplete(self.current_ctx, param.name)
+            if utils.is_param_value_incomplete(self.current_ctx, param.name)
         ]
 
-        param: "Optional[Parameter]" = self.parse_param_opt(current_command)
+        param: Parameter | None = self.parse_param_opt(current_command)
         if param is None:
             param = self.parse_param_arg(current_command)
 
         return param
 
-    def parse_param_opt(self, current_command: "Command") -> "Optional[click.Option]":
+    def parse_param_opt(self, current_command: Command) -> click.Option | None:
         if "--" in self.args:
             # click parses all input strings after "--" as values for click.Argument
             # type parameters. So, we don't check for click.Optional parameters.
             return None
 
         for param in current_command.params:
-            if isinstance(param, click.Argument) or (
-                param.is_flag or param.count  # type: ignore[attr-defined]
-            ):
-                # We skip the current parameter check if its a click.Argument type
-                # parameter, or its a flag or a counting type option.
+            if not isinstance(param, click.Option):
+                continue
+
+            if param.is_flag or param.count:
                 continue
 
             opts = param.opts + param.secondary_opts
+            current_args_for_param = self.args[param.nargs * -1 :]
 
-            if any(i in self.args[param.nargs * -1 :] for i in opts):
+            if any(opt in current_args_for_param for opt in opts):
                 # We want to make sure if this parameter was called
-                # If we are inside a parameter that was called, we want to show only
-                # relevant choices
-                return param  # type: ignore[return-value]
+                # If we are inside a parameter that was called, we want
+                # to show only relevant choices
+                return param
 
         return None
 
-    def parse_param_arg(self, current_command: "Command") -> "Optional[click.Argument]":
+    def parse_param_arg(self, current_command: Command) -> click.Argument | None:
         minus_one_param = None
 
-        command_argument_params = (
-            param
-            for param in current_command.params  # type: ignore[union-attr]
-            if isinstance(param, click.Argument)
-        )
+        for idx, param in enumerate(current_command.params):
+            if not isinstance(param, click.Argument):
+                continue
 
-        for idx, param in enumerate(command_argument_params):
-            if minus_one_param:
+            if minus_one_param is not None:
                 raise ArgumentPositionError(current_command, param, idx)
 
             if param.nargs == -1:
                 minus_one_param = param
-                continue
 
-            elif utils._is_param_value_incomplete(self.current_ctx, param.name):
+            elif utils.is_param_value_incomplete(self.current_ctx, param.name):
                 return param
 
         return minus_one_param
 
 
 @lru_cache(maxsize=3)
-def get_current_repl_parsing_state(
-    cli_ctx: "Context",
-    current_ctx: "Context",
-    args: "Tuple[str, ...]",
-) -> "ReplParsingState":
+def _resolve_repl_parsing_state(
+    cli_ctx: Context,
+    current_ctx: Context,
+    args: tuple[str, ...],
+) -> ReplParsingState:
     return ReplParsingState(cli_ctx, current_ctx, args)
 
 
 class Argument(_Argument):
     def process(
         self,
-        value: "Union[Optional[str], Sequence[Optional[str]]]",
-        state: "ParsingState",
+        value: str | Sequence[str | None] | None,
+        state: ParsingState,
     ) -> None:
         if self.nargs > 1 and value is not None:
-            holes = sum(1 for x in value if x is None)
+            holes = value.count(None)
             if holes == len(value):
                 value = None  # responsible for adding None value if arg is empty
 
@@ -358,38 +362,42 @@ class Argument(_Argument):
 
 
 class ReplOptionParser(OptionParser):
-    def __init__(self, ctx: "Context") -> None:
+    def __init__(self, ctx: Context) -> None:
         super().__init__(ctx)
 
         for opt in ctx.command.params:
             opt.add_to_parser(self, ctx)
 
-    def add_argument(
-        self, obj: "CoreArgument", dest: "Optional[str]", nargs: int = 1
-    ) -> None:
+    def add_argument(self, obj: CoreArgument, dest: str | None, nargs: int = 1) -> None:
         self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
 
-    def _process_args_for_options(self, state: "ParsingState") -> None:
+    def _process_args_for_options(self, state: ParsingState) -> None:
         while state.rargs:
             arg = state.rargs.pop(0)
             arglen = len(arg)
+
             # Double dashes always handled explicitly regardless of what
             # prefixes are valid.
+
             if arg == "--":
-                # Helps to denote to the completer class to stop generating
+                # Dynamic attribute in click.Context object that helps to
+                # denote to the completer class to stop generating
                 # completions for option flags.
-                self.ctx.__double_dash_found = True  # type: ignore[union-attr]
+                self.ctx._double_dash_found = True  # type: ignore[union-attr]
                 return
+
             elif arg[:1] in self._opt_prefixes and arglen > 1:
                 self._process_opts(arg, state)
+
             elif self.allow_interspersed_args:
                 state.largs.append(arg)
+
             else:
                 state.rargs.insert(0, arg)
                 return
 
     def _match_long_opt(
-        self, opt: str, explicit_value: "Optional[str]", state: "ParsingState"
+        self, opt: str, explicit_value: str | None, state: ParsingState
     ) -> None:
         if opt not in self._long_opt:
             from difflib import get_close_matches
@@ -412,7 +420,7 @@ class ReplOptionParser(OptionParser):
 
         option.process(value, state)
 
-    def _match_short_opt(self, arg: str, state: "ParsingState") -> None:
+    def _match_short_opt(self, arg: str, state: ParsingState) -> None:
         stop = False
         i = 1
         prefix = arg[0]
@@ -451,8 +459,8 @@ class ReplOptionParser(OptionParser):
             state.largs.append(f"{prefix}{''.join(unknown_options)}")
 
     def _get_value_from_state(
-        self, option_name: str, option: "Option", state: "ParsingState"
-    ) -> "Any":
+        self, option_name: str, option: Option, state: ParsingState
+    ) -> Any:
         nargs = option.nargs
         rargs_len = len(state.rargs)
 

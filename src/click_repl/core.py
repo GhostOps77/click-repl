@@ -3,35 +3,42 @@
 
 Core functionality of the click-repl module.
 """
+from __future__ import annotations
+
 import typing as t
+from collections.abc import Iterator
+from typing import Any
+from typing import Callable
+from typing import Final
 
 import click
-from prompt_toolkit import PromptSession
+from click import Context
 
 from . import _repl
 from ._globals import _pop_context
 from ._globals import _push_context
 from ._globals import ISATTY
+from ._internal_cmds import InternalCommandSystem
 
-if t.TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Generator, List, Optional, Final
 
-    from click import Context
-    from ._internal_cmds import InternalCommandSystem
+if t.TYPE_CHECKING or ISATTY:
+    from prompt_toolkit import PromptSession
+
     from .parser import ReplParsingState
+    from .bottom_bar import BottomBar
 
-    InfoDict = t.TypedDict(
-        "InfoDict",
-        {
-            "group_ctx": Context,
-            "prompt_kwargs": Dict[str, Any],
-            "session": Optional[PromptSession[Dict[str, Any]]],
-            "internal_command_system": InternalCommandSystem,
-            "parent": Optional[ReplContext],  # type: ignore[used-before-def] # noqa: F821
-            "_history": List[str],
-            "current_state": Optional[ReplParsingState],
-        },
-    )
+    _PromptSession: t.TypeAlias = PromptSession[dict[str, Any]]
+
+
+class InfoDict(t.TypedDict):
+    group_ctx: Context
+    prompt_kwargs: dict[str, Any]
+    session: _PromptSession | None
+    internal_command_system: InternalCommandSystem
+    parent: ReplContext | None
+    _history: list[str]
+    current_state: ReplParsingState | None
+    bottombar: BottomBar | None
 
 
 __all__ = ["ReplContext", "ReplCli"]
@@ -59,7 +66,11 @@ class ReplContext:
         The `InternalCommandSystem` object that holds information about
         the internal commands and their prefixes.
 
-    prompt_kwargs : A dSictionary of `str: Any` pairs
+    bottom_bar : `BottomBar`
+        The `BottomBar` object that controls the text that should be displayed in the
+        bottom toolbar of the `prompt_toolkit.PromptSession` object.
+
+    prompt_kwargs : A dictionary of `str: Any` pairs
         The extra Keyword arguments for `prompt_toolkit.PromptSession` class.
 
     styles : A dictionary of `str: str` pairs
@@ -69,6 +80,7 @@ class ReplContext:
     __slots__ = (
         "group_ctx",
         "prompt_kwargs",
+        "bottombar",
         "parent",
         "session",
         "internal_command_system",
@@ -78,34 +90,41 @@ class ReplContext:
 
     def __init__(
         self,
-        group_ctx: "Context",
-        internal_command_system: "InternalCommandSystem",
-        prompt_kwargs: "Dict[str, Any]",
-        parent: "Optional[ReplContext]" = None,
+        group_ctx: Context,
+        internal_command_system: InternalCommandSystem,
+        bottombar: BottomBar | None,
+        prompt_kwargs: dict[str, Any] = {},
+        parent: ReplContext | None = None,
     ) -> None:
-        self._history: "List[str]" = []
+        session: _PromptSession | None
 
         if ISATTY:
-            prompt_kwargs["completer"].repl_ctx = self
-            self.session: "PromptSession[Dict[str, Any]]" = PromptSession(
-                **prompt_kwargs,
-            )
+            session = PromptSession(**prompt_kwargs)
+            if bottombar is not None:
+                bottombar.current_repl_ctx = self
 
+        else:
+            session = None
+
+        self.session = session
+        self.bottombar = bottombar
+
+        self._history: list[str] = []
         self.internal_command_system = internal_command_system
-        self.group_ctx: "Final[Context]" = group_ctx
+        self.group_ctx: Final[Context] = group_ctx
         self.prompt_kwargs = prompt_kwargs
-        self.parent: "Final[Optional[ReplContext]]" = parent
-        self.current_state: "Optional[ReplParsingState]" = None
+        self.parent: Final[ReplContext | None] = parent
+        self.current_state: ReplParsingState | None = None
 
-    def __enter__(self) -> "ReplContext":
+    def __enter__(self) -> ReplContext:
         _push_context(self)
         return self
 
-    def __exit__(self, *_: "Any") -> None:
+    def __exit__(self, *_: Any) -> None:
         _pop_context()
 
     @property
-    def prompt_message(self) -> "Optional[str]":
+    def prompt_message(self) -> str | None:
         """
         The message displayed for every prompt input in the REPL.
 
@@ -114,16 +133,18 @@ class ReplContext:
         str or None
             String if `sys.stdin.isatty()` is `True`, else `None`
         """
-        if ISATTY:
+        if ISATTY and self.session is not None:
+            # assert self.session is not None
             return str(self.session.message)
         return None
 
     @prompt_message.setter
     def prompt_message(self, value: str) -> None:
-        if ISATTY:
+        if ISATTY and self.session is not None:
+            # assert self.session is not None
             self.session.message = value
 
-    def to_info_dict(self) -> "InfoDict":
+    def to_info_dict(self) -> InfoDict:
         """
         Provides the most minimal info about the current REPL
 
@@ -132,18 +153,16 @@ class ReplContext:
         A dictionary that has the instance variables and its values.
         """
 
-        res: "InfoDict" = {
+        res: InfoDict = {
             "group_ctx": self.group_ctx,
             "prompt_kwargs": self.prompt_kwargs,
             "internal_command_system": self.internal_command_system,
-            "session": None,
+            "session": self.session,
             "parent": self.parent,
             "_history": self._history,
             "current_state": self.current_state,
+            "bottombar": self.bottombar,
         }
-
-        if ISATTY:
-            res.update({"session": self.session})
 
         return res
 
@@ -154,10 +173,11 @@ class ReplContext:
         `prompt_toolkit.session.PromptSession` object
         """
 
-        if ISATTY:
+        if ISATTY and self.session is not None:
+            # assert self.session is not None
             self.session = PromptSession(**self.prompt_kwargs)
 
-    def history(self) -> "Generator[str, None, None]":
+    def history(self) -> Iterator[str]:
         """
         Generates the history of past executed commands.
 
@@ -168,7 +188,8 @@ class ReplContext:
             in chronological order from most recent to oldest.
         """
 
-        if ISATTY:
+        if ISATTY and self.session is not None:
+            # assert self.session is not None
             yield from self.session.history.load_history_strings()
 
         else:
@@ -186,7 +207,7 @@ class ReplCli(click.Group):
 
     Parameters
     ----------
-    prompt : str, default: "> "
+    prompt : str, default="> "
         The message that should be displayed for every prompt input.
 
     startup : A function that takes and returns nothing, optional
@@ -205,11 +226,11 @@ class ReplCli(click.Group):
     def __init__(
         self,
         prompt: str = "> ",
-        startup: "Optional[Callable[[], None]]" = None,
-        cleanup: "Optional[Callable[[], None]]" = None,
-        repl_kwargs: "Dict[str, Any]" = {},
-        **attrs: "t.Any",
-    ):
+        startup: Callable[[], None] | None = None,
+        cleanup: Callable[[], None] | None = None,
+        repl_kwargs: dict[str, Any] = {},
+        **attrs: Any,
+    ) -> None:
         attrs["invoke_without_command"] = True
         super().__init__(**attrs)
 
@@ -221,7 +242,7 @@ class ReplCli(click.Group):
 
         self.repl_kwargs = repl_kwargs
 
-    def invoke_repl(self, ctx: "Context") -> None:
+    def invoke_repl(self, ctx: Context) -> None:
         try:
             if self.startup is not None:
                 self.startup()
@@ -232,7 +253,7 @@ class ReplCli(click.Group):
             if self.cleanup is not None:
                 self.cleanup()
 
-    def invoke(self, ctx: "Context") -> "Any":
+    def invoke(self, ctx: Context) -> Any:
         return_val = super().invoke(ctx)
 
         if ctx.invoked_subcommand or ctx.protected_args:
