@@ -84,7 +84,6 @@ def get_token_type(obj: click.Command | click.Parameter) -> CompletionStyleDictK
     elif isinstance(obj, click.MultiCommand):
         return "multicommand"
 
-    # elif isinstance(obj, click.Command):
     return "command"
 
 
