@@ -91,7 +91,7 @@ class ReplContext:
         self,
         group_ctx: Context,
         internal_command_system: InternalCommandSystem,
-        bottombar: BottomBar | None,
+        bottombar: BottomBar | None = None,
         prompt_kwargs: dict[str, Any] = {},
         parent: ReplContext | None = None,
     ) -> None:

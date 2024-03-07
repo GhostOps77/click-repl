@@ -33,7 +33,7 @@ class TokenizedFormattedText(FormattedText):
         super().__init__(tokens_list)
         self.parent_token_class = parent_token_class
 
-    def __len__(self) -> int:
+    def get_length_by_content(self) -> int:
         length = 0
 
         for _, value, *_ in self:
@@ -71,23 +71,23 @@ class Marquee:
 
     Parameters
     ----------
-    text : TokensList
+    text : TokenizedFormattedText
         The text that should be displayed in the marquee style.
 
-    prefix : TokensList, default=`[]`
+    prefix : StyleAndTextTuples, default=`[]`
         The text that should be displayed before the given text.
     """
 
     __slots__ = (
         "text",
         "prefix",
+        "pointer_position",
         "terminal_width",
         "is_pointer_direction_left",
         "hit_boundary",
-        "pointer_position",
-        "_recent_text",
         "waited_for_in_iterations",
         "is_chunk_size_le_terminal_size",
+        "_recent_text",
     )
 
     def __init__(
@@ -114,7 +114,7 @@ class Marquee:
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
         pointer_max_pos_in_right = (
-            len(self.text) - self.terminal_width + len(self.prefix) + 1
+            self.text.get_length_by_content() - self.terminal_width + len(self.prefix) + 1
         )
 
         # Reset the waiting counter when the pointer hits
@@ -158,7 +158,7 @@ class Marquee:
         self.terminal_width = os.get_terminal_size().columns
         chunk_size = self.terminal_width - len(self.prefix)
 
-        if len(self.text) <= chunk_size:
+        if self.text.get_length_by_content() <= chunk_size:
             if self.is_chunk_size_le_terminal_size:
                 return self._recent_text
 
