@@ -6,7 +6,6 @@ Utilities to facilitate the functionality of the click_repl module.
 from __future__ import annotations
 
 import os
-import typing as t
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import Any
@@ -18,24 +17,21 @@ from click import Command
 from click import Context
 from click import MultiCommand
 from click import Parameter
+from click.parser import split_opt
 
-from ._globals import ISATTY
+from ._globals import _RANGE_TYPES
 from ._globals import StyleAndTextTuples
+from .parser import _resolve_incomplete
+from .parser import _resolve_repl_parsing_state
+from .parser import Incomplete
+from .parser import ReplParsingState
+from .proxies import _create_proxy_command
 
+# if t.TYPE_CHECKING or ISATTY:
 
-if t.TYPE_CHECKING or ISATTY:
-    from click.parser import split_opt
-
-    from ._globals import _RANGE_TYPES
-    from .parser import _resolve_incomplete
-    from .parser import _resolve_repl_parsing_state
-    from .parser import Incomplete
-    from .parser import ReplParsingState
-    from .proxies import _create_proxy_command
-
-    CompletionStyleDictKeys = Literal[
-        "internal-command", "command", "multicommand", "argument", "option", "parameter"
-    ]
+CompletionStyleDictKeys = Literal[
+    "internal-command", "command", "multicommand", "argument", "option", "parameter"
+]
 
 
 def append_classname_to_all_tokens(

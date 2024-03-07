@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -5,7 +7,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl import ClickCompleter
+from click_repl.completer import ClickCompleter
 
 
 @click.group()

@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import pytest
 
 from click_repl._internal_cmds import InternalCommandSystem
+from click_repl.exceptions import PrefixNotFound
 
 sys_cmds_only_obj = InternalCommandSystem(None)
 
@@ -10,7 +13,6 @@ sys_cmds_only_obj = InternalCommandSystem(None)
     [
         ("!echo hi", "hi\n"),
         ("!echo hi hi", "hi hi\n"),
-        # ("!", "Enter an Internal Command properly\n"),
     ],
 )
 def test_system_commands(capfd, test_input, expected):
@@ -27,8 +29,6 @@ no_sys_cmds_obj = InternalCommandSystem(None, None)
     "test_input",
     ["!echo hi", "!echo hi hi", "!"],
 )
-def test_no_system_commands(capfd, test_input):
-    no_sys_cmds_obj.execute(test_input)
-
-    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
-    assert captured_stdout == ""
+def test_no_system_commands(test_input):
+    with pytest.raises(PrefixNotFound):
+        no_sys_cmds_obj.execute(test_input)

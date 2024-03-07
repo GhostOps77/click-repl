@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import typing as t
 
 from prompt_toolkit.formatted_text import FormattedText
 
@@ -42,49 +41,28 @@ class TokenizedFormattedText(FormattedText):
 
         return length
 
-    @t.overload  # type:ignore[override]
-    def __getitem__(self, key: slice) -> TokenizedFormattedText:
-        ...
+    def slice_by_text_content(self, start: int, stop: int) -> TokenizedFormattedText:
+        if start >= stop:
+            return []  # type:ignore[return-value]
 
-    @t.overload
-    def __getitem__(self, key: int) -> str:
-        ...
+        result = []
 
-    def __getitem__(self, key: int | slice) -> TokenizedFormattedText | str:
-        if isinstance(key, slice):
-            if key.start >= key.stop:
-                return []  # type:ignore[return-value]
+        for token, value, *_ in self:
+            if stop <= 0:
+                break
 
-            result = []
+            length = len(value)
 
-            for token, value, *_ in self:
-                if key.stop <= 0:
-                    break
+            if start < length:
+                string = value[start:stop]
 
-                length = len(value)
+                if string:
+                    result.append((token, string, *_))
 
-                if key.start < length:
-                    string = value[key]
+            start = max(0, start - length)
+            stop = stop - length
 
-                    if string:
-                        result.append((token, string, *_))
-
-                key = slice(max(0, key.start - length), key.stop - length)
-
-            return TokenizedFormattedText(result, self.parent_token_class)
-
-        elif isinstance(key, int):
-            for _, value, *_ in self:
-                length = len(value)
-
-                if key < length:
-                    return value[key]  # type:ignore[no-any-return]
-
-                key -= length
-
-        raise TypeError(
-            f"Expected key to be an integer or slice, but got {type(key).__name__}"
-        )
+        return TokenizedFormattedText(result, self.parent_token_class)
 
 
 class Marquee:
@@ -114,7 +92,7 @@ class Marquee:
 
     def __init__(
         self,
-        text: StyleAndTextTuples,
+        text: TokenizedFormattedText,
         prefix: StyleAndTextTuples = [],
     ) -> None:
         self.text = text
@@ -159,7 +137,7 @@ class Marquee:
         else:
             self.pointer_position -= 1
 
-    def get_full_formatted_text(self) -> StyleAndTextTuples:
+    def get_full_formatted_text(self) -> TokenizedFormattedText:
         """
         Get the whole text along with the prefix, without being sliced.
         """
@@ -211,7 +189,7 @@ class Marquee:
             self.hit_boundary = False
 
         chunk_end_pos = self.pointer_position + chunk_size
-        text = self.text[self.pointer_position : chunk_end_pos]
+        text = self.text.slice_by_text_content(self.pointer_position, chunk_end_pos)
         self.adjust_pointer_position()
 
         # Storing/caching the recently generated string.

@@ -13,21 +13,20 @@ from typing import Final
 
 import click
 from click import Context
+from prompt_toolkit import PromptSession
 
 from . import _repl
 from ._globals import _pop_context
 from ._globals import _push_context
 from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
+from .bottom_bar import BottomBar
+from .parser import ReplParsingState
+
+# if t.TYPE_CHECKING or ISATTY:
 
 
-if t.TYPE_CHECKING or ISATTY:
-    from prompt_toolkit import PromptSession
-
-    from .parser import ReplParsingState
-    from .bottom_bar import BottomBar
-
-    _PromptSession: t.TypeAlias = PromptSession[dict[str, Any]]
+_PromptSession: t.TypeAlias = PromptSession[dict[str, Any]]
 
 
 class InfoDict(t.TypedDict):

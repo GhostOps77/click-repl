@@ -6,6 +6,7 @@ import pytest
 from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.core import ReplContext
 from click_repl.exceptions import ExitReplException
+from click_repl.exceptions import PrefixNotFound
 
 
 @click.command()
@@ -14,7 +15,7 @@ def dummy_cmd():
 
 
 internal_command_system = InternalCommandSystem(":", "!")
-repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system)
+repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system, None)
 
 
 @pytest.mark.parametrize("test_input", [":help", ":h", ":?"])
@@ -52,7 +53,5 @@ no_internal_cmds_obj = InternalCommandSystem(None, None)
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_no_internal_commands(capfd, test_input):
-    no_internal_cmds_obj.execute(test_input)
-
-    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
-    assert captured_stdout == ""
+    with pytest.raises(PrefixNotFound):
+        no_internal_cmds_obj.execute(test_input)

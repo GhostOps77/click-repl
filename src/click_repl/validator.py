@@ -24,10 +24,12 @@ from .utils import _resolve_state
 
 __all__ = ["ClickValidator"]
 
+
 logger = logging.getLogger(f"click_repl-{__name__}")
 
 if CLICK_REPL_DEV_ENV:
     logger_level = logging.DEBUG
+
 else:
     logger_level = logging.WARNING
 

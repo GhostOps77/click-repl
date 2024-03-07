@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from click_repl._internal_cmds import _exit_internal

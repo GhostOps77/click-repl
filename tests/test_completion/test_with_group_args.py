@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl import ClickCompleter
+from click_repl.completer import ClickCompleter
 
 
 @click.group(invoke_without_command=True)
