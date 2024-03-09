@@ -4,6 +4,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
+from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.completer import ClickCompleter
 
 
@@ -25,7 +26,7 @@ def test_command_collection():
         pass
 
     ctx = click.Context(click.CommandCollection(sources=(foo_group, foobar_group)))
-    c = ClickCompleter(ctx)
+    c = ClickCompleter(ctx, InternalCommandSystem())
     completions = c.get_completions(Document("foo"))
 
     assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
@@ -51,7 +52,7 @@ def second_level_command_two():
     pass
 
 
-c3 = ClickCompleter(click.Context(root_group))
+c3 = ClickCompleter(click.Context(root_group), InternalCommandSystem())
 
 
 @pytest.mark.parametrize(
@@ -96,7 +97,7 @@ def subcommand2(opt2):
     pass
 
 
-c4 = ClickCompleter(click.Context(cli))
+c4 = ClickCompleter(click.Context(cli), InternalCommandSystem())
 
 
 @pytest.mark.parametrize(

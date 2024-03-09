@@ -4,6 +4,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
+from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.completer import ClickCompleter
 
 
@@ -12,7 +13,7 @@ def root_command():
     pass
 
 
-c = ClickCompleter(click.Context(root_command))
+c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
 
 
 # @pytest.mark.skipif(

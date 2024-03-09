@@ -247,8 +247,8 @@ class ClickCompleter(Completer):
     def __init__(
         self,
         ctx: Context,
+        internal_commands_system: InternalCommandSystem,
         bottom_bar: BottomBar | None = None,
-        internal_commands_system: InternalCommandSystem | None = None,
         shortest_opts_only: bool = False,
         show_only_unused_opts: bool = False,
         show_hidden_commands: bool = False,
@@ -272,8 +272,8 @@ class ClickCompleter(Completer):
         self.show_hidden_params = show_hidden_params
         self.expand_envvars = expand_envvars
 
-        if internal_commands_system is None:
-            internal_commands_system = InternalCommandSystem(None, None)
+        # if internal_commands_system is None:
+        #     internal_commands_system = InternalCommandSystem(None, None)
 
         self.internal_commands_system = internal_commands_system
 

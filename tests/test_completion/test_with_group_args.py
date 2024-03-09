@@ -4,6 +4,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
+from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.completer import ClickCompleter
 
 
@@ -20,7 +21,7 @@ def c1(user):
     pass
 
 
-c = ClickCompleter(cmd.make_context("", args=["--user", "hi"]))
+c = ClickCompleter(cmd.make_context("", args=["--user", "hi"]), InternalCommandSystem())
 
 
 @pytest.mark.parametrize("test_input, expected", [(" ", {"c1"}), ("c1 ", {"--opt"})])
@@ -45,6 +46,7 @@ def cmd(cmd_arg):
 
 c2 = ClickCompleter(
     cli.make_context("", args=["--opt", "hi1", "hi2", "hi3", "hi4", "hi5", "hii"]),
+    InternalCommandSystem(),
 )
 
 
