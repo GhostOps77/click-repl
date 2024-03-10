@@ -37,8 +37,6 @@ from .utils import _get_group_ctx
 from .utils import print_error
 from .validator import ClickValidator
 
-# if t.TYPE_CHECKING or ISATTY:
-
 
 __all__ = ["Repl", "repl"]
 
@@ -107,19 +105,15 @@ class Repl:
                     "show_hidden_params", False
                 )
 
-            self.completer_kwargs = self._bootstrap_completer_kwargs(
-                completer_cls, completer_kwargs
-            )
-
-            self.validator_kwargs = self._bootstrap_validator_kwargs(
-                validator_cls, validator_kwargs
-            )
-
         else:
             self.bottom_bar = None
 
         self.prompt_kwargs = self._bootstrap_prompt_kwargs(
-            completer_cls, validator_cls, prompt_kwargs
+            completer_cls,
+            completer_kwargs,
+            validator_cls,
+            validator_kwargs,
+            prompt_kwargs,
         )
 
         self.repl_ctx = ReplContext(
@@ -227,31 +221,12 @@ class Repl:
     def _bootstrap_prompt_kwargs(
         self,
         completer_cls: type[Completer] | None,
+        completer_kwargs: dict[str, Any],
         validator_cls: type[Validator] | None,
+        validator_kwargs: dict[str, Any],
         prompt_kwargs: dict[str, Any],
     ) -> dict[str, Any]:
-        """
-        Generates bootstrap keyword arguments for initializing a
-        `prompt_toolkit.PromptSession` object, either
-        using default values or user-defined values, if available.
-
-        Parameters
-        ----------
-        prompt_kwargs : Dictionary of `str: Any` pairs
-            A dictionary that contains values for keyword arguments supplied by the
-            user, that to be passed to the `prompt_toolkit.PromptSession` class.
-
-        Returns
-        -------
-        Dictionary of `str: Any` pairs
-            A dictionary that contains all the keyword arguments to be passed
-            to the `prompt_toolkit.PromptSession` class.
-        """
-
         if not ISATTY:
-            # If the standard input is not a TTY device, there is no need
-            # to generate any keyword arguments for rendering. In this case,
-            # an empty dictionary is returned.
             return {}
 
         default_prompt_kwargs = {
@@ -269,10 +244,18 @@ class Repl:
             default_prompt_kwargs.update(bottom_toolbar=self.bottom_bar)
 
         if completer_cls is not None:
-            default_prompt_kwargs.update(completer=completer_cls(**self.completer_kwargs))
+            default_prompt_kwargs.update(
+                completer=completer_cls(
+                    **self._bootstrap_completer_kwargs(completer_cls, completer_kwargs)
+                )
+            )
 
         if validator_cls is not None:
-            default_prompt_kwargs.update(validator=validator_cls(**self.validator_kwargs))
+            default_prompt_kwargs.update(
+                validator=validator_cls(
+                    **self._bootstrap_validator_kwargs(validator_cls, validator_kwargs)
+                )
+            )
 
         styles = Style.from_dict(DEFAULT_PROMPTSESSION_STYLE_CONFIG)
 

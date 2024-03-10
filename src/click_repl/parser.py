@@ -31,6 +31,7 @@ from . import utils
 from ._globals import HAS_CLICK8
 from .exceptions import ArgumentPositionError
 
+
 _KEY: t.TypeAlias = tuple[
     dict[str, Any] | None,
     dict[str, Any] | None,
@@ -40,7 +41,12 @@ _KEY: t.TypeAlias = tuple[
 
 _flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
-_EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(r"^([^a-z\d\s]+[^=\s]+)=(.+)$", re.I)
+
+# Just gonna assume that people use only '-' and '--' as prefix for option flags
+# _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(r"^(--?[a-z][\w-]*)=(.*)$", re.I)
+_EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
+    r"^(([^a-z\d\s])\2?[a-z]+(?:-[a-z\d]+)?)=(.*)$", re.I
+)
 
 
 def split_arg_string(string: str, posix: bool = True) -> list[str]:
@@ -67,7 +73,6 @@ def split_arg_string(string: str, posix: bool = True) -> list[str]:
 
     lex = shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
-    # lex.commenters = ""
     lex.escape = ""
     out: list[str] = []
 
@@ -95,6 +100,9 @@ class Incomplete:
     def __bool__(self) -> bool:
         return bool(self.raw_str)
 
+    def __len__(self) -> int:
+        return len(self.parsed_str)
+
     def expand_envvars(self) -> str:
         self.parsed_str = utils._expand_envvars(self.parsed_str).strip()
         return self.parsed_str
@@ -118,10 +126,10 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     else:
         incomplete = ""
 
-    match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
+    equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
 
-    if match:
-        _, opt, incomplete = match.groups()
+    if equal_sign_match:
+        opt, _, incomplete = equal_sign_match.groups()
         args.append(opt)
 
     _args = tuple(args)
@@ -132,7 +140,16 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     raw_incomplete_with_quotes = ""
     secondary_check = False
 
-    for token in reversed(document_text.split(" ")):
+    space_splitted_args = document_text.split(" ")
+
+    if equal_sign_match:
+        opt_len = len(opt)
+        space_splitted_args[-1:] = [
+            space_splitted_args[-1][:opt_len],
+            space_splitted_args[-1][opt_len + 1 :],
+        ]
+
+    for token in reversed(space_splitted_args):
         _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
 
         if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
@@ -346,7 +363,7 @@ def _resolve_repl_parsing_state(
     return ReplParsingState(cli_ctx, current_ctx, args)
 
 
-class Argument(_Argument):
+class ArgumentParamParser(_Argument):
     def process(
         self,
         value: str | Sequence[str | None] | None,
@@ -369,7 +386,7 @@ class ReplOptionParser(OptionParser):
             opt.add_to_parser(self, ctx)
 
     def add_argument(self, obj: CoreArgument, dest: str | None, nargs: int = 1) -> None:
-        self._args.append(Argument(obj=obj, dest=dest, nargs=nargs))
+        self._args.append(ArgumentParamParser(obj=obj, dest=dest, nargs=nargs))
 
     def _process_args_for_options(self, state: ParsingState) -> None:
         while state.rargs:

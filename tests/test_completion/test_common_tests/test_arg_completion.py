@@ -4,8 +4,8 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.completer import ClickCompleter
+from tests import DummyInternalCommandSystem
 
 
 @click.group()
@@ -25,7 +25,7 @@ def arg_choices(handler):
     pass
 
 
-c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
+c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 
 @pytest.mark.parametrize(

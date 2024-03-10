@@ -172,8 +172,8 @@ def _get_visible_subcommands(
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> dict[str, Any]:
-    # Similar to the 'get_info_dict' method implementation # in click objects,
-    # but it only retrieves the essential attributes # required to
+    # Similar to the 'get_info_dict' method implementation in click objects,
+    # but it only retrieves the essential attributes required to
     # differentiate between different 'ReplParsingState' objects.
 
     if isinstance(obj, click.Context):
@@ -274,7 +274,7 @@ def get_info_dict(
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    command: MultiCommand,
+    multicommand: MultiCommand,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
@@ -287,7 +287,7 @@ def _generate_next_click_ctx(
     # list format, we explicitly convert args into a list.
     _args = list(_expand_envvars(i) for i in args)
 
-    name, cmd, _args = command.resolve_command(parent_ctx, _args)
+    name, cmd, _args = multicommand.resolve_command(parent_ctx, _args)
 
     if cmd is None:
         return parent_ctx, None

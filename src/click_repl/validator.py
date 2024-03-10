@@ -53,10 +53,6 @@ class ClickValidator(Validator):
     ctx : `click.Context`
         The current `click.Context` object.
 
-    internal_commands_system : `InternalCommandSystem`
-        The `InternalCommandSystem` object
-        that holds information about the internal commands and their prefixes.
-
     display_all_errors : bool
         If `False`, all generic Python Exceptions that are raised, will not be
         displayed in the Validator bar, resulting in the full error traceback
@@ -73,7 +69,6 @@ class ClickValidator(Validator):
         self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system
-
         self.display_all_errors = display_all_errors
 
     def _validate(self, document_text: str) -> None:
@@ -120,18 +115,18 @@ class ClickValidator(Validator):
         try:
             self._validate(document.text_before_cursor)
 
-        except UsageError as e:
+        except UsageError as ue:
             # UsageError's error messages are simple and are raised when there
             # is an improper use of arguments and options. In this case, we can
             # simply display the error message without mentioning the specific
             # error class.
-            raise ValidationError(0, e.format_message())
+            raise ValidationError(0, ue.format_message())
 
-        except ClickException as e:
+        except ClickException as ce:
             # Click formats its error messages to provide more detail. Therefore,
             # we can use it to display error messages along with the specific error
             # type.
-            raise ValidationError(0, f"{type(e).__name__}: {e.format_message()}")
+            raise ValidationError(0, f"{type(ce).__name__}: {ce.format_message()}")
 
         except Exception as e:
             if self.display_all_errors:

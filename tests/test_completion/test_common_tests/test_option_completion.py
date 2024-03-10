@@ -4,8 +4,8 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.completer import ClickCompleter
+from tests import DummyInternalCommandSystem
 
 
 @click.group()
@@ -13,7 +13,7 @@ def root_command():
     pass
 
 
-c = ClickCompleter(click.Context(root_command), InternalCommandSystem())
+c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 
 @root_command.command()
@@ -81,7 +81,7 @@ def shortest_only(foo, bar, foobar):
 
 
 c1 = ClickCompleter(
-    click.Context(root_command), InternalCommandSystem(), shortest_opts_only=True
+    click.Context(root_command), DummyInternalCommandSystem(), shortest_opts_only=True
 )
 
 
@@ -99,7 +99,7 @@ def test_shortest_only_true_mode(test_input, expected):
 
 
 c2 = ClickCompleter(
-    click.Context(root_command), InternalCommandSystem(), show_only_unused_opts=True
+    click.Context(root_command), DummyInternalCommandSystem(), show_only_unused_opts=True
 )
 
 

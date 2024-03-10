@@ -1293,9 +1293,9 @@ class ReplCompletion(Completion):
         if isinstance(incomplete, Incomplete):
             incomplete = incomplete.raw_str
 
-        diff = len(incomplete) - len(text)
-        if diff > 0:
-            text += " " * diff + "\b" * diff
+        # diff = len(incomplete) - len(text)
+        # if diff > 0:
+        #     text += " " * diff + "\b" * diff
 
         kwargs.setdefault("start_position", -len(incomplete))
 
