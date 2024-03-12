@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import os
 from collections import deque
+from collections import namedtuple
 from itertools import islice
 
 from click_repl._formatting import Marquee
 from click_repl._formatting import TokenizedFormattedText
+
+terminal_size = namedtuple("terminal_size", ["columns", "lines"])
 
 
 def sliding_str_window(iterable, n, reverse=False):
@@ -60,19 +64,44 @@ sample_prefix = TokenizedFormattedText(prefix_list, "sample-prefix")
 prefix_list_content_str = "".join(token[1] for token in prefix_list)
 
 
-def test_marquee():
+def _get_terminal_size_func(value=21):
+    def _get_terminal_size():
+        return terminal_size(21, 1)
+
+    return _get_terminal_size
+
+
+def test_marquee(monkeypatch):
+    monkeypatch.setattr(os, "get_terminal_size", _get_terminal_size_func())
+
     marquee = Marquee(sample_token, prefix=sample_prefix)
 
-    terminal_width, chunk_size = marquee.get_terminal_width_and_display_chunk_size()
-    max_iterations_over_right = terminal_width - chunk_size
+    _terminal_size, chunk_size = marquee.get_terminal_width_and_display_window_size()
+    max_iterations_over_right = _terminal_size - chunk_size
 
+    window_iter_obj = iter(
+        sliding_str_window(tokens_list_content_str, marquee.pointer_position + chunk_size)
+    )
+
+    first_yield = next(window_iter_obj)
+
+    # Waits for the first 5 iterations
+    for _ in range(6):
+        current_chunk_as_text = "".join(
+            token[1] for token in marquee.get_current_text_chunk()
+        )
+
+        assert current_chunk_as_text == (prefix_list_content_str + first_yield)
+
+    # Then it starts to iterate over the list
     for _, expected_window_content in zip(
         range(max_iterations_over_right),
-        sliding_str_window(tokens_list_content_str, max_iterations_over_right),
+        window_iter_obj,
     ):
-        "".join(token[1] for token in marquee.get_current_text_chunk())
+        current_chunk_as_text = "".join(
+            token[1] for token in marquee.get_current_text_chunk()
+        )
 
-        # assert current_chunk_as_text == (
-        #   prefix_list_content_str + expected_window_content
-        # )
-        # this test ain't passing
+        assert current_chunk_as_text == (
+            prefix_list_content_str + expected_window_content
+        )
