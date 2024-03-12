@@ -18,6 +18,8 @@ from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.validation import Validator
 
 from ._globals import CLICK_REPL_DEV_ENV
+from ._globals import get_current_repl_ctx
+from ._globals import ISATTY
 from ._internal_cmds import InternalCommandSystem
 from .utils import _resolve_state
 
@@ -71,19 +73,6 @@ class ClickValidator(Validator):
         self.internal_commands_system = internal_commands_system
         self.display_all_errors = display_all_errors
 
-    def _validate(self, document_text: str) -> None:
-        """
-        Parses the input from the REPL prompt and raises errors
-        if validation fails.
-
-        Parameters
-        ----------
-        document_text : str
-            The input string currently in the REPL prompt.
-        """
-
-        _resolve_state(self.cli_ctx, document_text)
-
     def validate(self, document: Document) -> None:
         """
         Validates the input from the prompt by raising a
@@ -113,7 +102,13 @@ class ClickValidator(Validator):
             return
 
         try:
-            self._validate(document.text_before_cursor)
+            _, state, _ = _resolve_state(self.cli_ctx, document.text_before_cursor)
+
+            if ISATTY:
+                bottombar = get_current_repl_ctx().bottombar  # type:ignore[union-attr]
+
+                if bottombar is not None:
+                    bottombar.update_state(state)
 
         except UsageError as ue:
             # UsageError's error messages are simple and are raised when there

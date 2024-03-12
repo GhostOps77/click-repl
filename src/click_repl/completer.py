@@ -1119,6 +1119,24 @@ class ClickCompleter(Completer):
                 selected_style=selected_style,
             )
 
+    def handle_internal_commands_request(
+        self, document_text: str
+    ) -> Iterator[Completion]:
+        flag, ics_prefix = self.internal_commands_system.get_prefix(document_text)
+
+        internal_cmds_requested = flag == "Internal"
+
+        if ics_prefix is not None:
+            if ISATTY and self.bottom_bar is not None:
+                self.bottom_bar.reset_state()
+
+            if internal_cmds_requested:
+                yield from self.get_completions_for_internal_commands(
+                    ics_prefix, document_text
+                )
+
+        return internal_cmds_requested
+
     def get_completions(
         self, document: Document, complete_event: CompleteEvent | None = None
     ) -> Iterator[Completion]:
@@ -1140,24 +1158,12 @@ class ClickCompleter(Completer):
             The `Completion` objects for command line autocompletion.
         """
 
-        flag, ics_prefix = self.internal_commands_system.get_prefix(
+        internal_cmds_requested = yield from self.handle_internal_commands_request(
             document.text_before_cursor
         )
 
-        if ics_prefix is not None:
-            # If there's a prefix indicating an internal or system command in the
-            # prompt, we avoid rendering the bottom bar. Instead, we generate
-            # completions specifically for those internal commands when an internal
-            # command prefix is detected.
-
-            if ISATTY and self.bottom_bar is not None:
-                self.bottom_bar.reset_state()
-
-            if flag == "Internal":
-                yield from self.get_completions_for_internal_commands(
-                    ics_prefix, document.text_before_cursor
-                )
-                return
+        if internal_cmds_requested:
+            return
 
         try:
             parsed_ctx, state, incomplete = _resolve_state(
@@ -1169,8 +1175,7 @@ class ClickCompleter(Completer):
                 return
 
             if ISATTY:
-                # Update the current parsing state in the REPL context object.
-                get_current_repl_ctx().current_state = state  # type:ignore[union-attr]
+                get_current_repl_ctx().update_state(state)  # type:ignore[union-attr]
 
                 if self.bottom_bar is not None:
                     self.bottom_bar.update_state(state)

@@ -194,6 +194,9 @@ class ReplContext:
         else:
             yield from reversed(self._history)
 
+    def update_state(self, state: ReplParsingState) -> None:
+        self.current_state = state
+
 
 class ReplCli(click.Group):
     """

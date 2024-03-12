@@ -39,6 +39,7 @@ class TokenizedFormattedText(FormattedText):
         for _, value, *_ in self:
             length += len(value)
 
+        # return sum(len(value) for _, value, *_ in self)
         return length
 
     def slice_by_text_content(self, start: int, stop: int) -> TokenizedFormattedText:
@@ -82,7 +83,7 @@ class Marquee:
         "text",
         "prefix",
         "pointer_position",
-        "terminal_width",
+        # "terminal_width",
         "is_pointer_direction_left",
         "hit_boundary",
         "waited_for_in_iterations",
@@ -93,12 +94,12 @@ class Marquee:
     def __init__(
         self,
         text: TokenizedFormattedText,
-        prefix: StyleAndTextTuples = [],
+        prefix: TokenizedFormattedText = [],  # type:ignore[assignment]
     ) -> None:
         self.text = text
         self.prefix = prefix
         self.pointer_position = 0
-        self.terminal_width = 0
+        # self.terminal_width = 0
         self.is_pointer_direction_left = True
         self.hit_boundary = True
         self.waited_for_in_iterations = 5
@@ -107,14 +108,28 @@ class Marquee:
         # This attribute is used to cache recently generated string.
         self._recent_text: StyleAndTextTuples = []
 
+    def get_terminal_width_and_display_chunk_size(self) -> tuple[int, int]:
+        # os.get_terminal_size() is called for every iteration to handle
+        # the change in terminal size.
+        terminal_width = os.get_terminal_size().columns
+        chunk_size = terminal_width - self.prefix.get_length_by_content()
+
+        return terminal_width, chunk_size
+
     def adjust_pointer_position(self) -> None:
         """
         Updates the pointer position for the next iteration.
         """
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
+
+        terminal_width, chunk_size = self.get_terminal_width_and_display_chunk_size()
+
         pointer_max_pos_in_right = (
-            self.text.get_length_by_content() - self.terminal_width + len(self.prefix) + 1
+            self.text.get_length_by_content()
+            - terminal_width
+            + self.prefix.get_length_by_content()
+            + 1
         )
 
         # Reset the waiting counter when the pointer hits
@@ -131,6 +146,19 @@ class Marquee:
             self.is_pointer_direction_left = True
             self.hit_boundary = True
             self.waited_for_in_iterations = 0
+
+        if self.text.get_length_by_content() <= chunk_size:
+            if not self.is_chunk_size_le_terminal_size:
+                self.is_chunk_size_le_terminal_size = True
+
+            if self.pointer_position != 0:
+                self.pointer_position = 0
+                self.hit_boundary = True
+                self.waited_for_in_iterations = 0
+                self.is_pointer_direction_left = True
+
+        else:
+            self.is_chunk_size_le_terminal_size = False
 
         if self.is_pointer_direction_left:
             self.pointer_position += 1
@@ -153,26 +181,13 @@ class Marquee:
         text and prefix objects altogether.
         """
 
-        # os.get_terminal_size() is called for every iteration to handle
-        # the change in terminal size.
-        self.terminal_width = os.get_terminal_size().columns
-        chunk_size = self.terminal_width - len(self.prefix)
+        _, chunk_size = self.get_terminal_width_and_display_chunk_size()
 
         if self.text.get_length_by_content() <= chunk_size:
             if self.is_chunk_size_le_terminal_size:
                 return self._recent_text
 
-            self.is_chunk_size_le_terminal_size = True
             self._recent_text = self.get_full_formatted_text()
-
-            if self.pointer_position != 0:
-                self.pointer_position = 0
-                self.hit_boundary = True
-                self.waited_for_in_iterations = 0
-                self.is_pointer_direction_left = True
-
-        else:
-            self.is_chunk_size_le_terminal_size = False
 
         if self.hit_boundary:
             # The string stored/cached in self._recent_text is used only here again
