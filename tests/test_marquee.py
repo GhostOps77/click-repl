@@ -7,13 +7,6 @@ from click_repl._formatting import Marquee
 from click_repl._formatting import TokenizedFormattedText
 
 
-class MarqueeForTesting(Marquee):
-    def get_terminal_width_and_display_chunk_size(self) -> tuple[int, int]:
-        # 21 is just a randomly chosen value for terminal length
-        # But it needs to be dynamic
-        return 21, 21 - self.prefix.get_length_by_content()
-
-
 def sliding_str_window(iterable, n, reverse=False):
     if reverse:
         it = reversed(iterable)
@@ -68,7 +61,7 @@ prefix_list_content_str = "".join(token[1] for token in prefix_list)
 
 
 def test_marquee():
-    marquee = MarqueeForTesting(sample_token, prefix=sample_prefix)
+    marquee = Marquee(sample_token, prefix=sample_prefix)
 
     terminal_width, chunk_size = marquee.get_terminal_width_and_display_chunk_size()
     max_iterations_over_right = terminal_width - chunk_size
