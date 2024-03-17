@@ -46,6 +46,7 @@ tokens_list = [
     ("sample.token.10", "?"),
 ]
 
+
 sample_token = TokenizedFormattedText(tokens_list, "sample-class-name")
 tokens_list_content_str = "".join(token[1] for token in tokens_list)
 
@@ -60,7 +61,7 @@ prefix_list_content_str = "".join(token[1] for token in prefix_list)
 
 
 def _get_terminal_size_func(value):
-    def _get_terminal_size():
+    def _get_terminal_size(arg=1):
         return terminal_size(value, 1)
 
     return _get_terminal_size

@@ -60,7 +60,7 @@ bottombar = BottomBar()
         ),
         (
             "cmd hi hii hello 123 a ",
-            "Command cmd: str-arg ... func-arg choice-arg bool-arg <boolean> "
+            "Command cmd: str-arg ... func-arg choice-arg bool-arg <boolean>"
             " intrange-arg floatrange-arg tuple-opt nargs-opt",
         ),
         (
@@ -139,6 +139,12 @@ def cmd2():
     pass
 
 
+@chainned_group.command(name=None)
+@click.argument("arg")
+def cmd3(arg):
+    pass
+
+
 ctx2 = click.Context(chainned_group)
 
 
@@ -146,7 +152,8 @@ ctx2 = click.Context(chainned_group)
     "test_input, expected",
     [
         ("", "Group chainned-group: COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."),
-        ("cmd2 ", "Command ...: "),
+        ("cmd2 ", "Group chainned-group: COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."),
+        ("cmd3 ", "Command cmd3: arg"),
     ],
 )
 def test_chained_group_metavar(test_input, expected):
