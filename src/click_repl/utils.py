@@ -10,7 +10,6 @@ from collections.abc import Iterator
 from functools import lru_cache
 from typing import Any
 from typing import Iterable
-from typing import Literal
 
 import click
 from click import Command
@@ -18,6 +17,7 @@ from click import Context
 from click import MultiCommand
 from click import Parameter
 from click.parser import split_opt
+from typing_extensions import Literal
 
 from ._globals import _RANGE_TYPES
 from ._globals import StyleAndTextTuples
