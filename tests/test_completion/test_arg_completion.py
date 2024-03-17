@@ -25,6 +25,12 @@ def arg_choices(handler):
     pass
 
 
+@root_command.command()
+@click.argument("handler", type=click.Choice(("foo", "bar"), case_sensitive=False))
+def arg_choices_case_insensitive(handler):
+    pass
+
+
 c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 
@@ -50,5 +56,20 @@ def test_boolean_arg(test_input, expected):
     ],
 )
 def test_arg_choices(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("arg-choices-case-insensitive ", {"foo", "bar"}),
+        ("arg-choices-case-insensitive F", {"foo"}),
+        ("arg-choices-case-insensitive fO", {"foo"}),
+        ("arg-choices-case-insensitive B", {"bar"}),
+        ("arg-choices-case-insensitive Bar ", set()),
+    ],
+)
+def test_arg_choices_case_insensitive(test_input, expected):
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected

@@ -33,19 +33,6 @@ def test_click7_autocomplete_arg():
     assert {x.text for x in completions} == {"foo", "bar"}
 
 
-def return_type_tuple_shell_complete(ctx, args, incomplete):
-    return [
-        i
-        for i in [
-            ("Hi", "hi"),
-            ("Please", "please"),
-            ("Hey", "hey"),
-            ("Aye", "aye"),
-        ]
-        if i[1].startswith(incomplete)
-    ]
-
-
 @pytest.mark.skipif(
     click.__version__[0] != "7",
     reason="click-v7 old autocomplete function is not available, so skipped",

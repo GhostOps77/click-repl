@@ -139,14 +139,14 @@ DEFAULT_PROMPTSESSION_STYLE_CONFIG = (
 )
 
 
-HAS_CLICK8 = click.__version__[0] == "8"
+HAS_CLICK_GE_8 = click.__version__[0] >= "8"
 
 # _NumberRangeBase class is defined in click v8.
 # Therefore, this tuple is used to check for the
 # range type ParamType objects.
 _RANGE_TYPES = (click.IntRange, click.FloatRange)
 
-if HAS_CLICK8:
+if HAS_CLICK_GE_8:
     _RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
 
 # The only ParamType classes that have their
@@ -161,7 +161,9 @@ ISATTY = sys.stdin.isatty()
 
 IS_WINDOWS = os.name == "nt"
 
-AUTO_COMPLETION_FUNC_ATTR = "_custom_shell_complete" if HAS_CLICK8 else "autocompletion"
+AUTO_COMPLETION_FUNC_ATTR = (
+    "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
+)
 
 # click repl environmental flag. Enable it only for debugging.
 CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None

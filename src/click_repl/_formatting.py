@@ -4,6 +4,7 @@ import os
 
 from prompt_toolkit.formatted_text import FormattedText
 
+from ._globals import ISATTY
 from ._globals import StyleAndTextTuples
 
 
@@ -32,6 +33,14 @@ class TokenizedFormattedText(FormattedText):
 
         super().__init__(tokens_list)
         self.parent_token_class = parent_token_class
+
+    def get_text(self) -> str:
+        res = ""
+
+        for _, value, *_ in self:
+            res += value
+
+        return res
 
     def get_length_by_content(self) -> int:
         length = 0
@@ -108,7 +117,7 @@ class Marquee:
         # This attribute is used to cache recently generated string.
         self._recent_text: StyleAndTextTuples = []
 
-    def get_terminal_width_and_display_window_size(self) -> tuple[int, int]:
+    def get_terminal_width_and_window_size(self) -> tuple[int, int]:
         # os.get_terminal_size() is called for every iteration to handle
         # the change in terminal size.
         terminal_width = os.get_terminal_size().columns
@@ -123,13 +132,13 @@ class Marquee:
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
 
-        terminal_width, window_size = self.get_terminal_width_and_display_window_size()
+        terminal_width, window_size = self.get_terminal_width_and_window_size()
 
         pointer_max_pos_in_right = (
             self.text.get_length_by_content()
             - terminal_width
             + self.prefix.get_length_by_content()
-            + 1
+            + ISATTY
         )
 
         # Reset the waiting counter when the pointer hits
@@ -157,6 +166,8 @@ class Marquee:
                 self.waited_for_in_iterations = 0
                 self.is_pointer_direction_left = True
 
+            return
+
         else:
             self.is_window_size_le_terminal_size = False
 
@@ -181,7 +192,7 @@ class Marquee:
         text and prefix objects altogether.
         """
 
-        _, chunk_size = self.get_terminal_width_and_display_window_size()
+        _, chunk_size = self.get_terminal_width_and_window_size()
 
         if self.text.get_length_by_content() <= chunk_size:
             if self.is_window_size_le_terminal_size:

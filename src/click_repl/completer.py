@@ -25,11 +25,10 @@ from prompt_toolkit.document import Document
 
 from ._formatting import TokenizedFormattedText
 from ._globals import _PATH_TYPES
-from ._globals import _RANGE_TYPES
 from ._globals import AUTO_COMPLETION_FUNC_ATTR
 from ._globals import CLICK_REPL_DEV_ENV
 from ._globals import get_current_repl_ctx
-from ._globals import HAS_CLICK8
+from ._globals import HAS_CLICK_GE_8
 from ._globals import IS_WINDOWS
 from ._globals import ISATTY
 from ._globals import StyleAndTextTuples
@@ -47,6 +46,8 @@ from .utils import is_param_value_incomplete
 from .utils import join_options
 from .utils import options_flags_joiner
 
+# from ._globals import _RANGE_TYPES
+
 
 class _CompletionStyleDict(t.TypedDict):
     completion_style: str
@@ -57,147 +58,6 @@ CompletionStyleDict: t.TypeAlias = dict[CompletionStyleDictKeys, _CompletionStyl
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
-
-
-def count_digits(num: int) -> int:
-    num = abs(num)
-    length = 0
-    while num > 0:
-        num //= 10
-        length += 1
-    return length
-
-
-def _limited_range(
-    start: int, stop: int, step: int = 1, limit: int = 20
-) -> Generator[int, None, None]:
-    # range, but yields only the first 'limit' numbers if the range is bigger than limit.
-    yield from range(start, stop, step)[:limit]
-
-
-def _open_range(
-    start: int | None = None, stop: int | None = None, negative_only: bool = False
-) -> Generator[int, None, None]:
-    # range, but the ends can be open
-    # And it only yields 20 items from the open direction
-
-    if start is not None:
-        _start = start
-
-    elif stop is not None:
-        _start = stop
-
-    if start is None:
-        end = _start - 20
-
-    elif stop is None:
-        end = _start + 20
-
-    if negative_only:
-        _start = min(_start, -1)
-
-    # -1 ** negative_only
-    # cuz, if its negative only, then we yield -1, -2, -3, ...
-    # instead like -3, -2, -1, ...
-    yield from _limited_range(_start, end, -(1**negative_only))
-
-
-def generate_ranged_numbers_with_prefix(
-    prefix_str: str,
-    lower_bound: int | None = None,
-    upper_bound: int | None = None,
-    lower_exclusive: bool = False,
-    upper_exclusive: bool = False,
-) -> Generator[int, None, None]:
-    # Generate integers within a specified range with the given
-    # 'prefix' as their leading digits.
-
-    if lower_bound is None and upper_bound is None:
-        return
-
-    # Adjusting boundary values by reducing it closer to prefix, based on it's sign.
-    no_num_in_prefix = prefix_str in ("-", "")
-    prefix_val_is_hyphen = prefix_str == "-"
-
-    if lower_bound is None:
-        if no_num_in_prefix:
-            yield from _open_range(stop=upper_bound, negative_only=prefix_val_is_hyphen)
-            return
-
-        lower_bound = -abs(upper_bound) * 10  # type: ignore[arg-type]
-
-    else:
-        lower_bound += lower_exclusive
-
-    if upper_bound is None:
-        if no_num_in_prefix:
-            yield from _open_range(start=lower_bound, negative_only=prefix_val_is_hyphen)
-            return
-
-        upper_bound = abs(lower_bound) * 10
-
-    else:
-        upper_bound -= upper_exclusive
-
-    # Exit early if the given value for bounds are not useful
-    # to generate values based on given prefix.
-    if lower_bound >= upper_bound:
-        return
-
-    prefix = 0
-    if not prefix_str:
-        prefix_sign = 1
-
-    elif prefix_val_is_hyphen:
-        prefix_sign = -1
-
-    else:
-        prefix = int(prefix_str)
-
-        if prefix >= 0:
-            if upper_bound < prefix:
-                return
-
-            prefix_sign = 1
-            lower_bound = max(0, lower_bound)
-
-        else:
-            if prefix < lower_bound:
-                return
-
-            prefix = abs(prefix)
-            prefix_sign = -1
-            upper_bound = min(0, upper_bound)
-
-    def _generate_ranged_numbers_with_prefix(
-        _prefix: int,
-        _lower_bound: int,
-        _upper_bound: int,
-    ) -> Iterator[int]:
-        if _prefix == 0:
-            yield from _limited_range(_lower_bound, _upper_bound, prefix_sign)
-            return
-
-        _lower_bound, _upper_bound = abs(_lower_bound), abs(_upper_bound)
-
-        if _lower_bound > _upper_bound:
-            _lower_bound, _upper_bound = _upper_bound, _lower_bound
-
-        _upper_bound += 1
-
-        max_int_length = count_digits(_upper_bound) - count_digits(_prefix) + 1
-
-        for length in range(max_int_length):
-            digit_offset = 10**length
-            lower_prefix_bound = _prefix * digit_offset
-            upper_prefix_bound = (_prefix + 1) * digit_offset
-
-            lower_range_start = max(lower_prefix_bound, _lower_bound) * prefix_sign
-            upper_range_end = min(upper_prefix_bound, _upper_bound) * prefix_sign
-
-            yield from _limited_range(lower_range_start, upper_range_end, prefix_sign)
-
-    yield from _generate_ranged_numbers_with_prefix(prefix, lower_bound, upper_bound)
 
 
 class ClickCompleter(Completer):
@@ -360,42 +220,25 @@ class ClickCompleter(Completer):
         param: Parameter,
         state: ReplParsingState,
         incomplete: Incomplete,
+        param_type: ParamType | None = None,
     ) -> Iterator[Completion]:
         """
         Generates auto-completions based on the output from the command's
         `shell_complete` or `autocompletion` function of the current parameter.
-
-        Parameters
-        ----------
-        ctx : `click.Context`
-            A click context object that holds information about the
-            currently parsed args string from the REPL prompt.
-
-        param : `click.Parameter`
-            A `click.Parameter` object that holds information about
-            the current parameter thats being parsed by the parser.
-
-        state : `ReplParsingState`
-            An ReplParsingState object that contains information about
-            the parsing state of the parameters of the current command.
-
-        incomplete : `Incomplete`
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
-
-        Yields
-        ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion
-            of the incomplete prompt.
         """
 
         # click < v8 has a different name for their shell_complete
         # function, and its called "autocompletion". So, for backwards
         # compatibility, we're calling them based on the click's version.
 
-        if HAS_CLICK8:
-            autocompletions = param.shell_complete(ctx, incomplete.parsed_str)
+        if HAS_CLICK_GE_8:
+            if param_type is None:
+                autocompletions = param.shell_complete(ctx, incomplete.parsed_str)
+
+            else:
+                autocompletions = param_type.shell_complete(
+                    ctx, param, incomplete.parsed_str
+                )
 
         else:
             autocompletions = param.autocompletion(  # type: ignore[attr-defined]
@@ -416,7 +259,7 @@ class ClickCompleter(Completer):
                     selected_style=param_style["selected_completion_style"],
                 )
 
-            elif HAS_CLICK8 and isinstance(
+            elif HAS_CLICK_GE_8 and isinstance(
                 autocomplete, click.shell_completion.CompletionItem
             ):
                 yield ReplCompletion(
@@ -484,8 +327,8 @@ class ClickCompleter(Completer):
             _choice = choice.lower() if case_insensitive else choice
 
             if _choice.startswith(_incomplete):
-                if not self.expand_envvars:
-                    choice = incomplete.parsed_str + choice[len(_incomplete) :]
+                # if not self.expand_envvars:
+                #     choice = incomplete.parsed_str + choice[len(_incomplete) :]
 
                 yield ReplCompletion(
                     choice,
@@ -622,6 +465,7 @@ class ClickCompleter(Completer):
 
     def get_completion_from_param_type(
         self,
+        ctx: Context,
         param: Parameter,
         param_type: ParamType,
         state: ReplParsingState,
@@ -660,7 +504,7 @@ class ClickCompleter(Completer):
             values = state.current_ctx.params[param.name]  # type: ignore[index]
             if None in values:
                 yield from self.get_completion_from_param_type(
-                    param, param_type.types[values.index(None)], state, incomplete
+                    ctx, param, param_type.types[values.index(None)], state, incomplete
                 )
 
         # shell_complete method for click.Choice class is introduced in click-v8.
@@ -678,7 +522,10 @@ class ClickCompleter(Completer):
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)
 
-        return
+        elif HAS_CLICK_GE_8:
+            yield from self.get_completion_from_autocompletion_functions(
+                ctx, param, state, incomplete, param_type
+            )
 
     def get_completion_from_param(
         self,
@@ -728,7 +575,7 @@ class ClickCompleter(Completer):
             param_type, (click.types.StringParamType, click.types.UnprocessedParamType)
         ):
             yield from self.get_completion_from_param_type(
-                param, param_type, state, incomplete
+                ctx, param, param_type, state, incomplete
             )
 
         return
@@ -794,7 +641,7 @@ class ClickCompleter(Completer):
                 continue
 
             is_shortest_opts_only = self.shortest_opts_only and not (
-                _incomplete or (option.is_bool_flag and option.secondary_opts)
+                _incomplete  # or (option.is_bool_flag and option.secondary_opts)
             )
 
             if is_shortest_opts_only and option.is_bool_flag and option.secondary_opts:
@@ -1121,7 +968,7 @@ class ClickCompleter(Completer):
 
     def handle_internal_commands_request(
         self, document_text: str
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, bool]:
         flag, ics_prefix = self.internal_commands_system.get_prefix(document_text)
 
         internal_cmds_requested = flag == "Internal"
@@ -1163,7 +1010,7 @@ class ClickCompleter(Completer):
         )
 
         if internal_cmds_requested:
-            return
+            return  # type:ignore[unreachable]
 
         try:
             parsed_ctx, state, incomplete = _resolve_state(
@@ -1185,72 +1032,6 @@ class ClickCompleter(Completer):
         except Exception:
             if CLICK_REPL_DEV_ENV:
                 raise
-
-
-class ClickRangeTypeCompleter(ClickCompleter):
-    """
-    Extension of the ClickCompleter class designed specifically
-    for range type parameters.
-
-    Auto-completion for range types can introduce performance overhead.
-    Therefore, it is provided on demand to optimize the auto-completion process.
-    """
-
-    def get_completion_from_param_type(
-        self,
-        param: Parameter,
-        param_type: ParamType,
-        state: ReplParsingState,
-        incomplete: Incomplete,
-    ) -> Iterator[Completion]:
-        if isinstance(param_type, _RANGE_TYPES):
-            yield from self.get_completion_for_range_types(param, param_type, incomplete)
-
-        yield from super().get_completion_from_param_type(
-            param, param_type, state, incomplete
-        )
-
-    def get_completion_for_range_types(
-        self,
-        param: Parameter,
-        param_type: click.IntRange | click.FloatRange,
-        incomplete: Incomplete,
-    ) -> Iterator[Completion]:
-        _incomplete = incomplete.expand_envvars()
-        prefix_str, *precision = _incomplete.split(".", 1)
-
-        if precision:
-            return
-
-        lower_bound = param_type.min
-        upper_bound = param_type.max
-
-        if lower_bound is not None:  # or isinstance(lower_bound, float):
-            lower_bound = int(lower_bound)
-
-        if upper_bound is not None:  # or isinstance(upper_bound, float):
-            upper_bound = int(upper_bound)
-
-        if isinstance(param_type, click.IntRange):
-            display_template = "{}"
-            value_style = "parameter.type.range.integer"
-
-        elif isinstance(param_type, click.FloatRange):
-            display_template = "{}."
-            value_style = "parameter.type.range.float"
-
-        for num in generate_ranged_numbers_with_prefix(
-            prefix_str, lower_bound, upper_bound, param_type.min_open, param_type.max_open
-        ):
-            value = display_template.format(num)
-
-            yield ReplCompletion(
-                value,
-                incomplete,
-                display=TokenizedFormattedText(
-                    [(value_style, value)], "autocompletion-menu"
-                ),
-            )
 
 
 class ReplCompletion(Completion):

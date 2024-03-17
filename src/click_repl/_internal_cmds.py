@@ -20,7 +20,7 @@ import click
 from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException
 from .exceptions import PrefixNotFound
-from .exceptions import SamePrefixError
+from .exceptions import SamePrefix
 from .exceptions import WrongType
 from .utils import print_error
 
@@ -122,7 +122,7 @@ class InternalCommandSystem:
         ) and internal_command_prefix == system_command_prefix:
             # We don't want both internal_command_prefix and system_command_prefix
             # to be same. So, we raise SamePrefixError Exception if that happens.
-            raise SamePrefixError(system_command_prefix)
+            raise SamePrefix(system_command_prefix)
 
         self._check_prefix_validity(internal_command_prefix, "internal_command_prefix")
         self._check_prefix_validity(system_command_prefix, "system_command_prefix")
@@ -162,7 +162,7 @@ class InternalCommandSystem:
         self._check_prefix_validity(value, "internal_command_prefix")
 
         if value is not None and value == self.prefix_table["System"]:
-            raise SamePrefixError(value)
+            raise SamePrefix(value)
 
         self.prefix_table["Internal"] = value
 
@@ -191,7 +191,7 @@ class InternalCommandSystem:
         self._check_prefix_validity(value, "system_command_prefix")
 
         if value is not None and value == self.prefix_table["Internal"]:
-            raise SamePrefixError(value)
+            raise SamePrefix(value)
 
         self.prefix_table["System"] = value
 

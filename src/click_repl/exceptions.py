@@ -69,7 +69,7 @@ class WrongType(InternalCommandException):
         )
 
 
-class SamePrefixError(InternalCommandException):
+class SamePrefix(InternalCommandException):
     """
     Exception raised when `click_repl._internal_cmds.InternalCommandSystem`
     assigns both `internal_command_prefix` and `system_command_prefix` as the same

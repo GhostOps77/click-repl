@@ -16,7 +16,7 @@ from click.types import ParamType
 from ._formatting import Marquee
 from ._formatting import TokenizedFormattedText
 from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK8
+from ._globals import HAS_CLICK_GE_8
 from ._globals import ISATTY
 from ._globals import StyleAndTextTuples
 from .parser import ReplParsingState
@@ -38,7 +38,7 @@ class ParamInfo(t.TypedDict):
 
 
 def _describe_range_click(param_type: IntRange | FloatRange) -> str:
-    if HAS_CLICK8:
+    if HAS_CLICK_GE_8:
         res = param_type._describe_range()
 
     elif param_type.min is None:
@@ -60,7 +60,6 @@ class BottomBar:
     def __init__(
         self,
         show_hidden_params: bool = False,
-        marquee: bool = True,
     ) -> None:
         """
         Initialize the `BottomBar` class.
@@ -69,61 +68,51 @@ class BottomBar:
         ----------
         show_hidden_params : bool, default=False
             Determines whether to display hidden params at bottom bar.
-
-        marquee : bool, default=True
-            Displays the text in marquee style if it's content exceeds the
-            terminal's display.
         """
 
         self.state: ReplParsingState | None = None
-        self._formatted_text: StyleAndTextTuples | Marquee = []
+        self._recent_formatted_text: StyleAndTextTuples | Marquee = []
         self.show_hidden_params = show_hidden_params
-        self.marquee = marquee
         self.current_repl_ctx: ReplContext | None = None
 
     def __call__(self) -> StyleAndTextTuples:
         return self.get_formatted_text()
 
+    def clear(self) -> None:
+        self._recent_formatted_text = []
+
     def reset_state(self) -> None:
         self.state = None
-        self._formatted_text = []
+        self.clear()
 
     def get_formatted_text(self) -> StyleAndTextTuples:
-        if isinstance(self._formatted_text, Marquee):
-            return self._formatted_text.get_current_text_chunk()
+        if isinstance(self._recent_formatted_text, Marquee):
+            return self._recent_formatted_text.get_current_text_chunk()
 
-        return self._formatted_text
+        return self._recent_formatted_text
 
     def update_state(self, state: ReplParsingState) -> None:
         if not ISATTY or state is None or state == self.state:
             return
 
         self.state = state
-        self._formatted_text = self.make_formatted_text()
+        self._recent_formatted_text = self.make_formatted_text()
         # self._formatted_text = str(state)
 
-    def clear(self) -> None:
-        self._formatted_text = []
-
-    def get_group_metavar_template(self) -> StyleAndTextTuples:
+    def get_group_metavar_template(self) -> tuple[StyleAndTextTuples, StyleAndTextTuples]:
         # Gets the metavar to describe the CLI Group, indicating
         # whether it is a chained Group or not.
 
         state = self.state
-
         assert state is not None, "state cannot be None"
 
         current_group = state.current_group
-
-        if not current_group.list_commands(state.current_ctx):
-            # Empty string if there are no subcommands.
-            return [("space", "")]
 
         current_group_name = current_group.name
         if current_group_name is None:
             current_group_name = "..."
 
-        res: StyleAndTextTuples = [
+        prefix: StyleAndTextTuples = [
             ("multicommand.type", "Group"),
             ("space", " "),
             ("multicommand.name", current_group_name),
@@ -131,9 +120,15 @@ class BottomBar:
             ("space", " "),
         ]
 
+        if not current_group.list_commands(state.current_ctx):
+            # Empty string if there are no subcommands.
+            return prefix, []
+
+        content: StyleAndTextTuples = []
+
         if getattr(current_group, "chain", False):
             # Metavar for chained group.
-            res += [
+            content = [
                 ("multicommand.metavar", "COMMAND1"),
                 ("space", " "),
                 ("symbol.bracket", "["),
@@ -154,7 +149,7 @@ class BottomBar:
 
         else:
             # Metavar for non-chained group.
-            res += [
+            content = [
                 ("multicommand.metavar", "COMMAND"),
                 ("space", " "),
                 ("symbol.bracket", "["),
@@ -163,7 +158,7 @@ class BottomBar:
                 ("symbol.ellipsis", "..."),
             ]
 
-        return res
+        return prefix, content
 
     def get_param_usage_state_token(self, param: Parameter) -> str:
         state = self.state
@@ -205,7 +200,10 @@ class BottomBar:
         if param_name is None:
             param_name = "..."
 
-        return (f"{token_name},{self.get_param_usage_state_token(param)}", param_name)
+        return (
+            f"{token_name},{self.get_param_usage_state_token(param)}",
+            param_name.replace("_", "-"),
+        )
 
     def get_param_type_info(
         self, param: Parameter, param_type: ParamType
@@ -294,11 +292,12 @@ class BottomBar:
             nargs_info = [("symbol.bracket", "("), *type_info, ("symbol.bracket", ")")]
 
         elif param.nargs == -1:
-            nargs_info = [
-                *type_info,
-                (f"space,{usage_state}", " "),
-                (f"ellipsis,{usage_state}", "..."),
-            ]
+            nargs_info = type_info.copy()
+
+            if nargs_info:
+                nargs_info.append((f"space,{usage_state}", " "))
+
+            nargs_info.append((f"ellipsis,{usage_state}", "..."))
 
         elif param.nargs > 1:
             assert self.state is not None, "state cannot be None"
@@ -312,7 +311,6 @@ class BottomBar:
 
             nargs_info = [
                 *type_info,
-                (f"space,{usage_state}", " "),
                 (f"symbol,{usage_state}", "("),
                 (f"parameter.nargs.counter,{usage_state}", f"{no_of_values_received}"),
                 (f"symbol,{usage_state}", "/"),
@@ -328,23 +326,17 @@ class BottomBar:
         param_name = param_info["name"]
         nargs_info = param_info["nargs_info"]
 
+        res: StyleAndTextTuples = [param_name]
+
         if not nargs_info:
-            return [param_name]
+            return res
 
         usage_state = self.get_param_usage_state_token(param)
 
-        res: StyleAndTextTuples = [param_name, (f"space,{usage_state}", " ")]
+        if not isinstance(param.type, click.Tuple):
+            res.append((f"space,{usage_state}", " "))
 
-        if param.nargs == 1 or isinstance(param.type, click.Tuple):
-            res += nargs_info
-
-        else:
-            res += [
-                (f"symbol.bracket,{usage_state}", "["),
-                *nargs_info,
-                (f"symbol.bracket,{usage_state}", "]"),
-            ]
-
+        res += nargs_info
         return res
 
     def get_param_info(self, param: Parameter) -> StyleAndTextTuples:
@@ -365,11 +357,11 @@ class BottomBar:
 
         return self.format_metavar_for_param_with_nargs(param, param_info)
 
-    def make_formatted_text(self) -> StyleAndTextTuples | Marquee:
+    def make_formatted_text(self) -> Marquee:
         state = self.state
 
         if state is None:
-            return []
+            return []  # type:ignore[return-value]
 
         current_command = state.current_command
 
@@ -377,7 +369,12 @@ class BottomBar:
             # If there is no command currently entered in the REPL,
             # the function returns the metavar template of the
             # parent/CLI/current Group.
-            return TokenizedFormattedText(self.get_group_metavar_template(), "bottom-bar")
+
+            _prefix, _content = self.get_group_metavar_template()
+            return Marquee(
+                TokenizedFormattedText(_content, "bottom-bar"),
+                TokenizedFormattedText(_prefix, "bottom-bar"),
+            )
 
         if isinstance(current_command, click.MultiCommand):
             command_type = "multicommand"
@@ -423,7 +420,7 @@ class BottomBar:
         )
 
     def display_exception(self, err: Exception) -> None:
-        self._formatted_text = Marquee(
+        self._recent_formatted_text = Marquee(
             TokenizedFormattedText(
                 [
                     ("error.exception-class-name", type(err).__name__),

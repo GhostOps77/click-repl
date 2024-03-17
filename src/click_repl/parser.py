@@ -28,7 +28,7 @@ from click.parser import OptionParser
 from click.parser import ParsingState
 
 from . import utils
-from ._globals import HAS_CLICK8
+from ._globals import HAS_CLICK_GE_8
 from .exceptions import ArgumentPositionError
 
 
@@ -482,7 +482,7 @@ class ReplOptionParser(OptionParser):
         rargs_len = len(state.rargs)
 
         if rargs_len < nargs:
-            if HAS_CLICK8 and option.obj._flag_needs_value:
+            if HAS_CLICK_GE_8 and option.obj._flag_needs_value:
                 # Option allows omitting the value.
                 value = _flag_needs_value
             else:
@@ -497,7 +497,7 @@ class ReplOptionParser(OptionParser):
             next_rarg = state.rargs[0]
 
             if (
-                HAS_CLICK8
+                HAS_CLICK_GE_8
                 and option.obj._flag_needs_value
                 and isinstance(next_rarg, str)
                 and next_rarg[:1] in self._opt_prefixes
