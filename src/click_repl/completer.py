@@ -1,45 +1,37 @@
 """
-`click_repl.completer`
-
-Configuration for auto-completion for REPL.
+Configuration for auto-completion in the REPL.
 """
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
+
 import click
-from prompt_toolkit.completion import Completer, Completion
+from click import Command, Context, Group, Parameter
+from click.types import ParamType
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+from typing_extensions import Final
 
-from ._formatting import TokenizedFormattedText
-from ._globals import _PATH_TYPES
-from ._globals import AUTO_COMPLETION_FUNC_ATTR
-from ._globals import CLICK_REPL_DEV_ENV
-from ._globals import HAS_CLICK_GE_8
-from ._globals import IS_WINDOWS
-from ._globals import ISATTY
-from ._globals import StyleAndTextTuples
-from ._globals import get_current_repl_ctx
-from ._internal_cmds import InternalCommandSystem
+from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
+from ._globals import (
+    CLICK_REPL_DEV_ENV,
+    DEFAULT_COMPLETION_STYLE_DICT,
+    HAS_CLICK_GE_8,
+    IS_WINDOWS,
+    ISATTY,
+    get_current_repl_ctx,
+)
+from ._types import CompletionStyleDict
 from .bottom_bar import BottomBar
-from .parser import Incomplete
-from .parser import ReplParsingState
-from .utils import CompletionStyleDictKeys
-from .utils import _get_visible_subcommands
-from .utils import _quotes
-from .utils import _resolve_state
-from .utils import get_option_flag_sep
-from .utils import get_token_type
-from .utils import is_param_value_incomplete
-from .utils import join_options
-from .utils import options_flags_joiner
-
-
-class _CompletionStyleDict(t.TypedDict):
-    completion_style: str
-    selected_completion_style: str
-
-
-CompletionStyleDict: t.TypeAlias = Dict[CompletionStyleDictKeys, _CompletionStyleDict]
-
+from .formatting import get_option_flag_sep, join_options
+from .internal_commands import InternalCommandSystem
+from .parser import Incomplete, ReplParsingState, _resolve_state
+from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner
+from .utils import _is_help_option, is_param_value_incomplete
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
@@ -50,153 +42,84 @@ class ClickCompleter(Completer):
 
     Parameters
     ----------
-    ctx : `click.Context`
-        The current click context object.
+    group_ctx
+        The current :class:`click.Context` object.
 
-    bottom_bar : `BottomBar`, optional
+    bottom_bar
         Object thats used to update the text displayed in the bottom bar.
 
-    internal_commands_system : `InternalCommandSystem`
+    internal_commands_system
         Object that holds information about the internal commands and their prefixes.
 
-    shortest_opts_only : bool, default=False
-        Determines whether only the shortest flag of an option parameter
-        is used for auto-completion.
+    shortest_opt_names_only
+        Determines whether only the shortest name of an option parameter
+        should be used for auto-completion.
 
         It is utilized when the user is requesting option flags without
-        providing any text. They are not considered for flag options.
+        providing any text. They are not considered for option flags.
 
-    show_only_unused_opts : bool, default=False
+    show_only_unused_options
         Determines whether the options that are already mentioned or
         used in the current prompt will be displayed during auto-completion.
 
-    show_hidden_commands : bool, default=False
+    show_hidden_commands
         Determines whether the hidden commands should be shown
         in autocompletion or not.
 
-    show_hidden_params : bool, default=False
+    show_hidden_params
         Determines whether the hidden parameters should be shown
         in autocompletion or not.
 
-    expand_envvars : bool, default=False
+    expand_envvars
         Determines whether to return completion with Environmental variables
         as expanded or not.
 
-    style : A Dictionary of `str: str` pairs
+    style
         A dictionary denoting different styles for
-        `prompt_toolkit.completion.Completion` objects for
-        `'command'`, `'argument'`, and `'option'`.
+        :class:`~prompt_toolkit.completion.Completion` objects for
+        ``command``, ``argument``, and ``option``.
     """
 
     def __init__(
         self,
-        ctx: Context,
+        group_ctx: Context,
         internal_commands_system: InternalCommandSystem,
         bottom_bar: BottomBar | None = None,
-        shortest_opts_only: bool = False,
-        show_only_unused_opts: bool = False,
+        shortest_opt_names_only: bool = False,
+        show_only_unused_options: bool = False,
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
         expand_envvars: bool = False,
         style: CompletionStyleDict | None = None,
     ) -> None:
-        self.cli_ctx: Final[Context] = ctx
-        self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
+        """
+        Initialize the `ClickCompleter` class.
+        """
+        self.group_ctx: Final[Context] = group_ctx
+        self.group: Final[Group] = self.group_ctx.command  # type: ignore[assignment]
 
-        if ISATTY:
-            self.bottom_bar = bottom_bar
+        if not ISATTY:
+            bottom_bar = None
 
-        else:
-            self.bottom_bar = None
+        self.bottom_bar = bottom_bar
 
-        self.shortest_opts_only = shortest_opts_only
-        self.show_only_unused_opts = show_only_unused_opts
+        self.shortest_opt_names_only = shortest_opt_names_only
+        self.show_only_unused_options = show_only_unused_options
 
         self.show_hidden_commands = show_hidden_commands
         self.show_hidden_params = show_hidden_params
         self.expand_envvars = expand_envvars
 
-        # if internal_commands_system is None:
-        #     internal_commands_system = InternalCommandSystem(None, None)
-
         self.internal_commands_system = internal_commands_system
 
         if style is None:
-            style = t.cast(
-                CompletionStyleDict,
-                {
-                    "internal-command": {
-                        "completion_style": "",
-                        "selected_completion_style": "",
-                    },
-                    "command": {"completion_style": "", "selected_completion_style": ""},
-                    "multicommand": {
-                        "completion_style": "",
-                        "selected_completion_style": "",
-                    },
-                    "argument": {"completion_style": "", "selected_completion_style": ""},
-                    "option": {"completion_style": "", "selected_completion_style": ""},
-                },
-            )
+            # style = t.cast(CompletionStyleDict, DEFAULT_COMPLETION_STYLE_DICT)
+            style = DEFAULT_COMPLETION_STYLE_DICT
 
         self.style = style
 
-    def get_completions_for_internal_commands(
-        self, prefix: str, incomplete: str
-    ) -> Iterator[Completion]:
-        """
-        Generates auto-completions based on the given prefix present
-        in the current incomplete prompt.
-
-        Parameters
-        ----------
-        prefix : str
-            The prefix string thats present in the start of the prompt.
-
-        incomplete : `Incomplete`
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
-
-        Yields
-        ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion
-            of the incomplete prompt.
-        """
-
-        incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
-        info_table = (
-            self.internal_commands_system._group_commands_by_callback_and_description()
-        )
-
-        internal_cmd_style = self.style["internal-command"]
-        completion_style = internal_cmd_style["completion_style"]
-        selected_style = internal_cmd_style["selected_completion_style"]
-
-        for (_, desc), aliases in info_table.items():
-            aliases_start_with_incomplete = [
-                alias
-                for alias in aliases
-                if alias.startswith(incomplete) and alias != incomplete
-            ]
-
-            if aliases_start_with_incomplete:
-                display = options_flags_joiner(
-                    aliases,
-                    "parameter.option.name",
-                    "parameter.option.name.separator",
-                    "/",
-                )
-
-                yield ReplCompletion(
-                    aliases_start_with_incomplete[0],
-                    incomplete,
-                    display=TokenizedFormattedText(display, "autocompletion-menu"),
-                    display_meta=desc,
-                    quote=False,
-                    style=completion_style,
-                    selected_style=selected_style,
-                )
+        self.parent_token_class_name: str = "autocompletion-menu"
+        """Parent class name for tokens that are related to :class:`~ClickCompleter`."""
 
     def get_completion_from_autocompletion_functions(
         self,
@@ -205,7 +128,7 @@ class ClickCompleter(Completer):
         state: ReplParsingState,
         incomplete: Incomplete,
         param_type: ParamType | None = None,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on the output from the command's
         `shell_complete` or `autocompletion` function of the current parameter.
@@ -230,8 +153,6 @@ class ClickCompleter(Completer):
             )
 
         param_style = self.style[get_token_type(param)]
-        completion_style = param_style["completion_style"]
-        selected_style = param_style["selected_completion_style"]
 
         for autocomplete in autocompletions:
             if isinstance(autocomplete, tuple):
@@ -239,8 +160,8 @@ class ClickCompleter(Completer):
                     autocomplete[0],
                     incomplete,
                     display_meta=autocomplete[1],
-                    style=param_style["completion_style"],
-                    selected_style=param_style["selected_completion_style"],
+                    style=param_style.completion_style,
+                    selected_style=param_style.selected_style,
                 )
 
             elif HAS_CLICK_GE_8 and isinstance(
@@ -249,8 +170,8 @@ class ClickCompleter(Completer):
                 yield ReplCompletion(
                     autocomplete.value,
                     incomplete,
-                    style=completion_style,
-                    selected_style=selected_style,
+                    style=param_style.completion_style,
+                    selected_style=param_style.selected_style,
                 )
 
             elif isinstance(autocomplete, Completion):
@@ -260,13 +181,13 @@ class ClickCompleter(Completer):
                 yield ReplCompletion(
                     str(autocomplete),
                     incomplete,
-                    style=completion_style,
-                    selected_style=selected_style,
+                    style=param_style.completion_style,
+                    selected_style=param_style.selected_style,
                 )
 
     def get_completion_from_choices_type(
         self, param: Parameter, param_type: click.Choice, incomplete: Incomplete
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on data from the given
         `click.Choice` parameter type of a parameter.
@@ -277,22 +198,23 @@ class ClickCompleter(Completer):
 
         Parameters
         ----------
-        param : `click.Parameter`
+        param
             A `click.Parameter` object which is referred to generate
             auto-completions.
 
-        param_type : `click.Choice`
+        param_type
             The click paramtype object of a parameter, to which the choice
             auto-completions should be generated.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
             of the incomplete prompt, based on the given parameter type.
         """
 
@@ -304,8 +226,6 @@ class ClickCompleter(Completer):
             _incomplete = _incomplete.lower()
 
         param_style = self.style[get_token_type(param)]
-        completion_style = param_style["completion_style"]
-        selected_style = param_style["selected_completion_style"]
 
         for choice in param_type.choices:
             _choice = choice.lower() if case_insensitive else choice
@@ -317,8 +237,8 @@ class ClickCompleter(Completer):
                 yield ReplCompletion(
                     choice,
                     incomplete,
-                    style=completion_style,
-                    selected_style=selected_style,
+                    style=param_style.completion_style,
+                    selected_style=param_style.selected_style,
                 )
 
     def get_completion_for_path_types(
@@ -326,29 +246,30 @@ class ClickCompleter(Completer):
         param: Parameter,
         param_type: click.Path | click.File,
         incomplete: Incomplete,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions for `click.Path` and `click.File` type parameters
         based on the given incomplete path string.
 
         Parameters
         ----------
-        param : `click.Parameter`
+        param
             A `click.Parameter` object which is referred to generate
             auto-completions.
 
-        param_type : `click.Path` or `click.File`
+        param_type
             The click paramtype object of a parameter, to which the path
             auto-completions should be generated.
 
-        incomplete : `Incomplete`
+        incomplete
             An unfinished object that holds the path string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
             of the incomplete prompt.
         """
 
@@ -361,8 +282,6 @@ class ClickCompleter(Completer):
         temp_path_obj = Path(search_pattern)
 
         param_style = self.style[get_token_type(param)]
-        completion_style = param_style["completion_style"]
-        selected_style = param_style["selected_completion_style"]
 
         for path in temp_path_obj.parent.glob(temp_path_obj.name):
             if param_type.name == "directory" and path.is_file():
@@ -389,34 +308,35 @@ class ClickCompleter(Completer):
                 path_str,
                 incomplete,
                 display=TokenizedFormattedText(
-                    [(path_style, path.name)], "autocompletion-menu"
+                    [(path_style, path.name)], self.parent_token_class_name
                 ),
                 start_position=-len(incomplete.raw_str),
-                style=completion_style,
-                selected_style=selected_style,
+                style=param_style.completion_style,
+                selected_style=param_style.selected_style,
             )
 
     def get_completion_for_boolean_type(
         self, param: Parameter, incomplete: Incomplete
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions for boolean type parameter
         based on the given incomplete string.
 
         Parameters
         ----------
-        param : `click.Parameter`
+        param
             A `click.Parameter` object which is referred to generate
             auto-completions.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`.
-            The `Completion` objects thats sent for auto-completion
+        prompt_toolkit.completion.Completion.
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
             of the incomplete prompt.
         """
 
@@ -428,8 +348,6 @@ class ClickCompleter(Completer):
         }
 
         param_style = self.style[get_token_type(param)]
-        completion_style = param_style["completion_style"]
-        selected_style = param_style["selected_completion_style"]
 
         for value, aliases in boolean_mapping.items():
             if any(alias.startswith(_incomplete) for alias in aliases):
@@ -440,11 +358,12 @@ class ClickCompleter(Completer):
                     value,
                     incomplete,
                     display=TokenizedFormattedText(
-                        [(f"parameter.type.bool.to{value}", value)], "autocompletion-menu"
+                        [(f"parameter.type.bool.to{value}", value)],
+                        self.parent_token_class_name,
                     ),
                     display_meta="/".join(aliases),
-                    style=completion_style,
-                    selected_style=selected_style,
+                    style=param_style.completion_style,
+                    selected_style=param_style.selected_style,
                 )
 
     def get_completion_from_param_type(
@@ -454,46 +373,51 @@ class ClickCompleter(Completer):
         param_type: ParamType,
         state: ReplParsingState,
         incomplete: Incomplete,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on the given `param_type` object
         of the given parameter `param`.
 
         Parameters
         ----------
-        param : `click.Parameter`
+        param
             A `click.Parameter` object which is referred to generate
             auto-completions.
 
-        param_type : `click.types.ParamType`
+        param_type
             The click patamtype object object of a parameter, to which
             appropriate auto-completions should've to be generated.
 
-        state : `ReplParsingState`
+        state
             An ReplParsingState object that contains information about
             the parsing state of the parameters of the current command.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
             of the incomplete prompt.
         """
 
         if isinstance(param_type, click.Tuple):
             values = state.current_ctx.params[param.name]  # type: ignore[index]
-            if None in values:
-                yield from self.get_completion_from_param_type(
-                    ctx, param, param_type.types[values.index(None)], state, incomplete
-                )
+            index_of_none = values.index(None)
 
-        # shell_complete method for click.Choice class is introduced in click-v8.
-        # So, we're implementing shell_complete for Choice, exclusively.
-        elif isinstance(param_type, click.Choice):
+            if index_of_none == -1:
+                return
+
+            yield from self.get_completion_from_param_type(
+                ctx, param, param_type.types[index_of_none], state, incomplete
+            )
+
+        # shell_complete method for click.Choice class is introduced in click v8.
+        # So, we're implementing shell_complete for Choice, separately.
+        elif isinstance(param_type, click.Choice) and not HAS_CLICK_GE_8:
             yield from self.get_completion_from_choices_type(
                 param, param_type, incomplete
             )
@@ -501,7 +425,7 @@ class ClickCompleter(Completer):
         elif isinstance(param_type, click.types.BoolParamType):
             yield from self.get_completion_for_boolean_type(param, incomplete)
 
-        elif isinstance(param_type, _PATH_TYPES):
+        elif isinstance(param_type, PATH_TYPES_TUPLE):
             # Both click.Path and click.File types are expected
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)
@@ -517,34 +441,35 @@ class ClickCompleter(Completer):
         param: Parameter,
         state: ReplParsingState,
         incomplete: Incomplete,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on the given parameter.
 
         Parameters
         ----------
-        ctx : `click.Context`
+        ctx
             A click context object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
-        param : `click.Parameter`
+        param
             A `click.Parameter` object which is referred to generate
             auto-completions.
 
-        state : `ReplParsingState`
+        state
             A `ReplParsingState` object that contains information about the
             parsing state of the parameters of the current command
             based on the text in the prompt.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects that's sent for auto-completion of the
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects that's sent for auto-completion of the
             incomplete prompt, based on the given parameter.
         """
 
@@ -564,40 +489,73 @@ class ClickCompleter(Completer):
 
         return
 
+    def get_completions_for_joined_boolean_option_flags(
+        self,
+        ctx: Context,
+        option: click.Option,
+        state: ReplParsingState,
+        incomplete: Incomplete,
+    ) -> Generator[Completion, None, None]:
+        # Display coloured option flags, only if there are
+        # any exclusive flags to pass in the False'y value
+
+        for flags_list, bool_val in zip(
+            [option.opts, option.secondary_opts], ["true", "false"]
+        ):
+            # The primary flags are assigned for the boolean value of "True",
+            # And "False" for secondary flags, despite the default value.
+
+            item_token = f"parameter.type.bool.to{bool_val}"
+
+            display_lst = option_flag_tokens_joiner(
+                flags_list,
+                item_token,
+                f"parameter.option.name.separator,{item_token}",
+                get_option_flag_sep(flags_list),
+            )
+
+            yield ReplCompletion(
+                min(flags_list, key=len),
+                incomplete,
+                display=TokenizedFormattedText(display_lst, self.parent_token_class_name),
+                display_meta=option.help or "",
+            )
+
     def get_completion_for_option_flags(
         self,
         ctx: Context,
         command: Command,
         state: ReplParsingState,
         incomplete: Incomplete,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions for option flags based on the given command.
 
         Parameters
         ----------
-        ctx : `click.Context`
+        ctx
             A click context object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
-        command : `click.Command`
+        command
             A click command object, which is referred to generate auto-completions
             based on its parameters.
 
-        state : `ReplParsingState`
+        state
             A `ReplParsingState` object that contains information about the
             parsing state of the parameters of the current command
             based on the text in the prompt.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion of the
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion of the
             incomplete prompt, based on the given parameter.
         """
 
@@ -610,13 +568,13 @@ class ClickCompleter(Completer):
             if option.hidden and not self.show_hidden_params:
                 continue
 
-            already_used = not is_param_value_incomplete(ctx, option.name)
+            already_used = not is_param_value_incomplete(ctx, option)
 
             if option.is_flag and already_used:
                 continue
 
             hide = (
-                self.show_only_unused_opts
+                self.show_only_unused_options
                 and already_used
                 and not (option.multiple or option.count)
             )
@@ -624,36 +582,16 @@ class ClickCompleter(Completer):
             if hide:
                 continue
 
-            is_shortest_opts_only = self.shortest_opts_only and not (
-                _incomplete  # or (option.is_bool_flag and option.secondary_opts)
-            )
+            is_shortest_opt_names_only = self.shortest_opt_names_only and not _incomplete
 
-            if is_shortest_opts_only and option.is_bool_flag and option.secondary_opts:
-                # Display coloured option flags, only if there are
-                # any exclusive flags to pass in the False'y value
-
-                for flags_list, bool_val in zip(
-                    [option.opts, option.secondary_opts], ["true", "false"]
-                ):
-                    # The primary flags are assigned for the boolean value of "True",
-                    # And "False" for secondary flags, despite the default value.
-
-                    display_lst = options_flags_joiner(
-                        flags_list,
-                        f"parameter.type.bool.to{bool_val}",
-                        "parameter.option.name.separator",
-                        get_option_flag_sep(flags_list),
-                    )
-
-                    yield ReplCompletion(
-                        min(flags_list, key=len),
-                        incomplete,
-                        display=TokenizedFormattedText(
-                            display_lst, "autocompletion-menu"
-                        ),
-                        display_meta=option.help or "",
-                    )
-
+            if (
+                is_shortest_opt_names_only
+                and option.is_bool_flag
+                and option.secondary_opts
+            ):
+                yield from self.get_completions_for_joined_boolean_option_flags(
+                    ctx, option, state, incomplete
+                )
                 continue
 
             option_flags = option.opts + option.secondary_opts
@@ -667,12 +605,15 @@ class ClickCompleter(Completer):
 
             flag_token = "parameter.option.name"
 
-            if is_shortest_opts_only:
+            if is_shortest_opt_names_only:
                 option_flags, sep = join_options(flags_that_start_with_incomplete)
 
-                def display_text_func(flag_token: str) -> StyleAndTextTuples:
-                    return options_flags_joiner(
-                        option_flags, flag_token, "parameter.option.name.separator", sep
+                def display_text_func(flag_token: str) -> ListOfTokens:
+                    if not flag_token.startswith("parameter.option.name"):
+                        flag_token = f"parameter.option.name.separator,{flag_token}"
+
+                    return option_flag_tokens_joiner(
+                        option_flags, flag_token, flag_token, sep
                     )
 
                 flags_that_start_with_incomplete = [
@@ -680,12 +621,12 @@ class ClickCompleter(Completer):
                 ]
 
             for option_flag in flags_that_start_with_incomplete:
-                if not is_shortest_opts_only:
+                if not is_shortest_opt_names_only:
 
-                    def display_text_func(flag_token: str) -> StyleAndTextTuples:  # noqa
+                    def display_text_func(flag_token: str) -> ListOfTokens:
                         return [(flag_token, option_flag)]
 
-                if option.is_bool_flag:
+                if option.is_bool_flag and not _is_help_option(option):
                     if option.secondary_opts:
                         # Display coloured option flags, only if there're
                         # any exclusive flags to pass in the False'y value
@@ -700,7 +641,7 @@ class ClickCompleter(Completer):
                     option_flag,
                     incomplete,
                     display=TokenizedFormattedText(
-                        display_text_func(flag_token), "autocompletion-menu"
+                        display_text_func(flag_token), self.parent_token_class_name
                     ),
                     display_meta=option.help or "",
                 )
@@ -711,35 +652,36 @@ class ClickCompleter(Completer):
         command: Command,
         state: ReplParsingState,
         incomplete: Incomplete,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions to display the flags of the options
         based on the given command object.
 
         Parameters
         ----------
-        ctx : `click.Context`
+        ctx
             A click context object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
-        command : `click.Command`
+        command
             A click command object, which is referred to generate auto-completions
             based on its parameters.
 
-        state : `ReplParsingState`
+        state
             A `ReplParsingState` object that contains information about the
             parsing state of the parameters of the current command
             based on the text in the prompt.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent
             for auto-completion of the incomplete prompt.
         """
 
@@ -748,15 +690,15 @@ class ClickCompleter(Completer):
 
         current_argument_havent_received_values = isinstance(
             current_param, click.Argument
-        ) and is_param_value_incomplete(
-            ctx, current_param.name, check_if_tuple_has_none=False
-        )
+        ) and is_param_value_incomplete(ctx, current_param, check_if_tuple_has_none=False)
+
+        ctx_opt_prefixes: set[str] = getattr(ctx, "_opt_prefixes", set())
 
         interspersed_args_available = (
             not state.current_group.chain
             and not current_param
             and ctx.allow_interspersed_args
-            and any(_incomplete_prefix.startswith(i) for i in ctx._opt_prefixes)
+            and any(_incomplete_prefix.startswith(i) for i in ctx_opt_prefixes)
         )
 
         prompt_requires_option_flags_suggestions = (
@@ -793,19 +735,20 @@ class ClickCompleter(Completer):
 
         Parameters
         ----------
-        ctx : `click.Context`
-            A click context object that contains information about the
+        ctx
+            A :class:`click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
-        state : `ReplParsingState`
-            A `ReplParsingState` object that contains information about the
-            parsing state of the parameters of the current command
+        state
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
             based on the text in the prompt.
 
-        incomplete : `Incomplete`
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+        incomplete
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires further
+            input or completion.
 
         Returns
         -------
@@ -819,7 +762,7 @@ class ClickCompleter(Completer):
         ]
 
         incomplete_visible_args = not args_list or any(
-            is_param_value_incomplete(ctx, param.name) for param in args_list
+            is_param_value_incomplete(ctx, param) for param in args_list
         )
 
         # If there's a sub-command found in the state object,
@@ -829,10 +772,10 @@ class ClickCompleter(Completer):
         )
 
         is_current_command_a_group_or_none = current_command is None or isinstance(
-            current_command, click.MultiCommand
+            current_command, click.Group
         )
 
-        return ctx.command != self.cli and (
+        return ctx.command != self.group and (
             incomplete_visible_args
             or not (is_chained_command or is_current_command_a_group_or_none)
         )
@@ -841,41 +784,45 @@ class ClickCompleter(Completer):
         self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
     ) -> MultiCommand | None:
         """
-        Returns the appropriate `click.MultiCommand` object that should be used
+        Returns the appropriate :class:`~click.Group` object that should be used
         to generate auto-completions for subcommands of a group.
 
         Parameters
         ----------
-        ctx : `click.Context`
-            A click context object that contains information about the
+        ctx
+            A :class:`click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
-        state : `ReplParsingState`
-            A `ReplParsingState` object that contains information about the
-            parsing state of the parameters of the current command
+        state
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
             based on the text in the prompt.
 
-        incomplete : `Incomplete`
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+        incomplete
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Returns
         -------
-        MultiCommand, optional
+        Group | None
             A click multicommand object, if available, which is supposed to be used for
             generating auto-completion for suggesting its subcommands.
         """
+        if state.current_param:
+            return None
+
         any_argument_param_incomplete = any(
-            is_param_value_incomplete(ctx, param.name)
+            is_param_value_incomplete(ctx, param)
             for param in ctx.command.params
             if isinstance(param, click.Argument)
         )
 
-        if any_argument_param_incomplete or state.current_param:
+        if any_argument_param_incomplete:
             return None
 
-        if isinstance(ctx.command, click.MultiCommand):
+        if isinstance(ctx.command, MultiCommand):
             return ctx.command
 
         if state.current_group.chain:
@@ -883,36 +830,62 @@ class ClickCompleter(Completer):
 
         return None
 
+    def _get_visible_subcommands(
+        self,
+        ctx: Context,
+        group: MultiCommand,
+        incomplete: str,
+        show_hidden_commands: bool = False,
+    ) -> Generator[tuple[str, Command], None, None]:
+        """
+        Get all the subcommands from the given ``multicommand`` whose name
+        starts with the given ``incomplete`` prefix string.
+        """
+
+        for command_name in group.list_commands(ctx):
+            if not command_name.startswith(incomplete):
+                continue
+
+            subcommand = group.get_command(ctx, command_name)
+
+            if subcommand is None or (subcommand.hidden and not show_hidden_commands):
+                # We skip if there's no command found or it's a hidden command
+                # and show_hidden_commands is False.
+                continue
+
+            yield command_name, subcommand
+
     def get_completions_for_subcommands(
         self,
         ctx: Context,
         state: ReplParsingState,
         incomplete: Incomplete,
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Provides auto-completions for command names, based on the
         current command and group.
 
         Parameters
         ----------
-        ctx : `click.Context`
+        ctx
             A click context object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
-        state : `ReplParsingState`
+        state
             A `ReplParsingState` object that contains information about the
             parsing state of the parameters of the current command
             based on the text in the prompt.
 
-        incomplete : `Incomplete`
+        incomplete
             An object that holds the unfinished string in the REPL prompt,
             and its parsed state, that requires further input or completion.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects thats sent for auto-completion
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
             of the incomplete prompt.
         """
 
@@ -930,75 +903,131 @@ class ClickCompleter(Completer):
 
         _incomplete = incomplete.parsed_str
 
-        for name, command in _get_visible_subcommands(
+        for name, command in self._get_visible_subcommands(
             ctx, multicommand, _incomplete, self.show_hidden_commands
         ):
             cmd_token_type = get_token_type(command)
 
             cmd_style = self.style[cmd_token_type]
-            completion_style = cmd_style["completion_style"]
-            selected_style = cmd_style["selected_completion_style"]
+            completion_style = cmd_style.completion_style
+            selected_style = cmd_style.selected_style
 
             yield ReplCompletion(
                 name,
                 incomplete,
                 display=TokenizedFormattedText(
-                    [(f"class:{cmd_token_type}.name", name)], "autocompletion-menu"
+                    [(f"class:{cmd_token_type}.name", name)], self.parent_token_class_name
                 ),
                 display_meta=command.get_short_help_str(),
                 style=completion_style,
                 selected_style=selected_style,
             )
 
+    def get_completions_for_internal_commands(
+        self, prefix: str, incomplete: str
+    ) -> Generator[Completion, None, None]:
+        """
+        Generates auto-completions based on the given prefix present
+        in the current incomplete prompt.
+
+        Parameters
+        ----------
+        prefix
+            The prefix string thats present in the start of the prompt.
+
+        incomplete
+            An object that holds the unfinished string in the REPL prompt,
+            and its parsed state, that requires further input or completion.
+
+        Yields
+        ------
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
+            of the incomplete prompt.
+        """
+
+        incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
+        info_table = self.internal_commands_system._group_commands_by_callback_and_desc()
+
+        internal_command_style = self.style["internal-command"]
+
+        for (_, desc), aliases in info_table.items():
+            aliases_start_with_incomplete = [
+                alias
+                for alias in aliases
+                if alias.startswith(incomplete) and alias != incomplete
+            ]
+
+            if aliases_start_with_incomplete:
+                display = option_flag_tokens_joiner(
+                    aliases,
+                    "parameter.option.name",
+                    "parameter.option.name.separator",
+                    "/",
+                )
+
+                yield ReplCompletion(
+                    aliases_start_with_incomplete[0],
+                    incomplete,
+                    display=TokenizedFormattedText(display, self.parent_token_class_name),
+                    display_meta=desc,
+                    style=internal_command_style.completion_style,
+                    selected_style=internal_command_style.selected_style,
+                )
+
     def handle_internal_commands_request(
         self, document_text: str
     ) -> Generator[Completion, None, bool]:
         flag, ics_prefix = self.internal_commands_system.get_prefix(document_text)
 
-        internal_cmds_requested = flag == "Internal"
+        internal_commands_requested = flag == "internal"
 
         if ics_prefix is not None:
             if ISATTY and self.bottom_bar is not None:
                 self.bottom_bar.reset_state()
 
-            if internal_cmds_requested:
+            if internal_commands_requested:
                 yield from self.get_completions_for_internal_commands(
                     ics_prefix, document_text
                 )
 
-        return internal_cmds_requested
+        return internal_commands_requested
 
     def get_completions(
         self, document: Document, complete_event: CompleteEvent | None = None
-    ) -> Iterator[Completion]:
+    ) -> Generator[Completion, None, None]:
         """
         Provides `prompt_toolkit.completion.Completion`
         objects from the obtained current input string in the REPL prompt.
 
         Parameters
         ----------
-        document : `prompt_toolkit.document.Document`
-            The `Document` object containing the incomplete command line string.
+        document
+            The :class:`~prompt_toolkit.document.Document` object containing the
+            incomplete command line string.
 
-        complete_event : `prompt_toolkit.completion.CompleteEvent`
-            The `CompleteEvent` object of the current prompt.
+        complete_event
+            The :class:`~prompt_toolkit.completion.CompleteEvent` object of the
+            current prompt.
 
         Yields
         ------
-        `prompt_toolkit.completion.Completion`
-            The `Completion` objects for command line autocompletion.
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects for command line autocompletion.
         """
 
-        internal_cmds_requested = yield from self.handle_internal_commands_request(
+        internal_commands_requested = yield from self.handle_internal_commands_request(
             document.text_before_cursor
         )
 
-        if internal_cmds_requested:
+        if internal_commands_requested:
             return  # type:ignore[unreachable]
 
         try:
             parsed_ctx, state, incomplete = _resolve_state(
-                self.cli_ctx, document.text_before_cursor
+                self.group_ctx, document.text_before_cursor
             )
 
             if parsed_ctx.command.hidden and not self.show_hidden_commands:
@@ -1026,39 +1055,50 @@ class ReplCompletion(Completion):
 
     Parameters
     ----------
-    text : str
-        The string that should fill into the prompt
-        during auto-completion.
+    text
+        The string that should fill into the prompt during auto-completion.
 
-    incomplete : `Incomplete`
+    incomplete
         The string thats not completed in the prompt.
-        It's used to get the `start_position` for the Completion to
+        It's used to get the :attr:`.start_position` for the Completion to
         swap text with, in the prompt.
 
-    quote : bool, default=True
-        Boolean value to determine whether the given incomplete
-        text with space should be double-quoted.
-
-    *args : tuple
+    *args
         Additional arguments should be passed as keyword arguments to the
-        `prompt_toolkit.completion.Completion` class.
+        :class:`~prompt_toolkit.completion.Completion` class.
 
-    **kwargs : dict, optional
-        Extra arguments to `metric`: refer to each metric documentation for a
+    **kwargs
+        Extra arguments to ``metric``: refer to each metric documentation for a
         list of all possible arguments to the
-        `prompt_toolkit.completion.Completion` class.
+        :class:`~prompt_toolkit.completion.Completion` class.
     """
+
+    __slots__ = (
+        "text",
+        "start_position",
+        "_display_meta",
+        "display",
+        "style",
+        "selected_style",
+    )
 
     def __init__(
         self,
         text: str,
         incomplete: Incomplete | str,
-        quote: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        if quote:
-            text = _quotes(text)
+        """
+        Initializes the `ReplCompletion` class.
+        """
+
+        no_surrounding_quotes = not (text.startswith('"') or text.endswith('"'))
+
+        if " " in text and no_surrounding_quotes:
+            # Surrounding text by quotes, as it has space in it.
+            text = text.replace('"', '\\"')
+            text = f'"{text}"'
 
         if isinstance(incomplete, Incomplete):
             incomplete = incomplete.raw_str

@@ -4,6 +4,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
+import click_repl
 from click_repl.completer import ClickCompleter
 from tests import DummyInternalCommandSystem
 
@@ -41,8 +42,8 @@ def cli(ctx, arg, opt):
 
 
 @cli.command()
-@click.argument("cmd_arg", type=click.Choice(["foo", "foo2"]))
-def cmd(cmd_arg):
+@click.argument("command_and_arg", type=click.Choice(["foo", "foo2"]))
+def cmd(command_arg):
     pass
 
 
@@ -58,3 +59,25 @@ c2 = ClickCompleter(
 def test_subcommand_invocation_for_group_with_opts(test_input, expected):
     completions = c2.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
+
+
+@pytest.mark.parametrize(
+    "remove_command_before_repl, check",
+    [
+        (False, lambda x: x is not None),
+        (True, lambda x: x is None),
+    ],
+)
+def test_register_repl_as_decorator(remove_command_before_repl, check):
+    @click_repl.register_repl(remove_command_before_repl=remove_command_before_repl)
+    @click.group()
+    def cli2():
+        pass
+
+    @cli2.command()
+    @click.pass_context
+    def repl_checker(ctx):
+        return cli2.get_command(ctx, "repl")
+
+    with pytest.raises(SystemExit):
+        assert check(cli2(args=["repl-checker"]))

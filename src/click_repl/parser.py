@@ -1,37 +1,27 @@
 """
-`click_repl.parser`
-
-Parsing functionalities for the click_repl module.
+Parsing functionalities for the module.
 """
 
 from __future__ import annotations
 
 import re
-import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import Any
-from typing import Sequence
-from typing import Tuple
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import click
+from click import Argument as CoreArgument
+from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
-from click.parser import Argument as _Argument
-from click.parser import OptionParser, ParsingState, normalize_opt
 
 from . import utils
+from ._compat import OptionParser, ParsingState, _Argument, _Option, normalize_opt
 from ._globals import HAS_CLICK_GE_8
-from .exceptions import ArgumentPositionError
 
-InfoDict: t.TypeAlias = dict[str, Any]
+if TYPE_CHECKING:
+    from ._types import _REPL_PARSING_STATE_KEY, InfoDict
 
-_KEY: t.TypeAlias = Tuple[
-    t.Optional[InfoDict],
-    t.Optional[InfoDict],
-    t.Optional[InfoDict],
-    Tuple[InfoDict, ...],
-]
 
 _flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
@@ -39,43 +29,8 @@ _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 # Just gonna assume that people use only '-' and '--' as prefix for option flags
 # _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(r"^(--?[a-z][\w-]*)=(.*)$", re.I)
 _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
-    r"^(([^a-z\d\s])\2?[a-z]+(?:-[a-z\d]+)?)=(.*)$", re.I
+    r"^(([^a-z\d\s])\2?[a-z]+(?:[\w-]+)?)=(.*)$", re.I
 )
-
-
-def split_arg_string(string: str, posix: bool = True) -> list[str]:
-    """
-    Split a command line string into a list of tokens.
-    Using the same implementation as in `click.parser.split_arg_string`
-
-    This function behaves similarly to `shlex.split`, but it does not fail
-    if the string is incomplete. It handles missing closing quotes or incomplete
-    escape sequences by treating the partial token as-is.
-
-    Parameters
-    ----------
-    string : str
-        The string to be split into tokens.
-
-    posix : bool, default=True
-        Determines whether to split the string in POSIX style.
-
-    Returns
-    -------
-    A list of string tokens parsed from the input string.
-    """
-
-    lex = shlex(string, posix=posix, punctuation_chars=True)
-    lex.whitespace_split = True
-    lex.escape = ""
-    out: list[str] = []
-
-    try:
-        out.extend(lex)
-    except ValueError:
-        out.append(lex.token)
-
-    return out
 
 
 class Incomplete:
@@ -110,6 +65,41 @@ class Incomplete:
         return value
 
 
+def split_arg_string(string: str, posix: bool = True) -> list[str]:
+    """
+    Split a command line string into a list of tokens.
+    Using the same implementation as in `click.parser.split_arg_string`
+
+    This function behaves similarly to `shlex.split`, but it does not fail
+    if the string is incomplete. It handles missing closing quotes or incomplete
+    escape sequences by treating the partial token as-is.
+
+    Parameters
+    ----------
+    string : str
+        The string to be split into tokens.
+
+    posix : bool
+        Determines whether to split the string in POSIX style.
+
+    Returns
+    -------
+    A list of string tokens parsed from the input string.
+    """
+
+    lex = shlex(string, posix=posix, punctuation_chars=True)
+    lex.whitespace_split = True
+    lex.escape = ""
+    out: list[str] = []
+
+    try:
+        out.extend(lex)
+    except ValueError:
+        out.append(lex.token)
+
+    return out
+
+
 @lru_cache(maxsize=3)
 def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
     args = split_arg_string(document_text)
@@ -123,8 +113,15 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
 
     if equal_sign_match:
+        # ctx_opt_prefixes = (
+        #     get_current_repl_ctx().current_state.current_ctx._opt_prefixes  # type:ignore
+        # )
         opt, _, incomplete = equal_sign_match.groups()
         args.append(opt)
+
+        # if opt_prefix not in ctx_opt_prefixes:
+        #     args.append(opt)
+        #     incomplete = _incomplete
 
     _args = tuple(args)
 
@@ -134,16 +131,13 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     raw_incomplete_with_quotes = ""
     secondary_check = False
 
-    space_splitted_args = document_text.split(" ")
+    args_splitted_by_space = document_text.split(" ")
 
     if equal_sign_match:
-        opt_len = len(opt)
-        space_splitted_args[-1:] = [
-            space_splitted_args[-1][:opt_len],
-            space_splitted_args[-1][opt_len + 1 :],
-        ]
+        args_splitted_by_space.pop()
+        args_splitted_by_space.extend([args[-1], incomplete])
 
-    for token in reversed(space_splitted_args):
+    for token in reversed(args_splitted_by_space):
         _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
 
         if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
@@ -177,7 +171,7 @@ class ReplParsingState:
         args: tuple[str, ...],
     ) -> None:
         self.cli_ctx = cli_ctx
-        self.cli = t.cast(MultiCommand, self.cli_ctx.command)
+        self.cli = cast(Group, self.cli_ctx.command)
 
         self.current_ctx = current_ctx
         self.args = args
@@ -205,8 +199,8 @@ class ReplParsingState:
     def __repr__(self) -> str:
         return f'"{str(self)}"'
 
-    def __key(self) -> _KEY:
-        keys: list[dict[str, Any] | None] = []
+    def __key(self) -> _REPL_PARSING_STATE_KEY:
+        keys: list[InfoDict | None] = []
 
         for i in (
             self.current_group,
@@ -223,71 +217,54 @@ class ReplParsingState:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ReplParsingState):
-            return NotImplemented
+            return NotImplemented  # type:ignore[no-any-return]
         return self.__key() == other.__key()
 
-    def parse(self) -> tuple[MultiCommand, Command | None, Parameter | None]:
+    def parse(self) -> tuple[Group, Command | None, Parameter | None]:
         current_group, current_command = self.get_current_group_and_command()
+        current_param = None
 
         if current_command is not None:
             current_param = self.get_current_param(current_command)
-        else:
-            current_param = None
 
         return current_group, current_command, current_param
 
-    def get_current_group_and_command(self) -> tuple[MultiCommand, Command | None]:
+    def get_current_group_and_command(self) -> tuple[Group, Command | None]:
         current_ctx_command = self.current_ctx.command
-        parent_group = current_ctx_command
 
-        # If parent ctx exist, we change parent_group to the parent ctx's command.
-        if self.current_ctx.parent is not None:
-            parent_group = self.current_ctx.parent.command
-
-        current_group = t.cast(MultiCommand, parent_group)
-        is_parent_group_chained = current_group.chain
+        current_group = current_ctx_command
         current_command = None
 
-        # Check if not all the required arguments have been assigned a value.
-        # Here, we are checking if any of the click.Argument type parameters
-        # have an incomplete value. Only click.Argument type parameters require
-        # values (they have required=True by default), so they consume any
-        # incoming string value they receive. If any incomplete argument value
-        # is found, not_all_args_got_values is set to False. This condition check
-        # is only performed when the parent group is a non-chained multi-command.
+        if current_ctx_command == self.cli:
+            return current_group, current_command  # type:ignore[return-value]
 
-        args_list = [
+        # If parent ctx exist, we change current_group to the parent ctx's command.
+        if self.current_ctx.parent is not None:
+            current_group = self.current_ctx.parent.command
+
+        current_group = cast(Group, current_group)
+
+        cmd_arguments_list = [
             param
             for param in current_ctx_command.params
             if isinstance(param, click.Argument)
         ]
 
-        not_all_args_got_values = all(
-            not utils.is_param_value_incomplete(self.current_ctx, param.name)
-            for param in args_list
+        all_arguments_got_values = all(
+            not utils.is_param_value_incomplete(self.current_ctx, param)
+            for param in cmd_arguments_list
         )
 
-        incomplete_args_exist = not args_list or not_all_args_got_values
-        no_incomplete_args = args_list and not_all_args_got_values
+        has_incomplete_args = not (cmd_arguments_list and all_arguments_got_values)
 
-        if current_ctx_command == self.cli:
-            return current_group, current_command
-
-        elif (
-            isinstance(current_ctx_command, click.MultiCommand) and incomplete_args_exist
-        ):
-            # If all the arguments are passed to the ctx multicommand,
-            # promote it as current group.
+        if isinstance(current_ctx_command, click.Group) and all_arguments_got_values:
+            # Promote the current command as current group, only if it
+            # has got values to all of its click.Argument type args.
             current_group = current_ctx_command
 
-        elif not (
-            is_parent_group_chained
-            and (not current_ctx_command.params or no_incomplete_args)
+        elif not current_group.chain or (
+            current_ctx_command.params and has_incomplete_args
         ):
-            # The current command should point to its parent, once it
-            # got all of its values, only if the parent has chain=True
-            # let current_command be None. Or else, let current_command
-            # be the current_ctx_command.
             current_command = current_ctx_command
 
         return current_group, current_command
@@ -296,14 +273,12 @@ class ReplParsingState:
         self.remaining_params = [
             param
             for param in current_command.params
-            if utils.is_param_value_incomplete(self.current_ctx, param.name)
+            if utils.is_param_value_incomplete(self.current_ctx, param)
         ]
 
-        param: Parameter | None = self.parse_param_opt(current_command)
-        if param is None:
-            param = self.parse_param_arg(current_command)
-
-        return param
+        return self.parse_param_opt(current_command) or self.parse_param_arg(
+            current_command
+        )
 
     def parse_param_opt(self, current_command: Command) -> click.Option | None:
         if "--" in self.args:
@@ -330,22 +305,14 @@ class ReplParsingState:
         return None
 
     def parse_param_arg(self, current_command: Command) -> click.Argument | None:
-        minus_one_param = None
-
-        for idx, param in enumerate(current_command.params):
+        for param in utils.iterate_command_params(current_command):
             if not isinstance(param, click.Argument):
                 continue
 
-            if minus_one_param is not None:
-                raise ArgumentPositionError(current_command, param, idx)
-
-            if param.nargs == -1:
-                minus_one_param = param
-
-            elif utils.is_param_value_incomplete(self.current_ctx, param.name):
+            elif utils.is_param_value_incomplete(self.current_ctx, param):
                 return param
 
-        return minus_one_param
+        return None
 
 
 @lru_cache(maxsize=3)
@@ -355,6 +322,37 @@ def _resolve_repl_parsing_state(
     args: tuple[str, ...],
 ) -> ReplParsingState:
     return ReplParsingState(cli_ctx, current_ctx, args)
+
+
+@lru_cache(maxsize=3)
+def _resolve_state(
+    ctx: Context, document_text: str
+) -> tuple[Context, ReplParsingState, Incomplete]:
+    """
+    Resolves the parsing state of the arguments in the REPL prompt.
+
+    Parameters
+    ----------
+    ctx
+        The current :class:`click.Context` object of the parent group.
+
+    document_text
+        Text that's currently entered in the prompt.
+
+    Returns
+    -------
+    tuple[Context,ReplParsingState,Incomplete]
+        Returns the appropriate `click.Context` constructed from parsing
+        the given input from prompt, current :class:`click_repl.parser.ReplParsingState`
+        object, and the :class:`click_repl.parser.Incomplete` object that holds the
+        incomplete data that requires suggestions.
+    """
+    # args = tuple(split_arg_string(document_text))
+    args, incomplete = _resolve_incomplete(document_text)
+    parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
+    state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
+
+    return parsed_ctx, state, incomplete
 
 
 class ArgumentParamParser(_Argument):
@@ -470,7 +468,7 @@ class ReplOptionParser(OptionParser):
             state.largs.append(f"{prefix}{''.join(unknown_options)}")
 
     def _get_value_from_state(
-        self, option_name: str, option: Option, state: ParsingState
+        self, option_name: str, option: _Option, state: ParsingState
     ) -> Any:
         nargs = option.nargs
         rargs_len = len(state.rargs)

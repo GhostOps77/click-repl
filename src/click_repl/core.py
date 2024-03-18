@@ -1,50 +1,31 @@
 """
-`click_repl.core`
-
-Core functionality of the click-repl module.
+Core functionality of the module.
 """
 
 from __future__ import annotations
 
-import typing as t
-from collections.abc import Iterator
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Final
+from typing import TYPE_CHECKING, Any, Generator
 
-import click
 from click import Context
 from prompt_toolkit import PromptSession
+from typing_extensions import Final
 
-from . import _repl
-from ._globals import ISATTY
-from ._globals import _pop_context
-from ._globals import _push_context
-from ._internal_cmds import InternalCommandSystem
+from ._globals import ISATTY, _pop_context, _push_context
 from .bottom_bar import BottomBar
+from .internal_commands import InternalCommandSystem
 from .parser import ReplParsingState
 
-_PromptSession: t.TypeAlias = PromptSession[Dict[str, Any]]
+if TYPE_CHECKING:
+    from prompt_toolkit.formatted_text import AnyFormattedText
 
+    from ._types import ReplContextInfoDict, _PromptSession
 
-class InfoDict(t.TypedDict):
-    group_ctx: Context
-    prompt_kwargs: dict[str, Any]
-    session: _PromptSession | None
-    internal_command_system: InternalCommandSystem
-    parent: ReplContext | None
-    _history: list[str]
-    current_state: ReplParsingState | None
-    bottombar: BottomBar | None
-
-
-__all__ = ["ReplContext", "ReplCli"]
+__all__ = ["ReplContext"]
 
 
 class ReplContext:
     """
-    Context object for the REPL (Read-Eval-Print-Loop).
+    Context object for the REPL.
 
     This class tracks the depth of nested REPLs, ensuring seamless navigation
     between different levels. It facilitates nested REPL scenarios, allowing
@@ -57,21 +38,22 @@ class ReplContext:
 
     Parameters
     ----------
-    group_ctx : `click.Context`
-        The click context object that belong to the CLI/parent Group.
+    group_ctx
+        The :class:`~click.Context` object that belong to the CLI/parent Group.
 
-    internal_command_system : `InternalCommandSystem`
-        The `InternalCommandSystem` object that holds information about
-        the internal commands and their prefixes.
+    internal_command_system
+        The :class:`~click_repl._internal_commands.InternalCommandSystem` object that
+        holds information about the internal commands and their prefixes.
 
-    bottom_bar : `BottomBar`
-        The `BottomBar` object that controls the text that should be displayed in the
-        bottom toolbar of the `prompt_toolkit.PromptSession` object.
+    bottom_bar
+        The :class:`~click_repl.bottom_bar.BottomBar` object that controls the text
+        that should be displayed in the bottom toolbar of the
+        :class:`~prompt_toolkit.PromptSession` object.
 
-    prompt_kwargs : A dictionary of `str: Any` pairs
-        The extra Keyword arguments for `prompt_toolkit.PromptSession` class.
+    prompt_kwargs
+        The extra keyword arguments for :class:`~prompt_toolkit.PromptSession` class.
 
-    styles : A dictionary of `str: str` pairs
+    styles
         A dictionary that denote the style schema of the prompt.
     """
 
@@ -94,6 +76,9 @@ class ReplContext:
         prompt_kwargs: dict[str, Any] = {},
         parent: ReplContext | None = None,
     ) -> None:
+        """
+        Initialize the `ReplContext` class.
+        """
         session: _PromptSession | None
 
         if ISATTY:
@@ -122,36 +107,35 @@ class ReplContext:
         _pop_context()
 
     @property
-    def prompt_message(self) -> str | None:
+    def prompt(self) -> AnyFormattedText:
         """
         The message displayed for every prompt input in the REPL.
 
         Returns
         -------
-        str or None
-            String if `sys.stdin.isatty()` is `True`, else `None`
+        :obj:`~prompt_toolkit.formatted_text.AnyFormattedText`
+            Returns prompt object if :func:`~sys.stdin.isatty` is ``True``, else ``None``
         """
         if ISATTY and self.session is not None:
-            # assert self.session is not None
-            return str(self.session.message)
+            return self.session.message
         return None
 
-    @prompt_message.setter
-    def prompt_message(self, value: str) -> None:
+    @prompt.setter
+    def prompt(self, value: AnyFormattedText) -> None:
         if ISATTY and self.session is not None:
-            # assert self.session is not None
             self.session.message = value
 
-    def to_info_dict(self) -> InfoDict:
+    def to_info_dict(self) -> ReplContextInfoDict:
         """
-        Provides the most minimal info about the current REPL
+        Provides the most minimal info about the current REPL.
 
         Returns
         -------
-        A dictionary that has the instance variables and its values.
+        ReplContextInfoDict
+            A dictionary that has the instance variables and its values.
         """
 
-        res: InfoDict = {
+        res: ReplContextInfoDict = {
             "group_ctx": self.group_ctx,
             "prompt_kwargs": self.prompt_kwargs,
             "internal_command_system": self.internal_command_system,
@@ -166,16 +150,15 @@ class ReplContext:
 
     def session_reset(self) -> None:
         """
-        Resets values of `prompt_toolkit.session.PromptSession` to
-        the provided `prompt_kwargs`, discarding any changes done to the
-        `prompt_toolkit.session.PromptSession` object
+        Resets values of :class:`~prompt_toolkit.session.PromptSession` to
+        the provided ``prompt_kwargs``, discarding any changes done to the
+        :class:`~prompt_toolkit.session.PromptSession` object.
         """
 
         if ISATTY and self.session is not None:
-            # assert self.session is not None
             self.session = PromptSession(**self.prompt_kwargs)
 
-    def history(self) -> Iterator[str]:
+    def history(self) -> Generator[str, None, None]:
         """
         Generates the history of past executed commands.
 
@@ -187,7 +170,6 @@ class ReplContext:
         """
 
         if ISATTY and self.session is not None:
-            # assert self.session is not None
             yield from self.session.history.load_history_strings()
 
         else:
@@ -195,71 +177,3 @@ class ReplContext:
 
     def update_state(self, state: ReplParsingState) -> None:
         self.current_state = state
-
-
-class ReplCli(click.Group):
-    """
-    Custom `click.Group` subclass for invoking the REPL.
-
-    This class extends the functionality of the `click.Group`
-    class and is designed to be used as a wrapper to
-    automatically invoke the `click_repl._repl.repl()`
-    function when the group is invoked without any sub-command.
-
-    Parameters
-    ----------
-    prompt : str, default="> "
-        The message that should be displayed for every prompt input.
-
-    startup : A function that takes and returns nothing, optional
-        The function that gets called before invoking the REPL.
-
-    cleanup : A function that takes and returns nothing, optional
-        The function that gets invoked after exiting out of the REPL.
-
-    repl_kwargs : A dictionary of `str: Any` pairs
-        The keyword arguments that needs to be sent to the `repl()` function.
-
-    **attrs : dict, optional
-        Extra keyword arguments that need to be passed to the `click.Group` class.
-    """
-
-    def __init__(
-        self,
-        prompt: str = "> ",
-        startup: Callable[[], None] | None = None,
-        cleanup: Callable[[], None] | None = None,
-        repl_kwargs: dict[str, Any] = {},
-        **attrs: Any,
-    ) -> None:
-        attrs["invoke_without_command"] = True
-        super().__init__(**attrs)
-
-        self.prompt = prompt
-        self.startup = startup
-        self.cleanup = cleanup
-
-        repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": prompt})
-
-        self.repl_kwargs = repl_kwargs
-
-    def invoke_repl(self, ctx: Context) -> None:
-        try:
-            if self.startup is not None:
-                self.startup()
-
-            _repl.repl(ctx, **self.repl_kwargs)
-
-        finally:
-            if self.cleanup is not None:
-                self.cleanup()
-
-    def invoke(self, ctx: Context) -> Any:
-        return_val = super().invoke(ctx)
-
-        if ctx.invoked_subcommand or ctx.protected_args:
-            return return_val
-
-        self.invoke_repl(ctx)
-
-        return return_val

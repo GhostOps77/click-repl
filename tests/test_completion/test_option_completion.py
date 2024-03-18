@@ -81,7 +81,9 @@ def shortest_only(foo, bar, foobar):
 
 
 c1 = ClickCompleter(
-    click.Context(root_command), DummyInternalCommandSystem(), shortest_opts_only=True
+    click.Context(root_command),
+    DummyInternalCommandSystem(),
+    shortest_opt_names_only=True,
 )
 
 
@@ -99,7 +101,9 @@ def test_shortest_only_true_mode(test_input, expected):
 
 
 c2 = ClickCompleter(
-    click.Context(root_command), DummyInternalCommandSystem(), show_only_unused_opts=True
+    click.Context(root_command),
+    DummyInternalCommandSystem(),
+    show_only_unused_options=True,
 )
 
 

@@ -42,7 +42,7 @@ c = ClickCompleter(click.Context(main), InternalCommandSystem())
     ],
 )
 def test_store_true_flags(test_input, shortest_opts_only, expected):
-    c.shortest_opts_only = shortest_opts_only
+    c.shortest_opt_names_only = shortest_opts_only
     completions = c.get_completions(Document(test_input))
     assert {i.text for i in completions} == expected
 
@@ -59,6 +59,6 @@ def test_store_true_flags(test_input, shortest_opts_only, expected):
     ],
 )
 def test_boolean_flags(test_input, shortest_opts_only, expected):
-    c.shortest_opts_only = shortest_opts_only
+    c.shortest_opt_names_only = shortest_opts_only
     completions = c.get_completions(Document(test_input))
     assert {i.text for i in completions} == expected

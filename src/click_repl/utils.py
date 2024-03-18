@@ -1,182 +1,213 @@
 """
-`click_repl.utils`
-
-Utilities to facilitate the functionality of the click_repl module.
+Utilities to facilitate the functionality of the module.
 """
 
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
+from difflib import get_close_matches
 from functools import lru_cache
-from typing import Any
-from typing import Iterable
+from typing import TYPE_CHECKING, Any, Generator
 
 import click
-from click import Command
-from click import Context
-from click import MultiCommand
-from click import Parameter
-from click.parser import split_opt
-from typing_extensions import Literal
+from click import Command, Context, Parameter
 
-from ._globals import _RANGE_TYPES
-from ._globals import StyleAndTextTuples
-from .parser import Incomplete
-from .parser import InfoDict
-from .parser import ReplParsingState
-from .parser import _resolve_incomplete
-from .parser import _resolve_repl_parsing_state
+from ._compat import RANGE_TYPES_TUPLE, MultiCommand
+from .exceptions import ArgumentPositionError
 from .proxies import _create_proxy_command
 
-CompletionStyleDictKeys = Literal[
-    "internal-command", "command", "multicommand", "argument", "option", "parameter"
-]
-
-
-def append_classname_to_all_tokens(
-    tokens_list: StyleAndTextTuples, classes: list[str] = []
-) -> StyleAndTextTuples:
-    if not classes:
-        return tokens_list
-
-    res: StyleAndTextTuples = []
-
-    for token, value, *_ in tokens_list:
-        token = f"{token},{','.join(classes)}"
-        res.append((token, value, *_))
-
-    return res
-
-
-def options_flags_joiner(
-    items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
-) -> StyleAndTextTuples:
-    if not items:
-        return []
-
-    sep_elem = (sep_token, sep)
-    iterator = iter(items)
-    res: StyleAndTextTuples = [(item_token, next(iterator))]
-
-    for item in iterator:
-        res.append(sep_elem)
-        res.append((item_token, item))
-
-    return res
-
-
-def get_token_type(obj: click.Command | click.Parameter) -> CompletionStyleDictKeys:
-    if isinstance(obj, click.Parameter):
-        if isinstance(obj, click.Argument):
-            return "argument"
-
-        elif isinstance(obj, click.Option):
-            return "option"
-
-        else:
-            return "parameter"
-
-    elif isinstance(obj, click.MultiCommand):
-        return "multicommand"
-
-    return "command"
-
-
-def _quotes(text: str) -> str:
-    if " " in text and text[0] != '"' != text[-1]:
-        text = text.strip('"').replace('"', '\\"')
-        return f'"{text}"'
-
-    return text
+if TYPE_CHECKING:
+    from ._types import InfoDict
 
 
 def _expand_envvars(text: str) -> str:
     return os.path.expandvars(os.path.expanduser(text))
 
 
-# def _is_help_option(param: click.Option) -> bool:
-#     return (
-#         param.is_flag
-#         and not param.expose_value
-#         and param.is_eager
-#         and param.help == _("Show this message and exit.")
-#     )
+def _is_help_option(param: click.Option) -> bool:
+    """
+    Checks whether the given :class:`~click.Option` object is a help option or not.
 
+    Parameters
+    ----------
+    param
+        A click option object.
 
-def print_error(text: str) -> None:
-    # Prints the given text to stderr, in red colour.
-    click.secho(text, color=True, err=True, fg="red")
+    Returns
+    -------
+    bool
+        If ``True``, The given :class:`~click.Option` object is a help option.
+        else, ``False``.
+    """
+    has_help_msg_as_help_text = bool(
+        get_close_matches(param.help or "", ["Show this message and exit."], cutoff=0.5)
+    )
 
-
-def is_param_value_incomplete(
-    ctx: Context, param_name: str | None, check_if_tuple_has_none: bool = True
-) -> bool:
-    # Checks whether the given name of that parameter
-    # doesn't recieve it's values completely.
-    if param_name is None:
-        return False
-
-    value = ctx.params.get(param_name, None)
-    return value in (None, ()) or (
-        check_if_tuple_has_none and isinstance(value, tuple) and None in value
+    return (
+        param.is_flag
+        and not param.expose_value
+        and "--help" in param.opts
+        and param.is_eager
+        and has_help_msg_as_help_text
     )
 
 
-def get_option_flag_sep(options: list[str]) -> str:
-    any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
-    return ";" if any_prefix_is_slash else "/"
+def is_param_value_incomplete(
+    ctx: Context, param: Parameter, check_if_tuple_has_none: bool = True
+) -> bool:
+    """
+    Checks whether the given name of a parameter doesn't recieve it's values completely.
+
+    Parameters
+    ----------
+    ctx
+        :class:`~click.Context` object corresponding to the parameter.
+
+    param
+        :class:`~click.Parameter` object to check it's value after parsing it.
+
+    check_if_tuple_has_none
+        Flag that checks whether the given parameter stores multiple
+        values in a tuple, and the tuple has `None` in it.
+
+    Returns
+    -------
+    bool
+        Whether the given parameter has recieved all of
+        it's necessary values from the prompt or not.
+    """
+    if param.name is None:
+        return False
+
+    if param.nargs == -1:
+        return True
+
+    value = ctx.params.get(param.name, None)
+
+    check_if_tuple_has_none = (
+        param.multiple or param.nargs != 1
+    ) and check_if_tuple_has_none
+
+    return (
+        value in (None, ())
+        or check_if_tuple_has_none
+        and isinstance(value, tuple)
+        and None in value
+    )
+
+    # return value in (None, ()) or (
+    #     check_if_tuple_has_none and isinstance(value, tuple) and None in value
+    # )
 
 
-def join_options(options: list[str]) -> tuple[list[str], str]:
-    # Same implementation as click.formatting.join_options function, but much simpler.
-    return sorted(options, key=len), get_option_flag_sep(options)
+def iterate_command_params(command: Command) -> Generator[Parameter, None, None]:
+    """
+    This function is to iterate over parameters of a command in an order such that
+    the parameters with `nargs=-1` will be yielded at the very end.
+
+    Parameters
+    ----------
+    command
+        The :class:`~click.Command` object to iterate over it's parameters.
+
+    Yields
+    ------
+    click.Parameter
+        The parameters of the given command.
+
+    Raises
+    ------
+    ArgumentPositionError
+        If the :class:`~click.Argument` object with `nargs=-1` is not
+        defined at the very end among other parameters.
+    """
+
+    nargs_minus_one_param: tuple[click.Argument, int] | None = None
+
+    for idx, param in enumerate(command.params):
+        is_param_argument = isinstance(param, click.Argument)
+
+        if is_param_argument and param.nargs == -1:
+            nargs_minus_one_param = (param, idx)  # type: ignore[assignment]
+
+        elif nargs_minus_one_param is not None and is_param_argument:
+            minus_one_param, minus_one_param_idx = nargs_minus_one_param
+            raise ArgumentPositionError(command, minus_one_param, minus_one_param_idx)
+
+        else:
+            yield param
+
+    if nargs_minus_one_param:
+        yield nargs_minus_one_param[0]
+
+    return
 
 
 def _get_group_ctx(ctx: Context) -> Context:
-    # If there's a parent context object and its command type is click.MultiCommand,
-    # we return its parent context object. A parent context object should be
-    # available most of the time. If not, then we return the original context object.
+    """
+    Checks and returns the appropriate :class:`~click.Context` object to
+    start repl on it.
 
-    if ctx.parent is not None and not isinstance(ctx.command, click.MultiCommand):
+    If there's a parent context object and its command type is :class:`~click.Group`,
+    we return its parent context object. A parent context object should be
+    available most of the time. If not, then we return the original context object.
+
+    Parameters
+    ----------
+    ctx
+        The :class:`~click.Context` object to check and start repl on it.
+
+    Returns
+    -------
+    click.Context
+        The :class:`~click.Context` object that should be used to start repl on it.
+    """
+    if ctx.parent is not None and not isinstance(ctx.command, MultiCommand):
         ctx = ctx.parent
 
     ctx.protected_args = []
     return ctx
 
 
-def _get_visible_subcommands(
-    ctx: Context,
-    multicommand: MultiCommand,
-    incomplete: str,
-    show_hidden_commands: bool = False,
-) -> Iterator[tuple[str, Command]]:
-    # Get all the subcommands whose name starts with the given
-    # "incomplete" prefix string.
-
-    for command_name in multicommand.list_commands(ctx):
-        if not command_name.startswith(incomplete):
-            continue
-
-        subcommand = multicommand.get_command(ctx, command_name)
-
-        if subcommand is None or (subcommand.hidden and not show_hidden_commands):
-            # We skip if there's no command found or it's a hidden command
-            # and show_hidden_commands is False.
-            continue
-
-        yield command_name, subcommand
-
-
 @lru_cache(maxsize=128)
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> InfoDict:
-    # Similar to the 'get_info_dict' method implementation in click objects,
-    # but it only retrieves the essential attributes required to
-    # differentiate between different 'ReplParsingState' objects.
+    """
+    Similar to the ``get_info_dict`` method implementation in click objects,
+    but it only retrieves the essential attributes required to
+    differentiate between different ``ReplParsingState`` objects.
 
-    if isinstance(obj, click.Context):
+    Parameters
+    ----------
+    obj
+        Click object for which the info dict needs to be generated.
+
+    Returns
+    -------
+    InfoDict
+        Dictionary that holds crucial details about the given click object
+        that can be used to uniquely identify it.
+
+    References
+    ----------
+    :meth:`~click.Context.get_info_dict`
+    :meth:`~click.Command.get_info_dict`
+    :meth:`~click.Group.get_info_dict`
+    :meth:`~click.Parameter.get_info_dict`
+    :meth:`~click.Option.get_info_dict`
+    :meth:`~click.ParamType.get_info_dict`
+    :meth:`~click.Choice.get_info_dict`
+    :meth:`~click.DateTime.get_info_dict`
+    :meth:`~click.File.get_info_dict`
+    :meth:`~click.Path.get_info_dict`
+    :meth:`~click.Tuple.get_info_dict`
+    :meth:`~click.IntRange.get_info_dict`
+    :meth:`~click.FloatRange.get_info_dict`
+    :meth:`~click.types.FuncParamType.get_info_dict`
+    """
+
+    if isinstance(obj, Context):
         return {
             "command": get_info_dict(obj.command),
             "params": obj.params,
@@ -184,8 +215,8 @@ def get_info_dict(
 
     info_dict: InfoDict = {}
 
-    if isinstance(obj, click.Command):
-        ctx = click.Context(obj)
+    if isinstance(obj, Command):
+        ctx = Context(obj)
 
         info_dict.update(
             name=obj.name,
@@ -193,7 +224,7 @@ def get_info_dict(
             callback=obj.callback,
         )
 
-        if isinstance(obj, click.MultiCommand):
+        if isinstance(obj, MultiCommand):
             commands = {}
 
             for name in obj.list_commands(ctx):
@@ -206,7 +237,7 @@ def get_info_dict(
 
             info_dict.update(commands=commands, chain=obj.chain)
 
-    elif isinstance(obj, click.Parameter):
+    elif isinstance(obj, Parameter):
         info_dict.update(
             name=obj.name,
             param_type_name=obj.param_type_name,
@@ -244,7 +275,7 @@ def get_info_dict(
         elif isinstance(obj, click.DateTime):
             info_dict["formats"] = obj.formats
 
-        elif isinstance(obj, _RANGE_TYPES):
+        elif isinstance(obj, RANGE_TYPES_TUPLE):
             info_dict.update(
                 min=obj.min,
                 max=obj.max,
@@ -274,7 +305,7 @@ def get_info_dict(
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    multicommand: MultiCommand,
+    group: MultiCommand,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
@@ -287,7 +318,7 @@ def _generate_next_click_ctx(
     # list format, we explicitly convert args into a list.
     _args = list(_expand_envvars(i) for i in args)
 
-    name, cmd, _args = multicommand.resolve_command(parent_ctx, _args)
+    name, cmd, _args = group.resolve_command(parent_ctx, _args)
 
     if cmd is None:
         return parent_ctx, None
@@ -299,8 +330,8 @@ def _generate_next_click_ctx(
         # case, we want to handle these incomplete arguments. To
         # achieve this, we use a proxy command object to modify
         # the command parsing behavior in click.
-        with _create_proxy_command(cmd) as _cmd:
-            ctx = _cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
+        with _create_proxy_command(cmd) as _command:
+            ctx = _command.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
 
     else:
         ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
@@ -313,14 +344,9 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
     while args:
         command = ctx.command
 
-        if isinstance(command, click.MultiCommand):
+        if isinstance(command, MultiCommand):
             if not command.chain:
-                ctx, cmd = _generate_next_click_ctx(
-                    command,
-                    ctx,
-                    args,
-                    proxy=proxy,
-                )
+                ctx, cmd = _generate_next_click_ctx(command, ctx, args, proxy=proxy)
 
                 if cmd is None:
                     return ctx
@@ -347,20 +373,3 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
             break
 
     return ctx
-
-
-@lru_cache(maxsize=3)
-def _resolve_state(
-    ctx: Context, document_text: str
-) -> tuple[Context, ReplParsingState, Incomplete]:
-    # Resolves the parsing state of the arguments in the REPL prompt.
-    # try:
-    args, incomplete = _resolve_incomplete(document_text)
-    parsed_ctx = _resolve_context(ctx, args, proxy=True)
-    state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
-
-    return parsed_ctx, state, incomplete
-
-
-# except Exception as e:
-#     raise ParserError(str(e)) from e

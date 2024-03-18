@@ -1,6 +1,4 @@
 """"
-click_repl.validator
-
 Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
@@ -8,21 +6,16 @@ raised during auto-completion.
 from __future__ import annotations
 
 import logging
-from typing import Final
 
-from click import Context
-from click import MultiCommand
-from click.exceptions import ClickException
-from click.exceptions import UsageError
+from click import Context, Group
+from click.exceptions import ClickException, UsageError
 from prompt_toolkit.document import Document
-from prompt_toolkit.validation import ValidationError
-from prompt_toolkit.validation import Validator
+from prompt_toolkit.validation import ValidationError, Validator
+from typing_extensions import Final
 
-from ._globals import CLICK_REPL_DEV_ENV
-from ._globals import ISATTY
-from ._globals import get_current_repl_ctx
-from ._internal_cmds import InternalCommandSystem
-from .utils import _resolve_state
+from ._globals import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
+from .internal_commands import InternalCommandSystem
+from .parser import _resolve_state
 
 __all__ = ["ClickValidator"]
 
@@ -40,7 +33,7 @@ logger.setLevel(logger_level)
 log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
 formatter = logging.Formatter(log_format)
 
-log_file = "click-repl-err.log"
+log_file = ".click-repl-err.log"
 file_handler = logging.FileHandler(log_file)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -48,27 +41,32 @@ logger.addHandler(file_handler)
 
 class ClickValidator(Validator):
     """
-    Custom prompt input validation for the click_repl app.
+    Custom prompt input validation for the REPL.
 
     Parameters
     ----------
-    ctx : `click.Context`
-        The current `click.Context` object.
+    group_ctx
+        The current :class:`~click.Context` object.
 
-    display_all_errors : bool
-        If `False`, all generic Python Exceptions that are raised, will not be
-        displayed in the Validator bar, resulting in the full error traceback
-        being redirected to a log file in the REPL mode.
+    display_all_errors
+        Flag that determines whether to raise generic python exceptions, and not to
+        display them in the :class:`~prompt_toolkit.validation.Validator` bar,
+        resulting in the full error traceback being redirected to a log file
+        in the REPL mode.
     """
 
     def __init__(
         self,
-        ctx: Context,
+        group_ctx: Context,
         internal_commands_system: InternalCommandSystem,
         display_all_errors: bool = True,
     ) -> None:
-        self.cli_ctx: Final[Context] = ctx
-        self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
+        """
+        Initializes a `ClickValidator` object.
+        """
+
+        self.group_ctx: Final[Context] = group_ctx
+        self.group: Final[Group] = self.group_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system
         self.display_all_errors = display_all_errors
@@ -76,18 +74,19 @@ class ClickValidator(Validator):
     def validate(self, document: Document) -> None:
         """
         Validates the input from the prompt by raising a
-        `prompt_toolkit.validation.ValidationError` if it is invalid.
-        Any raised errors are displayed in the Validator bar.
+        :exc:`~prompt_toolkit.validation.ValidationError` if it is invalid.
+
+        Any raised errors are displayed in the
+        :class:`~prompt_toolkit.validation.Validator` bar.
 
         Parameters
         ----------
-        document : `prompt_toolkit.document.Document`
-            A `prompt_toolkit.document.Document` object
-            containing the incomplete string from the REPL.
+        document
+            Contains the incomplete string from the REPL prompt.
 
         Raises
         ------
-        `prompt_toolkit.validation.ValidationError`
+        prompt_toolkit.validation.ValidationError
             If there's any error occurred during argument parsing, and it needs
             to be displayed in the validation bar.
 
@@ -102,7 +101,7 @@ class ClickValidator(Validator):
             return
 
         try:
-            _, state, _ = _resolve_state(self.cli_ctx, document.text_before_cursor)
+            _, state, _ = _resolve_state(self.group_ctx, document.text_before_cursor)
 
             if ISATTY:
                 bottombar = get_current_repl_ctx().bottombar  # type:ignore[union-attr]
@@ -126,11 +125,11 @@ class ClickValidator(Validator):
         except Exception as e:
             if self.display_all_errors:
                 # All other errors raised during input validation are
-                # displayed in the Validator bar, but only if
-                # self.catch_all_errors is set to True.
+                # displayed in the Validator bar.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            # Error tracebacks are displayed during the REPL loop if
-            # self.catch_all_errors is set to False. The short error
-            # messages are also logged into a click-repl-err.log file.
-            logger.exception("%s: %s", type(e).__name__, e)
+            if CLICK_REPL_DEV_ENV:
+                # Error tracebacks are displayed during the REPL loop if
+                # its a development environment. The short error
+                # messages are also logged into a click-repl-err.log file.
+                logger.exception("%s: %s", type(e).__name__, e)

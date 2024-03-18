@@ -1,17 +1,14 @@
 """
-Click Repl is a simple Python module that provides REPL support
+**click-repl** is a simple Python module that provides REPL support
 inside your click app in just some simple steps.
 """
 
 from __future__ import annotations
 
-from ._internal_cmds import repl_exit
-from ._repl import Repl
-from ._repl import repl
-from .core import ReplCli
+from ._repl import Repl, ReplCli, repl
 from .core import ReplContext
-from .decorators import pass_context
-from .decorators import register_repl
+from .decorators import pass_context, register_repl
+from .internal_commands import repl_exit
 
 __all__ = [
     "repl_exit",
@@ -23,5 +20,5 @@ __all__ = [
     "register_repl",
 ]
 
-version_info = (0, 2, 1, 8)
-__version__ = "0.2.1dev8"
+version_info = (0, 2, 1, 10)
+__version__ = "0.2.1dev10"

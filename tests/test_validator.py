@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
+
 import click
 import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError
 
-from click_repl._internal_cmds import InternalCommandSystem
+from click_repl._globals import HAS_CLICK_GE_8
+from click_repl.internal_commands import InternalCommandSystem
 from click_repl.validator import ClickValidator
 from tests import DummyInternalCommandSystem
 
@@ -35,7 +38,7 @@ validator = ClickValidator(click.Context(main), InternalCommandSystem())
 
 @pytest.mark.parametrize("test_input", ["!echo hi", ":cls"])
 def test_validator_ignores_internal_commands(test_input):
-    validator.validate(Document(test_input)) is None
+    assert validator.validate(Document(test_input)) is None
 
 
 @pytest.mark.parametrize(
@@ -47,6 +50,9 @@ def test_validator_ignores_internal_commands(test_input):
     ],
 )
 def test_default_validator(test_input, expected_err):
+    if not HAS_CLICK_GE_8:
+        expected_err = expected_err.lower()
+
     with pytest.raises(ValidationError, match=expected_err):
         validator.validate(Document(test_input))
 
@@ -64,12 +70,19 @@ validator_dont_show_all_errors = ClickValidator(
     ],
 )
 def test_display_all_errors_false_no_change_on_click_exc(test_input, expected_err):
+    if not HAS_CLICK_GE_8:
+        expected_err = expected_err.lower()
+
     with pytest.raises(ValidationError, match=expected_err):
         validator_dont_show_all_errors.validate(Document(test_input))
 
 
 def test_dont_show_all_errors_hides_other_exc():
+    os.environ["CLICK_REPL_DEV_ENV"] = "true"
+
     validator_dont_show_all_errors.validate(Document("command --opt2 "))
 
-    with open("click-repl-err.log") as log_file:
+    with open(".click-repl-err.log") as log_file:
         assert log_file.readlines()[-1].strip() == "Exception: sample standard error"
+
+    os.environ.pop("CLICK_REPL_DEV_ENV")
