@@ -7,7 +7,6 @@ Utility for the Bottom bar of the REPL.
 from __future__ import annotations
 
 import typing as t
-from typing import List
 from typing import Tuple
 
 import click
@@ -35,7 +34,7 @@ __all__ = ["BottomBar"]
 
 
 class ParamInfo(TypedDict):
-    name: Tuple[str, str]
+    name: tuple[str, str]
     type_info: StyleAndTextTuples
     nargs_info: StyleAndTextTuples
 
@@ -306,7 +305,7 @@ class BottomBar:
             assert self.state is not None, "state cannot be None"
 
             # Calculate the number of non-None values received for the parameter.
-            param_values: List[str] = (
+            param_values: list[str] = (
                 self.state.current_ctx.params[param.name] or []  # type:ignore[index]
             )
 

@@ -10,9 +10,7 @@ import os
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import Any
-from typing import Dict
 from typing import Iterable
-from typing import List
 from typing import Tuple
 
 import click
@@ -38,7 +36,7 @@ CompletionStyleDictKeys = Literal[
 
 
 def append_classname_to_all_tokens(
-    tokens_list: StyleAndTextTuples, classes: List[str] = []
+    tokens_list: StyleAndTextTuples, classes: list[str] = []
 ) -> StyleAndTextTuples:
     if not classes:
         return tokens_list
@@ -126,12 +124,12 @@ def is_param_value_incomplete(
     )
 
 
-def get_option_flag_sep(options: List[str]) -> str:
+def get_option_flag_sep(options: list[str]) -> str:
     any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
     return ";" if any_prefix_is_slash else "/"
 
 
-def join_options(options: List[str]) -> Tuple[List[str], str]:
+def join_options(options: list[str]) -> Tuple[list[str], str]:
     # Same implementation as click.formatting.join_options function, but much simpler.
     return sorted(options, key=len), get_option_flag_sep(options)
 
@@ -279,10 +277,10 @@ def get_info_dict(
 def _generate_next_click_ctx(
     multicommand: MultiCommand,
     parent_ctx: Context,
-    args: Tuple[str, ...],
+    args: tuple[str, ...],
     proxy: bool = False,
-    **ctx_kwargs: Dict[str, Any],
-) -> Tuple[Context, Command | None]:
+    **ctx_kwargs: dict[str, Any],
+) -> tuple[Context, Command | None]:
     if not args:
         return parent_ctx, None
 
@@ -312,7 +310,7 @@ def _generate_next_click_ctx(
 
 
 @lru_cache(maxsize=3)
-def _resolve_context(ctx: Context, args: Tuple[str, ...], proxy: bool = False) -> Context:
+def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
     while args:
         command = ctx.command
 

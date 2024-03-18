@@ -441,7 +441,7 @@ class ClickCompleter(Completer):
 
         _incomplete = incomplete.expand_envvars()
 
-        boolean_mapping: Dict[str, Tuple[str, ...]] = {
+        boolean_mapping: dict[str, Tuple[str, ...]] = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
         }

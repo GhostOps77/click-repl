@@ -10,7 +10,6 @@ from collections.abc import Iterator
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 
 import click
 from click import Context
@@ -32,11 +31,11 @@ _PromptSession: TypeAlias = PromptSession[Dict[str, Any]]
 
 class InfoDict(TypedDict):
     group_ctx: Context
-    prompt_kwargs: Dict[str, Any]
+    prompt_kwargs: dict[str, Any]
     session: _PromptSession | None
     internal_command_system: InternalCommandSystem
     parent: ReplContext | None
-    _history: List[str]
+    _history: list[str]
     current_state: ReplParsingState | None
     bottombar: BottomBar | None
 
@@ -93,7 +92,7 @@ class ReplContext:
         group_ctx: Context,
         internal_command_system: InternalCommandSystem,
         bottombar: BottomBar | None = None,
-        prompt_kwargs: Dict[str, Any] = {},
+        prompt_kwargs: dict[str, Any] = {},
         parent: ReplContext | None = None,
     ) -> None:
         session: _PromptSession | None
@@ -109,7 +108,7 @@ class ReplContext:
         self.session = session
         self.bottombar = bottombar
 
-        self._history: List[str] = []
+        self._history: list[str] = []
         self.internal_command_system = internal_command_system
         self.group_ctx: Final[Context] = group_ctx
         self.prompt_kwargs = prompt_kwargs
@@ -231,7 +230,7 @@ class ReplCli(click.Group):
         prompt: str = "> ",
         startup: Callable[[], None] | None = None,
         cleanup: Callable[[], None] | None = None,
-        repl_kwargs: Dict[str, Any] = {},
+        repl_kwargs: dict[str, Any] = {},
         **attrs: Any,
     ) -> None:
         attrs["invoke_without_command"] = True

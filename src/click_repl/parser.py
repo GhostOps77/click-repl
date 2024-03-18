@@ -80,7 +80,7 @@ def split_arg_string(string: str, posix: bool = True) -> List[str]:
     lex = shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
     lex.escape = ""
-    out: List[str] = []
+    out: list[str] = []
 
     try:
         out.extend(lex)
@@ -186,7 +186,7 @@ class ReplParsingState:
         self,
         cli_ctx: Context,
         current_ctx: Context,
-        args: Tuple[str, ...],
+        args: tuple[str, ...],
     ) -> None:
         self.cli_ctx = cli_ctx
         self.cli = t.cast(MultiCommand, self.cli_ctx.command)
@@ -194,7 +194,7 @@ class ReplParsingState:
         self.current_ctx = current_ctx
         self.args = args
 
-        self.remaining_params: List[Parameter] = []
+        self.remaining_params: list[Parameter] = []
         self.double_dash_found = getattr(current_ctx, "_double_dash_found", False)
 
         self.current_group, self.current_command, self.current_param = self.parse()
@@ -218,7 +218,7 @@ class ReplParsingState:
         return f'"{str(self)}"'
 
     def __key(self) -> _KEY:
-        keys: List[InfoDict | None] = []
+        keys: list[InfoDict | None] = []
 
         for i in (
             self.current_group,
@@ -364,7 +364,7 @@ class ReplParsingState:
 def _resolve_repl_parsing_state(
     cli_ctx: Context,
     current_ctx: Context,
-    args: Tuple[str, ...],
+    args: tuple[str, ...],
 ) -> ReplParsingState:
     return ReplParsingState(cli_ctx, current_ctx, args)
 
