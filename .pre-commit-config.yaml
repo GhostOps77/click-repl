@@ -35,13 +35,13 @@ repos:
           - "src"
           - "tests"
 
-  # Automatically upgrade syntax to newer versions
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.1
-    hooks:
-      - id: pyupgrade
-        args:
-          - "--py37-plus"
+  # # Automatically upgrade syntax to newer versions
+  # - repo: https://github.com/asottile/pyupgrade
+  #   rev: v3.15.1
+  #   hooks:
+  #     - id: pyupgrade
+  #       args:
+  #         - "--py37-plus"
 
   # Ruff for linting.
   - repo: https://github.com/astral-sh/ruff-pre-commit

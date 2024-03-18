@@ -7,6 +7,8 @@ Utility for the Bottom bar of the REPL.
 from __future__ import annotations
 
 import typing as t
+from typing import List
+from typing import Tuple
 
 import click
 from click import Parameter
@@ -32,7 +34,7 @@ __all__ = ["BottomBar"]
 
 
 class ParamInfo(t.TypedDict):
-    name: tuple[str, str]
+    name: Tuple[str, str]
     type_info: StyleAndTextTuples
     nargs_info: StyleAndTextTuples
 
@@ -99,7 +101,7 @@ class BottomBar:
         self._recent_formatted_text = self.make_formatted_text()
         # self._formatted_text = str(state)
 
-    def get_group_metavar_template(self) -> tuple[StyleAndTextTuples, StyleAndTextTuples]:
+    def get_group_metavar_template(self) -> Tuple[StyleAndTextTuples, StyleAndTextTuples]:
         # Gets the metavar to describe the CLI Group, indicating
         # whether it is a chained Group or not.
 
@@ -185,7 +187,7 @@ class BottomBar:
 
         return "parameter." + usage_state
 
-    def get_param_name(self, param: Parameter) -> tuple[str, str]:
+    def get_param_name(self, param: Parameter) -> Tuple[str, str]:
         if isinstance(param, click.Argument):
             token_name = "parameter.argument.name"
 
@@ -303,7 +305,7 @@ class BottomBar:
             assert self.state is not None, "state cannot be None"
 
             # Calculate the number of non-None values received for the parameter.
-            param_values: list[str] = (
+            param_values: List[str] = (
                 self.state.current_ctx.params[param.name] or []  # type:ignore[index]
             )
 

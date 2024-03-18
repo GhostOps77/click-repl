@@ -10,7 +10,10 @@ import os
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import Any
+from typing import Dict
 from typing import Iterable
+from typing import List
+from typing import Tuple
 
 import click
 from click import Command
@@ -35,7 +38,7 @@ CompletionStyleDictKeys = Literal[
 
 
 def append_classname_to_all_tokens(
-    tokens_list: StyleAndTextTuples, classes: list[str] = []
+    tokens_list: StyleAndTextTuples, classes: List[str] = []
 ) -> StyleAndTextTuples:
     if not classes:
         return tokens_list
@@ -123,12 +126,12 @@ def is_param_value_incomplete(
     )
 
 
-def get_option_flag_sep(options: list[str]) -> str:
+def get_option_flag_sep(options: List[str]) -> str:
     any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
     return ";" if any_prefix_is_slash else "/"
 
 
-def join_options(options: list[str]) -> tuple[list[str], str]:
+def join_options(options: List[str]) -> Tuple[List[str], str]:
     # Same implementation as click.formatting.join_options function, but much simpler.
     return sorted(options, key=len), get_option_flag_sep(options)
 
@@ -150,7 +153,7 @@ def _get_visible_subcommands(
     multicommand: MultiCommand,
     incomplete: str,
     show_hidden_commands: bool = False,
-) -> Iterator[tuple[str, Command]]:
+) -> Iterator[Tuple[str, Command]]:
     # Get all the subcommands whose name starts with the given
     # "incomplete" prefix string.
 
@@ -276,10 +279,10 @@ def get_info_dict(
 def _generate_next_click_ctx(
     multicommand: MultiCommand,
     parent_ctx: Context,
-    args: tuple[str, ...],
+    args: Tuple[str, ...],
     proxy: bool = False,
-    **ctx_kwargs: dict[str, Any],
-) -> tuple[Context, Command | None]:
+    **ctx_kwargs: Dict[str, Any],
+) -> Tuple[Context, Command | None]:
     if not args:
         return parent_ctx, None
 
@@ -309,7 +312,7 @@ def _generate_next_click_ctx(
 
 
 @lru_cache(maxsize=3)
-def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
+def _resolve_context(ctx: Context, args: Tuple[str, ...], proxy: bool = False) -> Context:
     while args:
         command = ctx.command
 
@@ -352,7 +355,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
 @lru_cache(maxsize=3)
 def _resolve_state(
     ctx: Context, document_text: str
-) -> tuple[Context, ReplParsingState, Incomplete]:
+) -> Tuple[Context, ReplParsingState, Incomplete]:
     # Resolves the parsing state of the arguments in the REPL prompt.
     # try:
     args, incomplete = _resolve_incomplete(document_text)

@@ -12,6 +12,8 @@ from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
 from typing import Any
+from typing import Dict
+from typing import List
 from typing import Sequence
 from typing import Tuple
 
@@ -33,7 +35,7 @@ from . import utils
 from ._globals import HAS_CLICK_GE_8
 from .exceptions import ArgumentPositionError
 
-InfoDict: t.TypeAlias = dict[str, Any]
+InfoDict: t.TypeAlias = Dict[str, Any]
 
 _KEY: t.TypeAlias = Tuple[
     t.Optional[InfoDict],
@@ -52,7 +54,7 @@ _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
 )
 
 
-def split_arg_string(string: str, posix: bool = True) -> list[str]:
+def split_arg_string(string: str, posix: bool = True) -> List[str]:
     """
     Split a command line string into a list of tokens.
     Using the same implementation as in `click.parser.split_arg_string`
@@ -77,7 +79,7 @@ def split_arg_string(string: str, posix: bool = True) -> list[str]:
     lex = shlex(string, posix=posix, punctuation_chars=True)
     lex.whitespace_split = True
     lex.escape = ""
-    out: list[str] = []
+    out: List[str] = []
 
     try:
         out.extend(lex)
@@ -120,7 +122,7 @@ class Incomplete:
 
 
 @lru_cache(maxsize=3)
-def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
+def _resolve_incomplete(document_text: str) -> Tuple[Tuple[str, ...], Incomplete]:
     args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
 
@@ -183,7 +185,7 @@ class ReplParsingState:
         self,
         cli_ctx: Context,
         current_ctx: Context,
-        args: tuple[str, ...],
+        args: Tuple[str, ...],
     ) -> None:
         self.cli_ctx = cli_ctx
         self.cli = t.cast(MultiCommand, self.cli_ctx.command)
@@ -191,7 +193,7 @@ class ReplParsingState:
         self.current_ctx = current_ctx
         self.args = args
 
-        self.remaining_params: list[Parameter] = []
+        self.remaining_params: List[Parameter] = []
         self.double_dash_found = getattr(current_ctx, "_double_dash_found", False)
 
         self.current_group, self.current_command, self.current_param = self.parse()
@@ -215,7 +217,7 @@ class ReplParsingState:
         return f'"{str(self)}"'
 
     def __key(self) -> _KEY:
-        keys: list[dict[str, Any] | None] = []
+        keys: List[Dict[str, Any] | None] = []
 
         for i in (
             self.current_group,
@@ -235,7 +237,7 @@ class ReplParsingState:
             return NotImplemented
         return self.__key() == other.__key()
 
-    def parse(self) -> tuple[MultiCommand, Command | None, Parameter | None]:
+    def parse(self) -> Tuple[MultiCommand, Command | None, Parameter | None]:
         current_group, current_command = self.get_current_group_and_command()
 
         if current_command is not None:
@@ -245,7 +247,7 @@ class ReplParsingState:
 
         return current_group, current_command, current_param
 
-    def get_current_group_and_command(self) -> tuple[MultiCommand, Command | None]:
+    def get_current_group_and_command(self) -> Tuple[MultiCommand, Command | None]:
         current_ctx_command = self.current_ctx.command
         parent_group = current_ctx_command
 
@@ -361,7 +363,7 @@ class ReplParsingState:
 def _resolve_repl_parsing_state(
     cli_ctx: Context,
     current_ctx: Context,
-    args: tuple[str, ...],
+    args: Tuple[str, ...],
 ) -> ReplParsingState:
     return ReplParsingState(cli_ctx, current_ctx, args)
 

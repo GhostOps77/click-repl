@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Final
+from typing import Tuple
 
 import click.shell_completion
 from click import Command
@@ -438,7 +439,7 @@ class ClickCompleter(Completer):
 
         _incomplete = incomplete.expand_envvars()
 
-        boolean_mapping: dict[str, tuple[str, ...]] = {
+        boolean_mapping: Dict[str, Tuple[str, ...]] = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
         }

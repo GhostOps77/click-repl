@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Tuple
 
 from prompt_toolkit.formatted_text import FormattedText
 
@@ -116,7 +117,7 @@ class Marquee:
         # This attribute is used to cache recently generated string.
         self._recent_text: StyleAndTextTuples = []
 
-    def get_terminal_width_and_window_size(self) -> tuple[int, int]:
+    def get_terminal_width_and_window_size(self) -> Tuple[int, int]:
         # os.get_terminal_size() is called for every iteration to handle
         # the change in terminal size.
         terminal_width = os.get_terminal_size().columns

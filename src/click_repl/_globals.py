@@ -11,6 +11,7 @@ import os
 import sys
 import typing as t
 from threading import local
+from typing import List
 from typing import NoReturn
 
 import click
@@ -171,7 +172,7 @@ CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
 
 # To store the ReplContext objects generated throughout the Runtime.
 _locals = local()
-ctx_stack: list[ReplContext] = []
+ctx_stack: List[ReplContext] = []
 _locals.ctx_stack = ctx_stack
 # ctx_stack = _locals.ctx_stack
 

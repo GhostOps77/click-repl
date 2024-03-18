@@ -360,7 +360,7 @@ class InternalCommandSystem:
 
         return info_table
 
-    def list_commands(self) -> list[list[str]]:
+    def list_commands(self) -> List[List[str]]:
         """
         List of internal commands that are available.
 
@@ -399,7 +399,7 @@ class InternalCommandSystem:
 
         return default
 
-    def get_prefix(self, command: str) -> tuple[str, str | None]:
+    def get_prefix(self, command: str) -> Tuple[str, str | None]:
         """
         Extracts the prefix from the beginning of a command string.
 

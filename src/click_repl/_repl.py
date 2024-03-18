@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 import traceback
 from typing import Any
+from typing import Dict
 from typing import Sequence
 from typing import cast
 
@@ -80,11 +81,11 @@ class Repl:
     def __init__(
         self,
         ctx: Context,
-        prompt_kwargs: dict[str, Any] = {},
+        prompt_kwargs: Dict[str, Any] = {},
         completer_cls: type[Completer] | None = ClickCompleter,
         validator_cls: type[Validator] | None = ClickValidator,
-        completer_kwargs: dict[str, Any] = {},
-        validator_kwargs: dict[str, Any] = {},
+        completer_kwargs: Dict[str, Any] = {},
+        validator_kwargs: Dict[str, Any] = {},
         internal_command_prefix: str | None = ":",
         system_command_prefix: str | None = "!",
     ) -> None:
@@ -143,8 +144,8 @@ class Repl:
         self.get_command = get_command
 
     def _bootstrap_completer_kwargs(
-        self, completer_cls: type[Completer] | None, completer_kwargs: dict[str, Any]
-    ) -> dict[str, Any]:
+        self, completer_cls: type[Completer] | None, completer_kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Generates bootstrap keyword arguments for initializing a
         `prompt_toolkit.completer.Completer` object, either using
@@ -179,8 +180,8 @@ class Repl:
         return default_completer_kwargs
 
     def _bootstrap_validator_kwargs(
-        self, validator_cls: type[Validator] | None, validator_kwargs: dict[str, Any]
-    ) -> dict[str, Any]:
+        self, validator_cls: type[Validator] | None, validator_kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Generates bootstrap keyword arguments for initializing a
         `prompt_toolkit.validation.Validator` object, either
@@ -221,11 +222,11 @@ class Repl:
     def _bootstrap_prompt_kwargs(
         self,
         completer_cls: type[Completer] | None,
-        completer_kwargs: dict[str, Any],
+        completer_kwargs: Dict[str, Any],
         validator_cls: type[Validator] | None,
-        validator_kwargs: dict[str, Any],
-        prompt_kwargs: dict[str, Any],
-    ) -> dict[str, Any]:
+        validator_kwargs: Dict[str, Any],
+        prompt_kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
         if not ISATTY:
             return {}
 
@@ -372,7 +373,7 @@ class Repl:
 
 def repl(
     group_ctx: Context,
-    prompt_kwargs: dict[str, Any] = {},
+    prompt_kwargs: Dict[str, Any] = {},
     cls: type[Repl] = Repl,
     **attrs: Any,
 ) -> None:
