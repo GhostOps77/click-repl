@@ -17,9 +17,9 @@ from click import Group
 from click import MultiCommand
 from click import Option
 from click import Parameter
-from click.core import ParameterSource
 from typing_extensions import Self
 
+from ._globals import HAS_CLICK_GE_8
 from .parser import ReplOptionParser
 
 T = t.TypeVar("T")
@@ -246,13 +246,23 @@ class ProxyParameter(Proxy, Parameter):
         # 'process_value' method is called within this method.
         return self.process_value(ctx, value)
 
+    @t.overload  # type:ignore[misc]
+    def consume_value(self, ctx: Context, opts: t.Mapping[str, t.Any]) -> t.Any: ...
+
     def consume_value(
         self, ctx: Context, opts: t.Mapping[str, t.Any]
-    ) -> t.Tuple[t.Any, ParameterSource]:
-        return (
-            opts.get(self.name, None),  # type:ignore[arg-type]
-            ParameterSource.COMMANDLINE,
-        )
+    ) -> t.Union[  # type:ignore[name-defined]
+        "t.Tuple[t.Any, ParameterSource]", t.Any  # noqa:F821
+    ]:
+
+        value = opts.get(self.name, None)  # type:ignore[arg-type]
+
+        if HAS_CLICK_GE_8:
+            from click.core import ParameterSource
+
+            return value, ParameterSource.COMMANDLINE
+
+        return value
 
     def process_value(self, ctx: Context, value: Any) -> Any:
         if value is not None:

@@ -5,6 +5,7 @@ import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError
 
+from click_repl._globals import HAS_CLICK_GE_8
 from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.validator import ClickValidator
 from tests import DummyInternalCommandSystem
@@ -47,6 +48,9 @@ def test_validator_ignores_internal_commands(test_input):
     ],
 )
 def test_default_validator(test_input, expected_err):
+    if not HAS_CLICK_GE_8:
+        expected_err = expected_err.lower()
+
     with pytest.raises(ValidationError, match=expected_err):
         validator.validate(Document(test_input))
 

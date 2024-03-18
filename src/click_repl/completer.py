@@ -14,7 +14,7 @@ from typing import Any
 from typing import Dict
 from typing import Tuple
 
-import click.shell_completion
+import click
 from click import Command
 from click import Context
 from click import MultiCommand

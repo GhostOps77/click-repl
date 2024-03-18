@@ -45,9 +45,9 @@ def append_classname_to_all_tokens(
 
     res: StyleAndTextTuples = []
 
-    for token, value, *_ in tokens_list:
+    for token, *_ in tokens_list:
         token = f"{token},{','.join(classes)}"
-        res.append((token, value, *_))
+        res.append((token, *_))  # type:ignore[arg-type]
 
     return res
 

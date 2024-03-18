@@ -30,14 +30,15 @@ from click.parser import Option
 from click.parser import OptionParser
 from click.parser import ParsingState
 from click.parser import normalize_opt
+from typing_extensions import TypeAlias
 
 from . import utils
 from ._globals import HAS_CLICK_GE_8
 from .exceptions import ArgumentPositionError
 
-InfoDict: t.TypeAlias = Dict[str, Any]
+InfoDict: TypeAlias = Dict[str, Any]
 
-_KEY: t.TypeAlias = Tuple[
+_KEY: TypeAlias = Tuple[
     t.Optional[InfoDict],
     t.Optional[InfoDict],
     t.Optional[InfoDict],
@@ -217,7 +218,7 @@ class ReplParsingState:
         return f'"{str(self)}"'
 
     def __key(self) -> _KEY:
-        keys: List[Dict[str, Any] | None] = []
+        keys: List[InfoDict | None] = []
 
         for i in (
             self.current_group,
@@ -234,7 +235,7 @@ class ReplParsingState:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ReplParsingState):
-            return NotImplemented
+            return NotImplemented  # type:ignore[no-any-return]
         return self.__key() == other.__key()
 
     def parse(self) -> Tuple[MultiCommand, Command | None, Parameter | None]:

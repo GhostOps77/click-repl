@@ -55,7 +55,7 @@ class TokenizedFormattedText(FormattedText):
         if start >= stop:
             return []  # type:ignore[return-value]
 
-        result = []
+        result: StyleAndTextTuples = []
 
         for token, value, *_ in self:
             if stop <= 0:
