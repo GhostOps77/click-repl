@@ -9,7 +9,6 @@ from click_repl._formatting import Marquee
 from click_repl._formatting import TokenizedFormattedText
 from click_repl.bottom_bar import BottomBar
 
-
 terminal_size = namedtuple("terminal_size", ["columns", "lines"])
 
 

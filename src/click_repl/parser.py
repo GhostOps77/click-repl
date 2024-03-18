@@ -33,11 +33,13 @@ from . import utils
 from ._globals import HAS_CLICK_GE_8
 from .exceptions import ArgumentPositionError
 
+InfoDict: t.TypeAlias = dict[str, Any]
+
 _KEY: t.TypeAlias = Tuple[
-    t.Optional[utils.InfoDict],
-    t.Optional[utils.InfoDict],
-    t.Optional[utils.InfoDict],
-    Tuple[utils.InfoDict, ...],
+    t.Optional[InfoDict],
+    t.Optional[InfoDict],
+    t.Optional[InfoDict],
+    Tuple[InfoDict, ...],
 ]
 
 _flag_needs_value = object()

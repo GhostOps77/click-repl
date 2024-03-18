@@ -8,7 +8,6 @@ from click_repl.exceptions import PrefixNotFound
 from click_repl.exceptions import SamePrefix
 from click_repl.exceptions import WrongType
 
-
 ics = InternalCommandSystem(":", "!")
 
 

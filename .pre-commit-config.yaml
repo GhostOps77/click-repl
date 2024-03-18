@@ -23,6 +23,8 @@ repos:
           - "from __future__ import annotations"
           - "--profile"
           - "black"
+          - "src"
+          - "tests"
 
   # Format code.
   - repo: https://github.com/psf/black

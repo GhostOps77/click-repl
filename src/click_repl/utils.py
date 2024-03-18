@@ -7,7 +7,6 @@ Utilities to facilitate the functionality of the click_repl module.
 from __future__ import annotations
 
 import os
-import typing as t
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import Any
@@ -24,6 +23,7 @@ from typing_extensions import Literal
 from ._globals import _RANGE_TYPES
 from ._globals import StyleAndTextTuples
 from .parser import Incomplete
+from .parser import InfoDict
 from .parser import ReplParsingState
 from .parser import _resolve_incomplete
 from .parser import _resolve_repl_parsing_state
@@ -32,9 +32,6 @@ from .proxies import _create_proxy_command
 CompletionStyleDictKeys = Literal[
     "internal-command", "command", "multicommand", "argument", "option", "parameter"
 ]
-
-
-InfoDict: t.TypeAlias = dict[str, Any]
 
 
 def append_classname_to_all_tokens(
