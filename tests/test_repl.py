@@ -186,58 +186,58 @@ from lvl2 command
     )
 
 
-# def test_internal_commands(capfd):
-#     @click.group(invoke_without_command=True)
-#     @click.pass_context
-#     def cli(ctx):
-#         if not ctx.invoked_subcommand:
-#             click_repl.repl(ctx)
+def test_internal_commands(capfd):
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def cli(ctx):
+        if not ctx.invoked_subcommand:
+            click_repl.repl(ctx)
 
-#     with mock_stdin(":help\n:exit\n"):
-#         with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
-#             cli()
+    with mock_stdin(":help\n:exit\n"):
+        with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
+            cli()
 
-#     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
-#     assert (
-#         captured_stdout
-#         == """REPL help:
+    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
+    assert (
+        captured_stdout
+        == """REPL help:
 
-#   External/System Commands:
-#     Prefix External/System commands with "!".
+  External/System Commands:
+    Prefix External/System commands with "!".
 
-#   Internal Commands:
-#     Prefix Internal commands with ":".
-#     :clear, :cls      Clears screen.
-#     :?, :h, :help     Displays general help information.
-#     :exit, :q, :quit  Exits the REPL.
+  Internal Commands:
+    Prefix Internal commands with ":".
+    :clear, :cls      Clears screen.
+    :?, :h, :help     Displays general help information.
+    :exit, :q, :quit  Exits the REPL.
 
-# """
-#     )
-
-
-# @click.group(
-#     cls=click_repl.ReplCli, startup=lambda: print("hi"), cleanup=lambda: print("bye")
-# )
-# def main():
-#     print("main group")
+"""
+    )
 
 
-# @main.command()
-# def cmd1():
-#     print("hello")
+@click.group(
+    cls=click_repl.ReplCli, startup=lambda: print("hi"), cleanup=lambda: print("bye")
+)
+def main():
+    print("main group")
 
 
-# def test_replcli_class(capfd):
-#     with pytest.raises(SystemExit):
-#         with mock_stdin("cmd1\n"):
-#             main()
+@main.command()
+def cmd1():
+    print("hello")
 
-#     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
-#     assert (
-#         captured_stdout
-#         == """main group
-# hi
-# hello
-# bye
-# """
-#     )
+
+def test_replcli_class(capfd):
+    with pytest.raises(SystemExit):
+        with mock_stdin("cmd1\n"):
+            main()
+
+    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
+    assert (
+        captured_stdout
+        == """main group
+hi
+hello
+bye
+"""
+    )
