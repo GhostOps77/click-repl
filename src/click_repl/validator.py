@@ -4,6 +4,7 @@ click_repl.validator
 Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
+
 from __future__ import annotations
 
 import logging
@@ -18,11 +19,10 @@ from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.validation import Validator
 
 from ._globals import CLICK_REPL_DEV_ENV
-from ._globals import get_current_repl_ctx
 from ._globals import ISATTY
+from ._globals import get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .utils import _resolve_state
-
 
 __all__ = ["ClickValidator"]
 

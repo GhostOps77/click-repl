@@ -4,6 +4,7 @@
 Global variables, values, and functions that are accessed across
 all the files in this module.
 """
+
 from __future__ import annotations
 
 import os

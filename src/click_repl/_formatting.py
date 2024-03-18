@@ -7,7 +7,6 @@ from prompt_toolkit.formatted_text import FormattedText
 from ._globals import ISATTY
 from ._globals import StyleAndTextTuples
 
-
 __all__ = ["TokenizedFormattedText", "Marquee"]
 
 

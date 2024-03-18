@@ -3,6 +3,7 @@
 
 Utility for the Bottom bar of the REPL.
 """
+
 from __future__ import annotations
 
 import typing as t
@@ -22,7 +23,6 @@ from ._globals import StyleAndTextTuples
 from .parser import ReplParsingState
 from .utils import append_classname_to_all_tokens
 from .utils import is_param_value_incomplete
-
 
 if t.TYPE_CHECKING:
     from .core import ReplContext

@@ -3,6 +3,7 @@
 
 Parsing functionalities for the click_repl module.
 """
+
 from __future__ import annotations
 
 import re
@@ -12,6 +13,7 @@ from gettext import gettext as _
 from shlex import shlex
 from typing import Any
 from typing import Sequence
+from typing import Tuple
 
 import click
 from click import Argument as CoreArgument
@@ -22,21 +24,20 @@ from click import Parameter
 from click.exceptions import BadOptionUsage
 from click.exceptions import NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import normalize_opt
 from click.parser import Option
 from click.parser import OptionParser
 from click.parser import ParsingState
+from click.parser import normalize_opt
 
 from . import utils
 from ._globals import HAS_CLICK_GE_8
 from .exceptions import ArgumentPositionError
 
-
-_KEY: t.TypeAlias = tuple[
-    dict[str, Any] | None,
-    dict[str, Any] | None,
-    dict[str, Any] | None,
-    tuple[dict[str, Any], ...],
+_KEY: t.TypeAlias = Tuple[
+    t.Optional[utils.InfoDict],
+    t.Optional[utils.InfoDict],
+    t.Optional[utils.InfoDict],
+    Tuple[utils.InfoDict, ...],
 ]
 
 _flag_needs_value = object()

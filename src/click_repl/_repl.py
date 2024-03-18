@@ -3,26 +3,27 @@
 
 Core functionality of the REPL.
 """
+
 from __future__ import annotations
 
 import sys
 import traceback
 from typing import Any
-from typing import cast
 from typing import Sequence
+from typing import cast
 
 import click
 from click import Context
 from click import MultiCommand
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.styles import merge_styles
 from prompt_toolkit.styles import Style
+from prompt_toolkit.styles import merge_styles
 from prompt_toolkit.validation import Validator
 
 from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG
-from ._globals import get_current_repl_ctx
 from ._globals import ISATTY
+from ._globals import get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .completer import ClickCompleter
@@ -36,7 +37,6 @@ from .utils import _generate_next_click_ctx
 from .utils import _get_group_ctx
 from .utils import print_error
 from .validator import ClickValidator
-
 
 __all__ = ["Repl", "repl"]
 

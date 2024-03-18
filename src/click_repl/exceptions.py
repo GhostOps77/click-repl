@@ -3,6 +3,7 @@
 
 Exceptional classes required for the click_repl module.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,7 +11,6 @@ from typing import Any
 from click import Argument
 from click import Command
 from click.exceptions import Exit as ClickExit
-
 
 __all__ = [
     "InternalCommandException",

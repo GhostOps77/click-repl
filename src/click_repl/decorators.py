@@ -3,6 +3,7 @@
 
 Decorators to make using click-repl simpler and more similar to click.
 """
+
 from __future__ import annotations
 
 import typing as t

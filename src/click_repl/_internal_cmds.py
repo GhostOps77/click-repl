@@ -3,6 +3,7 @@
 
 Utilities to manage the REPL's internal commands.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -13,7 +14,10 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Any
 from typing import Callable
+from typing import Dict
+from typing import List
 from typing import NoReturn
+from typing import Tuple
 
 import click
 
@@ -25,8 +29,8 @@ from .exceptions import WrongType
 from .utils import print_error
 
 CallableNone: t.TypeAlias = Callable[[], None]
-InternalCommandDict: t.TypeAlias = dict[str, tuple[CallableNone, str]]
-InfoTable: t.TypeAlias = dict[tuple[CallableNone, str], list[str]]
+InternalCommandDict: t.TypeAlias = Dict[str, Tuple[CallableNone, str]]
+InfoTable: t.TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
 
 
 class PrefixTable(t.TypedDict):

@@ -3,9 +3,11 @@
 
 Utilities to facilitate the functionality of the click_repl module.
 """
+
 from __future__ import annotations
 
 import os
+import typing as t
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import Any
@@ -21,17 +23,18 @@ from typing_extensions import Literal
 
 from ._globals import _RANGE_TYPES
 from ._globals import StyleAndTextTuples
-from .parser import _resolve_incomplete
-from .parser import _resolve_repl_parsing_state
 from .parser import Incomplete
 from .parser import ReplParsingState
+from .parser import _resolve_incomplete
+from .parser import _resolve_repl_parsing_state
 from .proxies import _create_proxy_command
-
-# if t.TYPE_CHECKING or ISATTY:
 
 CompletionStyleDictKeys = Literal[
     "internal-command", "command", "multicommand", "argument", "option", "parameter"
 ]
+
+
+InfoDict: t.TypeAlias = dict[str, Any]
 
 
 def append_classname_to_all_tokens(
@@ -171,7 +174,7 @@ def _get_visible_subcommands(
 @lru_cache(maxsize=128)
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
-) -> dict[str, Any]:
+) -> InfoDict:
     # Similar to the 'get_info_dict' method implementation in click objects,
     # but it only retrieves the essential attributes required to
     # differentiate between different 'ReplParsingState' objects.
@@ -182,7 +185,7 @@ def get_info_dict(
             "params": obj.params,
         }
 
-    info_dict: dict[str, Any] = {}
+    info_dict: InfoDict = {}
 
     if isinstance(obj, click.Command):
         ctx = click.Context(obj)

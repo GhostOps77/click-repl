@@ -3,6 +3,7 @@
 
 Proxy objects to modify the parsing method of click objects.
 """
+
 from __future__ import annotations
 
 import typing as t
@@ -25,8 +26,7 @@ T = t.TypeVar("T")
 
 
 @t.overload
-def _create_proxy_command(obj: Group) -> ProxyGroup:
-    ...
+def _create_proxy_command(obj: Group) -> ProxyGroup: ...
 
 
 @t.overload
@@ -41,8 +41,7 @@ def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
 
 
 @t.overload
-def _create_proxy_param(obj: Parameter) -> Parameter:
-    ...
+def _create_proxy_param(obj: Parameter) -> Parameter: ...
 
 
 @t.overload

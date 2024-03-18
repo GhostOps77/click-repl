@@ -3,6 +3,7 @@
 
 Configuration for auto-completion for REPL.
 """
+
 from __future__ import annotations
 
 import typing as t
@@ -10,6 +11,7 @@ from collections.abc import Generator
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from typing import Dict
 from typing import Final
 
 import click.shell_completion
@@ -27,26 +29,24 @@ from ._formatting import TokenizedFormattedText
 from ._globals import _PATH_TYPES
 from ._globals import AUTO_COMPLETION_FUNC_ATTR
 from ._globals import CLICK_REPL_DEV_ENV
-from ._globals import get_current_repl_ctx
 from ._globals import HAS_CLICK_GE_8
 from ._globals import IS_WINDOWS
 from ._globals import ISATTY
 from ._globals import StyleAndTextTuples
+from ._globals import get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import Incomplete
 from .parser import ReplParsingState
+from .utils import CompletionStyleDictKeys
 from .utils import _get_visible_subcommands
 from .utils import _quotes
 from .utils import _resolve_state
-from .utils import CompletionStyleDictKeys
 from .utils import get_option_flag_sep
 from .utils import get_token_type
 from .utils import is_param_value_incomplete
 from .utils import join_options
 from .utils import options_flags_joiner
-
-# from ._globals import _RANGE_TYPES
 
 
 class _CompletionStyleDict(t.TypedDict):
@@ -54,7 +54,7 @@ class _CompletionStyleDict(t.TypedDict):
     selected_completion_style: str
 
 
-CompletionStyleDict: t.TypeAlias = dict[CompletionStyleDictKeys, _CompletionStyleDict]
+CompletionStyleDict: t.TypeAlias = Dict[CompletionStyleDictKeys, _CompletionStyleDict]
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
