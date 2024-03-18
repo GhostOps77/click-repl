@@ -771,11 +771,13 @@ class ClickCompleter(Completer):
             ctx, current_param.name, check_if_tuple_has_none=False
         )
 
+        ctx_opt_prefixes: set[str] = getattr(ctx, "_opt_prefixes", set())
+
         interspersed_args_available = (
             not state.current_group.chain
             and not current_param
             and ctx.allow_interspersed_args
-            and any(_incomplete_prefix.startswith(i) for i in ctx._opt_prefixes)
+            and any(_incomplete_prefix.startswith(i) for i in ctx_opt_prefixes)
         )
 
         prompt_requires_option_flags_suggestions = (

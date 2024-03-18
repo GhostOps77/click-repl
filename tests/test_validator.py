@@ -68,6 +68,9 @@ validator_dont_show_all_errors = ClickValidator(
     ],
 )
 def test_display_all_errors_false_no_change_on_click_exc(test_input, expected_err):
+    if not HAS_CLICK_GE_8:
+        expected_err = expected_err.lower()
+
     with pytest.raises(ValidationError, match=expected_err):
         validator_dont_show_all_errors.validate(Document(test_input))
 
