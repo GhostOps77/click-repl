@@ -12,7 +12,6 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import Final
 from typing import Tuple
 
 import click.shell_completion
@@ -25,6 +24,9 @@ from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
+from typing_extensions import Final
+from typing_extensions import TypeAlias
+from typing_extensions import TypedDict
 
 from ._formatting import TokenizedFormattedText
 from ._globals import _PATH_TYPES
@@ -50,12 +52,12 @@ from .utils import join_options
 from .utils import options_flags_joiner
 
 
-class _CompletionStyleDict(t.TypedDict):
+class _CompletionStyleDict(TypedDict):
     completion_style: str
     selected_completion_style: str
 
 
-CompletionStyleDict: t.TypeAlias = Dict[CompletionStyleDictKeys, _CompletionStyleDict]
+CompletionStyleDict: TypeAlias = Dict[CompletionStyleDictKeys, _CompletionStyleDict]
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]

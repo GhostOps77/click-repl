@@ -15,6 +15,7 @@ from click import Parameter
 from click.types import FloatRange
 from click.types import IntRange
 from click.types import ParamType
+from typing_extensions import TypedDict
 
 from ._formatting import Marquee
 from ._formatting import TokenizedFormattedText
@@ -33,7 +34,7 @@ if t.TYPE_CHECKING:
 __all__ = ["BottomBar"]
 
 
-class ParamInfo(t.TypedDict):
+class ParamInfo(TypedDict):
     name: Tuple[str, str]
     type_info: StyleAndTextTuples
     nargs_info: StyleAndTextTuples

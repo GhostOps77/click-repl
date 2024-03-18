@@ -8,7 +8,6 @@ raised during auto-completion.
 from __future__ import annotations
 
 import logging
-from typing import Final
 
 from click import Context
 from click import MultiCommand
@@ -17,6 +16,7 @@ from click.exceptions import UsageError
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError
 from prompt_toolkit.validation import Validator
+from typing_extensions import Final
 
 from ._globals import CLICK_REPL_DEV_ENV
 from ._globals import ISATTY

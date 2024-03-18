@@ -6,17 +6,18 @@ Core functionality of the click-repl module.
 
 from __future__ import annotations
 
-import typing as t
 from collections.abc import Iterator
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import Final
 from typing import List
 
 import click
 from click import Context
 from prompt_toolkit import PromptSession
+from typing_extensions import Final
+from typing_extensions import TypeAlias
+from typing_extensions import TypedDict
 
 from . import _repl
 from ._globals import ISATTY
@@ -26,10 +27,10 @@ from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import ReplParsingState
 
-_PromptSession: t.TypeAlias = PromptSession[Dict[str, Any]]
+_PromptSession: TypeAlias = PromptSession[Dict[str, Any]]
 
 
-class InfoDict(t.TypedDict):
+class InfoDict(TypedDict):
     group_ctx: Context
     prompt_kwargs: Dict[str, Any]
     session: _PromptSession | None

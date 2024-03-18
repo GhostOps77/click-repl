@@ -7,7 +7,6 @@ Utilities to manage the REPL's internal commands.
 from __future__ import annotations
 
 import subprocess
-import typing as t
 from collections import defaultdict
 from collections.abc import Generator
 from collections.abc import Iterator
@@ -20,6 +19,8 @@ from typing import NoReturn
 from typing import Tuple
 
 import click
+from typing_extensions import TypeAlias
+from typing_extensions import TypedDict
 
 from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException
@@ -28,12 +29,12 @@ from .exceptions import SamePrefix
 from .exceptions import WrongType
 from .utils import print_error
 
-CallableNone: t.TypeAlias = Callable[[], None]
-InternalCommandDict: t.TypeAlias = Dict[str, Tuple[CallableNone, str]]
-InfoTable: t.TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
+CallableNone: TypeAlias = Callable[[], None]
+InternalCommandDict: TypeAlias = Dict[str, Tuple[CallableNone, str]]
+InfoTable: TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
 
 
-class PrefixTable(t.TypedDict):
+class PrefixTable(TypedDict):
     Internal: str | None
     System: str | None
 
