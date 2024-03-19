@@ -9,6 +9,7 @@ from __future__ import annotations
 import typing as t
 from typing import Any
 
+import click
 from click import Argument
 from click import Command
 from click import CommandCollection
@@ -246,14 +247,9 @@ class ProxyParameter(Proxy, Parameter):
         # 'process_value' method is called within this method.
         return self.process_value(ctx, value)
 
-    @t.overload  # type:ignore[misc]
-    def consume_value(self, ctx: Context, opts: t.Mapping[str, t.Any]) -> t.Any: ...
-
     def consume_value(
         self, ctx: Context, opts: t.Mapping[str, t.Any]
-    ) -> t.Union[  # type:ignore[name-defined]
-        "t.Tuple[t.Any, ParameterSource]", t.Any  # noqa:F821
-    ]:
+    ) -> tuple[t.Any, click.core.ParameterSource] | t.Any:
 
         value = opts.get(self.name, None)  # type:ignore[arg-type]
 
