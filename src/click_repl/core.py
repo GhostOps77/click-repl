@@ -7,9 +7,11 @@ Core functionality of the click-repl module.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Generator
 
 import click
 from click import Context
@@ -41,6 +43,17 @@ class InfoDict(TypedDict):
 
 
 __all__ = ["ReplContext", "ReplCli"]
+
+
+@contextmanager
+def handle_lifetime(self_obj: ReplCli) -> Generator[None, None, None]:
+    if self_obj.startup is not None:
+        self_obj.startup()
+
+    yield
+
+    if self_obj.cleanup is not None:
+        self_obj.cleanup()
 
 
 class ReplContext:
@@ -248,18 +261,7 @@ class ReplCli(click.Group):
         if ctx.invoked_subcommand or ctx.protected_args:
             return super().invoke(ctx)
 
-        return_val = None
-
-        try:
-            if self.startup is not None:
-                self.startup()
-
+        with handle_lifetime(self):
             return_val = super().invoke(ctx)
-
             _repl.repl(ctx, **self.repl_kwargs)
-
-        finally:
-            if self.cleanup is not None:
-                self.cleanup()
-
             return return_val
