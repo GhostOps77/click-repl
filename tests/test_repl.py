@@ -235,8 +235,8 @@ def test_replcli_class(capfd):
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert (
         captured_stdout
-        == """main group
-hi
+        == """hi
+main group
 hello
 bye
 """

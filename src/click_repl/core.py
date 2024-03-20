@@ -244,23 +244,20 @@ class ReplCli(click.Group):
 
         self.repl_kwargs = repl_kwargs
 
-    def invoke_repl(self, ctx: Context) -> None:
+    def invoke(self, ctx: Context) -> Any:
+        if ctx.invoked_subcommand or ctx.protected_args:
+            return super().invoke(ctx)
+
         try:
             if self.startup is not None:
                 self.startup()
 
+            return_val = super().invoke(ctx)
+
             _repl.repl(ctx, **self.repl_kwargs)
+
+            return return_val
 
         finally:
             if self.cleanup is not None:
                 self.cleanup()
-
-    def invoke(self, ctx: Context) -> Any:
-        return_val = super().invoke(ctx)
-
-        if ctx.invoked_subcommand or ctx.protected_args:
-            return return_val
-
-        self.invoke_repl(ctx)
-
-        return return_val
