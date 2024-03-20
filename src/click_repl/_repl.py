@@ -289,6 +289,7 @@ class Repl:
             return
 
         try:
+            print("hi")
             self.repl_ctx.internal_command_system.execute(command.lower())
 
         except PrefixNotFound:

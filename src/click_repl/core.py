@@ -248,6 +248,8 @@ class ReplCli(click.Group):
         if ctx.invoked_subcommand or ctx.protected_args:
             return super().invoke(ctx)
 
+        return_val = None
+
         try:
             if self.startup is not None:
                 self.startup()
@@ -256,8 +258,8 @@ class ReplCli(click.Group):
 
             _repl.repl(ctx, **self.repl_kwargs)
 
-            return return_val
-
         finally:
             if self.cleanup is not None:
                 self.cleanup()
+
+            return return_val
