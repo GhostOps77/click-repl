@@ -240,61 +240,56 @@ class ReplParsingState:
 
     def parse(self) -> Tuple[MultiCommand, Command | None, Parameter | None]:
         current_group, current_command = self.get_current_group_and_command()
+        current_param = None
 
         if current_command is not None:
             current_param = self.get_current_param(current_command)
-        else:
-            current_param = None
 
         return current_group, current_command, current_param
 
     def get_current_group_and_command(self) -> Tuple[MultiCommand, Command | None]:
         current_ctx_command = self.current_ctx.command
-        parent_group = current_ctx_command
 
-        # If parent ctx exist, we change parent_group to the parent ctx's command.
-        if self.current_ctx.parent is not None:
-            parent_group = self.current_ctx.parent.command
-
-        current_group = t.cast(MultiCommand, parent_group)
-        is_parent_group_chained = current_group.chain
+        current_group = current_ctx_command
         current_command = None
+
+        if current_ctx_command == self.cli:
+            return current_group, current_command  # type:ignore[return-value]
+
+        # If parent ctx exist, we change current_group to the parent ctx's command.
+        if self.current_ctx.parent is not None:
+            current_group = self.current_ctx.parent.command
+
+        current_group = t.cast(MultiCommand, current_group)
 
         # Check if not all the required arguments have been assigned a value.
         # Here, we are checking if any of the click.Argument type parameters
         # have an incomplete value. Only click.Argument type parameters require
         # values (they have required=True by default), so they consume any
         # incoming string value they receive. If any incomplete argument value
-        # is found, not_all_args_got_values is set to False. This condition check
+        # is found, cmd_got_all_the_values is set to False. This condition check
         # is only performed when the parent group is a non-chained multi-command.
 
-        args_list = [
+        cmd_arguments_list = [
             param
             for param in current_ctx_command.params
             if isinstance(param, click.Argument)
         ]
 
-        not_all_args_got_values = all(
+        all_args_got_values = all(
             not utils.is_param_value_incomplete(self.current_ctx, param.name)
-            for param in args_list
+            for param in cmd_arguments_list
         )
 
-        incomplete_args_exist = not args_list or not_all_args_got_values
-        no_incomplete_args = args_list and not_all_args_got_values
+        has_incomplete_args = not (cmd_arguments_list and all_args_got_values)
 
-        if current_ctx_command == self.cli:
-            return current_group, current_command
-
-        elif (
-            isinstance(current_ctx_command, click.MultiCommand) and incomplete_args_exist
-        ):
+        if isinstance(current_ctx_command, click.MultiCommand) and all_args_got_values:
             # If all the arguments are passed to the ctx multicommand,
             # promote it as current group.
             current_group = current_ctx_command
 
-        elif not (
-            is_parent_group_chained
-            and (not current_ctx_command.params or no_incomplete_args)
+        elif not current_group.chain or (
+            current_ctx_command.params and has_incomplete_args
         ):
             # The current command should point to its parent, once it
             # got all of its values, only if the parent has chain=True
@@ -311,11 +306,9 @@ class ReplParsingState:
             if utils.is_param_value_incomplete(self.current_ctx, param.name)
         ]
 
-        param: Parameter | None = self.parse_param_opt(current_command)
-        if param is None:
-            param = self.parse_param_arg(current_command)
-
-        return param
+        return self.parse_param_opt(current_command) or self.parse_param_arg(
+            current_command
+        )
 
     def parse_param_opt(self, current_command: Command) -> click.Option | None:
         if "--" in self.args:
