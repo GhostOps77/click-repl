@@ -186,16 +186,17 @@ from lvl2 command
     )
 
 
-def test_internal_commands(capfd):
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def cli(ctx):
-        if not ctx.invoked_subcommand:
-            click_repl.repl(ctx)
+@click.group(invoke_without_command=True)
+@click.pass_context
+def internal_cmd_test_group(ctx):
+    if not ctx.invoked_subcommand:
+        click_repl.repl(ctx)
 
+
+def test_internal_commands(capfd):
     with mock_stdin(":help\n:exit\n"):
         with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
-            cli()
+            internal_cmd_test_group(args=[])
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert (
@@ -218,25 +219,25 @@ def test_internal_commands(capfd):
 @click.group(
     cls=click_repl.ReplCli, startup=lambda: print("hi"), cleanup=lambda: print("bye")
 )
-def main():
-    print("main group")
+def replcli_group():
+    print("replcli cls group")
 
 
-@main.command()
+@replcli_group.command()
 def cmd1():
     print("hello")
 
 
 def test_replcli_class(capfd):
-    with pytest.raises(SystemExit):
-        with mock_stdin("cmd1\n"):
-            main()
+    with mock_stdin("cmd1\n"):
+        with pytest.raises(SystemExit):
+            replcli_group(args=[])
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert (
         captured_stdout
         == """hi
-main group
+replcli cls group
 hello
 bye
 """
