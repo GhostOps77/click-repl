@@ -23,5 +23,5 @@ __all__ = [
     "register_repl",
 ]
 
-version_info = (0, 2, 1, 8)
-__version__ = "0.2.1dev8"
+version_info = (0, 2, 1, 9)
+__version__ = "0.2.1dev9"

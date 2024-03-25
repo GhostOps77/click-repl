@@ -79,7 +79,7 @@ def cli():
 
 
 @cli.group(chain=True)
-@click.argument("arg", type=click.Choice(["hi", "hi2", "hi3"]))
+@click.argument("arg", type=click.Choice(["hi", "hi 2", "hi 3"]))
 def chained_group(arg):
     pass
 
@@ -103,7 +103,7 @@ c4 = ClickCompleter(click.Context(cli), InternalCommandSystem())
 @pytest.mark.parametrize(
     "test_input,expected",
     [
-        ("chained-group ", {"hi", "hi2", "hi3"}),
+        ("chained-group ", {"hi", '"hi 2"', '"hi 3"'}),
         ("chained-group hi ", {"subcommand1", "subcommand2"}),
         ("chained-group hi subcommand1 ", {"hlllo", "hello2", "hello3", "--opt1"}),
         ("chained-group hi subcommand1 hlllo ", {"subcommand1", "subcommand2"}),

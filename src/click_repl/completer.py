@@ -43,6 +43,7 @@ from .parser import Incomplete
 from .parser import ReplParsingState
 from .utils import CompletionStyleDictKeys
 from .utils import _get_visible_subcommands
+from .utils import _is_help_option
 from .utils import _quotes
 from .utils import _resolve_state
 from .utils import get_option_flag_sep
@@ -583,6 +584,38 @@ class ClickCompleter(Completer):
 
         return
 
+    def get_completions_for_joined_boolean_option_flags(
+        self,
+        ctx: Context,
+        option: click.Option,
+        state: ReplParsingState,
+        incomplete: Incomplete,
+    ) -> Iterator[Completion]:
+        # Display coloured option flags, only if there are
+        # any exclusive flags to pass in the False'y value
+
+        for flags_list, bool_val in zip(
+            [option.opts, option.secondary_opts], ["true", "false"]
+        ):
+            # The primary flags are assigned for the boolean value of "True",
+            # And "False" for secondary flags, despite the default value.
+
+            item_token = f"parameter.type.bool.to{bool_val}"
+
+            display_lst = options_flags_joiner(
+                flags_list,
+                item_token,
+                f"parameter.option.name.separator,{item_token}",
+                get_option_flag_sep(flags_list),
+            )
+
+            yield ReplCompletion(
+                min(flags_list, key=len),
+                incomplete,
+                display=TokenizedFormattedText(display_lst, "autocompletion-menu"),
+                display_meta=option.help or "",
+            )
+
     def get_completion_for_option_flags(
         self,
         ctx: Context,
@@ -643,36 +676,12 @@ class ClickCompleter(Completer):
             if hide:
                 continue
 
-            is_shortest_opts_only = self.shortest_opts_only and not (
-                _incomplete  # or (option.is_bool_flag and option.secondary_opts)
-            )
+            is_shortest_opts_only = self.shortest_opts_only and not _incomplete
 
             if is_shortest_opts_only and option.is_bool_flag and option.secondary_opts:
-                # Display coloured option flags, only if there are
-                # any exclusive flags to pass in the False'y value
-
-                for flags_list, bool_val in zip(
-                    [option.opts, option.secondary_opts], ["true", "false"]
-                ):
-                    # The primary flags are assigned for the boolean value of "True",
-                    # And "False" for secondary flags, despite the default value.
-
-                    display_lst = options_flags_joiner(
-                        flags_list,
-                        f"parameter.type.bool.to{bool_val}",
-                        "parameter.option.name.separator",
-                        get_option_flag_sep(flags_list),
-                    )
-
-                    yield ReplCompletion(
-                        min(flags_list, key=len),
-                        incomplete,
-                        display=TokenizedFormattedText(
-                            display_lst, "autocompletion-menu"
-                        ),
-                        display_meta=option.help or "",
-                    )
-
+                yield from self.get_completions_for_joined_boolean_option_flags(
+                    ctx, option, state, incomplete
+                )
                 continue
 
             option_flags = option.opts + option.secondary_opts
@@ -690,9 +699,10 @@ class ClickCompleter(Completer):
                 option_flags, sep = join_options(flags_that_start_with_incomplete)
 
                 def display_text_func(flag_token: str) -> StyleAndTextTuples:
-                    return options_flags_joiner(
-                        option_flags, flag_token, "parameter.option.name.separator", sep
-                    )
+                    if not flag_token.startswith("parameter.option.name"):
+                        flag_token = f"parameter.option.name.separator,{flag_token}"
+
+                    return options_flags_joiner(option_flags, flag_token, flag_token, sep)
 
                 flags_that_start_with_incomplete = [
                     min(flags_that_start_with_incomplete, key=len)
@@ -701,10 +711,10 @@ class ClickCompleter(Completer):
             for option_flag in flags_that_start_with_incomplete:
                 if not is_shortest_opts_only:
 
-                    def display_text_func(flag_token: str) -> StyleAndTextTuples:  # noqa
+                    def display_text_func(flag_token: str) -> StyleAndTextTuples:
                         return [(flag_token, option_flag)]
 
-                if option.is_bool_flag:
+                if option.is_bool_flag and not _is_help_option(option):
                     if option.secondary_opts:
                         # Display coloured option flags, only if there're
                         # any exclusive flags to pass in the False'y value

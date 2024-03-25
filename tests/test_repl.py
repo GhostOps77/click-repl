@@ -226,12 +226,13 @@ def replcli_group():
 @replcli_group.command()
 def cmd1():
     print("hello")
+    return 1
 
 
-def test_replcli_class(capfd):
+def test_replcli_class_repl(capfd):
     with mock_stdin("cmd1\n"):
         with pytest.raises(SystemExit):
-            replcli_group(args=[])
+            assert replcli_group(args=[]) is None
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert (
@@ -240,5 +241,18 @@ def test_replcli_class(capfd):
 replcli cls group
 hello
 bye
+"""
+    )
+
+
+def test_replcli_class_rqepl_with_protected_args(capfd):
+    with pytest.raises(SystemExit):
+        assert replcli_group(args=["cmd1"]) == 1
+
+    captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
+    assert (
+        captured_stdout
+        == """replcli cls group
+hello
 """
     )

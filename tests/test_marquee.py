@@ -139,3 +139,13 @@ def test_marquee_inline_content(monkeypatch):
         assert bottombar.get_formatted_text().get_text() == (
             prefix_list_content_str + tokens_list_content_str
         )
+
+
+# def test_dynamic_change_in_terminal_width(monkeypatch):
+#     monkeypatch.setattr(
+#         os,
+#         "get_terminal_size",
+#         _get_terminal_size_func(
+#             len(prefix_list_content_str) + len(tokens_list_content_str) + 20
+#         ),
+#     )

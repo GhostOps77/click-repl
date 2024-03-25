@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
+from difflib import get_close_matches
 from functools import lru_cache
 from typing import Any
 from typing import Iterable
@@ -96,13 +97,18 @@ def _expand_envvars(text: str) -> str:
     return os.path.expandvars(os.path.expanduser(text))
 
 
-# def _is_help_option(param: click.Option) -> bool:
-#     return (
-#         param.is_flag
-#         and not param.expose_value
-#         and param.is_eager
-#         and param.help == _("Show this message and exit.")
-#     )
+def _is_help_option(param: click.Option) -> bool:
+    return (
+        param.is_flag
+        and not param.expose_value
+        and param.is_eager
+        and "--help" in param.opts
+        and bool(
+            get_close_matches(
+                param.help or "", ["Show this message and exit."], cutoff=0.5
+            )
+        )
+    )
 
 
 def print_error(text: str) -> None:
@@ -355,13 +361,8 @@ def _resolve_state(
     ctx: Context, document_text: str
 ) -> Tuple[Context, ReplParsingState, Incomplete]:
     # Resolves the parsing state of the arguments in the REPL prompt.
-    # try:
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
 
     return parsed_ctx, state, incomplete
-
-
-# except Exception as e:
-#     raise ParserError(str(e)) from e

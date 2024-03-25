@@ -21,15 +21,15 @@ class TokenizedFormattedText(FormattedText):
 
         if is_not_formatted_text and parent_token_class:
             for index, token_tuple in enumerate(tokens_list):
-                class_names_str = token_tuple[0]
+                class_names = token_tuple[0]
 
-                if class_names_str and not class_names_str.startswith("class:"):
-                    class_names_str = "class:" + ",".join(
+                if class_names and not class_names.startswith("class:"):
+                    class_names = "class:" + ",".join(
                         f"{parent_token_class}.{class_name}"
-                        for class_name in class_names_str.split(",")
+                        for class_name in class_names.split(",")
                     )
 
-                tokens_list[index] = (class_names_str, token_tuple[1])
+                tokens_list[index] = (class_names, *token_tuple[1:])
 
         super().__init__(tokens_list)
         self.parent_token_class = parent_token_class
@@ -43,13 +43,7 @@ class TokenizedFormattedText(FormattedText):
         return res
 
     def get_length_by_content(self) -> int:
-        length = 0
-
-        for _, value, *_ in self:
-            length += len(value)
-
-        # return sum(len(value) for _, value, *_ in self)
-        return length
+        return sum(len(value) for _, value, *_ in self)
 
     def slice_by_text_content(self, start: int, stop: int) -> TokenizedFormattedText:
         if start >= stop:
@@ -108,7 +102,6 @@ class Marquee:
         self.text = text
         self.prefix = prefix
         self.pointer_position = 0
-        # self.terminal_width = 0
         self.is_pointer_direction_left = True
         self.hit_boundary = True
         self.waited_for_in_iterations = 5
@@ -218,7 +211,7 @@ class Marquee:
         text = self.text.slice_by_text_content(self.pointer_position, chunk_end_pos)
         self.adjust_pointer_position()
 
-        # Storing/caching the recently generated string.
+        # Storing/Caching the recently generated string.
         self._recent_text = TokenizedFormattedText(self.prefix + text, "bottom-bar")
 
         return self._recent_text

@@ -262,39 +262,30 @@ class ReplParsingState:
 
         current_group = t.cast(MultiCommand, current_group)
 
-        # Check if not all the required arguments have been assigned a value.
-        # Here, we are checking if any of the click.Argument type parameters
-        # have an incomplete value. Only click.Argument type parameters require
-        # values (they have required=True by default), so they consume any
-        # incoming string value they receive. If any incomplete argument value
-        # is found, cmd_got_all_the_values is set to False. This condition check
-        # is only performed when the parent group is a non-chained multi-command.
-
         cmd_arguments_list = [
             param
             for param in current_ctx_command.params
             if isinstance(param, click.Argument)
         ]
 
-        all_args_got_values = all(
+        all_arguments_got_values = all(
             not utils.is_param_value_incomplete(self.current_ctx, param.name)
             for param in cmd_arguments_list
         )
 
-        has_incomplete_args = not (cmd_arguments_list and all_args_got_values)
+        has_incomplete_args = not (cmd_arguments_list and all_arguments_got_values)
 
-        if isinstance(current_ctx_command, click.MultiCommand) and all_args_got_values:
-            # If all the arguments are passed to the ctx multicommand,
-            # promote it as current group.
+        if (
+            isinstance(current_ctx_command, click.MultiCommand)
+            and all_arguments_got_values
+        ):
+            # Promote the current command as current group, only if it
+            # has got values to all of its click.Argument type args.
             current_group = current_ctx_command
 
         elif not current_group.chain or (
             current_ctx_command.params and has_incomplete_args
         ):
-            # The current command should point to its parent, once it
-            # got all of its values, only if the parent has chain=True
-            # let current_command be None. Or else, let current_command
-            # be the current_ctx_command.
             current_command = current_ctx_command
 
         return current_group, current_command
@@ -335,22 +326,22 @@ class ReplParsingState:
         return None
 
     def parse_param_arg(self, current_command: Command) -> click.Argument | None:
-        minus_one_param = None
+        nargs_minus_one_param = None
 
         for idx, param in enumerate(current_command.params):
             if not isinstance(param, click.Argument):
                 continue
 
-            if minus_one_param is not None:
+            if nargs_minus_one_param is not None:
                 raise ArgumentPositionError(current_command, param, idx)
 
             if param.nargs == -1:
-                minus_one_param = param
+                nargs_minus_one_param = param
 
             elif utils.is_param_value_incomplete(self.current_ctx, param.name):
                 return param
 
-        return minus_one_param
+        return nargs_minus_one_param
 
 
 @lru_cache(maxsize=3)
