@@ -90,7 +90,7 @@ class Marquee:
         "is_pointer_direction_left",
         "hit_boundary",
         "waited_for_in_iterations",
-        "is_window_size_le_terminal_size",
+        "_is_text_length_le_window_size",
         "_recent_text",
     )
 
@@ -105,7 +105,7 @@ class Marquee:
         self.is_pointer_direction_left = True
         self.hit_boundary = True
         self.waited_for_in_iterations = 5
-        self.is_window_size_le_terminal_size = False
+        self._is_text_length_le_window_size = False
 
         # This attribute is used to cache recently generated string.
         self._recent_text: StyleAndTextTuples = []
@@ -126,6 +126,21 @@ class Marquee:
         # given string object, in right side of it.
 
         terminal_width, window_size = self.get_terminal_width_and_window_size()
+
+        if self.text.get_length_by_content() <= window_size:
+            if not self._is_text_length_le_window_size:
+                self._is_text_length_le_window_size = True
+
+            if self.pointer_position != 0:
+                self.pointer_position = 0
+                self.hit_boundary = True
+                self.waited_for_in_iterations = 0
+                self.is_pointer_direction_left = True
+
+            return
+
+        elif self._is_text_length_le_window_size:
+            self._is_text_length_le_window_size = False
 
         pointer_max_pos_in_right = (
             self.text.get_length_by_content()
@@ -149,21 +164,6 @@ class Marquee:
             self.hit_boundary = True
             self.waited_for_in_iterations = 0
 
-        if self.text.get_length_by_content() <= window_size:
-            if not self.is_window_size_le_terminal_size:
-                self.is_window_size_le_terminal_size = True
-
-            if self.pointer_position != 0:
-                self.pointer_position = 0
-                self.hit_boundary = True
-                self.waited_for_in_iterations = 0
-                self.is_pointer_direction_left = True
-
-            return
-
-        else:
-            self.is_window_size_le_terminal_size = False
-
         if self.is_pointer_direction_left:
             self.pointer_position += 1
         else:
@@ -185,20 +185,19 @@ class Marquee:
         text and prefix objects altogether.
         """
 
-        _, chunk_size = self.get_terminal_width_and_window_size()
+        _, window_size = self.get_terminal_width_and_window_size()
 
-        if self.text.get_length_by_content() <= chunk_size:
-            if self.is_window_size_le_terminal_size:
-                return self._recent_text
+        if self.text.get_length_by_content() <= window_size:
+            if not self._is_text_length_le_window_size:
+                self._recent_text = self.get_full_formatted_text()
+                self.adjust_pointer_position()
 
-            self._recent_text = self.get_full_formatted_text()
+            return self._recent_text
 
         if self.hit_boundary:
-            # The string stored/cached in self._recent_text is used only here again
+            # The string cached in self._recent_text is used only here again
             # without slicing it from the original string, to avoid re-evaluation
             # for the next 5 iterations.
-            if self.is_window_size_le_terminal_size:
-                return self._recent_text
 
             if self.waited_for_in_iterations < 5:
                 # Wait for the next 5 iterations if you've hit boundary.
@@ -207,7 +206,7 @@ class Marquee:
 
             self.hit_boundary = False
 
-        chunk_end_pos = self.pointer_position + chunk_size
+        chunk_end_pos = self.pointer_position + window_size
         text = self.text.slice_by_text_content(self.pointer_position, chunk_end_pos)
         self.adjust_pointer_position()
 
