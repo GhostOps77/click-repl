@@ -20,9 +20,11 @@ __all__ = [
 
 class InternalCommandException(Exception):
     """
-    Base Class for all Exceptions raised by the `InternalCommandSystem`.
+    Base Class for all Exceptions raised by the
+    :class:`~click_repl._internal_cmds.InternalCommandSystem`.
 
-    This class is used to replace errors raised inside the `InternalCommandSystem`
+    This class is used to replace errors raised inside the
+    :class:`~click_repl._internal_cmds.InternalCommandSystem`
     class in order to display their error messages separately in the REPL.
     """
 
@@ -49,14 +51,16 @@ class PrefixNotFound(InternalCommandException):
 class WrongType(InternalCommandException):
     """
     Exception raised when an object with an invalid type is passed to one of
-    the methods in `InternalCommandSystem`.
+    the methods in :class:`~click_repl._internal_cmds.InternalCommandSystem`.
 
     Parameters
     ----------
     var : Any
         The variable that has wrong/unexpected type.
+
     var_name : str
         The name of the variable passed through the `var` parameter.
+
     expected_type : str
         A string that describes the expected type.
     """
@@ -107,10 +111,10 @@ class ArgumentPositionError(ParserError):
 
     Parameters
     ----------
-    command : `click.Command`
+    command : click.Command
         The click command object that contains the argument.
 
-    argument : `click.Argument`
+    argument : click.Argument
         The click argument object that violates the position rule.
 
     position : int

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from typing import Self
 
 from prompt_toolkit.formatted_text import FormattedText
 
@@ -76,7 +75,7 @@ class TokenizedFormattedText(FormattedText):
         """
         return sum(len(token[1]) for token in self)
 
-    def slice_by_text_content(self, start: int, stop: int) -> Self:
+    def slice_by_text_content(self, start: int, stop: int) -> TokenizedFormattedText:
         """
         Slices the tokens based on the display text in them.
 

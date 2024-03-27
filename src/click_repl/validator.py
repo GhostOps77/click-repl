@@ -44,16 +44,6 @@ logger.addHandler(file_handler)
 class ClickValidator(Validator):
     """
     Custom prompt input validation for the click_repl app.
-
-    Parameters
-    ----------
-    ctx : `click.Context`
-        The current `click.Context` object.
-
-    display_all_errors : bool
-        If `False`, all generic Python Exceptions that are raised, will not be
-        displayed in the Validator bar, resulting in the full error traceback
-        being redirected to a log file in the REPL mode.
     """
 
     def __init__(
@@ -62,6 +52,20 @@ class ClickValidator(Validator):
         internal_commands_system: InternalCommandSystem,
         display_all_errors: bool = True,
     ) -> None:
+        """
+        Initializes a `ClickValidator` object.
+
+        Parameters
+        ----------
+        ctx : click.Context
+            The current :class:`~click.Context` object.
+
+        display_all_errors : bool
+            Flag that determines whether to raise generic Python Exceptions, and not to
+            display them in the `Validator` bar, resulting in the full error traceback
+            being redirected to a log file in the REPL mode.
+        """
+
         self.cli_ctx: Final[Context] = ctx
         self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
 
@@ -76,13 +80,13 @@ class ClickValidator(Validator):
 
         Parameters
         ----------
-        document : `prompt_toolkit.document.Document`
-            A `prompt_toolkit.document.Document` object
+        document : prompt_toolkit.document.Document
+            A :class:`~prompt_toolkit.document.Document` object
             containing the incomplete string from the REPL.
 
         Raises
         ------
-        `prompt_toolkit.validation.ValidationError`
+        prompt_toolkit.validation.ValidationError
             If there's any error occurred during argument parsing, and it needs
             to be displayed in the validation bar.
 

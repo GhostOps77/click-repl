@@ -7,7 +7,7 @@ Utilities to facilitate the functionality of the click_repl module.
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
+from collections.abc import Generator
 from difflib import get_close_matches
 from functools import lru_cache
 from typing import Any, Iterable
@@ -152,9 +152,9 @@ def _get_visible_subcommands(
     multicommand: MultiCommand,
     incomplete: str,
     show_hidden_commands: bool = False,
-) -> Iterator[tuple[str, Command]]:
+) -> Generator[tuple[str, Command], None, None]:
     # Get all the subcommands whose name starts with the given
-    # "incomplete" prefix string.
+    # 'incomplete' prefix string.
 
     for command_name in multicommand.list_commands(ctx):
         if not command_name.startswith(incomplete):
@@ -174,9 +174,22 @@ def _get_visible_subcommands(
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> InfoDict:
-    # Similar to the 'get_info_dict' method implementation in click objects,
-    # but it only retrieves the essential attributes required to
-    # differentiate between different 'ReplParsingState' objects.
+    """
+    Similar to the 'get_info_dict' method implementation in click objects,
+    but it only retrieves the essential attributes required to
+    differentiate between different 'ReplParsingState' objects.
+
+    Parameters
+    ----------
+    obj : click.Context | click.Command | click.Parameter | click.ParamType
+        Click object for which the info dict needs to be generated.
+
+    Returns
+    -------
+    InfoDict
+        Dictionary that holds crucial details about the given click object
+        that can be used to uniquely identify it.
+    """
 
     if isinstance(obj, click.Context):
         return {
@@ -355,7 +368,25 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
 def _resolve_state(
     ctx: Context, document_text: str
 ) -> tuple[Context, ReplParsingState, Incomplete]:
-    # Resolves the parsing state of the arguments in the REPL prompt.
+    """
+    Resolves the parsing state of the arguments in the REPL prompt.
+
+    Parameters
+    ----------
+    ctx : click.Context
+        The current click context object of the parent group.
+
+    document_text : str
+        Text that's currently entered in the prompt.
+
+    Returns
+    -------
+    tuple[Context, ReplParsingState, Incomplete]
+        Returns the appropriate `click.Context` constructed from parsing
+        the given input from prompt, current `ReplParsingState` object,
+        and the `Incomplete` object that holds the incomplete data that
+        requires suggestions.
+    """
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)

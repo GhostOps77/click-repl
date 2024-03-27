@@ -30,18 +30,19 @@ def pass_context(
     func: Callable[Concatenate[ReplContext | None, P], R],
 ) -> Callable[P, R]:
     """
-    A Decorator that marks a callback as wanting to receive
-    the current REPL context object as its first argument.
+    Marks a callback as wanting to receive the current REPL context
+    object as its first argument.
 
     Parameters
     ----------
     func : Any function.
-        The callback function to decorate.
+        The callback function to pass context as it's first parameter.
 
     Returns
     -------
-    The decorated callback function that recieves the current repl
-    context object as its first argument.
+    Decorated function
+        The decorated callback function that receives the current repl
+        context object as its first argument.
     """
 
     @wraps(func)
@@ -63,15 +64,21 @@ def register_repl(
 
     Parameters
     ----------
-    group : `click.Group`
+    group : click.Group | None
         The click group (current CLI) object to which the repl command will be registered.
 
-    name : str
+    name : str, default="repl"
         The name of the repl command in the given Group.
 
     remove_cmd_before_repl : bool
         Flag that determines whether to remove the repl command from the group,
         before it's execution or not.
+
+    Returns
+    -------
+    Callable[[Group], Group] | Group
+        The same `group` or a callback that returns the same group, but
+        the group has a repl command registered to it.
 
     Raises
     ------
