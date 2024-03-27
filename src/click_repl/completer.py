@@ -7,50 +7,43 @@ Configuration for auto-completion for REPL.
 from __future__ import annotations
 
 import typing as t
-from collections.abc import Generator
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 import click
-from click import Command
-from click import Context
-from click import MultiCommand
-from click import Parameter
+from click import Command, Context, MultiCommand, Parameter
 from click.types import ParamType
-from prompt_toolkit.completion import CompleteEvent
-from prompt_toolkit.completion import Completer
-from prompt_toolkit.completion import Completion
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
-from typing_extensions import Final
-from typing_extensions import TypeAlias
-from typing_extensions import TypedDict
+from typing_extensions import Final, TypeAlias, TypedDict
 
 from ._formatting import TokenizedFormattedText
-from ._globals import _PATH_TYPES
-from ._globals import AUTO_COMPLETION_FUNC_ATTR
-from ._globals import CLICK_REPL_DEV_ENV
-from ._globals import HAS_CLICK_GE_8
-from ._globals import IS_WINDOWS
-from ._globals import ISATTY
-from ._globals import StyleAndTextTuples
-from ._globals import get_current_repl_ctx
+from ._globals import (
+    _PATH_TYPES,
+    AUTO_COMPLETION_FUNC_ATTR,
+    CLICK_REPL_DEV_ENV,
+    HAS_CLICK_GE_8,
+    IS_WINDOWS,
+    ISATTY,
+    StyleAndTextTuples,
+    get_current_repl_ctx,
+)
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
-from .parser import Incomplete
-from .parser import ReplParsingState
-from .utils import CompletionStyleDictKeys
-from .utils import _get_visible_subcommands
-from .utils import _is_help_option
-from .utils import _quotes
-from .utils import _resolve_state
-from .utils import get_option_flag_sep
-from .utils import get_token_type
-from .utils import is_param_value_incomplete
-from .utils import join_options
-from .utils import options_flags_joiner
+from .parser import Incomplete, ReplParsingState
+from .utils import (
+    CompletionStyleDictKeys,
+    _get_visible_subcommands,
+    _is_help_option,
+    _quotes,
+    _resolve_state,
+    get_option_flag_sep,
+    get_token_type,
+    is_param_value_incomplete,
+    join_options,
+    options_flags_joiner,
+)
 
 
 class _CompletionStyleDict(TypedDict):

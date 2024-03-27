@@ -8,25 +8,14 @@ from __future__ import annotations
 
 import subprocess
 from collections import defaultdict
-from collections.abc import Generator
-from collections.abc import Iterator
-from collections.abc import Sequence
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import NoReturn
-from typing import Tuple
+from collections.abc import Generator, Iterator, Sequence
+from typing import Any, Callable, Dict, List, NoReturn, Tuple
 
 import click
-from typing_extensions import TypeAlias
-from typing_extensions import TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from ._globals import get_current_repl_ctx
-from .exceptions import ExitReplException
-from .exceptions import PrefixNotFound
-from .exceptions import SamePrefix
-from .exceptions import WrongType
+from .exceptions import ExitReplException, PrefixNotFound, SamePrefix, WrongType
 from .utils import print_error
 
 CallableNone: TypeAlias = Callable[[], None]

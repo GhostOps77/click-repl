@@ -5,8 +5,7 @@ from typing import Tuple
 
 from prompt_toolkit.formatted_text import FormattedText
 
-from ._globals import ISATTY
-from ._globals import StyleAndTextTuples
+from ._globals import ISATTY, StyleAndTextTuples
 
 __all__ = ["TokenizedFormattedText", "Marquee"]
 

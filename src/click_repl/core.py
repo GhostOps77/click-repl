@@ -8,22 +8,15 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Generator
+from typing import Any, Callable, Dict, Generator
 
 import click
 from click import Context
 from prompt_toolkit import PromptSession
-from typing_extensions import Final
-from typing_extensions import TypeAlias
-from typing_extensions import TypedDict
+from typing_extensions import Final, TypeAlias, TypedDict
 
 from . import _repl
-from ._globals import ISATTY
-from ._globals import _pop_context
-from ._globals import _push_context
+from ._globals import ISATTY, _pop_context, _push_context
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import ReplParsingState

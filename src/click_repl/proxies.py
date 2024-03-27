@@ -10,14 +10,16 @@ import typing as t
 from typing import Any
 
 import click
-from click import Argument
-from click import Command
-from click import CommandCollection
-from click import Context
-from click import Group
-from click import MultiCommand
-from click import Option
-from click import Parameter
+from click import (
+    Argument,
+    Command,
+    CommandCollection,
+    Context,
+    Group,
+    MultiCommand,
+    Option,
+    Parameter,
+)
 from typing_extensions import Self
 
 from ._globals import HAS_CLICK_GE_8

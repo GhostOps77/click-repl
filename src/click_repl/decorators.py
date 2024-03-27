@@ -8,13 +8,11 @@ from __future__ import annotations
 
 import typing as t
 from functools import wraps
-from typing import Any
-from typing import Callable
+from typing import Any, Callable
 
 import click
 from click import Group
-from typing_extensions import Concatenate
-from typing_extensions import ParamSpec
+from typing_extensions import Concatenate, ParamSpec
 
 from ._globals import get_current_repl_ctx
 from ._repl import repl

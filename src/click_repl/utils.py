@@ -10,25 +10,21 @@ import os
 from collections.abc import Iterator
 from difflib import get_close_matches
 from functools import lru_cache
-from typing import Any
-from typing import Iterable
-from typing import Tuple
+from typing import Any, Iterable, Tuple
 
 import click
-from click import Command
-from click import Context
-from click import MultiCommand
-from click import Parameter
+from click import Command, Context, MultiCommand, Parameter
 from click.parser import split_opt
 from typing_extensions import Literal
 
-from ._globals import _RANGE_TYPES
-from ._globals import StyleAndTextTuples
-from .parser import Incomplete
-from .parser import InfoDict
-from .parser import ReplParsingState
-from .parser import _resolve_incomplete
-from .parser import _resolve_repl_parsing_state
+from ._globals import _RANGE_TYPES, StyleAndTextTuples
+from .parser import (
+    Incomplete,
+    InfoDict,
+    ReplParsingState,
+    _resolve_incomplete,
+    _resolve_repl_parsing_state,
+)
 from .proxies import _create_proxy_command
 
 CompletionStyleDictKeys = Literal[

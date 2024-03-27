@@ -11,25 +11,14 @@ import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Sequence
-from typing import Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 import click
 from click import Argument as CoreArgument
-from click import Command
-from click import Context
-from click import MultiCommand
-from click import Parameter
-from click.exceptions import BadOptionUsage
-from click.exceptions import NoSuchOption
+from click import Command, Context, MultiCommand, Parameter
+from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
-from click.parser import Option
-from click.parser import OptionParser
-from click.parser import ParsingState
-from click.parser import normalize_opt
+from click.parser import Option, OptionParser, ParsingState, normalize_opt
 from typing_extensions import TypeAlias
 
 from . import utils

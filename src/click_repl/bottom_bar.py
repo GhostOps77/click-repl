@@ -11,20 +11,13 @@ from typing import Tuple
 
 import click
 from click import Parameter
-from click.types import FloatRange
-from click.types import IntRange
-from click.types import ParamType
+from click.types import FloatRange, IntRange, ParamType
 from typing_extensions import TypedDict
 
-from ._formatting import Marquee
-from ._formatting import TokenizedFormattedText
-from ._globals import _RANGE_TYPES
-from ._globals import HAS_CLICK_GE_8
-from ._globals import ISATTY
-from ._globals import StyleAndTextTuples
+from ._formatting import Marquee, TokenizedFormattedText
+from ._globals import _RANGE_TYPES, HAS_CLICK_GE_8, ISATTY, StyleAndTextTuples
 from .parser import ReplParsingState
-from .utils import append_classname_to_all_tokens
-from .utils import is_param_value_incomplete
+from .utils import append_classname_to_all_tokens, is_param_value_incomplete
 
 if t.TYPE_CHECKING:
     from .core import ReplContext

@@ -8,8 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from click import Argument
-from click import Command
+from click import Argument, Command
 from click.exceptions import Exit as ClickExit
 
 __all__ = [

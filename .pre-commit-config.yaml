@@ -18,7 +18,6 @@ repos:
     hooks:
       - id: isort
         args:
-          - "--force-single-line-imports"
           - "--add-import"
           - "from __future__ import annotations"
           - "--profile"

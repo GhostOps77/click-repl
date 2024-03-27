@@ -5,8 +5,7 @@ import pytest
 
 from click_repl._internal_cmds import InternalCommandSystem
 from click_repl.core import ReplContext
-from click_repl.exceptions import ExitReplException
-from click_repl.exceptions import PrefixNotFound
+from click_repl.exceptions import ExitReplException, PrefixNotFound
 
 
 @click.command()

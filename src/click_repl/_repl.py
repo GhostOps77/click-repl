@@ -8,34 +8,28 @@ from __future__ import annotations
 
 import sys
 import traceback
-from typing import Any
-from typing import Sequence
-from typing import cast
+from typing import Any, Sequence, cast
 
 import click
-from click import Context
-from click import MultiCommand
+from click import Context, MultiCommand
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.styles import Style
-from prompt_toolkit.styles import merge_styles
+from prompt_toolkit.styles import Style, merge_styles
 from prompt_toolkit.validation import Validator
 
-from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG
-from ._globals import ISATTY
-from ._globals import get_current_repl_ctx
+from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext
-from .exceptions import ClickExit
-from .exceptions import ExitReplException
-from .exceptions import InternalCommandException
-from .exceptions import PrefixNotFound
+from .exceptions import (
+    ClickExit,
+    ExitReplException,
+    InternalCommandException,
+    PrefixNotFound,
+)
 from .parser import split_arg_string
-from .utils import _generate_next_click_ctx
-from .utils import _get_group_ctx
-from .utils import print_error
+from .utils import _generate_next_click_ctx, _get_group_ctx, print_error
 from .validator import ClickValidator
 
 __all__ = ["Repl", "repl"]

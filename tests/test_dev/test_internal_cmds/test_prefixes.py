@@ -4,9 +4,7 @@ import pytest
 
 from click_repl._internal_cmds import InternalCommandSystem
 from click_repl._internal_cmds import repl_exit as repl_exit
-from click_repl.exceptions import PrefixNotFound
-from click_repl.exceptions import SamePrefix
-from click_repl.exceptions import WrongType
+from click_repl.exceptions import PrefixNotFound, SamePrefix, WrongType
 
 ics = InternalCommandSystem(":", "!")
 

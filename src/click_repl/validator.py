@@ -9,18 +9,13 @@ from __future__ import annotations
 
 import logging
 
-from click import Context
-from click import MultiCommand
-from click.exceptions import ClickException
-from click.exceptions import UsageError
+from click import Context, MultiCommand
+from click.exceptions import ClickException, UsageError
 from prompt_toolkit.document import Document
-from prompt_toolkit.validation import ValidationError
-from prompt_toolkit.validation import Validator
+from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
-from ._globals import CLICK_REPL_DEV_ENV
-from ._globals import ISATTY
-from ._globals import get_current_repl_ctx
+from ._globals import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .utils import _resolve_state
 
