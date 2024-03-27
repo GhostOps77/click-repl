@@ -11,7 +11,7 @@ import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import click
 from click import Argument as CoreArgument
@@ -28,9 +28,9 @@ from .exceptions import ArgumentPositionError
 InfoDict: TypeAlias = Dict[str, Any]
 
 _KEY: TypeAlias = Tuple[
-    t.Optional[InfoDict],
-    t.Optional[InfoDict],
-    t.Optional[InfoDict],
+    Optional[InfoDict],
+    Optional[InfoDict],
+    Optional[InfoDict],
     Tuple[InfoDict, ...],
 ]
 
@@ -44,7 +44,7 @@ _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
 )
 
 
-def split_arg_string(string: str, posix: bool = True) -> List[str]:
+def split_arg_string(string: str, posix: bool = True) -> list[str]:
     """
     Split a command line string into a list of tokens.
     Using the same implementation as in `click.parser.split_arg_string`
@@ -112,7 +112,7 @@ class Incomplete:
 
 
 @lru_cache(maxsize=3)
-def _resolve_incomplete(document_text: str) -> Tuple[Tuple[str, ...], Incomplete]:
+def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
     args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
 
@@ -227,7 +227,7 @@ class ReplParsingState:
             return NotImplemented  # type:ignore[no-any-return]
         return self.__key() == other.__key()
 
-    def parse(self) -> Tuple[MultiCommand, Command | None, Parameter | None]:
+    def parse(self) -> tuple[MultiCommand, Command | None, Parameter | None]:
         current_group, current_command = self.get_current_group_and_command()
         current_param = None
 
@@ -236,7 +236,7 @@ class ReplParsingState:
 
         return current_group, current_command, current_param
 
-    def get_current_group_and_command(self) -> Tuple[MultiCommand, Command | None]:
+    def get_current_group_and_command(self) -> tuple[MultiCommand, Command | None]:
         current_ctx_command = self.current_ctx.command
 
         current_group = current_ctx_command

@@ -10,7 +10,7 @@ import os
 from collections.abc import Iterator
 from difflib import get_close_matches
 from functools import lru_cache
-from typing import Any, Iterable, Tuple
+from typing import Any, Iterable
 
 import click
 from click import Command, Context, MultiCommand, Parameter
@@ -33,7 +33,7 @@ CompletionStyleDictKeys = Literal[
 
 
 def append_classname_to_all_tokens(
-    tokens_list: StyleAndTextTuples, classes: list[str] = []
+    tokens_list: StyleAndTextTuples, classes: Iterable[str] = []
 ) -> StyleAndTextTuples:
     if not classes:
         return tokens_list
@@ -41,8 +41,7 @@ def append_classname_to_all_tokens(
     res: StyleAndTextTuples = []
 
     for token, *_ in tokens_list:
-        token = f"{token},{','.join(classes)}"
-        res.append((token, *_))  # type:ignore[arg-type]
+        res.append((f"{token},{','.join(classes)}", *_))  # type:ignore[arg-type]
 
     return res
 
@@ -131,7 +130,7 @@ def get_option_flag_sep(options: list[str]) -> str:
     return ";" if any_prefix_is_slash else "/"
 
 
-def join_options(options: list[str]) -> Tuple[list[str], str]:
+def join_options(options: list[str]) -> tuple[list[str], str]:
     # Same implementation as click.formatting.join_options function, but much simpler.
     return sorted(options, key=len), get_option_flag_sep(options)
 
@@ -153,7 +152,7 @@ def _get_visible_subcommands(
     multicommand: MultiCommand,
     incomplete: str,
     show_hidden_commands: bool = False,
-) -> Iterator[Tuple[str, Command]]:
+) -> Iterator[tuple[str, Command]]:
     # Get all the subcommands whose name starts with the given
     # "incomplete" prefix string.
 
@@ -355,7 +354,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
 @lru_cache(maxsize=3)
 def _resolve_state(
     ctx: Context, document_text: str
-) -> Tuple[Context, ReplParsingState, Incomplete]:
+) -> tuple[Context, ReplParsingState, Incomplete]:
     # Resolves the parsing state of the arguments in the REPL prompt.
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args, proxy=True)

@@ -7,7 +7,6 @@ Utility for the Bottom bar of the REPL.
 from __future__ import annotations
 
 import typing as t
-from typing import Tuple
 
 import click
 from click import Parameter
@@ -32,7 +31,21 @@ class ParamInfo(TypedDict):
     nargs_info: StyleAndTextTuples
 
 
-def _describe_range_click(param_type: IntRange | FloatRange) -> str:
+def _describe_click_range_paramtype(param_type: IntRange | FloatRange) -> str:
+    """
+    Returns the metavar of the range-type :class:`~click.types.ParamType` type objects.
+
+    Parameter
+    ---------
+    param_type: IntRange | FloatRange
+        :class:`~click.types.ParamType` object, whose metavar should be generated.
+
+    Returns
+    -------
+    str
+        Metavar that describes about the given `param_type` object.
+    """
+
     if HAS_CLICK_GE_8:
         res = param_type._describe_range()
 
@@ -66,37 +79,70 @@ class BottomBar:
         """
 
         self.state: ReplParsingState | None = None
+        """Current Repl parsing state object."""
+
         self._recent_formatted_text: StyleAndTextTuples | Marquee = []
+        """Stores recently generated text for bottom bar as cache."""
+
         self.show_hidden_params = show_hidden_params
+        """Flag that determines whether to display hidden params at bottom bar"""
+
         self.current_repl_ctx: ReplContext | None = None
+        """Context object of the current Repl session."""
 
     def __call__(self) -> StyleAndTextTuples:
         return self.get_formatted_text()
 
     def clear(self) -> None:
+        """Clears the bottom bar's content."""
         self._recent_formatted_text = []
 
-    def reset_state(self) -> None:
-        self.state = None
-        self.clear()
-
     def get_formatted_text(self) -> StyleAndTextTuples:
+        """
+        Gives the next chunk of text that's sliced from
+        :attr:`~click_repl.formatting.Marquee.text` object
+        that needs to be displayed in bottom bar.
+
+        Returns
+        -------
+        StyleAndTextTuples
+            Next chunk of text that should be displayed in bottom bar.
+        """
         if isinstance(self._recent_formatted_text, Marquee):
             return self._recent_formatted_text.get_current_text_chunk()
 
         return self._recent_formatted_text
 
+    def reset_state(self) -> None:
+        """Reset the current parsing state object and content in bottom bar."""
+        self.state = None
+        self.clear()
+
     def update_state(self, state: ReplParsingState) -> None:
+        """
+        Updates the current Repl parsing state object in `BottomBar`.
+
+        Parameters
+        ----------
+        state : ReplParsingState
+            Current parsing state of the prompt.
+        """
         if not ISATTY or state is None or state == self.state:
             return
 
         self.state = state
         self._recent_formatted_text = self.make_formatted_text()
-        # self._formatted_text = str(state)
 
-    def get_group_metavar_template(self) -> Tuple[StyleAndTextTuples, StyleAndTextTuples]:
-        # Gets the metavar to describe the CLI Group, indicating
-        # whether it is a chained Group or not.
+    def get_group_metavar_template(self) -> tuple[StyleAndTextTuples, StyleAndTextTuples]:
+        """
+        Gets the metavar to describe the CLI Group, indicating
+        whether it is a chained Group or not.
+
+        Returns
+        -------
+        tuple[StyleAndTextTuples, StyleAndTextTuples]
+            Pre-defined set of metavar tokens for both `prefix` and `text` attributes.
+        """
 
         state = self.state
         assert state is not None, "state cannot be None"
@@ -180,7 +226,7 @@ class BottomBar:
 
         return "parameter." + usage_state
 
-    def get_param_name(self, param: Parameter) -> Tuple[str, str]:
+    def get_param_name(self, param: Parameter) -> tuple[str, str]:
         if isinstance(param, click.Argument):
             token_name = "parameter.argument.name"
 
@@ -256,7 +302,10 @@ class BottomBar:
             type_info += [
                 (f"parameter.type.range.{range_num_type}", param_type.name),
                 ("space", " "),
-                ("parameter.type.range.descriptor", _describe_range_click(param_type)),
+                (
+                    "parameter.type.range.descriptor",
+                    _describe_click_range_paramtype(param_type),
+                ),
             ]
 
         elif param_type not in (click.STRING, click.UNPROCESSED):

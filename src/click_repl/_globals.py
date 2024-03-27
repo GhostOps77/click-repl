@@ -20,10 +20,6 @@ if t.TYPE_CHECKING:
     from .core import ReplContext
 
 
-# TBottomBar = Token.BottomBar
-# TAutocompletionMenu = Token.AutocompletionMenu
-
-
 DEFAULT_COMPLETION_STYLE_CONFIG = {
     # Command
     "autocompletion-menu.command.name": "",
@@ -114,30 +110,11 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
 }
 
 
-OTHER_MISC_STYLE_CONFIGS = {
-    "misc.bold": "bold",
-    "misc.underline": "underline",
-    "misc.strike": "strike",
-    "misc.italic": "italic",
-    "misc.blink": "blink",
-    "misc.reverse": "reverse",
-    "misc.hidden": "hidden",
-    "misc.nobold": "nobold",
-    "misc.nounderline": "nounderline",
-    "misc.nostrike": "nostrike",
-    "misc.noitalic": "noitalic",
-    "misc.noblink": "noblink",
-    "misc.noreverse": "noreverse",
-    "misc.nohidden": "nohidden",
-}
-
-
 DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
     "bottom-toolbar": "fg:lightblue bg:default noreverse"
 }
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_BOTTOMBAR_STYLE_CONFIG)
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_COMPLETION_STYLE_CONFIG)
-DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(OTHER_MISC_STYLE_CONFIGS)
 
 
 HAS_CLICK_GE_8 = click.__version__[0] >= "8"
@@ -146,15 +123,17 @@ HAS_CLICK_GE_8 = click.__version__[0] >= "8"
 # Therefore, this tuple is used to check for the
 # range type ParamType objects.
 _RANGE_TYPES = (click.IntRange, click.FloatRange)
+"""Range types that are used as Parameter's type in click"""
 
 if HAS_CLICK_GE_8:
     _RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
 
-# The only ParamType classes that have their
-# get_metavar method's functionality defined.
 _PARAMS_WITH_METAVAR = (click.Choice, click.DateTime)
+"""The only :class:`~click.types.ParamType` classes that have their
+:meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
 
 _PATH_TYPES = (click.Path, click.File)
+"""`ParamTypes` that expect path as values."""
 
 # If ISATTY is False, then we're not gonna run any code
 # to generate auto-completions. Most of the code will be inactive
@@ -166,14 +145,13 @@ AUTO_COMPLETION_FUNC_ATTR = (
     "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
 )
 
-# click repl environmental flag. Enable it only for debugging.
 CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
+"""click-repl Environmental flag. Enable it only for debugging."""
 
 # To store the ReplContext objects generated throughout the Runtime.
 _locals = local()
 ctx_stack: list[ReplContext] = []
 _locals.ctx_stack = ctx_stack
-# ctx_stack = _locals.ctx_stack
 
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
