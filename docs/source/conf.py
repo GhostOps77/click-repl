@@ -9,6 +9,7 @@ import click_repl
 project = "click-repl"
 copyright = "2024, Markus Unterwaditzer"
 author = "Markus Unterwaditzer"
+repo_link = "https://github.com/GhostOps77/click-repl/tree/GhostOps77-patch-1"
 
 version = click_repl.__version__
 
@@ -17,6 +18,7 @@ version = click_repl.__version__
 extensions = [
     "sphinx.ext.duration",
     # "sphinx.ext.doctest",
+    "sphinx.ext.linkcode",
     "sphinx.ext.autodoc",
     # 'sphinx.ext.extlinks',
     "sphinx.ext.autosummary",
@@ -47,6 +49,7 @@ html_theme = "furo"
 pygments_style = "friendly"
 
 intersphinx_disabled_domains = ["std"]
+exclude_patterns = ["_build"]
 
 # html_static_path = ["_static"]
 # templates_path = ["_templates"]
@@ -82,3 +85,43 @@ napoleon_attr_annotations = True
 # always_document_param_types = True
 # typehints_use_signature = True
 # typehints_use_signature_return = False
+
+
+def linkcode_resolve(domain: str, info: dict) -> str:
+    """linkcode_resolve."""
+    if domain != "py":
+        return None
+    if not info["module"]:
+        return None
+
+    import importlib
+    import inspect
+    import types
+
+    mod = importlib.import_module(info["module"])
+
+    val = mod
+    for k in info["fullname"].split("."):
+        val = getattr(val, k, None)
+        if val is None:
+            break
+
+    filename = info["module"].replace(".", "/") + ".py"
+
+    if isinstance(
+        val,
+        types.ModuleType
+        | types.MethodType
+        | types.FunctionType
+        | types.TracebackType
+        | types.FrameType
+        | types.CodeType,
+    ):
+        try:
+            lines, first = inspect.getsourcelines(val)
+            last = first + len(lines) - 1
+            filename += f"#L{first}-L{last}"
+        except (OSError, TypeError):
+            pass
+
+    return f"{repo_link}/blob/main/src/{filename}"
