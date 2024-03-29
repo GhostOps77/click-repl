@@ -65,7 +65,7 @@ class Repl:
             class. Do note that you don't have to pass the `Completer` and `Validator`
             class via this dictionary.
 
-        completer_cls : type[prompt_toolkit.completion.Completer], optional
+        completer_cls : type[prompt_toolkit.completion.Completer] | None
             :class:`~prompt_toolkit.completion.Completer` class to generate
             :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
             :class:`~click_repl.completer.ClickCompleter` class is used by default.
@@ -248,7 +248,7 @@ class Repl:
             :class:`~prompt_toolkit.completer.Completer` class.
 
         validator_cls : type[Validator]
-            A :class:`~prompt_toolkit.validation.Validator` type class
+            A :class:`~prompt_toolkit.validation.Validator` type class.
 
         validator_kwargs : dict[str, Any]
             Contains keyword arguments that has to be passed to the
@@ -426,12 +426,12 @@ def repl(
         These parameters configure the prompt appearance and behavior,
         such as prompt message, history, completion, etc.
 
-    cls : type[Repl], default=Repl
+    cls : type[Repl]
         Repl class to use for the click_repl app. if `None`, the
         `click_repl._repl.Repl` class is used by default. This allows
         customization of the REPL behavior by providing a custom Repl subclass.
 
-    **attrs : Any, optional
+    **attrs : Any
         Extra keyword arguments to be passed to the Repl class. These additional
         arguments can be used to further customize the behavior of the Repl class.
 

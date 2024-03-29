@@ -215,7 +215,7 @@ class ReplCli(click.Group):
 
     Parameters
     ----------
-    prompt : str, default="> "
+    prompt : str
         The message that should be displayed for every prompt input.
 
     startup : A function that takes and returns nothing, optional

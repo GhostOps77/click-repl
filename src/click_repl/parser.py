@@ -58,7 +58,7 @@ def split_arg_string(string: str, posix: bool = True) -> list[str]:
     string : str
         The string to be split into tokens.
 
-    posix : bool, default=True
+    posix : bool
         Determines whether to split the string in POSIX style.
 
     Returns

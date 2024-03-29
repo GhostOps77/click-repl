@@ -14,7 +14,8 @@ from threading import local
 from typing import NoReturn
 
 import click
-from prompt_toolkit.formatted_text import StyleAndTextTuples as StyleAndTextTuples
+
+# from prompt_toolkit.formatted_text import StyleAndTextTuples as StyleAndTextTuples
 
 if t.TYPE_CHECKING:
     from .core import ReplContext
@@ -168,8 +169,8 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
 
     Returns
     -------
-    ctx : `ReplContext`, optional
-        ReplContext object if available.
+    ctx : :class:`~click.core.ReplContext
+        :class:`~click.core.ReplContext object if available.
 
     Raises
     ------
@@ -192,7 +193,7 @@ def _push_context(ctx: ReplContext) -> None:
 
     Parameters
     ----------
-    ctx : `ReplContext`
+    ctx : ReplContext
         ReplContext object that should be added to the repl context stack.
     """
     _locals.ctx_stack.append(ctx)

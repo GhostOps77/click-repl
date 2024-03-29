@@ -67,7 +67,7 @@ def register_repl(
     group : click.Group | None
         The click group (current CLI) object to which the repl command will be registered.
 
-    name : str, default="repl"
+    name : str
         The name of the repl command in the given Group.
 
     remove_cmd_before_repl : bool

@@ -24,26 +24,36 @@ __all__ = ["ClickValidator"]
 
 logger = logging.getLogger(f"click_repl-{__name__}")
 
+log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
+formatter = logging.Formatter(log_format)
+
 if CLICK_REPL_DEV_ENV:
     logger_level = logging.DEBUG
+    log_file = ".click-repl-err.log"
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
 else:
     logger_level = logging.WARNING
 
+
 logger.setLevel(logger_level)
-
-log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
-formatter = logging.Formatter(log_format)
-
-log_file = "click-repl-err.log"
-file_handler = logging.FileHandler(log_file)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
 
 class ClickValidator(Validator):
     """
     Custom prompt input validation for the click_repl app.
+
+    Parameters
+    ----------
+    ctx : click.Context
+        The current :class:`~click.Context` object.
+
+    display_all_errors : bool
+        Flag that determines whether to raise generic Python Exceptions, and not to
+        display them in the `Validator` bar, resulting in the full error traceback
+        being redirected to a log file in the REPL mode.
     """
 
     def __init__(
@@ -54,16 +64,6 @@ class ClickValidator(Validator):
     ) -> None:
         """
         Initializes a `ClickValidator` object.
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The current :class:`~click.Context` object.
-
-        display_all_errors : bool
-            Flag that determines whether to raise generic Python Exceptions, and not to
-            display them in the `Validator` bar, resulting in the full error traceback
-            being redirected to a log file in the REPL mode.
         """
 
         self.cli_ctx: Final[Context] = ctx
@@ -129,7 +129,8 @@ class ClickValidator(Validator):
                 # self.catch_all_errors is set to True.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            # Error tracebacks are displayed during the REPL loop if
-            # self.catch_all_errors is set to False. The short error
-            # messages are also logged into a click-repl-err.log file.
-            logger.exception("%s: %s", type(e).__name__, e)
+            if CLICK_REPL_DEV_ENV:
+                # Error tracebacks are displayed during the REPL loop if
+                # self.catch_all_errors is set to False. The short error
+                # messages are also logged into a click-repl-err.log file.
+                logger.exception("%s: %s", type(e).__name__, e)

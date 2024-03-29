@@ -3,13 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to click-repl's documentation!
-======================================
+Welcome to click-repl's Documentation
+=====================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
+.. include:: ../../README.rst
+    :start-line: 23
+
+.. include:: ../../CHANGELOG.rst
 
 
 Indices and tables

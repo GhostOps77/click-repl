@@ -11,10 +11,11 @@ import typing as t
 import click
 from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
+from prompt_toolkit.formatted_text import StyleAndTextTuples
 from typing_extensions import TypedDict
 
 from ._formatting import Marquee, TokenizedFormattedText
-from ._globals import _RANGE_TYPES, HAS_CLICK_GE_8, ISATTY, StyleAndTextTuples
+from ._globals import _RANGE_TYPES, HAS_CLICK_GE_8, ISATTY  # , StyleAndTextTuples
 from .parser import ReplParsingState
 from .utils import append_classname_to_all_tokens, is_param_value_incomplete
 
@@ -37,7 +38,7 @@ def _describe_click_range_paramtype(param_type: IntRange | FloatRange) -> str:
 
     Parameter
     ---------
-    param_type: IntRange | FloatRange
+    param_type: :class:`~click.IntRange` | :class:`~click.FloatRange`
         :class:`~click.types.ParamType` object, whose metavar should be generated.
 
     Returns
@@ -63,7 +64,14 @@ def _describe_click_range_paramtype(param_type: IntRange | FloatRange) -> str:
 
 
 class BottomBar:
-    """Toolbar class to manage the text in the bottom toolbar."""
+    """
+    Toolbar class to manage the text in the bottom toolbar.
+
+    Parameters
+    ----------
+    show_hidden_params : bool
+        Determines whether to display hidden params at bottom bar.
+    """
 
     def __init__(
         self,
@@ -71,11 +79,6 @@ class BottomBar:
     ) -> None:
         """
         Initialize the `BottomBar` class.
-
-        Parameters
-        ----------
-        show_hidden_params : bool, default=False
-            Determines whether to display hidden params at bottom bar.
         """
 
         self.state: ReplParsingState | None = None
@@ -105,7 +108,7 @@ class BottomBar:
 
         Returns
         -------
-        StyleAndTextTuples
+        :py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`
             Next chunk of text that should be displayed in bottom bar.
         """
         if isinstance(self._recent_formatted_text, Marquee):
@@ -120,11 +123,11 @@ class BottomBar:
 
     def update_state(self, state: ReplParsingState) -> None:
         """
-        Updates the current Repl parsing state object in `BottomBar`.
+        Updates the current Repl parsing state object in :class:`click_repl.bottom_bar.BottomBar`.
 
         Parameters
         ----------
-        state : ReplParsingState
+        state
             Current parsing state of the prompt.
         """
         if not ISATTY or state is None or state == self.state:
@@ -140,7 +143,7 @@ class BottomBar:
 
         Returns
         -------
-        tuple[StyleAndTextTuples, StyleAndTextTuples]
+        tuple[:py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`, :py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`]
             Pre-defined set of metavar tokens for both `prefix` and `text` attributes.
         """
 

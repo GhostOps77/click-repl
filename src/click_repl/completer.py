@@ -9,24 +9,24 @@ from __future__ import annotations
 import typing as t
 from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 import click
 from click import Command, Context, MultiCommand, Parameter
 from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
+from prompt_toolkit.formatted_text import StyleAndTextTuples
 from typing_extensions import Final, TypeAlias, TypedDict
 
 from ._formatting import TokenizedFormattedText
-from ._globals import (
+from ._globals import (  # StyleAndTextTuples,
     _PATH_TYPES,
     AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
     HAS_CLICK_GE_8,
     IS_WINDOWS,
     ISATTY,
-    StyleAndTextTuples,
     get_current_repl_ctx,
 )
 from ._internal_cmds import InternalCommandSystem
@@ -63,35 +63,35 @@ class ClickCompleter(Completer):
 
     Parameters
     ----------
-    ctx : `click.Context`
+    ctx : click.Context
         The current click context object.
 
-    bottom_bar : `BottomBar`, optional
+    bottom_bar : BottomBar
         Object thats used to update the text displayed in the bottom bar.
 
-    internal_commands_system : `InternalCommandSystem`
+    internal_commands_system : InternalCommandSystem
         Object that holds information about the internal commands and their prefixes.
 
-    shortest_opts_only : bool, default=False
+    shortest_opts_only : bool
         Determines whether only the shortest flag of an option parameter
         is used for auto-completion.
 
         It is utilized when the user is requesting option flags without
         providing any text. They are not considered for flag options.
 
-    show_only_unused_opts : bool, default=False
+    show_only_unused_opts : bool
         Determines whether the options that are already mentioned or
         used in the current prompt will be displayed during auto-completion.
 
-    show_hidden_commands : bool, default=False
+    show_hidden_commands : bool
         Determines whether the hidden commands should be shown
         in autocompletion or not.
 
-    show_hidden_params : bool, default=False
+    show_hidden_params : bool
         Determines whether the hidden parameters should be shown
         in autocompletion or not.
 
-    expand_envvars : bool, default=False
+    expand_envvars : bool
         Determines whether to return completion with Environmental variables
         as expanded or not.
 
@@ -435,7 +435,7 @@ class ClickCompleter(Completer):
 
         _incomplete = incomplete.expand_envvars()
 
-        boolean_mapping: dict[str, Tuple[str, ...]] = {
+        boolean_mapping: dict[str, tuple[str, ...]] = {
             "true": ("1", "true", "t", "yes", "y", "on"),
             "false": ("0", "false", "f", "no", "n", "off"),
         }
@@ -886,7 +886,7 @@ class ClickCompleter(Completer):
 
         Returns
         -------
-        MultiCommand, optional
+        MultiCommand | None
             A click multicommand object, if available, which is supposed to be used for
             generating auto-completion for suggesting its subcommands.
         """
@@ -1059,7 +1059,7 @@ class ReplCompletion(Completion):
         It's used to get the `start_position` for the Completion to
         swap text with, in the prompt.
 
-    quote : bool, default=True
+    quote : bool
         Boolean value to determine whether the given incomplete
         text with space should be double-quoted.
 
@@ -1067,7 +1067,7 @@ class ReplCompletion(Completion):
         Additional arguments should be passed as keyword arguments to the
         `prompt_toolkit.completion.Completion` class.
 
-    **kwargs : dict, optional
+    **kwargs : dict
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments to the
         `prompt_toolkit.completion.Completion` class.

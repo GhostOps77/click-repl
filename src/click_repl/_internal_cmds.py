@@ -87,6 +87,17 @@ class InternalCommandSystem:
     A utility for managing and executing internal/system commands
     from the REPL. Commands are triggered by their respective prefix.
 
+    Attributes
+    ----------
+    internal_command_prefix
+    system_command_prefix
+
+    prefix_table : PrefixTable
+        Table to keep track of the prefixes.
+
+    shell : bool
+        Flag that tells whether to run the system commands through shell or not.
+
     Notes
     -----
     The prefixes determine how the commands are recognized and distinguished
@@ -111,8 +122,13 @@ class InternalCommandSystem:
         system_command_prefix : str
             Prefix to execute bash/other command-line scripts.
 
-        shell : bool, default=True
+        shell : bool
             Determines whether the system commands should be executed in shell or not.
+
+        Raises
+        ------
+        SamePrefix
+            If both `internal_command_prefix` and `system_command_prefix` are same.
         """
 
         if internal_command_prefix and internal_command_prefix == system_command_prefix:
@@ -127,13 +143,11 @@ class InternalCommandSystem:
             "Internal": internal_command_prefix,
             "System": system_command_prefix,
         }
-        """Table to keep track of the perfixes."""
 
         self.shell = shell
-        """Flag that determines whether to run the System commands through shell or not."""
 
         self._internal_commands: InternalCommandDict = {}
-        """Directory of Internal Commands."""
+        # Directory of Internal Commands.
 
         self._register_default_internal_commands()
 
@@ -282,7 +296,7 @@ class InternalCommandSystem:
             A string or a sequence of strings representing the
             command names and aliases.
 
-        description : str, optional
+        description : str | None
             A string displayed in the help text for the Internal Command.
 
         Returns
@@ -296,19 +310,20 @@ class InternalCommandSystem:
         The following examples demonstrate how to register the `kill`
         function as an Internal Command:
 
-        ```py
-        @register_command(
-            names='kill',
-            description='Kills certain process'
-        )
-        def kill():
-            ...
+        .. code_block python
 
-        @register_command
-        def kill():
-            '''Kills certain process'''
-            ...
-        ```
+          @register_command(
+              names='kill',
+              description='Kills certain process'
+          )
+          def kill():
+              'hi'
+              ...
+
+          @register_command
+          def kill():
+              '''Kills certain process'''
+              ...
         """
 
         def decorator(func: CallableNone) -> CallableNone:
@@ -388,6 +403,7 @@ class InternalCommandSystem:
 
         Returns
         -------
+        Callable[[], None] | Any
             The callback function of the Internal Command if found. If not
             found, it returns the value specified in the `default` parameter.
         """

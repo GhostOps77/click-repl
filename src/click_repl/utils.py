@@ -15,9 +15,10 @@ from typing import Any, Iterable
 import click
 from click import Command, Context, MultiCommand, Parameter
 from click.parser import split_opt
+from prompt_toolkit.formatted_text import StyleAndTextTuples
 from typing_extensions import Literal
 
-from ._globals import _RANGE_TYPES, StyleAndTextTuples
+from ._globals import _RANGE_TYPES  # , StyleAndTextTuples
 from .parser import (
     Incomplete,
     InfoDict,

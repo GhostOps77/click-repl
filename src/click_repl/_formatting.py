@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 
-from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.formatted_text import FormattedText, StyleAndTextTuples
 
-from ._globals import ISATTY, StyleAndTextTuples
+from ._globals import ISATTY
 
 __all__ = ["TokenizedFormattedText", "Marquee"]
 
@@ -13,6 +13,15 @@ class TokenizedFormattedText(FormattedText):
     """
     Sub-class of :class:`~prompt_toolkit.formatted_text.FormattedText`,
     but has custom slicing method, based on it's display text.
+
+    Parameters
+    ----------
+    tokens_list : :py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`
+        List of Token tuples.
+
+    parent_token_class : str
+        Parent class name for the tokens in the given
+        :attr:`~click_repl._formatting.TokenizedFormattedText.tokens_list`.
     """
 
     __slots__ = ("parent_token_class",)
@@ -20,14 +29,6 @@ class TokenizedFormattedText(FormattedText):
     def __init__(self, tokens_list: StyleAndTextTuples, parent_token_class: str) -> None:
         """
         Initializes the `TokenizedFormattedText` class.
-
-        Parameters
-        ----------
-        tokens_list: StyleAndTextTuples
-            List of tokens.
-
-        parent_token_class: str
-            Parent class name for the tokens in the given `tokens_list`.
         """
 
         is_not_formatted_text = not isinstance(
@@ -48,9 +49,9 @@ class TokenizedFormattedText(FormattedText):
 
         super().__init__(tokens_list)
 
-        self.parent_token_class = parent_token_class
+        self.parent_token_class: str = parent_token_class
         """Parent class name for the tokens in the given
-        :attr:`~click_repl._formatting.TokenizedFormattedText.tokens_list`."""
+            :attr:`~click_repl._formatting.TokenizedFormattedText.tokens_list`."""
 
     def get_text(self) -> str:
         """
@@ -65,13 +66,13 @@ class TokenizedFormattedText(FormattedText):
 
     def get_length_by_content(self) -> int:
         """
-        Returns the length of the FormattedText based on the length
-        of the display text in each token.
+        Returns the length of the :class:`~prompt_toolkit.formatted_text.FormattedText`
+        based on the length of the display text in each token.
 
         Returns
         -------
         int
-            Length of the content in the tokens list.
+            Length of the content altogether in the tokens list.
         """
         return sum(len(token[1]) for token in self)
 
@@ -81,17 +82,17 @@ class TokenizedFormattedText(FormattedText):
 
         Parameters
         ----------
-        start : int
+        start
             Starting position to slice tokens.
 
-        stop : int
+        stop
             Last position to stop slicing tokens.
 
         Returns
         -------
         TokenizedFormattedText
-            Returns a new sliced `TokenizedFormattedText` object that contains
-            the text content within that slice range.
+            Returns a new sliced :class:`~click_repl._formatting.TokenizedFormattedText`
+            object that contains the text content within that slice range.
         """
         if start >= stop:
             return []  # type:ignore[return-value]
@@ -127,7 +128,7 @@ class Marquee:
         "pointer_position",
         "is_pointer_direction_left",
         "hit_boundary",
-        "waited_for_in_iterations",
+        "no_of_iterations_waited_for",
         "max_wait_in_iterations",
         "_is_text_length_le_window_size",
         "_recent_text",
@@ -143,44 +144,45 @@ class Marquee:
 
         Parameters
         ----------
-        text : TokenizedFormattedText
-            The text tokens that'll be displayed in the marquee style.
+        text
+            The text tokens that will be displayed in the marquee style.
 
-        prefix : TokenizedFormattedText, default=[]
+        prefix
             This text will be displayed as a prefix before `text`, and
             it will not be moved in the terminal display as a marquee.
         """
 
-        self.text = text
+        self.text: TokenizedFormattedText = text
         """The text tokens that'll be displayed in the marquee style."""
 
-        self.prefix = prefix
+        self.prefix: TokenizedFormattedText = prefix
         """This text will be displayed as a prefix before
-        :attr:`~click_repl._formatting.Marquee.text`."""
+            :attr:`~click_repl._formatting.Marquee.text`."""
 
-        self.pointer_position = 0
+        self.pointer_position: int = 0
         """Keeps track of the next starting position to slice the
-        :attr:`~click_repl._formatting.Marquee.text` from."""
+            :attr:`~click_repl._formatting.Marquee.text` from."""
 
-        self.is_pointer_direction_left = True
-        """Flag that keeps track on the current direction on pointer's movement."""
+        self.is_pointer_direction_left: bool = True
+        """To keep track on the current direction on pointer's movement."""
 
-        self.hit_boundary = True
+        self.hit_boundary: bool = True
         """Flag that tells if the pointer has hit either the left or right-most end."""
 
-        self.max_wait_in_iterations = 5
-        """Maximum number of iterations the pointer can stay idle once it has hit either of the ends."""
+        self.max_wait_in_iterations: int = 5
+        """Maximum number of iterations the pointer can stay
+            idle once it has hit either of the ends."""
 
-        self.waited_for_in_iterations = self.max_wait_in_iterations
+        self.no_of_iterations_waited_for: int = self.max_wait_in_iterations
         """The pointer stays at the very end once it has touched the boundary, for next
-        :attr:`~click_repl._formatting.Marquee.waited_for_in_iterations` iterations"""
+            :attr:`~click_repl._formatting.Marquee.no_of_iterations_waited_for` iterations."""
 
-        self._is_text_length_le_window_size = False
-        """Flag that tells whether the window size to display the
-        :attr:`~click_repl._formatting.Marquee.text`'s content is greater than `text`'s length"""
+        self._is_text_length_le_window_size: bool = False
+        # Flag that tells whether the window size that displays the
+        # text's content is greater than the length of the text.
 
         self._recent_text: StyleAndTextTuples = []
-        """Used to cache recently generated string."""
+        # Used to cache recently generated string.
 
     def get_terminal_width_and_window_size(self) -> tuple[int, int]:
         """
@@ -214,7 +216,7 @@ class Marquee:
             if self.pointer_position != 0:
                 self.pointer_position = 0
                 self.hit_boundary = True
-                self.waited_for_in_iterations = 0
+                self.no_of_iterations_waited_for = 0
                 self.is_pointer_direction_left = True
 
             return
@@ -237,7 +239,7 @@ class Marquee:
 
         if pointer_at_left_end or pointer_at_right_end:
             self.hit_boundary = True
-            self.waited_for_in_iterations = 0
+            self.no_of_iterations_waited_for = 0
             self.is_pointer_direction_left = (
                 not pointer_at_right_end or pointer_at_left_end
             )
@@ -262,15 +264,17 @@ class Marquee:
 
     def get_current_text_chunk(self) -> StyleAndTextTuples:
         """
-        Returns the updated text chunk, along with the prefix,
-        that currently should be displayed in the bottom bar.
+        Returns the updated text chunk, along with the
+        :attr:`~click_repl._formatting.Marquee.prefix`, that currently
+        should be displayed in the bottom bar.
 
         Returns
         -------
-        StyleAndTextTuples
+        :py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`
             The entire :attr:`~click_repl._formatting.Marquee.text` with the
             :attr:`~click_repl._formatting.Marquee.prefix` if the terminal window length
-            is sufficient. Otherwise, returns a sliced portion of the `text` that fits
+            is sufficient. Otherwise, returns a sliced portion of the
+            :attr:`~click_repl._formatting.Marquee.text` that fits
             the current window size.
         """
 
@@ -288,9 +292,9 @@ class Marquee:
             # without slicing it from the original string, to avoid re-evaluation
             # for the next 5 iterations.
 
-            if self.waited_for_in_iterations < self.max_wait_in_iterations:
+            if self.no_of_iterations_waited_for < self.max_wait_in_iterations:
                 # Wait for the next 5 iterations if you've hit boundary.
-                self.waited_for_in_iterations += 1
+                self.no_of_iterations_waited_for += 1
                 return self._recent_text
 
             self.hit_boundary = False
