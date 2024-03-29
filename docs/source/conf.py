@@ -18,6 +18,7 @@ version = click_repl.__version__
 extensions = [
     "sphinx.ext.duration",
     # "sphinx.ext.doctest",
+    "notfound.extension",
     "sphinx.ext.linkcode",
     "sphinx.ext.autodoc",
     # 'sphinx.ext.extlinks',
@@ -29,7 +30,18 @@ extensions = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/click-contrib/click-repl/issues/%s", "GH-%s"),
+    "issue": ("https://github.com/click-contrib/click-repl/issues/%d", "#%d"),
+}
+
+notfound_context = {
+    "title": "Page Not Found",
+    "body": """
+<h1>Page Not Found</h1>
+
+<p>Sorry, we couldn't find that page.</p>
+
+<p>Try using the search box or go to the homepage.</p>
+""",
 }
 
 intersphinx_mapping = {
@@ -49,18 +61,20 @@ html_theme = "furo"
 pygments_style = "friendly"
 
 intersphinx_disabled_domains = ["std"]
-exclude_patterns = ["_build"]
+exclude_patterns = ["build"]
 
 # html_static_path = ["_static"]
 # templates_path = ["_templates"]
 
-autoapi_dirs = ["../../src"]
-
 # autodoc_member_order = 'alphabetical'
-autodoc_typehints = "description"
+autoapi_dirs = ["../../src/click_repl/"]
+autoapi_python_use_implicit_namespaces = True
 autodoc_typehints_format = "short"
-
-# autoclass_content = 'both'
+autodoc_default_options = {
+    "special-members": "",
+    "undoc-members": False,
+    "exclude-members": "__slots__",
+}
 
 # Options for EPUB output
 epub_show_urls = "footnote"
@@ -69,14 +83,14 @@ epub_show_urls = "footnote"
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = True
+napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
 napoleon_use_admonition_for_examples = False
 napoleon_use_admonition_for_notes = False
 napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
-napoleon_use_param = True
-napoleon_use_rtype = True
+napoleon_use_param = False
+napoleon_use_rtype = False
 napoleon_preprocess_types = True
 napoleon_type_aliases = None
 napoleon_attr_annotations = True

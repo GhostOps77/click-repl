@@ -15,7 +15,7 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples
 from typing_extensions import TypedDict
 
 from ._formatting import Marquee, TokenizedFormattedText
-from ._globals import _RANGE_TYPES, HAS_CLICK_GE_8, ISATTY  # , StyleAndTextTuples
+from ._globals import HAS_CLICK_GE_8, ISATTY, RANGE_TYPES  # , StyleAndTextTuples
 from .parser import ReplParsingState
 from .utils import append_classname_to_all_tokens, is_param_value_incomplete
 
@@ -69,7 +69,7 @@ class BottomBar:
 
     Parameters
     ----------
-    show_hidden_params : bool
+    show_hidden_params
         Determines whether to display hidden params at bottom bar.
     """
 
@@ -297,7 +297,7 @@ class BottomBar:
         else:
             usage_state = "parameter.type.inuse"
 
-        if isinstance(param_type, _RANGE_TYPES):
+        if isinstance(param_type, RANGE_TYPES):
             range_num_type = (
                 "integer" if isinstance(param_type, click.IntRange) else "float"
             )

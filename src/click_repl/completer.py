@@ -21,12 +21,12 @@ from typing_extensions import Final, TypeAlias, TypedDict
 
 from ._formatting import TokenizedFormattedText
 from ._globals import (  # StyleAndTextTuples,
-    _PATH_TYPES,
     AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
     HAS_CLICK_GE_8,
     IS_WINDOWS,
     ISATTY,
+    PATH_TYPES,
     get_current_repl_ctx,
 )
 from ._internal_cmds import InternalCommandSystem
@@ -514,7 +514,7 @@ class ClickCompleter(Completer):
         elif isinstance(param_type, click.types.BoolParamType):
             yield from self.get_completion_for_boolean_type(param, incomplete)
 
-        elif isinstance(param_type, _PATH_TYPES):
+        elif isinstance(param_type, PATH_TYPES):
             # Both click.Path and click.File types are expected
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)

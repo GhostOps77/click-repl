@@ -85,7 +85,8 @@ def _test_marquee():
     bottombar = BottomBar()
     bottombar._recent_formatted_text = marquee
 
-    _terminal_size, chunk_size = marquee.get_terminal_width_and_window_size()
+    _terminal_size = os.get_terminal_size().columns
+    chunk_size = marquee.get_window_size()
 
     window_iter_obj = iter(
         sliding_str_window(tokens_list_content_str, marquee.pointer_position + chunk_size)
@@ -103,9 +104,7 @@ def _test_marquee():
 
     # Then it starts to iterate over the list
     max_iterations_to_right = (
-        sample_token.get_length_by_content()
-        - _terminal_size
-        + sample_prefix.get_length_by_content()
+        sample_token.content_length() - _terminal_size + sample_prefix.content_length()
     )
 
     for _, expected_window_content in zip(
@@ -184,7 +183,7 @@ def test_dynamic_change_in_terminal_width(monkeypatch):
     bottombar = BottomBar()
     bottombar._recent_formatted_text = marquee
 
-    _, chunk_size = marquee.get_terminal_width_and_window_size()
+    chunk_size = marquee.get_window_size()
 
     window_iter_obj = iter(
         sliding_str_window(tokens_list_content_str, marquee.pointer_position + chunk_size)
@@ -233,7 +232,7 @@ def test_dynamic_change_in_terminal_width(monkeypatch):
         _get_terminal_size_func(len(prefix_list_content_str) + 5),
     )
 
-    _, chunk_size = marquee.get_terminal_width_and_window_size()
+    chunk_size = marquee.get_window_size()
     marquee.adjust_pointer_position()
 
     window_iter_obj = iter(sliding_str_window(tokens_list_content_str, chunk_size))

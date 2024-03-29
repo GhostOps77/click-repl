@@ -18,7 +18,7 @@ from click.parser import split_opt
 from prompt_toolkit.formatted_text import StyleAndTextTuples
 from typing_extensions import Literal
 
-from ._globals import _RANGE_TYPES  # , StyleAndTextTuples
+from ._globals import RANGE_TYPES  # , StyleAndTextTuples
 from .parser import (
     Incomplete,
     InfoDict,
@@ -260,7 +260,7 @@ def get_info_dict(
         elif isinstance(obj, click.DateTime):
             info_dict["formats"] = obj.formats
 
-        elif isinstance(obj, _RANGE_TYPES):
+        elif isinstance(obj, RANGE_TYPES):
             info_dict.update(
                 min=obj.min,
                 max=obj.max,

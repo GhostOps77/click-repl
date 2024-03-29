@@ -3,15 +3,12 @@ from __future__ import annotations
 import contextlib
 import sys
 from io import StringIO
-from typing import Callable
 
-from click_repl._internal_cmds import InternalCommandSystem
+from click_repl._internal_cmds import InfoTable, InternalCommandSystem
 
 
 class DummyInternalCommandSystem(InternalCommandSystem):
-    def _group_commands_by_callback_and_description(
-        self,
-    ) -> dict[tuple[Callable[[], None], str], list[str]]:
+    def _group_commands_by_callback_and_description(self) -> InfoTable:
         return {}
 
     def get_prefix(self, command: str) -> tuple[str, str | None]:

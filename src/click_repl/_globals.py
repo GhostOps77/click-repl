@@ -15,8 +15,6 @@ from typing import NoReturn
 
 import click
 
-# from prompt_toolkit.formatted_text import StyleAndTextTuples as StyleAndTextTuples
-
 if t.TYPE_CHECKING:
     from .core import ReplContext
 
@@ -123,17 +121,17 @@ HAS_CLICK_GE_8 = click.__version__[0] >= "8"
 # _NumberRangeBase class is defined in click v8.
 # Therefore, this tuple is used to check for the
 # range type ParamType objects.
-_RANGE_TYPES = (click.IntRange, click.FloatRange)
+RANGE_TYPES = (click.IntRange, click.FloatRange)
 """Range types that are used as Parameter's type in click"""
 
 if HAS_CLICK_GE_8:
-    _RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
+    RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
 
-_PARAMS_WITH_METAVAR = (click.Choice, click.DateTime)
+PARAM_TYPES_WITH_METAVAR = (click.Choice, click.DateTime)
 """The only :class:`~click.types.ParamType` classes that have their
 :meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
 
-_PATH_TYPES = (click.Path, click.File)
+PATH_TYPES = (click.Path, click.File)
 """`ParamTypes` that expect path as values."""
 
 # If ISATTY is False, then we're not gonna run any code

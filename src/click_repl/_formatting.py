@@ -16,24 +16,23 @@ class TokenizedFormattedText(FormattedText):
 
     Parameters
     ----------
-    tokens_list : :py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`
+    tokens_list
         List of Token tuples.
 
-    parent_token_class : str
-        Parent class name for the tokens in the given
-        :attr:`~click_repl._formatting.TokenizedFormattedText.tokens_list`.
+    parent_token_class
+        Parent class name for the tokens in the given ``tokens_list``.
     """
 
     __slots__ = ("parent_token_class",)
 
-    def __init__(self, tokens_list: StyleAndTextTuples, parent_token_class: str) -> None:
+    def __init__(
+        self, tokens_list: StyleAndTextTuples, parent_token_class: str = ""
+    ) -> None:
         """
         Initializes the `TokenizedFormattedText` class.
         """
 
-        is_not_formatted_text = not isinstance(
-            tokens_list, (TokenizedFormattedText, FormattedText)
-        )
+        is_not_formatted_text = not isinstance(tokens_list, (type(self), FormattedText))
 
         if is_not_formatted_text and parent_token_class:
             for index, token_tuple in enumerate(tokens_list):
@@ -50,8 +49,7 @@ class TokenizedFormattedText(FormattedText):
         super().__init__(tokens_list)
 
         self.parent_token_class: str = parent_token_class
-        """Parent class name for the tokens in the given
-            :attr:`~click_repl._formatting.TokenizedFormattedText.tokens_list`."""
+        """Parent class name for the tokens in the given ``tokens_list``."""
 
     def get_text(self) -> str:
         """
@@ -64,7 +62,7 @@ class TokenizedFormattedText(FormattedText):
         """
         return "".join(token[1] for token in self)
 
-    def get_length_by_content(self) -> int:
+    def content_length(self) -> int:
         """
         Returns the length of the :class:`~prompt_toolkit.formatted_text.FormattedText`
         based on the length of the display text in each token.
@@ -76,7 +74,7 @@ class TokenizedFormattedText(FormattedText):
         """
         return sum(len(token[1]) for token in self)
 
-    def slice_by_text_content(self, start: int, stop: int) -> TokenizedFormattedText:
+    def slice_by_textual_content(self, start: int, stop: int) -> TokenizedFormattedText:
         """
         Slices the tokens based on the display text in them.
 
@@ -136,8 +134,8 @@ class Marquee:
 
     def __init__(
         self,
-        text: TokenizedFormattedText,
-        prefix: TokenizedFormattedText = [],  # type:ignore[assignment]
+        text: StyleAndTextTuples,
+        prefix: StyleAndTextTuples = [],
     ) -> None:
         """
         Initialize the `Marquee` class.
@@ -152,8 +150,14 @@ class Marquee:
             it will not be moved in the terminal display as a marquee.
         """
 
+        if not isinstance(text, TokenizedFormattedText):
+            text = TokenizedFormattedText(text)
+
         self.text: TokenizedFormattedText = text
         """The text tokens that'll be displayed in the marquee style."""
+
+        if not isinstance(prefix, TokenizedFormattedText):
+            prefix = TokenizedFormattedText(prefix)
 
         self.prefix: TokenizedFormattedText = prefix
         """This text will be displayed as a prefix before
@@ -181,24 +185,20 @@ class Marquee:
         # Flag that tells whether the window size that displays the
         # text's content is greater than the length of the text.
 
-        self._recent_text: StyleAndTextTuples = []
+        self._recent_text: TokenizedFormattedText = []  # type:ignore[assignment]
         # Used to cache recently generated string.
 
-    def get_terminal_width_and_window_size(self) -> tuple[int, int]:
+    def get_window_size(self) -> int:
         """
-        Gets current terminal's width, and appropriate window size to display it's
-        content as marquee.
+        Returns the appropriate window size to display it's content as marquee.
 
         Returns
         -------
-        tuple[int, int]
-            This tuple has the current terminal width, and the new window
-            size to display :attr:`~click_repl._formatting.Marquee.text`
+        int
+            New window size to display a chunk of
+            :attr:`~click_repl._formatting.Marquee.text`
         """
-        terminal_width = os.get_terminal_size().columns
-        window_size = terminal_width - self.prefix.get_length_by_content()
-
-        return terminal_width, window_size
+        return os.get_terminal_size().columns - self.prefix.content_length()
 
     def adjust_pointer_position(self) -> None:
         """
@@ -207,9 +207,10 @@ class Marquee:
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
 
-        terminal_width, window_size = self.get_terminal_width_and_window_size()
+        terminal_width = os.get_terminal_size().columns
+        window_size = self.get_window_size()
 
-        if self.text.get_length_by_content() <= window_size:
+        if self.text.content_length() <= window_size:
             if not self._is_text_length_le_window_size:
                 self._is_text_length_le_window_size = True
 
@@ -225,9 +226,9 @@ class Marquee:
             self._is_text_length_le_window_size = False
 
         pointer_max_pos_in_right = (
-            self.text.get_length_by_content()
+            self.text.content_length()
             - terminal_width
-            + self.prefix.get_length_by_content()
+            + self.prefix.content_length()
             + ISATTY
         )
 
@@ -246,12 +247,13 @@ class Marquee:
 
         if self.is_pointer_direction_left:
             self.pointer_position += 1
+
         else:
             self.pointer_position -= 1
 
     def get_full_formatted_text(self) -> TokenizedFormattedText:
         """
-        Gets the whole text along with the prefix, without being sliced.
+        Returns the whole text along with the prefix, without being sliced.
 
         Returns
         -------
@@ -262,7 +264,7 @@ class Marquee:
         """
         return TokenizedFormattedText(self.prefix + self.text, "bottom-bar")
 
-    def get_current_text_chunk(self) -> StyleAndTextTuples:
+    def get_current_text_chunk(self) -> TokenizedFormattedText:
         """
         Returns the updated text chunk, along with the
         :attr:`~click_repl._formatting.Marquee.prefix`, that currently
@@ -270,17 +272,17 @@ class Marquee:
 
         Returns
         -------
-        :py:obj:`~prompt_toolkit.formatted_text.StyleAndTextTuples`
+        TokenizedFormattedText
             The entire :attr:`~click_repl._formatting.Marquee.text` with the
-            :attr:`~click_repl._formatting.Marquee.prefix` if the terminal window length
-            is sufficient. Otherwise, returns a sliced portion of the
+            :attr:`~click_repl._formatting.Marquee.prefix` if the terminal window
+            length is sufficient. Otherwise, returns a sliced portion of the
             :attr:`~click_repl._formatting.Marquee.text` that fits
             the current window size.
         """
 
-        _, window_size = self.get_terminal_width_and_window_size()
+        window_size = self.get_window_size()
 
-        if self.text.get_length_by_content() <= window_size:
+        if self.text.content_length() <= window_size:
             if not self._is_text_length_le_window_size:
                 self._recent_text = self.get_full_formatted_text()
                 self.adjust_pointer_position()
@@ -300,7 +302,7 @@ class Marquee:
             self.hit_boundary = False
 
         chunk_end_pos = self.pointer_position + window_size
-        text = self.text.slice_by_text_content(self.pointer_position, chunk_end_pos)
+        text = self.text.slice_by_textual_content(self.pointer_position, chunk_end_pos)
         self.adjust_pointer_position()
 
         # Storing/Caching the recently generated string.
