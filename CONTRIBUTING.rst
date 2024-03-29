@@ -5,8 +5,7 @@ Before contributing, please either ask to claim an existing open issue or create
 a new issue to discuss your proposed changes with the owner(s) of this repo
 before making any changes.
 
-*Any pull requests without an approved issue associated with them will be
-closed*
+**Any pull requests without an approved issue associated with them will be closed**
 
 Bug reports
 -----------

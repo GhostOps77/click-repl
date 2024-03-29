@@ -21,7 +21,7 @@ extensions = [
     "notfound.extension",
     "sphinx.ext.linkcode",
     "sphinx.ext.autodoc",
-    # 'sphinx.ext.extlinks',
+    "sphinx.ext.extlinks",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
@@ -30,7 +30,7 @@ extensions = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/click-contrib/click-repl/issues/%d", "#%d"),
+    "issue": ("https://github.com/click-contrib/click-repl/issues/%s", "#%s"),
 }
 
 notfound_context = {
