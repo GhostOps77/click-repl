@@ -109,12 +109,12 @@ bottombar = BottomBar()
             "floatrange-arg tuple-opt(<text> <int> <filename> <path>) nargs-opt",
         ),
         (
-            "cmd --tuple-opt hi 123 click-repl-err.log ",
+            "cmd --tuple-opt hi 123 .click-repl-err.log ",
             "Command cmd: str-arg ... func-arg choice-arg bool-arg intrange-arg "
             "floatrange-arg tuple-opt(<text> <int> <filename> <path>) nargs-opt",
         ),
         (
-            "cmd --tuple-opt hi 123 click-repl-err.log /some/path/ ",
+            "cmd --tuple-opt hi 123 .click-repl-err.log /some/path/ ",
             "Command cmd: str-arg (0/2) ... func-arg choice-arg bool-arg intrange-arg "
             "floatrange-arg tuple-opt nargs-opt",
         ),

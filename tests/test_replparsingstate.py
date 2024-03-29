@@ -36,9 +36,9 @@ ctx = click.Context(main)
         "cmd 98 3 ",
         "cmd 98 3 hi ",
         "cmd 98 3 hi --file-opt=",
-        "cmd 98 3 hi --file-opt=click-repl-err.log ",
-        "cmd 98 3 hi --file-opt=click-repl-err.log -p ",
-        "cmd 98 3 hi --file-opt=click-repl-err.log -p /some/random/path/ --tuple-opt ",
+        "cmd 98 3 hi --file-opt=.click-repl-err.log ",
+        "cmd 98 3 hi --file-opt=.click-repl-err.log -p ",
+        "cmd 98 3 hi --file-opt=.click-repl-err.log -p /some/random/path/ --tuple-opt ",
     ],
 )
 def test_state_objs_with_same_values_have_same_hashes(test_input):
@@ -53,12 +53,12 @@ def test_state_objs_with_same_values_have_same_hashes(test_input):
 def test_state_objs_with_different_values_have_different_hashes():
     _, state1, _ = _resolve_state(
         ctx,
-        "cmd 98 3 --file-opt click-repl-err.log "
+        "cmd 98 3 --file-opt .click-repl-err.log "
         "--path-opt /some/random/path/ "
         "--tuple-opt 10087967 2023-12-25 ",
     )
     _resolve_state.cache_clear()
 
-    _, state2, _ = _resolve_state(ctx, "cmd 98 3 --file-opt click-repl-err.log ")
+    _, state2, _ = _resolve_state(ctx, "cmd 98 3 --file-opt .click-repl-err.log ")
 
     assert state1 != state2

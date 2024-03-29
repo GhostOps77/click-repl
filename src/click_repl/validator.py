@@ -24,21 +24,21 @@ __all__ = ["ClickValidator"]
 
 logger = logging.getLogger(f"click_repl-{__name__}")
 
-log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
-formatter = logging.Formatter(log_format)
-
 if CLICK_REPL_DEV_ENV:
     logger_level = logging.DEBUG
-    log_file = ".click-repl-err.log"
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
 
 else:
     logger_level = logging.WARNING
 
-
 logger.setLevel(logger_level)
+
+log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
+formatter = logging.Formatter(log_format)
+
+log_file = ".click-repl-err.log"
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 
 class ClickValidator(Validator):
@@ -129,8 +129,7 @@ class ClickValidator(Validator):
                 # self.catch_all_errors is set to True.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            if CLICK_REPL_DEV_ENV:
-                # Error tracebacks are displayed during the REPL loop if
-                # self.catch_all_errors is set to False. The short error
-                # messages are also logged into a click-repl-err.log file.
-                logger.exception("%s: %s", type(e).__name__, e)
+            # Error tracebacks are displayed during the REPL loop if
+            # self.catch_all_errors is set to False. The short error
+            # messages are also logged into a click-repl-err.log file.
+            logger.exception("%s: %s", type(e).__name__, e)
