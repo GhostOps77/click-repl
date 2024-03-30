@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 
-from click import Context, MultiCommand
+from click import Context, Group
 from click.exceptions import ClickException, UsageError
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
@@ -51,8 +51,9 @@ class ClickValidator(Validator):
 
     display_all_errors
         Flag that determines whether to raise generic Python Exceptions, and not to
-        display them in the :class:`~Validator` bar, resulting in the full error traceback
-        being redirected to a log file in the REPL mode.
+        display them in the :class:`~prompt_toolkit.validation.Validator` bar,
+        resulting in the full error traceback being redirected to a log file
+        in the REPL mode.
     """
 
     def __init__(
@@ -66,7 +67,7 @@ class ClickValidator(Validator):
         """
 
         self.cli_ctx: Final[Context] = ctx
-        self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
+        self.cli: Final[Group] = self.cli_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system
         self.display_all_errors = display_all_errors
@@ -75,7 +76,9 @@ class ClickValidator(Validator):
         """
         Validates the input from the prompt by raising a
         :exc:`~prompt_toolkit.validation.ValidationError` if it is invalid.
-        Any raised errors are displayed in the :class:`~Validator` bar.
+
+        Any raised errors are displayed in the
+        :class:`~prompt_toolkit.validation.Validator` bar.
 
         Parameters
         ----------

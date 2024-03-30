@@ -9,19 +9,32 @@ import os
 import sys
 import typing as t
 from threading import local
-from typing import NoReturn
+from typing import Dict, NoReturn
 
 import click
+from typing_extensions import Literal, TypeAlias, TypedDict
 
 if t.TYPE_CHECKING:
     from .core import ReplContext
 
 
+_CompletionStyleDictKeys = Literal[
+    "internal-command", "command", "group", "argument", "option", "parameter"
+]
+
+
+class _CompletionStyleDict(TypedDict):
+    completion_style: str
+    selected_completion_style: str
+
+
+CompletionStyleDict: TypeAlias = Dict[_CompletionStyleDictKeys, _CompletionStyleDict]
+
+
 DEFAULT_COMPLETION_STYLE_CONFIG = {
     # Command
     "autocompletion-menu.command.name": "",
-    "autocompletion-menu.multicommand.name": "",
-    "autocompletion-menu.multicommand.group.name": "",
+    "autocompletion-menu.group.name": "",
     # Parameter types.
     "autocompletion-menu.parameter.argument.name": "",
     "autocompletion-menu.parameter.option.name": "",
@@ -51,11 +64,26 @@ DEFAULT_COMPLETION_STYLE_CONFIG = {
 }
 """Default token style configuration for :class:`~click_repl.completer.ClickCompleter`"""
 
+DEFAULT_COMPLETION_STYLE_DICT: CompletionStyleDict = {
+    "internal-command": {
+        "completion_style": "",
+        "selected_completion_style": "",
+    },
+    "command": {"completion_style": "", "selected_completion_style": ""},
+    "group": {
+        "completion_style": "",
+        "selected_completion_style": "",
+    },
+    "argument": {"completion_style": "", "selected_completion_style": ""},
+    "option": {"completion_style": "", "selected_completion_style": ""},
+}
+"""Default token configuration for :class:`~`"""
+
 DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
-    # MultiCommand
-    "bottom-bar.multicommand.name": "bold",
-    "bottom-bar.multicommand.type": "bold",
-    "bottom-bar.multicommand.metavar": "",
+    # Group
+    "bottom-bar.group.name": "bold",
+    "bottom-bar.group.type": "bold",
+    "bottom-bar.group.metavar": "",
     # Command
     "bottom-bar.command.name": "bold",
     "bottom-bar.command.type": "bold",
@@ -142,10 +170,10 @@ ISATTY = sys.stdin.isatty()
 _IS_WINDOWS = os.name == "nt"
 
 AUTO_COMPLETION_FUNC_ATTR = (
-    "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
+    "``_custom_shell_complete``" if HAS_CLICK_GE_8 else "autocompletion"
 )
 """The attribute name of the custom autocompletion function for a
-   :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8`.
+   :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8``.
 """
 
 CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
@@ -166,12 +194,12 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     Parameters
     ----------
     silent
-        If set to True the return value is None if no context
+        If set to ``True``, the return value is None if no context
         is available. The default behavior is to raise a :exc:`~RuntimeError`.
 
     Returns
     -------
-    click.core.ReplContext | None
+    :class:`~click_repl.core.ReplContext` | None
         ``ReplContext`` object, if available.
 
     Raises
@@ -196,7 +224,8 @@ def _push_context(ctx: ReplContext) -> None:
     Parameters
     ----------
     ctx
-        ReplContext object that should be added to the repl context stack.
+        :class:`~click_repl.core.ReplContext` object that should be
+        added to the repl context stack.
     """
     _locals.ctx_stack.append(ctx)
 

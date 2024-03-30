@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional, Sequence, Tuple
 
 import click
 from click import Argument as CoreArgument
-from click import Command, Context, MultiCommand, Parameter
+from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
 from click.parser import Option, OptionParser, ParsingState, normalize_opt
@@ -176,7 +176,7 @@ class ReplParsingState:
         args: tuple[str, ...],
     ) -> None:
         self.cli_ctx = cli_ctx
-        self.cli = t.cast(MultiCommand, self.cli_ctx.command)
+        self.cli = t.cast(Group, self.cli_ctx.command)
 
         self.current_ctx = current_ctx
         self.args = args
@@ -225,7 +225,7 @@ class ReplParsingState:
             return NotImplemented  # type:ignore[no-any-return]
         return self.__key() == other.__key()
 
-    def parse(self) -> tuple[MultiCommand, Command | None, Parameter | None]:
+    def parse(self) -> tuple[Group, Command | None, Parameter | None]:
         current_group, current_command = self.get_current_group_and_command()
         current_param = None
 
@@ -234,7 +234,7 @@ class ReplParsingState:
 
         return current_group, current_command, current_param
 
-    def get_current_group_and_command(self) -> tuple[MultiCommand, Command | None]:
+    def get_current_group_and_command(self) -> tuple[Group, Command | None]:
         current_ctx_command = self.current_ctx.command
 
         current_group = current_ctx_command
@@ -247,7 +247,7 @@ class ReplParsingState:
         if self.current_ctx.parent is not None:
             current_group = self.current_ctx.parent.command
 
-        current_group = t.cast(MultiCommand, current_group)
+        current_group = t.cast(Group, current_group)
 
         cmd_arguments_list = [
             param
@@ -262,10 +262,7 @@ class ReplParsingState:
 
         has_incomplete_args = not (cmd_arguments_list and all_arguments_got_values)
 
-        if (
-            isinstance(current_ctx_command, click.MultiCommand)
-            and all_arguments_got_values
-        ):
+        if isinstance(current_ctx_command, click.Group) and all_arguments_got_values:
             # Promote the current command as current group, only if it
             # has got values to all of its click.Argument type args.
             current_group = current_ctx_command

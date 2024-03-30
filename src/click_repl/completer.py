@@ -7,31 +7,32 @@ from __future__ import annotations
 import typing as t
 from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import click
-from click import Command, Context, MultiCommand, Parameter
+from click import Command, Context, Group, Parameter
 from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Final, TypeAlias, TypedDict
+from typing_extensions import Final
 
 from ._formatting import TokenizedFormattedText
 from ._globals import (
     _IS_WINDOWS,
     AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
+    DEFAULT_COMPLETION_STYLE_CONFIG,
     HAS_CLICK_GE_8,
     ISATTY,
     PATH_TYPES,
+    CompletionStyleDict,
     get_current_repl_ctx,
 )
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import Incomplete, ReplParsingState
 from .utils import (
-    _CompletionStyleDictKeys,
     _get_visible_subcommands,
     _is_help_option,
     _resolve_state,
@@ -42,15 +43,6 @@ from .utils import (
     options_flags_joiner,
 )
 
-
-class _CompletionStyleDict(TypedDict):
-    completion_style: str
-    selected_completion_style: str
-
-
-CompletionStyleDict: TypeAlias = Dict[_CompletionStyleDictKeys, _CompletionStyleDict]
-
-
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
 
@@ -60,42 +52,42 @@ class ClickCompleter(Completer):
 
     Parameters
     ----------
-    ctx : click.Context
+    ctx
         The current click context object.
 
-    bottom_bar : BottomBar
+    bottom_bar
         Object thats used to update the text displayed in the bottom bar.
 
-    internal_commands_system : InternalCommandSystem
+    internal_commands_system
         Object that holds information about the internal commands and their prefixes.
 
-    shortest_opts_only : bool
+    shortest_opts_only
         Determines whether only the shortest flag of an option parameter
         is used for auto-completion.
 
         It is utilized when the user is requesting option flags without
         providing any text. They are not considered for flag options.
 
-    show_only_unused_opts : bool
+    show_only_unused_opts
         Determines whether the options that are already mentioned or
         used in the current prompt will be displayed during auto-completion.
 
-    show_hidden_commands : bool
+    show_hidden_commands
         Determines whether the hidden commands should be shown
         in autocompletion or not.
 
-    show_hidden_params : bool
+    show_hidden_params
         Determines whether the hidden parameters should be shown
         in autocompletion or not.
 
-    expand_envvars : bool
+    expand_envvars
         Determines whether to return completion with Environmental variables
         as expanded or not.
 
-    style : A Dictionary of `str: str` pairs
+    style
         A dictionary denoting different styles for
-        `prompt_toolkit.completion.Completion` objects for
-        `'command'`, `'argument'`, and `'option'`.
+        :class:`~prompt_toolkit.completion.Completion` objects for
+        ``command``, ``argument``, and ``option``.
     """
 
     def __init__(
@@ -110,14 +102,16 @@ class ClickCompleter(Completer):
         expand_envvars: bool = False,
         style: CompletionStyleDict | None = None,
     ) -> None:
+        """
+        Initialize the `ClickCompleter` class.
+        """
         self.cli_ctx: Final[Context] = ctx
-        self.cli: Final[MultiCommand] = self.cli_ctx.command  # type: ignore[assignment]
+        self.cli: Final[Group] = self.cli_ctx.command  # type: ignore[assignment]
 
-        if ISATTY:
-            self.bottom_bar = bottom_bar
+        if not ISATTY:
+            bottom_bar = None
 
-        else:
-            self.bottom_bar = None
+        self.bottom_bar = bottom_bar
 
         self.shortest_opts_only = shortest_opts_only
         self.show_only_unused_opts = show_only_unused_opts
@@ -126,28 +120,10 @@ class ClickCompleter(Completer):
         self.show_hidden_params = show_hidden_params
         self.expand_envvars = expand_envvars
 
-        # if internal_commands_system is None:
-        #     internal_commands_system = InternalCommandSystem(None, None)
-
         self.internal_commands_system = internal_commands_system
 
         if style is None:
-            style = t.cast(
-                CompletionStyleDict,
-                {
-                    "internal-command": {
-                        "completion_style": "",
-                        "selected_completion_style": "",
-                    },
-                    "command": {"completion_style": "", "selected_completion_style": ""},
-                    "multicommand": {
-                        "completion_style": "",
-                        "selected_completion_style": "",
-                    },
-                    "argument": {"completion_style": "", "selected_completion_style": ""},
-                    "option": {"completion_style": "", "selected_completion_style": ""},
-                },
-            )
+            style = t.cast(CompletionStyleDict, DEFAULT_COMPLETION_STYLE_CONFIG)
 
         self.style = style
 
@@ -846,7 +822,7 @@ class ClickCompleter(Completer):
         )
 
         is_current_command_a_group_or_none = current_command is None or isinstance(
-            current_command, click.MultiCommand
+            current_command, click.Group
         )
 
         return ctx.command != self.cli and (
@@ -856,9 +832,9 @@ class ClickCompleter(Completer):
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
-    ) -> MultiCommand | None:
+    ) -> Group | None:
         """
-        Returns the appropriate `click.MultiCommand` object that should be used
+        Returns the appropriate `click.Group` object that should be used
         to generate auto-completions for subcommands of a group.
 
         Parameters
@@ -879,7 +855,7 @@ class ClickCompleter(Completer):
 
         Returns
         -------
-        MultiCommand | None
+        Group | None
             A click multicommand object, if available, which is supposed to be used for
             generating auto-completion for suggesting its subcommands.
         """
@@ -892,7 +868,7 @@ class ClickCompleter(Completer):
         if any_argument_param_incomplete or state.current_param:
             return None
 
-        if isinstance(ctx.command, click.MultiCommand):
+        if isinstance(ctx.command, click.Group):
             return ctx.command
 
         if state.current_group.chain:

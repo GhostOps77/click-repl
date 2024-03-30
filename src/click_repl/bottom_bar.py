@@ -9,6 +9,7 @@ import typing as t
 import click
 from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
+from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import TypedDict
 
@@ -25,7 +26,7 @@ __all__ = ["BottomBar"]
 
 
 class ParamInfo(TypedDict):
-    name: tuple[str, str]
+    name: Token
     type_info: ListOfTokens
     nargs_info: ListOfTokens
 
@@ -36,13 +37,14 @@ def _describe_click_range_paramtype(param_type: IntRange | FloatRange) -> str:
 
     Parameter
     ---------
-    param_type: :class:`~click.IntRange` | :class:`~click.FloatRange`
+    param_type
         :class:`~click.types.ParamType` object, whose metavar should be generated.
 
     Returns
     -------
     str
-        Metavar that describes about the given `param_type` object.
+        Metavar that describes about the given range-like
+        :class:`~click.types.ParamType` object.
     """
 
     if HAS_CLICK_GE_8:
@@ -100,8 +102,7 @@ class BottomBar:
 
     def get_formatted_text(self) -> ListOfTokens:
         """
-        Gives the next chunk of text that's sliced from
-        :attr:`~.Marquee.text` object
+        Gives the next chunk of text that's sliced from :attr:`~.Marquee.text` object
         that needs to be displayed in bottom bar.
 
         Returns
@@ -121,7 +122,7 @@ class BottomBar:
 
     def update_state(self, state: ReplParsingState) -> None:
         """
-        Updates the current Repl parsing state object in :class:`click_repl.bottom_bar.BottomBar`.
+        Updates the current Repl parsing state object in :class:`.BottomBar`.
 
         Parameters
         ----------
@@ -141,7 +142,7 @@ class BottomBar:
 
         Returns
         -------
-        tuple[ListOfTokens, ListOfTokens]
+        tuple[ListOfTokens,ListOfTokens]
             Pre-defined set of metavar tokens for both :attr:`.Marquee.prefix` and
             :attr:`.Marquee.text` attributes.
         """
@@ -204,8 +205,21 @@ class BottomBar:
         return prefix, content
 
     def get_param_usage_state_token(self, param: Parameter) -> str:
-        state = self.state
+        """
+        Determine the usage state of a parameter in the context of a REPL.
 
+        Parameters
+        ----------
+        param
+            The parameter for which to determine it's usage state.
+
+        Returns
+        -------
+        str
+            A token class representing the usage state of the parameter. It indicates
+            whether the parameter has already received values via REPL or not.
+        """
+        state = self.state
         assert state is not None, "state cannot be None"
 
         if param == state.current_param:
@@ -228,7 +242,20 @@ class BottomBar:
 
         return "parameter." + usage_state
 
-    def get_param_name(self, param: Parameter) -> tuple[str, str]:
+    def get_param_name_token(self, param: Parameter) -> Token:
+        """
+        Returns the token name accordingly to the given ``param``'s type.
+
+        Parameters
+        ----------
+        param
+            The parameter for which to determine it's usage state.
+
+        Returns
+        -------
+        Token
+            Token that represents the given ``param``'s name.
+        """
         if isinstance(param, click.Argument):
             token_name = "parameter.argument.name"
 
@@ -248,47 +275,70 @@ class BottomBar:
             param_name.replace("_", "-"),
         )
 
-    def get_param_type_info(
+    def get_param_tuple_type_info_tokens(self, param: Parameter) -> ListOfTokens:
+        assert self.state is not None, "state cannot be None"
+        if param.name is None:
+            return []
+
+        param_type: click.Tuple = param.type  # type:ignore[assignment]
+        param_values: tuple[str | None, ...] = self.state.current_ctx.params[param.name]
+
+        found_current_type_in_tuple = False
+        type_info_tokens: ListOfTokens = []
+
+        for type_, value_in_ctx in zip(param_type.types, param_values):
+            res = self.get_param_type_info_tokens(param, type_)
+
+            if not res:
+                res = [
+                    ("symbol.bracket", "<"),
+                    ("parameter.type.string", "text"),
+                    ("symbol.bracket", ">"),
+                ]
+
+            if value_in_ctx is not None:
+                usage_state = "parameter.type.used"
+
+            elif not found_current_type_in_tuple:
+                usage_state = "parameter.type.inuse"
+                found_current_type_in_tuple = True
+
+            else:
+                usage_state = "parameter.type.unused"
+
+            type_info_tokens += [
+                (f"{token.rsplit(',', 1)[0]},{usage_state}", val, *_)
+                for token, val, *_ in res
+            ]
+            type_info_tokens.append(("space", " "))
+
+        type_info_tokens.pop()
+        return type_info_tokens
+
+    def get_param_type_info_tokens(
         self, param: Parameter, param_type: ParamType
     ) -> ListOfTokens:
+        """
+
+        Parameters
+        ----------
+        param
+            The parameter for which to determine it's usage state.
+
+        param_type
+            The :class:`~click.types.ParamType` of the given ``param``.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that represents the given ``param``'s type.
+        """
         assert self.state is not None, "state cannot be None"
 
-        type_info: ListOfTokens = []
+        type_info_tokens: ListOfTokens = []
 
         if isinstance(param_type, click.Tuple):
-            found_current_type_in_tuple = False
-
-            for type_, value_in_ctx in zip(
-                param_type.types,
-                self.state.current_ctx.params[param.name],  # type:ignore[index]
-            ):
-                res = self.get_param_type_info(param, type_)
-
-                if not res:
-                    res = [
-                        ("symbol.bracket", "<"),
-                        ("parameter.type.string", "text"),
-                        ("symbol.bracket", ">"),
-                    ]
-
-                if value_in_ctx is not None:
-                    usage_state = "parameter.type.used"
-
-                elif not found_current_type_in_tuple:
-                    usage_state = "parameter.type.inuse"
-                    found_current_type_in_tuple = True
-
-                else:
-                    usage_state = "parameter.type.unused"
-
-                type_info += [
-                    (f"{token.rsplit(',', 1)[0]},{usage_state}", val, *_)
-                    for token, val, *_ in res
-                ]
-                type_info.append(("space", " "))
-
-            type_info.pop()
-            return type_info
+            return self.get_param_tuple_type_info_tokens(param)
 
         if not is_param_value_incomplete(self.state.current_ctx, param):
             usage_state = "parameter.type.used"
@@ -301,7 +351,7 @@ class BottomBar:
                 "integer" if isinstance(param_type, click.IntRange) else "float"
             )
 
-            type_info += [
+            type_info_tokens += [
                 (f"parameter.type.range.{range_num_type}", param_type.name),
                 ("space", " "),
                 (
@@ -313,18 +363,24 @@ class BottomBar:
         elif param_type not in (click.STRING, click.UNPROCESSED):
             param_type_name = param_type.name or type(param_type).__name__.lower()
 
-            type_info.append(
+            type_info_tokens.append(
                 (f"parameter.type.{param_type_name}", param_type.name or f"{param_type}")
             )
 
-        if type_info:
-            type_info = [("symbol.bracket", "<"), *type_info, ("symbol.bracket", ">")]
+        if type_info_tokens:
+            type_info_tokens = [
+                ("symbol.bracket", "<"),
+                *type_info_tokens,
+                ("symbol.bracket", ">"),
+            ]
 
-            type_info = append_classname_to_all_tokens(type_info, [usage_state])
+            type_info_tokens = append_classname_to_all_tokens(
+                type_info_tokens, [usage_state]
+            )
 
-        return type_info
+        return type_info_tokens
 
-    def get_param_nargs_info(
+    def get_param_nargs_info_tokens(
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
         type_info = param_info["type_info"]
@@ -389,7 +445,7 @@ class BottomBar:
         assert self.state is not None, "state cannot be None"
 
         param_info: ParamInfo = {
-            "name": self.get_param_name(param),
+            "name": self.get_param_name_token(param),
             "type_info": [],
             "nargs_info": [],
         }
@@ -398,8 +454,8 @@ class BottomBar:
             # Displaying detailed information only for the current parameter
             # in the bottom bar, to save space.
 
-            param_info["type_info"] = self.get_param_type_info(param, param.type)
-            param_info["nargs_info"] = self.get_param_nargs_info(param, param_info)
+            param_info["type_info"] = self.get_param_type_info_tokens(param, param.type)
+            param_info["nargs_info"] = self.get_param_nargs_info_tokens(param, param_info)
 
         return self.format_metavar_for_param_with_nargs(param, param_info)
 
@@ -422,7 +478,7 @@ class BottomBar:
                 TokenizedFormattedText(_prefix, "bottom-bar"),
             )
 
-        if isinstance(current_command, click.MultiCommand):
+        if isinstance(current_command, click.Group):
             command_type = "multicommand"
             command_type_metavar = type(current_command).__name__
 

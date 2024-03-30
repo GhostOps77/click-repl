@@ -9,7 +9,7 @@ import traceback
 from typing import Any, Sequence, cast
 
 import click
-from click import Context, MultiCommand
+from click import Context, Group
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style, merge_styles
@@ -92,7 +92,7 @@ class Repl:
         self.group_ctx: Context = _get_group_ctx(ctx)
         """Parent group for the repl to retrieve subcommands from."""
 
-        self.group: MultiCommand = cast(MultiCommand, self.group_ctx.command)
+        self.group: Group = cast(Group, self.group_ctx.command)
         """Group used in the `group_ctx`"""
 
         self.internal_commands_system: InternalCommandSystem = InternalCommandSystem(
@@ -439,7 +439,7 @@ def repl(
         such as prompt message, history, completion, etc.
 
     cls
-        Repl class to use for the click_repl app. if ``None``, the
+        Repl class to use for the click_repl app. if :py:obj:`None`, the
         :class:`~.Repl` class is used by default. This allows
         customization of the REPL behavior by providing a custom Repl subclass.
 
@@ -457,7 +457,7 @@ def repl(
     - Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
     to determine the content that will be displayed in the bottom toolbar via the
     ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
-    toolbar, pass ``None`` as the value for this key.
+    toolbar, pass :py:obj:`None` as the value for this key.
     """
 
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()

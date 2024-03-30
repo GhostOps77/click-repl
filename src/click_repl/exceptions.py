@@ -39,7 +39,7 @@ class ParserError(Exception):
 
 class PrefixNotFound(InternalCommandException):
     """
-    Exception raised when the Internal Command's prefix is not found while
+    Exception raised when the internal command's prefix is not found while
     trying to execute a query.
     """
 
@@ -53,13 +53,13 @@ class WrongType(InternalCommandException):
 
     Parameters
     ----------
-    var : Any
+    var
         The variable that has wrong/unexpected type.
 
-    var_name : str
+    var_name
         The name of the variable passed through the `var` parameter.
 
-    expected_type : str
+    expected_type
         A string that describes the expected type.
     """
 
@@ -72,15 +72,17 @@ class WrongType(InternalCommandException):
 
 class SamePrefix(InternalCommandException):
     """
-    Exception raised when `click_repl._internal_cmds.InternalCommandSystem`
-    assigns both `internal_command_prefix` and `system_command_prefix` as the same
+    Exception raised when :class:`~click_repl._internal_cmds.InternalCommandSystem`
+    assigns both :attr:`~click_repl._internal_cmds.InternalCommandSystem.internal_command_prefix`
+    and :attr:`~click_repl._internal_cmds.InternalCommandSystem.system_command_prefix` as the same
     prefix string.
 
     Parameters
     ----------
-    prefix_str : str
-        The prefix string that is assigned to both `internal_command_prefix`
-        and `system_command_prefix`.
+    prefix_str
+        The prefix string that is assigned to both
+        :attr:`~click_repl._internal_cmds.InternalCommandSystem.internal_command_prefix`
+        and :attr:`~click_repl._internal_cmds.InternalCommandSystem.system_command_prefix`.
     """
 
     def __init__(self, prefix_str: str) -> None:
@@ -98,25 +100,25 @@ class ExitReplException(InternalCommandException):
 
 class ArgumentPositionError(ParserError):
     """
-    Exception raised when an argument with `nargs=-1` is not defined at the rightmost
+    Exception raised when an argument with ``nargs=-1`` is not defined at the rightmost
     end of the parameter list.
 
-    This exception indicates that the given command has an argument with `nargs=-1`
-    defined within the other parameters. However, an argument with `nargs=-1` must
+    This exception indicates that the given command has an argument with ``nargs=-1``
+    defined within the other parameters. However, an argument with ``nargs=-1`` must
     be defined at the end of the parameter list. This is because an argument with
-    `nargs=-1` consumes all the incoming values as the remaining values from the REPL
+    ``nargs=-1`` consumes all the incoming values as the remaining values from the REPL
     prompt, and any other parameter defined after it will not receive any value.
 
     Parameters
     ----------
-    command : click.Command
-        The click command object that contains the argument.
+    command
+        The :class:`~click.Command` object that contains the argument.
 
-    argument : click.Argument
-        The click argument object that violates the position rule.
+    argument
+        The :class:`~click.Argument` object that violates the position rule.
 
-    position : int
-        The index of the disarranged nargs=-1 argument in the parameter list of
+    position
+        The index of the disarranged ``nargs=-1`` argument in the parameter list of
         the given command.
     """
 

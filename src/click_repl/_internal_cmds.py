@@ -93,7 +93,7 @@ class InternalCommandSystem:
 
     Raises
     ------
-    click_repl.exceptions.SamePrefix
+    :exc:`~click_repl.exceptions.SamePrefix`
         If both :attr:`.internal_command_prefix` and :attr:`.system_command_prefix` are same.
 
     Note
@@ -143,7 +143,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        str | None
+        :class:`str` | None
             The prefix for internal commands, if available.
 
         Raises
@@ -151,7 +151,7 @@ class InternalCommandSystem:
         click_repl.exceptions.WrongType
             If the value being assigned is not a str type.
 
-        click_repl.exceptions.SamePrefix
+        :exc:`~click_repl.exceptions.SamePrefix`
             If the new prefix thats being assigned is the same as the current prefix.
         """
         return self.prefix_table["Internal"]
@@ -172,13 +172,13 @@ class InternalCommandSystem:
 
         Returns
         -------
-        str | None
+        :class:`str` | None
             The prefix for system commands, if available.
 
         Raises
         ------
         click_repl.exceptions.WrongType
-            If the value being assigned is not a ``str`` type.
+            If the value being assigned is not a :class:`str` type.
 
         click_repl.exceptions.SamePrefix
             If the new prefix thats being assigned is the same as the current prefix.
@@ -209,7 +209,7 @@ class InternalCommandSystem:
         Raises
         ------
         click_repl.exceptions.WrongType
-            If the prefix is not of type ``str`` or ``None``.
+            If the prefix is not of type :class:`str` or :py:obj:`None`.
 
         ValueError
             If the prefix is an empty string.
@@ -291,7 +291,7 @@ class InternalCommandSystem:
 
         Example
         -------
-        The following example demonstrate how to register the `kill`
+        The following example demonstrate how to register the ``kill``
         function as an internal command:
 
         .. code-block:: python
@@ -438,7 +438,7 @@ class InternalCommandSystem:
 
         Raises
         ------
-        click_repl.exceptions.PrefixNotFound
+        :class:`~click_repl.exceptions.PrefixNotFound`
             If there's no internal prefix used in the given command.
         """
 

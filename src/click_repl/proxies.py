@@ -8,7 +8,7 @@ import typing as t
 from typing import Any
 
 import click
-from click import Argument, Command, Context, Group, MultiCommand, Option, Parameter
+from click import Argument, Command, Context, Group, Option, Parameter
 from typing_extensions import Self
 
 from ._globals import HAS_CLICK_GE_8
@@ -27,8 +27,7 @@ def _create_proxy_command(obj: Group) -> ProxyGroup: ...  # type:ignore[misc]
 
 def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
     """
-    Wraps the given :class:`~click.Command` object within
-    a proxy object.
+    Wraps the given :class:`~click.Command` object within a proxy object.
 
     Parameters
     ----------
@@ -61,8 +60,7 @@ def _create_proxy_param(obj: Argument) -> ProxyArgument:  # type:ignore[misc]
 
 def _create_proxy_param(obj: Parameter) -> ProxyParameter:
     """
-    Wraps the given :class:`~click.Parameter` object within
-    a proxy object.
+    Wraps the given :class:`~click.Parameter` object within a proxy object.
 
     Parameters
     ----------
@@ -185,7 +183,7 @@ class ProxyCommand(Proxy, Command):
 
     Parameters
     ----------
-    obj : click.Command
+    obj
         The click command object that has to be proxied.
     """
 
@@ -213,21 +211,21 @@ class ProxyCommand(Proxy, Command):
         return ReplOptionParser(ctx)
 
 
-class ProxyMultiCommand(ProxyCommand, MultiCommand):
+class ProxyGroup(ProxyCommand, Group):
     """
-    A proxy class for :class:`~click.MultiCommand` objects that changes
-    its parser to :class:`~click_repl.parser.ReplOptionParser` in the
-    :meth:`~click.MultiCommand.make_parser` method.
+    A proxy class for :class:`~click.Group` objects that changes its parser
+    to :class:`~click_repl.parser.ReplOptionParser` in the
+    :meth:`~click.Group.make_parser` method.
 
     Parameters
     ----------
-    obj : click.MultiCommand
-        The click multicommand object that has to be proxied.
+    obj
+        The click Group object that has to be proxied.
     """
 
-    def __init__(self, obj: MultiCommand) -> None:
+    def __init__(self, obj: Group) -> None:
         """
-        Initializes a `ProxyMultiCommand` object.
+        Initialize the `ProxyGroup` class.
         """
         super().__init__(obj)
         self.proxy_setattr(
@@ -240,21 +238,6 @@ class ProxyMultiCommand(ProxyCommand, MultiCommand):
         self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
 
 
-class ProxyGroup(ProxyMultiCommand, Group):
-    """
-    A proxy class for :class:`~click.Group` objects that changes its parser
-    to :class:`~click_repl.parser.ReplOptionParser` in the
-    :meth:`~click.Group.make_parser` method.
-
-    Parameters
-    ----------
-    obj : click.Group
-        The click Group object that has to be proxied.
-    """
-
-    pass
-
-
 class ProxyParameter(Proxy, Parameter):
     """
     A generic proxy class for :class:`~click.Parameter` objects that
@@ -265,9 +248,15 @@ class ProxyParameter(Proxy, Parameter):
 
     Parameters
     ----------
-    obj : click.Parameter
+    obj
         The click parameter object that has to be proxied.
     """
+
+    def __init__(self, obj: Parameter) -> None:
+        """
+        Initializes the `ProxyParameter` class.
+        """
+        super().__init__(obj)
 
     def full_process_value(self, ctx: Context, value: Any) -> Any:
         # click v7 has 'full_process_value' instead of 'process_value'.
@@ -305,11 +294,15 @@ class ProxyArgument(ProxyParameter, Argument):
 
     Parameters
     ----------
-    obj : click.Argument
+    obj
         The click argument object that has to be proxied.
     """
 
-    pass
+    def __init__(self, obj: Argument) -> None:
+        """
+        Initiailizes the `ProxyArgument` class.
+        """
+        super().__init__(obj)
 
 
 class ProxyOption(ProxyParameter, Option):
@@ -319,9 +312,15 @@ class ProxyOption(ProxyParameter, Option):
 
     Parameters
     ----------
-    obj : click.Option
+    obj
         The click option object that has to be proxied.
     """
+
+    def __init__(self, obj: Option) -> None:
+        """
+        Initiailizes the `ProxyOption` class.
+        """
+        super().__init__(obj)
 
     def prompt_for_value(self, ctx: Context) -> Any:
         return

@@ -9,7 +9,8 @@ import click_repl
 project = "click-repl"
 copyright = "2024, Markus Unterwaditzer"
 author = "Markus Unterwaditzer"
-repo_link = "https://github.com/GhostOps77/click-repl/tree/GhostOps77-patch-1"
+repo_link = "https://github.com/GhostOps77/click-repl"
+repo_branch = "GhostOps77-patch-1"
 
 version = click_repl.__version__
 
@@ -44,6 +45,7 @@ intersphinx_mapping = {
         None,
     ),
     "click": ("https://click.palletsprojects.com/en/8.1.x/", None),
+    "typing_extensions": ("https://typing-extensions.readthedocs.io/en/latest/", None),
 }
 
 html_show_sphinx = False
@@ -62,37 +64,31 @@ exclude_patterns = ["build"]
 autoapi_dirs = ["../../src/click_repl/"]
 autoapi_python_use_implicit_namespaces = True
 
+# autodoc_type_aliases = {}
 autodoc_typehints_format = "short"
-autodoc_default_options = {
-    "special-members": "__slots__",
-    "undoc-members": False,
-    # "exclude-members": "__slots__",
-}
-
-autodoc_type_aliases = {
-    "pt": "prompt_toolkit",
-    "pt.c": "prompt_toolkit.completer",
-    "pt.v": "prompt_toolkit.validation",
-    "ListOfTokens": "prompt_toolkit.formatted_text.StyleAndTextTuples",
-}
+# autodoc_default_options = {
+#     # "special-members": "__slots__",
+#     "undoc-members": False,
+#     # "exclude-members": "__slots__",
+# }
 
 # Options for EPUB output
 epub_show_urls = "footnote"
 
 # Napoleon settings
 napoleon_google_docstring = False
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = False
+# napoleon_numpy_docstring = True
+# napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
 napoleon_use_admonition_for_examples = True
 napoleon_use_admonition_for_notes = True
 napoleon_use_admonition_for_references = True
-napoleon_use_ivar = False
+# napoleon_use_ivar = False
 napoleon_use_param = False
 napoleon_use_rtype = False
 napoleon_preprocess_types = True
-napoleon_type_aliases = None
+# napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
 # # sphinx-autodoc-typehints settings
@@ -125,12 +121,14 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
 
     if isinstance(
         val,
-        types.ModuleType
-        | types.MethodType
-        | types.FunctionType
-        | types.TracebackType
-        | types.FrameType
-        | types.CodeType,
+        (
+            types.ModuleType,
+            types.MethodType,
+            types.FunctionType,
+            types.TracebackType,
+            types.FrameType,
+            types.CodeType,
+        ),
     ):
         try:
             lines, first = inspect.getsourcelines(val)
@@ -139,4 +137,4 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
         except (OSError, TypeError):
             pass
 
-    return f"{repo_link}/blob/main/src/{filename}"
+    return f"{repo_link}/blob/{repo_branch}/src/{filename}"

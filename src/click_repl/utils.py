@@ -11,12 +11,11 @@ from functools import lru_cache
 from typing import Any, Iterable
 
 import click
-from click import Command, Context, MultiCommand, Parameter
+from click import Command, Context, Group, Parameter
 from click.parser import split_opt
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Literal
 
-from ._globals import RANGE_TYPES
+from ._globals import RANGE_TYPES, _CompletionStyleDictKeys
 from .parser import (
     Incomplete,
     InfoDict,
@@ -25,10 +24,6 @@ from .parser import (
     _resolve_repl_parsing_state,
 )
 from .proxies import _create_proxy_command
-
-_CompletionStyleDictKeys = Literal[
-    "internal-command", "command", "multicommand", "argument", "option", "parameter"
-]
 
 
 def append_classname_to_all_tokens(
@@ -74,8 +69,8 @@ def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDict
         else:
             return "parameter"
 
-    elif isinstance(obj, click.MultiCommand):
-        return "multicommand"
+    elif isinstance(obj, click.Group):
+        return "group"
 
     return "command"
 
@@ -141,7 +136,7 @@ def is_param_value_incomplete(
 
     check_if_tuple_has_none
         Flag that checks whether the given parameter stores multiple
-        values in a tuple, and the tuple has ``None`` in it.
+        values in a tuple, and the tuple has :py:obj:`None` in it.
 
     Returns
     -------
@@ -180,25 +175,43 @@ def join_options(options: list[str]) -> tuple[list[str], str]:
     """
     Same implementation as :func:`~click.formatting.join_options`, but much simpler.
 
-    *Given a list of option strings this joins them in the most appropriate
-    way and returns them in the form ``(formatted_string,
-    any_prefix_is_slash)`` where the second item in the tuple is a flag that
-    indicates if any of the option prefixes was a slash.*
+    Given a list of option strings this joins them in the most appropriate
+    way and returns them in the form ``(formatted_string, any_prefix_is_slash)``
+    where the second item in the tuple is a flag that
+    indicates if any of the option prefixes was a slash.
 
     Parameters
     ----------
     options
         List of option flags that needs to be joined together.
+
+    References
+    ----------
+    .. [:class:`~click.formatting.join_options`]
     """
     return sorted(options, key=len), get_option_flag_sep(options)
 
 
 def _get_group_ctx(ctx: Context) -> Context:
-    # If there's a parent context object and its command type is click.MultiCommand,
-    # we return its parent context object. A parent context object should be
-    # available most of the time. If not, then we return the original context object.
+    """
+    Checks and returns the appropriate :class:`~click.Context` object to
+    start repl on it.
 
-    if ctx.parent is not None and not isinstance(ctx.command, click.MultiCommand):
+    If there's a parent context object and its command type is click.Group,
+    we return its parent context object. A parent context object should be
+    available most of the time. If not, then we return the original context object.
+
+    Parameters
+    ----------
+    ctx
+        The :class:`~click.Context` object to check and start repl on it.
+
+    Returns
+    -------
+    click.Context
+        The :class:`~click.Context` object that should be used to start repl on it.
+    """
+    if ctx.parent is not None and not isinstance(ctx.command, click.Group):
         ctx = ctx.parent
 
     ctx.protected_args = []
@@ -207,12 +220,14 @@ def _get_group_ctx(ctx: Context) -> Context:
 
 def _get_visible_subcommands(
     ctx: Context,
-    multicommand: MultiCommand,
+    multicommand: Group,
     incomplete: str,
     show_hidden_commands: bool = False,
 ) -> Generator[tuple[str, Command], None, None]:
-    # Get all the subcommands whose name starts with the given
-    # 'incomplete' prefix string.
+    """
+    Get all the subcommands from the given ``multicommand`` whose name
+    starts with the given ``incomplete`` prefix string.
+    """
 
     for command_name in multicommand.list_commands(ctx):
         if not command_name.startswith(incomplete):
@@ -233,9 +248,9 @@ def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> InfoDict:
     """
-    Similar to the 'get_info_dict' method implementation in click objects,
+    Similar to the ``get_info_dict`` method implementation in click objects,
     but it only retrieves the essential attributes required to
-    differentiate between different 'ReplParsingState' objects.
+    differentiate between different ``ReplParsingState`` objects.
 
     Parameters
     ----------
@@ -247,6 +262,14 @@ def get_info_dict(
     InfoDict
         Dictionary that holds crucial details about the given click object
         that can be used to uniquely identify it.
+
+    References
+    ----------
+    .. [:class:`~click.Context.get_info_dict`]
+    .. [:class:`~click.Command.get_info_dict`]
+    .. [:class:`~click.Group.get_info_dict`]
+    .. [:class:`~click.Context.get_info_dict`]
+    .. [:class:`~click.Context.get_info_dict`]
     """
 
     if isinstance(obj, click.Context):
@@ -266,7 +289,7 @@ def get_info_dict(
             callback=obj.callback,
         )
 
-        if isinstance(obj, click.MultiCommand):
+        if isinstance(obj, click.Group):
             commands = {}
 
             for name in obj.list_commands(ctx):
@@ -347,7 +370,7 @@ def get_info_dict(
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    multicommand: MultiCommand,
+    multicommand: Group,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
@@ -386,7 +409,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
     while args:
         command = ctx.command
 
-        if isinstance(command, click.MultiCommand):
+        if isinstance(command, click.Group):
             if not command.chain:
                 ctx, cmd = _generate_next_click_ctx(
                     command,
