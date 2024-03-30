@@ -277,6 +277,7 @@ class BottomBar:
 
     def get_param_tuple_type_info_tokens(self, param: Parameter) -> ListOfTokens:
         assert self.state is not None, "state cannot be None"
+
         if param.name is None:
             return []
 

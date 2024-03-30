@@ -40,7 +40,7 @@ class Repl:
     Parameters
     ----------
     ctx
-        The click context object of the root/parent/CLI group.
+        The "class:`~click.Context` object of the root/parent/CLI group.
 
     prompt_kwargs
         Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
@@ -431,7 +431,7 @@ def repl(
     Parameters
     ----------
     group_ctx
-        The current click context object.
+        The current :class:`~click.Context` object.
 
     prompt_kwargs
         Parameters passed to :class:`~prompt_toolkit.PromptSession`.
@@ -439,7 +439,7 @@ def repl(
         such as prompt message, history, completion, etc.
 
     cls
-        Repl class to use for the click_repl app. if :py:obj:`None`, the
+        Repl class to use for the click_repl app. if ``None``, the
         :class:`~.Repl` class is used by default. This allows
         customization of the REPL behavior by providing a custom Repl subclass.
 
@@ -457,7 +457,7 @@ def repl(
     - Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
     to determine the content that will be displayed in the bottom toolbar via the
     ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
-    toolbar, pass :py:obj:`None` as the value for this key.
+    toolbar, pass `None` as the value for this key.
     """
 
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()

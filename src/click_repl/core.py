@@ -134,7 +134,7 @@ class ReplContext:
         Returns
         -------
         str or None
-            String if `sys.stdin.isatty()` is :py:obj:`True`, else :py:obj:`None`
+            String if :class:`~sys.stdin.isatty()` is `True`, else `None`
         """
         if ISATTY and self.session is not None:
             # assert self.session is not None

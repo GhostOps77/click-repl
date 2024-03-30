@@ -136,7 +136,7 @@ def is_param_value_incomplete(
 
     check_if_tuple_has_none
         Flag that checks whether the given parameter stores multiple
-        values in a tuple, and the tuple has :py:obj:`None` in it.
+        values in a tuple, and the tuple has `None` in it.
 
     Returns
     -------

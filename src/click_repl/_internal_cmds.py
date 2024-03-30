@@ -22,8 +22,8 @@ InfoTable: TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
 
 
 class PrefixTable(TypedDict):
-    Internal: str | None
-    System: str | None
+    internal: str | None
+    system: str | None
 
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
@@ -94,7 +94,8 @@ class InternalCommandSystem:
     Raises
     ------
     :exc:`~click_repl.exceptions.SamePrefix`
-        If both :attr:`.internal_command_prefix` and :attr:`.system_command_prefix` are same.
+        If both :attr:`.internal_command_prefix` and
+        :attr:`.system_command_prefix` are same.
 
     Note
     ----
@@ -122,8 +123,8 @@ class InternalCommandSystem:
         self.check_prefix_validity(system_command_prefix, "system_command_prefix")
 
         self.prefix_table: PrefixTable = {
-            "Internal": internal_command_prefix,
-            "System": system_command_prefix,
+            "internal": internal_command_prefix,
+            "system": system_command_prefix,
         }
         """Table to keep track of the prefixes."""
 
@@ -154,16 +155,16 @@ class InternalCommandSystem:
         :exc:`~click_repl.exceptions.SamePrefix`
             If the new prefix thats being assigned is the same as the current prefix.
         """
-        return self.prefix_table["Internal"]
+        return self.prefix_table["internal"]
 
     @internal_command_prefix.setter
     def internal_command_prefix(self, value: str | None) -> None:
         self.check_prefix_validity(value, "internal_command_prefix")
 
-        if value is not None and value == self.prefix_table["System"]:
+        if value is not None and value == self.prefix_table["system"]:
             raise SamePrefix(value)
 
-        self.prefix_table["Internal"] = value
+        self.prefix_table["internal"] = value
 
     @property
     def system_command_prefix(self) -> str | None:
@@ -183,16 +184,16 @@ class InternalCommandSystem:
         click_repl.exceptions.SamePrefix
             If the new prefix thats being assigned is the same as the current prefix.
         """
-        return self.prefix_table["System"]
+        return self.prefix_table["system"]
 
     @system_command_prefix.setter
     def system_command_prefix(self, value: str | None) -> None:
         self.check_prefix_validity(value, "system_command_prefix")
 
-        if value is not None and value == self.prefix_table["Internal"]:
+        if value is not None and value == self.prefix_table["internal"]:
             raise SamePrefix(value)
 
-        self.prefix_table["System"] = value
+        self.prefix_table["system"] = value
 
     def check_prefix_validity(self, prefix: str | None, var_name: str) -> None:
         """
@@ -209,7 +210,7 @@ class InternalCommandSystem:
         Raises
         ------
         click_repl.exceptions.WrongType
-            If the prefix is not of type :class:`str` or :py:obj:`None`.
+            If the prefix is not of type :class:`str` or `None`.
 
         ValueError
             If the prefix is an empty string.
@@ -226,13 +227,13 @@ class InternalCommandSystem:
 
     def dispatch_system_commands(self, command: str) -> None:
         """
-        Execute System commands entered in the REPL. System commands start with the
+        Execute System commands entered in the REPL. system commands start with the
         :attr:`.system_command_prefix` string in the REPL.
 
         Parameters
         ----------
         command
-            A string containing thse System command to be executed.
+            Contains the system command that needs to be executed.
         """
         try:
             subprocess.run(command, shell=self.shell)
@@ -248,7 +249,7 @@ class InternalCommandSystem:
         Parameters
         ----------
         command
-            String containing the Internal command to be executed.
+            Contains the internal command that needs to be to be executed.
         """
 
         target = self.get_command(command, default=None)
@@ -277,11 +278,10 @@ class InternalCommandSystem:
             The callback function for the internal command.
 
         names
-            A string or a sequence of strings representing the
-            command names and aliases.
+            Contains command names and aliases.
 
         description
-            A string displayed in the help text for the internal command.
+            Help text for the internal command.
 
         Returns
         -------
@@ -353,8 +353,7 @@ class InternalCommandSystem:
         Returns
         -------
         InfoTable
-            Returns a dictionary that has all the aliases of a command
-            under a single key.
+            Dictionary that has all the aliases of a command under a single key.
         """
         info_table = defaultdict(list)
 
@@ -370,8 +369,7 @@ class InternalCommandSystem:
         Returns
         -------
         list[list[str]]
-            A list that contains all the names and aliases of
-            each available internal command.
+            Contains all the names and aliases of each available internal command.
         """
         return list(self._group_commands_by_callback_and_desc().values())
 
@@ -392,7 +390,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        Callable[[],None] | Any
+        CallableNone | Any
             The callback function of the internal command if found. If not
             found, it returns the value specified in the `default` parameter.
         """
@@ -411,7 +409,7 @@ class InternalCommandSystem:
         Parameters
         ----------
         command
-            The command string to be parsed.
+            Input string that has to be parsed.
 
         Returns
         -------
@@ -434,7 +432,7 @@ class InternalCommandSystem:
         Parameters
         ----------
         string
-            The input string that has to be parsed and executed.
+            Input string that has to be parsed and executed.
 
         Raises
         ------
@@ -454,10 +452,10 @@ class InternalCommandSystem:
         if not command:
             print_error(f"Enter a proper {flag} Command.")
 
-        elif flag == "Internal":
+        elif flag == "internal":
             self.handle_internal_commands(command)
 
-        elif flag == "System":
+        elif flag == "system":
             self.dispatch_system_commands(command)
 
     def _register_default_internal_commands(self) -> None:
