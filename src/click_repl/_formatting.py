@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 
-from prompt_toolkit.formatted_text import FormattedText, StyleAndTextTuples
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 
 from ._globals import ISATTY
 
@@ -25,9 +26,7 @@ class TokenizedFormattedText(FormattedText):
 
     __slots__ = ("parent_token_class",)
 
-    def __init__(
-        self, tokens_list: StyleAndTextTuples, parent_token_class: str = ""
-    ) -> None:
+    def __init__(self, tokens_list: ListOfTokens, parent_token_class: str = "") -> None:
         """
         Initializes the `TokenizedFormattedText` class.
         """
@@ -94,7 +93,7 @@ class TokenizedFormattedText(FormattedText):
         if start >= stop:
             return []  # type:ignore[return-value]
 
-        result: StyleAndTextTuples = []
+        result: ListOfTokens = []
 
         for token, value, *_ in self:
             if stop <= 0:
@@ -142,8 +141,8 @@ class Marquee:
 
     def __init__(
         self,
-        text: StyleAndTextTuples,
-        prefix: StyleAndTextTuples = [],
+        text: ListOfTokens,
+        prefix: ListOfTokens = [],
     ) -> None:
         """
         Initialize the `Marquee` class.

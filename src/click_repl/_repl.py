@@ -48,8 +48,8 @@ class Repl:
         class via this dictionary.
 
     completer_cls
-        :class:`~prompt_toolkit.completion.Completer` class to generate
-        :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
+        :class:`~pt.c.Completer` class to generate
+        :class:`~pt.c.Completion` objects for auto-completion.
         :class:`~click_repl.completer.ClickCompleter` class is used by default.
 
     validator_cls
@@ -163,23 +163,23 @@ class Repl:
     ) -> dict[str, Any]:
         """
         Generates default keyword arguments for initializing a
-        :class:`~prompt_toolkit.completer.Completer` object, either
+        :class:`~prompt_toolkit.completion.Completer` object, either
         using default values or user-defined values, if available.
 
         Parameters
         ----------
         completer_cls
-            A :class:`~prompt_toolkit.completion.Completer` type class.
+            A :class:`~pt.c.Completer` type class.
 
         completer_kwargs
             Contains keyword arguments that to be passed to the
-            :class:`~prompt_toolkit.completer.Completer` class.
+            :class:`~prompt_toolkit.completion.Completer` class.
 
         Returns
         -------
         dict[str, Any]
             Contains keyword arguments that to be passed to the
-            :class:`~prompt_toolkit.completer.Completer` class.
+            :class:`~prompt_toolkit.completion.Completer` class.
         """
 
         if not ISATTY or completer_cls is None:
@@ -253,7 +253,7 @@ class Repl:
 
         completer_kwargs
             Contains keyword arguments that to be passed to the
-            :class:`~prompt_toolkit.completer.Completer` class.
+            :class:`~prompt_toolkit.completion.Completer` class.
 
         validator_cls
             A :class:`~prompt_toolkit.validation.Validator` type class.

@@ -71,11 +71,18 @@ exclude_patterns = ["build"]
 # autodoc_member_order = 'alphabetical'
 autoapi_dirs = ["../../src/click_repl/"]
 autoapi_python_use_implicit_namespaces = True
+
 autodoc_typehints_format = "short"
 autodoc_default_options = {
     "special-members": "__slots__",
     "undoc-members": False,
     # "exclude-members": "__slots__",
+}
+autodoc_type_aliases = {
+    "pt": "prompt_toolkit",
+    "pt.c": "prompt_toolkit.completer",
+    "pt.v": "prompt_toolkit.validation",
+    "StyleAndTextTuples": "prompt_toolkit.formatted_text.StyleAndTextTuples",
 }
 
 # Options for EPUB output

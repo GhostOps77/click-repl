@@ -14,11 +14,11 @@ from click import Command, Context, MultiCommand, Parameter
 from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
-from prompt_toolkit.formatted_text import StyleAndTextTuples
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final, TypeAlias, TypedDict
 
 from ._formatting import TokenizedFormattedText
-from ._globals import (  # StyleAndTextTuples,
+from ._globals import (
     _IS_WINDOWS,
     AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
@@ -31,7 +31,7 @@ from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import Incomplete, ReplParsingState
 from .utils import (
-    CompletionStyleDictKeys,
+    _CompletionStyleDictKeys,
     _get_visible_subcommands,
     _is_help_option,
     _quotes,
@@ -49,7 +49,7 @@ class _CompletionStyleDict(TypedDict):
     selected_completion_style: str
 
 
-CompletionStyleDict: TypeAlias = Dict[CompletionStyleDictKeys, _CompletionStyleDict]
+CompletionStyleDict: TypeAlias = Dict[_CompletionStyleDictKeys, _CompletionStyleDict]
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
@@ -687,7 +687,7 @@ class ClickCompleter(Completer):
             if is_shortest_opts_only:
                 option_flags, sep = join_options(flags_that_start_with_incomplete)
 
-                def display_text_func(flag_token: str) -> StyleAndTextTuples:
+                def display_text_func(flag_token: str) -> ListOfTokens:
                     if not flag_token.startswith("parameter.option.name"):
                         flag_token = f"parameter.option.name.separator,{flag_token}"
 
@@ -700,7 +700,7 @@ class ClickCompleter(Completer):
             for option_flag in flags_that_start_with_incomplete:
                 if not is_shortest_opts_only:
 
-                    def display_text_func(flag_token: str) -> StyleAndTextTuples:
+                    def display_text_func(flag_token: str) -> ListOfTokens:
                         return [(flag_token, option_flag)]
 
                 if option.is_bool_flag and not _is_help_option(option):

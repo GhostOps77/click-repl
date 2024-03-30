@@ -13,10 +13,10 @@ from typing import Any, Iterable
 import click
 from click import Command, Context, MultiCommand, Parameter
 from click.parser import split_opt
-from prompt_toolkit.formatted_text import StyleAndTextTuples
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Literal
 
-from ._globals import RANGE_TYPES  # , StyleAndTextTuples
+from ._globals import RANGE_TYPES
 from .parser import (
     Incomplete,
     InfoDict,
@@ -26,18 +26,19 @@ from .parser import (
 )
 from .proxies import _create_proxy_command
 
-CompletionStyleDictKeys = Literal[
+_CompletionStyleDictKeys = Literal[
     "internal-command", "command", "multicommand", "argument", "option", "parameter"
 ]
 
 
 def append_classname_to_all_tokens(
-    tokens_list: StyleAndTextTuples, classes: Iterable[str] = []
-) -> StyleAndTextTuples:
+    tokens_list: ListOfTokens, classes: Iterable[str] = []
+) -> ListOfTokens:
+
     if not classes:
         return tokens_list
 
-    res: StyleAndTextTuples = []
+    res: ListOfTokens = []
 
     for token, *_ in tokens_list:
         res.append((f"{token},{','.join(classes)}", *_))  # type:ignore[arg-type]
@@ -47,13 +48,13 @@ def append_classname_to_all_tokens(
 
 def options_flags_joiner(
     items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
-) -> StyleAndTextTuples:
+) -> ListOfTokens:
     if not items:
         return []
 
     sep_elem = (sep_token, sep)
     iterator = iter(items)
-    res: StyleAndTextTuples = [(item_token, next(iterator))]
+    res: ListOfTokens = [(item_token, next(iterator))]
 
     for item in iterator:
         res.append(sep_elem)
@@ -62,7 +63,7 @@ def options_flags_joiner(
     return res
 
 
-def get_token_type(obj: click.Command | click.Parameter) -> CompletionStyleDictKeys:
+def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDictKeys:
     if isinstance(obj, click.Parameter):
         if isinstance(obj, click.Argument):
             return "argument"
