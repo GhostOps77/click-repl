@@ -256,7 +256,7 @@ class ReplParsingState:
         ]
 
         all_arguments_got_values = all(
-            not utils.is_param_value_incomplete(self.current_ctx, param.name)
+            not utils.is_param_value_incomplete(self.current_ctx, param)
             for param in cmd_arguments_list
         )
 
@@ -281,7 +281,7 @@ class ReplParsingState:
         self.remaining_params = [
             param
             for param in current_command.params
-            if utils.is_param_value_incomplete(self.current_ctx, param.name)
+            if utils.is_param_value_incomplete(self.current_ctx, param)
         ]
 
         return self.parse_param_opt(current_command) or self.parse_param_arg(
@@ -325,7 +325,7 @@ class ReplParsingState:
             if param.nargs == -1:
                 nargs_minus_one_param = param
 
-            elif utils.is_param_value_incomplete(self.current_ctx, param.name):
+            elif utils.is_param_value_incomplete(self.current_ctx, param):
                 return param
 
         return nargs_minus_one_param

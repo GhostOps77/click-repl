@@ -106,7 +106,7 @@ class BottomBar:
 
         Returns
         -------
-        prompt_toolkit.formatted_text.ListOfTokens
+        ListOfTokens
             Next chunk of text that should be displayed in bottom bar.
         """
         if isinstance(self._recent_formatted_text, Marquee):
@@ -211,7 +211,7 @@ class BottomBar:
         if param == state.current_param:
             usage_state = "inuse"
 
-        elif not is_param_value_incomplete(state.current_ctx, param.name):
+        elif not is_param_value_incomplete(state.current_ctx, param):
             usage_state = "used"
 
         else:
@@ -290,7 +290,7 @@ class BottomBar:
             type_info.pop()
             return type_info
 
-        if not is_param_value_incomplete(self.state.current_ctx, param.name):
+        if not is_param_value_incomplete(self.state.current_ctx, param):
             usage_state = "parameter.type.used"
 
         else:

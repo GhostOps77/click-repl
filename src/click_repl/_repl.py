@@ -44,12 +44,11 @@ class Repl:
 
     prompt_kwargs
         Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
-        class. Do note that You don't have to pass the `Completer` and `Validator`
-        class via this dictionary.
+        class.
 
     completer_cls
-        :class:`~pt.c.Completer` class to generate
-        :class:`~pt.c.Completion` objects for auto-completion.
+        :class:`~prompt_toolkit.completion.Completer` class to generate
+        :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
         :class:`~click_repl.completer.ClickCompleter` class is used by default.
 
     validator_cls
@@ -68,6 +67,11 @@ class Repl:
 
     system_command_prefix
         Prefix that triggers system commands within the REPL.
+
+    Note
+    ----
+    You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
+    :class:`~prompt_toolkit.validation.Validator` objects via ``prompt_kwargs``.
     """
 
     def __init__(
@@ -169,7 +173,7 @@ class Repl:
         Parameters
         ----------
         completer_cls
-            A :class:`~pt.c.Completer` type class.
+            A :class:`~prompt_toolkit.completion.Completer` type class.
 
         completer_kwargs
             Contains keyword arguments that to be passed to the
@@ -177,7 +181,7 @@ class Repl:
 
         Returns
         -------
-        dict[str, Any]
+        dict[str,Any]
             Contains keyword arguments that to be passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
         """
@@ -264,7 +268,7 @@ class Repl:
 
         Returns
         -------
-        dict[str, Any]
+        dict[str,Any]
             Contains keyword arguments that has to be passed to the
             :class:`~prompt_toolkit.PromptSession` class.
         """
@@ -397,7 +401,7 @@ class Repl:
                     if e.ctx is not None and e.ctx.command.name is not None:
                         command_name = f"{e.ctx.command.name}: "
 
-                    print_error(f"{command_name}{e.format_message()}")
+                    print_error(command_name + e.format_message())
 
                 except click.ClickException as e:
                     e.show()

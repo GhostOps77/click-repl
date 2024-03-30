@@ -34,7 +34,6 @@ from .utils import (
     _CompletionStyleDictKeys,
     _get_visible_subcommands,
     _is_help_option,
-    _quotes,
     _resolve_state,
     get_option_flag_sep,
     get_token_type,
@@ -651,7 +650,7 @@ class ClickCompleter(Completer):
             if option.hidden and not self.show_hidden_params:
                 continue
 
-            already_used = not is_param_value_incomplete(ctx, option.name)
+            already_used = not is_param_value_incomplete(ctx, option)
 
             if option.is_flag and already_used:
                 continue
@@ -766,9 +765,7 @@ class ClickCompleter(Completer):
 
         current_argument_havent_received_values = isinstance(
             current_param, click.Argument
-        ) and is_param_value_incomplete(
-            ctx, current_param.name, check_if_tuple_has_none=False
-        )
+        ) and is_param_value_incomplete(ctx, current_param, check_if_tuple_has_none=False)
 
         ctx_opt_prefixes: set[str] = getattr(ctx, "_opt_prefixes", set())
 
@@ -839,7 +836,7 @@ class ClickCompleter(Completer):
         ]
 
         incomplete_visible_args = not args_list or any(
-            is_param_value_incomplete(ctx, param.name) for param in args_list
+            is_param_value_incomplete(ctx, param) for param in args_list
         )
 
         # If there's a sub-command found in the state object,
@@ -887,7 +884,7 @@ class ClickCompleter(Completer):
             generating auto-completion for suggesting its subcommands.
         """
         any_argument_param_incomplete = any(
-            is_param_value_incomplete(ctx, param.name)
+            is_param_value_incomplete(ctx, param)
             for param in ctx.command.params
             if isinstance(param, click.Argument)
         )
@@ -1046,27 +1043,26 @@ class ReplCompletion(Completion):
 
     Parameters
     ----------
-    text : str
-        The string that should fill into the prompt
-        during auto-completion.
+    text
+        The string that should fill into the prompt during auto-completion.
 
-    incomplete : `Incomplete`
+    incomplete
         The string thats not completed in the prompt.
-        It's used to get the `start_position` for the Completion to
+        It's used to get the :attr:`.start_position` for the Completion to
         swap text with, in the prompt.
 
-    quote : bool
+    quote
         Boolean value to determine whether the given incomplete
         text with space should be double-quoted.
 
-    *args : tuple
+    *args
         Additional arguments should be passed as keyword arguments to the
-        `prompt_toolkit.completion.Completion` class.
+        :class:`~prompt_toolkit.completion.Completion` class.
 
-    **kwargs : dict
+    **kwargs
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments to the
-        `prompt_toolkit.completion.Completion` class.
+        :class:`~prompt_toolkit.completion.Completion` class.
     """
 
     def __init__(
@@ -1077,8 +1073,17 @@ class ReplCompletion(Completion):
         *args: Any,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the `ReplCompletion` class.
+        """
+
         if quote:
-            text = _quotes(text)
+            no_surrounding_quotes = not (text.startswith('"') or text.endswith('"'))
+
+            if " " in text and no_surrounding_quotes:
+                # Surrounding text by quotes, as it has space in it.
+                text = text.strip('"').replace('"', '\\"')
+                text = f'"{text}"'
 
         if isinstance(incomplete, Incomplete):
             incomplete = incomplete.raw_str

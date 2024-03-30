@@ -80,7 +80,7 @@ def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDict
     return "command"
 
 
-def _quotes(text: str) -> str:
+def _add_quotes(text: str) -> str:
     if " " in text and text[0] != '"' != text[-1]:
         text = text.strip('"').replace('"', '\\"')
         return f'"{text}"'
@@ -93,36 +93,82 @@ def _expand_envvars(text: str) -> str:
 
 
 def _is_help_option(param: click.Option) -> bool:
+    """
+    Checks whether the given :class:`~click.Option` object is a help option or not.
+
+    Parameters
+    ----------
+    param
+        A click option object.
+
+    Returns
+    -------
+    bool
+        If ``True``, The given :class:`~click.Option` object is a help option.
+        else, ``False``.
+    """
+    has_help_msg_as_help_text = bool(
+        get_close_matches(param.help or "", ["Show this message and exit."], cutoff=0.5)
+    )
+
     return (
         param.is_flag
         and not param.expose_value
-        and param.is_eager
         and "--help" in param.opts
-        and bool(
-            get_close_matches(
-                param.help or "", ["Show this message and exit."], cutoff=0.5
-            )
-        )
+        and param.is_eager
+        and has_help_msg_as_help_text
     )
 
 
 def print_error(text: str) -> None:
-    # Prints the given text to stderr, in red colour.
+    """Prints the given text to stderr, in red colour."""
     click.secho(text, color=True, err=True, fg="red")
 
 
 def is_param_value_incomplete(
-    ctx: Context, param_name: str | None, check_if_tuple_has_none: bool = True
+    ctx: Context, param: Parameter, check_if_tuple_has_none: bool = True
 ) -> bool:
-    # Checks whether the given name of that parameter
-    # doesn't recieve it's values completely.
-    if param_name is None:
+    """
+    Checks whether the given name of a parameter doesn't recieve it's values completely.
+
+    Parameters
+    ----------
+    ctx
+        :class:`~click.Context` object corresponding to the parameter.
+
+    param
+        :class:`~click.Parameter` object to check it's value after parsing it.
+
+    check_if_tuple_has_none
+        Flag that checks whether the given parameter stores multiple
+        values in a tuple, and the tuple has ``None`` in it.
+
+    Returns
+    -------
+    bool
+        Whether the given parameter has recieved all of
+        it's necessary values from the prompt or not.
+    """
+    if param.name is None:
         return False
 
-    value = ctx.params.get(param_name, None)
-    return value in (None, ()) or (
-        check_if_tuple_has_none and isinstance(value, tuple) and None in value
+    value = ctx.params.get(param.name, None)
+
+    check_if_tuple_has_none = (
+        param.multiple or param.nargs != 1
+    ) and check_if_tuple_has_none
+
+    return (
+        value in (None, ())
+        or check_if_tuple_has_none
+        and isinstance(value, tuple)
+        and None in value
     )
+
+    # value = ctx.params.get(param_name, None)
+    # return value in (None, ()) or (
+    #     check_if_tuple_has_none and isinstance(value, tuple) and None in value
+    # )
 
 
 def get_option_flag_sep(options: list[str]) -> str:
@@ -131,7 +177,19 @@ def get_option_flag_sep(options: list[str]) -> str:
 
 
 def join_options(options: list[str]) -> tuple[list[str], str]:
-    # Same implementation as click.formatting.join_options function, but much simpler.
+    """
+    Same implementation as :func:`~click.formatting.join_options`, but much simpler.
+
+    *Given a list of option strings this joins them in the most appropriate
+    way and returns them in the form ``(formatted_string,
+    any_prefix_is_slash)`` where the second item in the tuple is a flag that
+    indicates if any of the option prefixes was a slash.*
+
+    Parameters
+    ----------
+    options
+        List of option flags that needs to be joined together.
+    """
     return sorted(options, key=len), get_option_flag_sep(options)
 
 

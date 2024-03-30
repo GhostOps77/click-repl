@@ -35,16 +35,6 @@ extlinks = {
     "issue": ("https://github.com/click-contrib/click-repl/issues/%s", "#%s"),
 }
 
-# notfound_context = {
-#     "title": "Page Not Found",
-#     "body": """
-# <h1>Page Not Found</h1>
-
-# <p>Sorry, we couldn't find that page.</p>
-
-# <p>Try using the search box or go to the homepage.</p>
-# """,
-# }
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -78,11 +68,12 @@ autodoc_default_options = {
     "undoc-members": False,
     # "exclude-members": "__slots__",
 }
+
 autodoc_type_aliases = {
     "pt": "prompt_toolkit",
     "pt.c": "prompt_toolkit.completer",
     "pt.v": "prompt_toolkit.validation",
-    "StyleAndTextTuples": "prompt_toolkit.formatted_text.StyleAndTextTuples",
+    "ListOfTokens": "prompt_toolkit.formatted_text.StyleAndTextTuples",
 }
 
 # Options for EPUB output
