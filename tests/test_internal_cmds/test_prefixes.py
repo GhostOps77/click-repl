@@ -43,7 +43,7 @@ def test_internal_cmd_same_prefix_error():
 )
 def test_incorrect_value_for_prefixes(test_input, exception):
     with pytest.raises(exception):
-        ics._check_prefix_validity(test_input, "var name")
+        ics.check_prefix_validity(test_input, "var name")
 
 
 @pytest.mark.parametrize("test_prefix", ["a", "s", "d", "f"])

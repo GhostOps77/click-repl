@@ -1,6 +1,4 @@
 """
-`click_repl._repl`
-
 Core functionality of the REPL.
 """
 

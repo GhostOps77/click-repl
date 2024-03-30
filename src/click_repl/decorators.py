@@ -1,6 +1,4 @@
 """
-`click_repl.decorators`
-
 Decorators to make using click-repl simpler and more similar to click.
 """
 

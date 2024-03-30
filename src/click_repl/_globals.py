@@ -1,6 +1,4 @@
 """
-`click_repl._globals`
-
 Global variables, values, and functions that are accessed across
 all the files in this module.
 """
@@ -51,7 +49,7 @@ DEFAULT_COMPLETION_STYLE_CONFIG = {
     "autocompletion-menu.symbols.bracket": "",
     "autocompletion-menu.space": "",
 }
-
+"""Default token style configuration for :class:`~click_repl.completer.ClickCompleter`"""
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     # MultiCommand
@@ -107,22 +105,25 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     "bottom-bar.error.exception-class-name": "bold",
     "bottom-bar.error.message": "bold",
 }
-
+"""Default token style configuration for :class:`~click_repl.bottom_bar.BottomBar`"""
 
 DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
     "bottom-toolbar": "fg:lightblue bg:default noreverse"
 }
+"""Default token style configuration for :class:`~prompt_toolkit.PromptSession`"""
+
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_BOTTOMBAR_STYLE_CONFIG)
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_COMPLETION_STYLE_CONFIG)
 
-
 HAS_CLICK_GE_8 = click.__version__[0] >= "8"
 
-# _NumberRangeBase class is defined in click v8.
-# Therefore, this tuple is used to check for the
-# range type ParamType objects.
 RANGE_TYPES = (click.IntRange, click.FloatRange)
-"""Range types that are used as Parameter's type in click"""
+"""Range types that are used as a :class:`~click.Parameter`'s type in :mod:`~click`.
+
+:class:`~click.types._NumberRangeBase` class is defined in click v8.
+# Therefore, this tuple is used to check for the
+# range type :class:`~click.types.ParamType` objects.
+"""
 
 if HAS_CLICK_GE_8:
     RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
@@ -132,13 +133,13 @@ PARAM_TYPES_WITH_METAVAR = (click.Choice, click.DateTime)
 :meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
 
 PATH_TYPES = (click.Path, click.File)
-"""`ParamTypes` that expect path as values."""
+""":class:`~click.types.ParamType` classes that expect path as values."""
 
-# If ISATTY is False, then we're not gonna run any code
-# to generate auto-completions. Most of the code will be inactive
 ISATTY = sys.stdin.isatty()
+"""If it is ``False``, then we're not gonna run any code
+to generate auto-completions. Most of the code will be inactive"""
 
-IS_WINDOWS = os.name == "nt"
+_IS_WINDOWS = os.name == "nt"
 
 AUTO_COMPLETION_FUNC_ATTR = (
     "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
@@ -149,21 +150,21 @@ CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
 
 # To store the ReplContext objects generated throughout the Runtime.
 _locals = local()
-ctx_stack: list[ReplContext] = []
-_locals.ctx_stack = ctx_stack
+_ctx_stack: list[ReplContext] = []
+_locals.ctx_stack = _ctx_stack
 
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     """
     Returns the current click-repl Context, providing a way to access
     the context from anywhere in the code  This is a more implicit
-    alternative to the `pass_context` decorator.
+    alternative to the :func:`~click.decorators.pass_context` decorator.
 
     Parameters
     ----------
-    silent : bool
+    silent
         If set to True the return value is None if no context
-        is available. The default behavior is to raise a `RuntimeError`.
+        is available. The default behavior is to raise a :exc:`~RuntimeError`.
 
     Returns
     -------
@@ -177,7 +178,7 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     """
 
     try:
-        return ctx_stack[-1]
+        return _ctx_stack[-1]
     except (AttributeError, IndexError):
         if not silent:
             raise RuntimeError("There is no active click-repl context.")

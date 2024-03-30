@@ -1,7 +1,5 @@
 """
-`click_repl.core`
-
-Core functionality of the click-repl module.
+Core functionality of the module.
 """
 
 from __future__ import annotations

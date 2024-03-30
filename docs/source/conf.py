@@ -21,11 +21,13 @@ extensions = [
     "notfound.extension",
     "sphinx.ext.linkcode",
     "sphinx.ext.autodoc",
+    "sphinx_copybutton",
     "sphinx.ext.extlinks",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "autoapi.extension",
+    "myst_parser",
     # "sphinx_autodoc_typehints",
 ]
 
@@ -33,16 +35,16 @@ extlinks = {
     "issue": ("https://github.com/click-contrib/click-repl/issues/%s", "#%s"),
 }
 
-notfound_context = {
-    "title": "Page Not Found",
-    "body": """
-<h1>Page Not Found</h1>
+# notfound_context = {
+#     "title": "Page Not Found",
+#     "body": """
+# <h1>Page Not Found</h1>
 
-<p>Sorry, we couldn't find that page.</p>
+# <p>Sorry, we couldn't find that page.</p>
 
-<p>Try using the search box or go to the homepage.</p>
-""",
-}
+# <p>Try using the search box or go to the homepage.</p>
+# """,
+# }
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -71,9 +73,9 @@ autoapi_dirs = ["../../src/click_repl/"]
 autoapi_python_use_implicit_namespaces = True
 autodoc_typehints_format = "short"
 autodoc_default_options = {
-    "special-members": "",
+    "special-members": "__slots__",
     "undoc-members": False,
-    "exclude-members": "__slots__",
+    # "exclude-members": "__slots__",
 }
 
 # Options for EPUB output
@@ -83,11 +85,11 @@ epub_show_urls = "footnote"
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = False
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
+# napoleon_include_private_with_doc = False
+# napoleon_include_special_with_doc = False
+napoleon_use_admonition_for_examples = True
+napoleon_use_admonition_for_notes = True
+napoleon_use_admonition_for_references = True
 napoleon_use_ivar = False
 napoleon_use_param = False
 napoleon_use_rtype = False
@@ -101,10 +103,11 @@ napoleon_attr_annotations = True
 # typehints_use_signature_return = False
 
 
-def linkcode_resolve(domain: str, info: dict) -> str:
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
     """linkcode_resolve."""
     if domain != "py":
         return None
+
     if not info["module"]:
         return None
 

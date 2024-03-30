@@ -1,6 +1,4 @@
 """
-`click_repl._internal_cmds`
-
 Utilities to manage the REPL's internal commands.
 """
 
@@ -68,16 +66,14 @@ def _help_internal_cmd() -> None:
                 f'Prefix Internal commands with "{ics_obj.internal_command_prefix}".'
             )
 
-            info_table = ics_obj._group_commands_by_callback_and_description()
-            formatter.write_dl(
-                [
-                    (
-                        ", ".join([f":{i}" for i in sorted(mnemonics)]),
-                        description,
-                    )
-                    for (_, description), mnemonics in info_table.items()
-                ]
-            )
+            info_table = ics_obj._group_commands_by_callback_and_desc()
+            definitions_list: list[tuple[str, str]] = []
+
+            for (_, description), aliases in info_table.items():
+                aliases_list_str = ", ".join([f":{i}" for i in sorted(aliases)])
+                definitions_list.append((aliases_list_str, description))
+
+            formatter.write_dl(definitions_list)
 
     click.echo(formatter.getvalue())
 
@@ -87,22 +83,24 @@ class InternalCommandSystem:
     A utility for managing and executing internal/system commands
     from the REPL. Commands are triggered by their respective prefix.
 
-    Attributes
+    Parameters
     ----------
     internal_command_prefix
+        Prefix to trigger internal commands.
+
     system_command_prefix
+        Prefix to execute bash/other command-line scripts.
 
-    prefix_table : PrefixTable
-        Table to keep track of the prefixes.
+    Raises
+    ------
+    click_repl.exceptions.SamePrefix
+        If both :attr:`.internal_command_prefix` and :attr:`.system_command_prefix` are same.
 
-    shell : bool
-        Flag that tells whether to run the system commands through shell or not.
-
-    Notes
-    -----
+    Note
+    ----
     The prefixes determine how the commands are recognized and distinguished
-    within the REPL. And both the `internal_command_prefix` and `system_command_prefix`
-    should not be same.
+    within the REPL. And both the :attr:`.internal_command_prefix` and
+    :attr:`.system_command_prefix` should not be same.
     """
 
     def __init__(
@@ -113,22 +111,6 @@ class InternalCommandSystem:
     ) -> None:
         """
         Initializes a `InternalCommandSystem` object.
-
-        Parameters
-        ----------
-        internal_command_prefix : str
-            Prefix to trigger internal commands.
-
-        system_command_prefix : str
-            Prefix to execute bash/other command-line scripts.
-
-        shell : bool
-            Determines whether the system commands should be executed in shell or not.
-
-        Raises
-        ------
-        SamePrefix
-            If both `internal_command_prefix` and `system_command_prefix` are same.
         """
 
         if internal_command_prefix and internal_command_prefix == system_command_prefix:
@@ -136,18 +118,21 @@ class InternalCommandSystem:
             # to be the same.
             raise SamePrefix(system_command_prefix)
 
-        self._check_prefix_validity(internal_command_prefix, "internal_command_prefix")
-        self._check_prefix_validity(system_command_prefix, "system_command_prefix")
+        self.check_prefix_validity(internal_command_prefix, "internal_command_prefix")
+        self.check_prefix_validity(system_command_prefix, "system_command_prefix")
 
         self.prefix_table: PrefixTable = {
             "Internal": internal_command_prefix,
             "System": system_command_prefix,
         }
+        """Table to keep track of the prefixes."""
 
-        self.shell = shell
+        self.shell: bool = shell
+        """Determines whether the system commands should be executed
+        through the shell or not."""
 
         self._internal_commands: InternalCommandDict = {}
-        # Directory of Internal Commands.
+        """Directory of internal commands."""
 
         self._register_default_internal_commands()
 
@@ -158,22 +143,22 @@ class InternalCommandSystem:
 
         Returns
         -------
-        prefix : str | None
-            The prefix for internal commands.
+        str | None
+            The prefix for internal commands, if available.
 
         Raises
         ------
-        WrongType
+        click_repl.exceptions.WrongType
             If the value being assigned is not a str type.
 
-        SamePrefixError
+        click_repl.exceptions.SamePrefix
             If the new prefix thats being assigned is the same as the current prefix.
         """
         return self.prefix_table["Internal"]
 
     @internal_command_prefix.setter
     def internal_command_prefix(self, value: str | None) -> None:
-        self._check_prefix_validity(value, "internal_command_prefix")
+        self.check_prefix_validity(value, "internal_command_prefix")
 
         if value is not None and value == self.prefix_table["System"]:
             raise SamePrefix(value)
@@ -187,65 +172,66 @@ class InternalCommandSystem:
 
         Returns
         -------
-        prefix : str | None
-            The prefix for system commands.
+        str | None
+            The prefix for system commands, if available.
 
         Raises
         ------
-        WrongType
-            If the value being assigned is not a str type.
+        click_repl.exceptions.WrongType
+            If the value being assigned is not a ``str`` type.
 
-        SamePrefixError
+        click_repl.exceptions.SamePrefix
             If the new prefix thats being assigned is the same as the current prefix.
         """
         return self.prefix_table["System"]
 
     @system_command_prefix.setter
     def system_command_prefix(self, value: str | None) -> None:
-        self._check_prefix_validity(value, "system_command_prefix")
+        self.check_prefix_validity(value, "system_command_prefix")
 
         if value is not None and value == self.prefix_table["Internal"]:
             raise SamePrefix(value)
 
         self.prefix_table["System"] = value
 
-    def _check_prefix_validity(self, prefix: str | None, var_name: str) -> None:
+    def check_prefix_validity(self, prefix: str | None, var_name: str) -> None:
         """
         Checks the validity of the prefix.
 
         Parameters
         ----------
-        prefix : str | None
+        prefix
             The prefix to be checked.
 
-        var_name : str
-            The name of the variable thats been passed to the `prefix` argument.
+        var_name
+            The name of the variable thats been passed to the ``prefix`` argument.
 
         Raises
         ------
-        WrongType
-            If the prefix is not of type `str` or `None`.
+        click_repl.exceptions.WrongType
+            If the prefix is not of type ``str`` or ``None``.
 
         ValueError
             If the prefix is an empty string.
         """
 
-        if prefix is not None:
-            if not isinstance(prefix, str):
-                raise WrongType(prefix, var_name, "str or None")
+        if prefix is None:
+            return
 
-            elif prefix.strip() == "":
-                raise ValueError("Prefix string cannot be empty")
+        if not isinstance(prefix, str):
+            raise WrongType(prefix, var_name, "str or None")
+
+        elif prefix.strip() == "":
+            raise ValueError("Prefix string cannot be empty")
 
     def dispatch_system_commands(self, command: str) -> None:
         """
         Execute System commands entered in the REPL. System commands start with the
-        :attr:`~click_repl._internal_cmds.InternalCommandSystem.system_command_prefix`
-        string in the REPL.
+        :attr:`.system_command_prefix` string in the REPL.
 
         Parameters
         ----------
-        command : str
+        command
             A string containing thse System command to be executed.
         """
         try:
@@ -257,12 +243,11 @@ class InternalCommandSystem:
     def handle_internal_commands(self, command: str) -> None:
         """
         Run REPL-internal commands that start with the
-        :attr:`~click_repl._internal_cmds.InternalCommandSystem.internal_command_prefix`
-        string in the REPL.
+        :attr:`.internal_command_prefix` string in the REPL.
 
         Parameters
         ----------
-        command : str
+        command
             String containing the Internal command to be executed.
         """
 
@@ -281,49 +266,53 @@ class InternalCommandSystem:
         description: str | None = None,
     ) -> Callable[[CallableNone], CallableNone] | CallableNone:
         """
-        A decorator used to register a new Internal Command from a
-        given function.
+        A decorator used to register a new internal command from a given function.
 
-        Internal Commands are case-insensitive, and this decorator allows
+        internal commands are case-insensitive, and this decorator allows
         for easy registration of command names and aliases.
 
         Parameters
         ----------
-        target : CallableNone | None
-            The callback function for the Internal Command.
+        target
+            The callback function for the internal command.
 
-        names : str | None | Sequence[str]
+        names
             A string or a sequence of strings representing the
             command names and aliases.
 
-        description : str | None
-            A string displayed in the help text for the Internal Command.
+        description
+            A string displayed in the help text for the internal command.
 
         Returns
         -------
-        Callable[[CallableNone], CallableNone] | CallableNone
+        Callable[[CallableNone],CallableNone] | CallableNone
             The same function object passed into this decorator,
             or a function that takes and returns the same function when called.
 
-        Examples
-        --------
-        The following examples demonstrate how to register the `kill`
-        function as an Internal Command:
+        Example
+        -------
+        The following example demonstrate how to register the `kill`
+        function as an internal command:
 
-        .. code_block python
+        .. code-block:: python
 
-          @register_command(
-              names='kill',
-              description='Kills certain process'
-          )
-          def kill():
-              'hi'
-              ...
+            from click_repl._internal_cmds import InternalCommandSystem
+            ics_obj = InternalCommandSystem()
 
-          @register_command
-          def kill():
-              '''Kills certain process'''
-              ...
+            # Register it with some custom aliases
+            @ics_obj.register_command(
+                names=['kill', 'pkill],
+                description='Kills certain process'
+            )
+            def kill():
+                ...
+
+            # Function's docstring is the command's description.
+            @ics_obj.register_command
+            def kill():
+                '''Kills certain process'''
+                ...
+
         """
 
         def decorator(func: CallableNone) -> CallableNone:
@@ -356,10 +345,10 @@ class InternalCommandSystem:
             return decorator
         return decorator(target)
 
-    def _group_commands_by_callback_and_description(self) -> InfoTable:
+    def _group_commands_by_callback_and_desc(self) -> InfoTable:
         """
-        Groups all the aliases of all the Internal Commands together from
-        :attr:`~click_repl._internal_cmds.InternalCommandSystem._internal_commands`.
+        Groups all the aliases of all the internal commands together from
+        :attr:`._internal_commands`.
 
         Returns
         -------
@@ -384,7 +373,7 @@ class InternalCommandSystem:
             A list that contains all the names and aliases of
             each available internal command.
         """
-        return list(self._group_commands_by_callback_and_description().values())
+        return list(self._group_commands_by_callback_and_desc().values())
 
     def get_command(self, name: str, default: Any = None) -> CallableNone | Any:
         """
@@ -394,17 +383,17 @@ class InternalCommandSystem:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the desired internal command.
 
-        default : Any
+        default
             The sentinel value to be returned if the internal command
             with the given name is not found.
 
         Returns
         -------
-        Callable[[], None] | Any
-            The callback function of the Internal Command if found. If not
+        Callable[[],None] | Any
+            The callback function of the internal command if found. If not
             found, it returns the value specified in the `default` parameter.
         """
 
@@ -421,12 +410,12 @@ class InternalCommandSystem:
 
         Parameters
         ----------
-        command : str
+        command
             The command string to be parsed.
 
         Returns
         -------
-        tuple[str, str | None]
+        tuple[str,str | None]
             The first string is a flag that denotes the type of the prefix.
             The next optional string is the prefix that can be found at the
             beginning of the command string.
@@ -438,24 +427,29 @@ class InternalCommandSystem:
 
         return "Not Found", None
 
-    def execute(self, command: str) -> None:
+    def execute(self, string: str) -> None:
         """
         Executes incoming Internal and System commands.
 
         Parameters
         ----------
-        command : str
-            The command string that has to be parsed and executed.
+        string
+            The input string that has to be parsed and executed.
+
+        Raises
+        ------
+        click_repl.exceptions.PrefixNotFound
+            If there's no internal prefix used in the given command.
         """
 
-        flag, prefix = self.get_prefix(command.strip())
+        flag, prefix = self.get_prefix(string.strip())
 
         if prefix is None:
             raise PrefixNotFound(
-                "Cannot find Internal Command Prefix in the given query."
+                "Cannot find internal command prefix in the given query."
             )
 
-        command = command[len(prefix) :].lstrip()
+        command = string[len(prefix) :].lstrip()
 
         if not command:
             print_error(f"Enter a proper {flag} Command.")

@@ -89,8 +89,7 @@ class TokenizedFormattedText(FormattedText):
         Returns
         -------
         TokenizedFormattedText
-            Returns a new sliced :class:`~click_repl._formatting.TokenizedFormattedText`
-            object that contains the text content within that slice range.
+            Returns a new slice that contains the text content within that slice range.
         """
         if start >= stop:
             return []  # type:ignore[return-value]
@@ -118,6 +117,15 @@ class TokenizedFormattedText(FormattedText):
 class Marquee:
     """
     Displays the given text in the form of Marquee in terminal.
+
+    Parameters
+    ----------
+    text
+        The text tokens that will be displayed in the marquee style.
+
+    prefix
+        This text will be displayed as a prefix before :attr:`.text`, and
+        it will not be moved in the terminal display as a marquee.
     """
 
     __slots__ = (
@@ -139,15 +147,6 @@ class Marquee:
     ) -> None:
         """
         Initialize the `Marquee` class.
-
-        Parameters
-        ----------
-        text
-            The text tokens that will be displayed in the marquee style.
-
-        prefix
-            This text will be displayed as a prefix before `text`, and
-            it will not be moved in the terminal display as a marquee.
         """
 
         if not isinstance(text, TokenizedFormattedText):
@@ -160,12 +159,10 @@ class Marquee:
             prefix = TokenizedFormattedText(prefix)
 
         self.prefix: TokenizedFormattedText = prefix
-        """This text will be displayed as a prefix before
-            :attr:`~click_repl._formatting.Marquee.text`."""
+        """This text will be displayed as a prefix before :attr:`.text`."""
 
         self.pointer_position: int = 0
-        """Keeps track of the next starting position to slice the
-            :attr:`~click_repl._formatting.Marquee.text` from."""
+        """Keeps track of the next starting position to slice the :attr:`.text` from."""
 
         self.is_pointer_direction_left: bool = True
         """To keep track on the current direction on pointer's movement."""
@@ -179,7 +176,7 @@ class Marquee:
 
         self.no_of_iterations_waited_for: int = self.max_wait_in_iterations
         """The pointer stays at the very end once it has touched the boundary, for next
-            :attr:`~click_repl._formatting.Marquee.no_of_iterations_waited_for` iterations."""
+            :attr:`.no_of_iterations_waited_for` iterations."""
 
         self._is_text_length_le_window_size: bool = False
         # Flag that tells whether the window size that displays the
@@ -195,14 +192,13 @@ class Marquee:
         Returns
         -------
         int
-            New window size to display a chunk of
-            :attr:`~click_repl._formatting.Marquee.text`
+            New window size to display a chunk of :attr:`.text`
         """
         return os.get_terminal_size().columns - self.prefix.content_length()
 
     def adjust_pointer_position(self) -> None:
         """
-        Updates the pointer position for the next iteration.
+        Updates the :attr:`.pointer_position` for the next iteration for updating the text.
         """
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
@@ -253,31 +249,27 @@ class Marquee:
 
     def get_full_formatted_text(self) -> TokenizedFormattedText:
         """
-        Returns the whole text along with the prefix, without being sliced.
+        Returns the whole text along with the :attr:`.prefix`, without being sliced.
 
         Returns
         -------
         TokenizedFormattedText
-            Contains the entire content of both
-            :attr:`~click_repl._formatting.Marquee.prefix`
-            and the :attr:`~click_repl._formatting.Marquee.text`
+            Contains the entire content of both :attr:`.prefix` and the :attr:`.text`
         """
         return TokenizedFormattedText(self.prefix + self.text, "bottom-bar")
 
     def get_current_text_chunk(self) -> TokenizedFormattedText:
         """
         Returns the updated text chunk, along with the
-        :attr:`~click_repl._formatting.Marquee.prefix`, that currently
+        :attr:`.prefix`, that currently
         should be displayed in the bottom bar.
 
         Returns
         -------
         TokenizedFormattedText
-            The entire :attr:`~click_repl._formatting.Marquee.text` with the
-            :attr:`~click_repl._formatting.Marquee.prefix` if the terminal window
+            The entire :attr:`.text` with the :attr:`.prefix` if the terminal window
             length is sufficient. Otherwise, returns a sliced portion of the
-            :attr:`~click_repl._formatting.Marquee.text` that fits
-            the current window size.
+            :attr:`.text` that fits the current window size.
         """
 
         window_size = self.get_window_size()

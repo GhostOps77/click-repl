@@ -1,7 +1,5 @@
 """
-`click_repl.utils`
-
-Utilities to facilitate the functionality of the click_repl module.
+Utilities to facilitate the functionality of the module.
 """
 
 from __future__ import annotations

@@ -1,6 +1,4 @@
 """
-`click_repl.bottom_bar`
-
 Utility for the Bottom bar of the REPL.
 """
 

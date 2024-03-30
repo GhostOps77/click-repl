@@ -8,7 +8,7 @@ from click_repl._internal_cmds import InfoTable, InternalCommandSystem
 
 
 class DummyInternalCommandSystem(InternalCommandSystem):
-    def _group_commands_by_callback_and_description(self) -> InfoTable:
+    def _group_commands_by_callback_and_desc(self) -> InfoTable:
         return {}
 
     def get_prefix(self, command: str) -> tuple[str, str | None]:

@@ -10,10 +10,13 @@ Welcome to click-repl's Documentation
    :maxdepth: 3
    :caption: Contents:
 
+   `Changelog <../../CHANGELOG.md>`
+   `Contributing <../../CONTRIBUTING.md>`
+
 .. include:: ../../README.rst
     :start-line: 23
 
-.. include:: ../../CHANGELOG.rst
+.. include:: ../../CHANGELOG.md
 
 
 Indices and tables
@@ -22,3 +25,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+* :doc:`../../CHANGELOG.md`

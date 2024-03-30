@@ -1,6 +1,4 @@
 """
-`click_repl.proxies`
-
 Proxy objects to modify the parsing method of click objects.
 """
 
@@ -16,7 +14,7 @@ from typing_extensions import Self
 from ._globals import HAS_CLICK_GE_8
 from .parser import ReplOptionParser
 
-T = t.TypeVar("T")
+_T = t.TypeVar("_T")
 
 
 @t.overload
@@ -34,13 +32,13 @@ def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
 
     Parameters
     ----------
-    obj : click.Command | click.Group
+    obj
         Command object that needs to be wrapped in a proxy object.
 
     Returns
     -------
     ProxyCommand
-        Proxy wrapper for the `Command` objects.
+        Proxy wrapper for the :class:`~click.Command` objects.
     """
     if isinstance(obj, Group):
         return ProxyGroup(obj)
@@ -68,13 +66,13 @@ def _create_proxy_param(obj: Parameter) -> ProxyParameter:
 
     Parameters
     ----------
-    obj : click.Parameter
+    obj
         Parameter object that needs to be wrapped in a proxy object.
 
     Returns
     -------
     ProxyParameter
-        Proxy wrapper for the `Parameter` objects.
+        Proxy wrapper for the :class:`~click.Parameter` objects.
     """
     if isinstance(obj, Option):
         return ProxyOption(obj)
@@ -87,27 +85,18 @@ def _create_proxy_param(obj: Parameter) -> ProxyParameter:
 
 class Proxy:
     """
-    An abstract generic proxy class that delegates attribute access
-    to the underlying object.
-
-    This class provides a simple mechanism to proxy attribute access to another object.
-    It allows accessing attributes, setting attributes, and deleting attributes on the
-    underlying object.
-
-    Notes
-    -----
     This class is used as a base class for creating proxy objects that customize
     attribute access behavior.
+
+    Parameters
+    ----------
+    obj
+        Object to which attribute access is delegated.
     """
 
-    def __init__(self, obj: T) -> None:
+    def __init__(self, obj: _T) -> None:
         """
         Initializes a `Proxy` object.
-
-        Parameters
-        ----------
-        obj : Any
-            Object to which attribute access is delegated.
         """
         self.proxy_setattr("_obj", obj)
 
@@ -140,7 +129,8 @@ class Proxy:
 
         Returns
         -------
-        The underlying object to which attribute access is delegated.
+        Any
+            The underlying object to which attribute access is delegated.
         """
         return self.proxy_getattr("_obj")
 
@@ -150,12 +140,13 @@ class Proxy:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the attribute to access.
 
         Returns
         -------
-        The value of the accessed attribute.
+        Any
+            The value of the accessed attribute.
         """
         return object.__getattribute__(self, name)
 
@@ -165,10 +156,10 @@ class Proxy:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the attribute to assign.
 
-        value : Any
+        value
             The value to assign to the attribute.
         """
         object.__setattr__(self, name, value)
@@ -179,7 +170,7 @@ class Proxy:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the attribute to delete.
         """
         object.__delattr__(self, name)
@@ -191,16 +182,16 @@ class ProxyCommand(Proxy, Command):
     options parser, by overriding its :meth:`~click.Command.make_parser`
     method to use the custom parser implementation provided by
     :class:`~click_repl.parser.ReplOptionParser`.
+
+    Parameters
+    ----------
+    obj : click.Command
+        The click command object that has to be proxied.
     """
 
     def __init__(self, obj: Command) -> None:
         """
         Initializes a `ProxyCommand` object.
-
-        Parameters
-        ----------
-        obj : click.Command
-            The click command object that has to be proxied.
         """
         # Changing the Parameter types to their proxies.
         super().__init__(obj)
@@ -227,16 +218,16 @@ class ProxyMultiCommand(ProxyCommand, MultiCommand):
     A proxy class for :class:`~click.MultiCommand` objects that changes
     its parser to :class:`~click_repl.parser.ReplOptionParser` in the
     :meth:`~click.MultiCommand.make_parser` method.
+
+    Parameters
+    ----------
+    obj : click.MultiCommand
+        The click multicommand object that has to be proxied.
     """
 
     def __init__(self, obj: MultiCommand) -> None:
         """
         Initializes a `ProxyMultiCommand` object.
-
-        Parameters
-        ----------
-        obj : click.MultiCommand
-            The click multicommand object that has to be proxied.
         """
         super().__init__(obj)
         self.proxy_setattr(
@@ -269,8 +260,8 @@ class ProxyParameter(Proxy, Parameter):
     A generic proxy class for :class:`~click.Parameter` objects that
     modifies its behavior for missing values.
 
-    This class overrides the `process_value` method to return missing
-    values as they are, even if they are incomplete or not provided.
+    This class overrides the :meth:`~click.Parameter.process_value` method to
+    return missing values as they are, even if they are incomplete or not provided.
 
     Parameters
     ----------

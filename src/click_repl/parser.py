@@ -1,7 +1,5 @@
 """
-`click_repl.parser`
-
-Parsing functionalities for the click_repl module.
+Parsing functionalities for the module.
 """
 
 from __future__ import annotations

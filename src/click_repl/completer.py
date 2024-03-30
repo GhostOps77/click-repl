@@ -1,7 +1,5 @@
 """
-`click_repl.completer`
-
-Configuration for auto-completion for REPL.
+Configuration for auto-completion in the REPL.
 """
 
 from __future__ import annotations
@@ -21,10 +19,10 @@ from typing_extensions import Final, TypeAlias, TypedDict
 
 from ._formatting import TokenizedFormattedText
 from ._globals import (  # StyleAndTextTuples,
+    _IS_WINDOWS,
     AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
     HAS_CLICK_GE_8,
-    IS_WINDOWS,
     ISATTY,
     PATH_TYPES,
     get_current_repl_ctx,
@@ -178,9 +176,7 @@ class ClickCompleter(Completer):
         """
 
         incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
-        info_table = (
-            self.internal_commands_system._group_commands_by_callback_and_description()
-        )
+        info_table = self.internal_commands_system._group_commands_by_callback_and_desc()
 
         internal_cmd_style = self.style["internal-command"]
         completion_style = internal_cmd_style["completion_style"]
@@ -389,7 +385,7 @@ class ClickCompleter(Completer):
 
             path_str = str(path)
 
-            if IS_WINDOWS:
+            if _IS_WINDOWS:
                 path_str = path_str.replace("\\\\", "\\")
 
             # if path.is_dir():

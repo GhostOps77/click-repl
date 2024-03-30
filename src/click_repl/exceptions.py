@@ -1,7 +1,5 @@
 """
-`click_repl.exceptions`
-
-Exceptional classes required for the click_repl module.
+Exceptional classes required for the module.
 """
 
 from __future__ import annotations

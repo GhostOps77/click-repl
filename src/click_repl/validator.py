@@ -1,6 +1,4 @@
 """"
-click_repl.validator
-
 Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
@@ -27,18 +25,19 @@ logger = logging.getLogger(f"click_repl-{__name__}")
 if CLICK_REPL_DEV_ENV:
     logger_level = logging.DEBUG
 
+    log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
+    formatter = logging.Formatter(log_format)
+
+    log_file = ".click-repl-err.log"
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+
 else:
     logger_level = logging.WARNING
 
 logger.setLevel(logger_level)
-
-log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
-formatter = logging.Formatter(log_format)
-
-log_file = ".click-repl-err.log"
-file_handler = logging.FileHandler(log_file)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
 
 class ClickValidator(Validator):
@@ -48,11 +47,11 @@ class ClickValidator(Validator):
     Parameters
     ----------
     ctx : click.Context
-        The current :class:`~click.Context` object.
+        The current click context object.
 
     display_all_errors : bool
         Flag that determines whether to raise generic Python Exceptions, and not to
-        display them in the `Validator` bar, resulting in the full error traceback
+        display them in the :class:`~Validator` bar, resulting in the full error traceback
         being redirected to a log file in the REPL mode.
     """
 
@@ -129,7 +128,8 @@ class ClickValidator(Validator):
                 # self.catch_all_errors is set to True.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            # Error tracebacks are displayed during the REPL loop if
-            # self.catch_all_errors is set to False. The short error
-            # messages are also logged into a click-repl-err.log file.
-            logger.exception("%s: %s", type(e).__name__, e)
+            if CLICK_REPL_DEV_ENV:
+                # Error tracebacks are displayed during the REPL loop if
+                # self.catch_all_errors is set to False. The short error
+                # messages are also logged into a click-repl-err.log file.
+                logger.exception("%s: %s", type(e).__name__, e)
