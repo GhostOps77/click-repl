@@ -47,7 +47,7 @@ class ClickValidator(Validator):
     Parameters
     ----------
     ctx
-        The current click context object.
+        The current :class:`~click.Context` object.
 
     display_all_errors
         Flag that determines whether to raise generic Python Exceptions, and not to

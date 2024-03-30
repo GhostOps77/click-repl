@@ -10,9 +10,6 @@ Welcome to click-repl's Documentation
    :maxdepth: 3
    :caption: Contents:
 
-   `Changelog <../../CHANGELOG.md>`
-   `Contributing <../../CONTRIBUTING.md>`
-
 .. include:: ../../README.rst
     :start-line: 23
 
