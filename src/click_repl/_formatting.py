@@ -260,8 +260,7 @@ class Marquee:
 
     def get_current_text_chunk(self) -> TokenizedFormattedText:
         """
-        Returns the updated text chunk, along with the
-        :attr:`.prefix`, that currently
+        Returns the updated text chunk, along with the :attr:`.prefix`, that currently
         should be displayed in the bottom bar.
 
         Returns

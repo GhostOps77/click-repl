@@ -120,9 +120,9 @@ HAS_CLICK_GE_8 = click.__version__[0] >= "8"
 RANGE_TYPES = (click.IntRange, click.FloatRange)
 """Range types that are used as a :class:`~click.Parameter`'s type in :mod:`~click`.
 
-:class:`~click.types._NumberRangeBase` class is defined in click v8.
-# Therefore, this tuple is used to check for the
-# range type :class:`~click.types.ParamType` objects.
+   :class:`~click.types._NumberRangeBase` class is defined in click v8.
+   Therefore, this tuple is used to check for the
+   range type :class:`~click.types.ParamType` objects.
 """
 
 if HAS_CLICK_GE_8:
@@ -130,20 +130,23 @@ if HAS_CLICK_GE_8:
 
 PARAM_TYPES_WITH_METAVAR = (click.Choice, click.DateTime)
 """The only :class:`~click.types.ParamType` classes that have their
-:meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
+   :meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
 
 PATH_TYPES = (click.Path, click.File)
 """:class:`~click.types.ParamType` classes that expect path as values."""
 
 ISATTY = sys.stdin.isatty()
 """If it is ``False``, then we're not gonna run any code
-to generate auto-completions. Most of the code will be inactive"""
+   to generate auto-completions. Most of the code will be inactive"""
 
 _IS_WINDOWS = os.name == "nt"
 
 AUTO_COMPLETION_FUNC_ATTR = (
     "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
 )
+"""The attribute name of the custom autocompletion function for a
+   :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8`.
+"""
 
 CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
 """click-repl Environmental flag. Enable it only for debugging."""
@@ -156,7 +159,7 @@ _locals.ctx_stack = _ctx_stack
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     """
-    Returns the current click-repl Context, providing a way to access
+    Returns the current click-repl context, providing a way to access
     the context from anywhere in the code  This is a more implicit
     alternative to the :func:`~click.decorators.pass_context` decorator.
 
@@ -168,13 +171,13 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
 
     Returns
     -------
-    ctx : :class:`~click.core.ReplContext
-        :class:`~click.core.ReplContext object if available.
+    click.core.ReplContext | None
+        ``ReplContext`` object, if available.
 
     Raises
     ------
     RuntimeError
-        If there's no Context object in the stack.
+        If there's no context object in the stack and ``silent`` is ``False``.
     """
 
     try:
@@ -192,7 +195,7 @@ def _push_context(ctx: ReplContext) -> None:
 
     Parameters
     ----------
-    ctx : ReplContext
+    ctx
         ReplContext object that should be added to the repl context stack.
     """
     _locals.ctx_stack.append(ctx)

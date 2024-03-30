@@ -35,8 +35,39 @@ __all__ = ["Repl", "repl"]
 
 class Repl:
     """
-    Responsible for executing and maintaining the REPL
-    in a click_repl app.
+    Responsible for executing and maintaining the REPL.
+
+    Parameters
+    ----------
+    ctx
+        The click context object of the root/parent/CLI group.
+
+    prompt_kwargs
+        Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
+        class. Do note that You don't have to pass the `Completer` and `Validator`
+        class via this dictionary.
+
+    completer_cls
+        :class:`~prompt_toolkit.completion.Completer` class to generate
+        :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
+        :class:`~click_repl.completer.ClickCompleter` class is used by default.
+
+    validator_cls
+        :class:`~prompt_toolkit.validation.Validator` class to display error messages
+        in the bottom bar during auto-completion.
+        :class:`~click_repl.validator.ClickValidator` class is used by default.
+
+    completer_kwargs
+        Keyword arguments thats sent to the ``completer_cls`` class constructor.
+
+    validator_kwargs
+        Keyword arguments thats sent to the ``validator_cls`` class constructor.
+
+    internal_command_prefix
+        Prefix that triggers internal commands within the REPL.
+
+    system_command_prefix
+        Prefix that triggers system commands within the REPL.
     """
 
     def __init__(
@@ -52,67 +83,40 @@ class Repl:
     ) -> None:
         """
         Initializes the `Repl` class.
-
-        Parameters
-        ----------
-        ctx : click.Context
-            The click context object of the root/parent/CLI group.
-
-        prompt_kwargs : dict[str, Any]
-            Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
-            class. Do note that you don't have to pass the `Completer` and `Validator`
-            class via this dictionary.
-
-        completer_cls : type[prompt_toolkit.completion.Completer] | None
-            :class:`~prompt_toolkit.completion.Completer` class to generate
-            :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
-            :class:`~click_repl.completer.ClickCompleter` class is used by default.
-
-        validator_cls : type[prompt_toolkit.validation.Validator] | None
-            :class:`~prompt_toolkit.validation.Validator` class to display error messages
-            in the bottom bar during auto-completion.
-            :class:`~click_repl.validator.ClickValidator` class is used by default.
-
-        completer_kwargs : dict[str, Any]
-            Keyword arguments thats sent to the `completer_cls` class constructor.
-
-        validator_kwargs : dict[str, Any]
-            Keyword arguments thats sent to the `validator_cls` class constructor.
-
-        internal_command_prefix : str | None
-            Prefix that triggers internal commands within the click-repl app.
-
-        system_command_prefix : str | None
-            Prefix that triggers system commands within the click-repl app.
         """
 
-        self.group_ctx = _get_group_ctx(ctx)
+        self.group_ctx: Context = _get_group_ctx(ctx)
         """Parent group for the repl to retrieve subcommands from."""
 
-        self.group = cast(MultiCommand, self.group_ctx.command)
+        self.group: MultiCommand = cast(MultiCommand, self.group_ctx.command)
         """Group used in the `group_ctx`"""
 
-        self.internal_commands_system = InternalCommandSystem(
+        self.internal_commands_system: InternalCommandSystem = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
         )
         """Handles and executes internal commands that are invoked in repl."""
 
-        if ISATTY:
-            self.bottom_bar: BottomBar | None = prompt_kwargs.get(
-                "bottom_toolbar", BottomBar()
-            )
-            """To change the command description that's dispplayed in the bottom bar
-            accordingly based on the current parsing state."""
+        self.bottom_bar: BottomBar | None = None
+        """To change the command description that's displayed in the bottom bar
+           accordingly based on the current parsing state."""
 
-            if self.bottom_bar is not None:
-                self.bottom_bar.show_hidden_params = completer_kwargs.get(
+        if ISATTY:
+            bottom_bar = prompt_kwargs.get("bottom_toolbar", BottomBar())
+
+            if isinstance(bottom_bar, BottomBar):
+                bottom_bar.show_hidden_params = completer_kwargs.get(
                     "show_hidden_params", False
                 )
 
-        else:
-            self.bottom_bar = None
+            elif bottom_bar is not None:
+                raise TypeError(
+                    "Expected bottom_bar to be a type of BottomBar or None, "
+                    f"but got {type(bottom_bar).__name__}"
+                )
 
-        prompt_kwargs = self._bootstrap_prompt_kwargs(
+            self.bottom_bar = bottom_bar
+
+        prompt_kwargs = self._get_default_prompt_kwargs(
             completer_cls,
             completer_kwargs,
             validator_cls,
@@ -120,14 +124,14 @@ class Repl:
             prompt_kwargs,
         )
 
-        self.repl_ctx = ReplContext(
+        self.repl_ctx: ReplContext = ReplContext(
             self.group_ctx,
             self.internal_commands_system,
             bottombar=self.bottom_bar,
             prompt_kwargs=prompt_kwargs,
             parent=get_current_repl_ctx(silent=True),
         )
-        """Context object for the current Repl session."""
+        """Context object for the current repl session."""
 
         if ISATTY:
             # If stdin is a TTY, prompt the user for input using PromptSession.
@@ -141,27 +145,33 @@ class Repl:
                 self.repl_ctx._history.append(inp)
                 return inp
 
-        def get_command() -> str:
-            # "split_arg_string" is called here to strip out shell comments.
-            return " ".join(split_arg_string(_get_command()))
+        self._get_command = _get_command
 
-        self.get_command = get_command
-        """Retrieves input for the repl."""
+    def get_command(self) -> str:
+        """Retrieves input for the repl.
 
-    def _bootstrap_completer_kwargs(
+        Returns
+        -------
+        str
+            Input text from repl prompt.
+        """
+        # "split_arg_string" is called here to strip out shell comments.
+        return " ".join(split_arg_string(self._get_command()))
+
+    def _get_default_completer_kwargs(
         self, completer_cls: type[Completer] | None, completer_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """
-        Generates bootstrap keyword arguments for initializing a
-        :class:`~prompt_toolkit.completer.Completer` object, either using
-        default values or user-defined values, if available.
+        Generates default keyword arguments for initializing a
+        :class:`~prompt_toolkit.completer.Completer` object, either
+        using default values or user-defined values, if available.
 
         Parameters
         ----------
-        completer_cls : type[Completer]
+        completer_cls
             A :class:`~prompt_toolkit.completion.Completer` type class.
 
-        completer_kwargs : dict[str, Any]
+        completer_kwargs
             Contains keyword arguments that to be passed to the
             :class:`~prompt_toolkit.completer.Completer` class.
 
@@ -184,26 +194,26 @@ class Repl:
         default_completer_kwargs.update(completer_kwargs)
         return default_completer_kwargs
 
-    def _bootstrap_validator_kwargs(
+    def _get_default_validator_kwargs(
         self, validator_cls: type[Validator] | None, validator_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """
-        Generates bootstrap keyword arguments for initializing a
+        Generates default keyword arguments for initializing a
         :class:`~prompt_toolkit.validation.Validator` object, either
         using default values or user-defined values, if available.
 
         Parameters
         ----------
-        validator_cls : type[Validator]
+        validator_cls
             A :class:`~prompt_toolkit.validation.Validator` type class
 
-        validator_kwargs : dict[str, Any]
+        validator_kwargs
             Contains keyword arguments that has to be passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
 
         Returns
         -------
-        dict[str, Any]
+        dict[str,Any]
             Contains keyword arguments that has to be passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
         """
@@ -223,7 +233,7 @@ class Repl:
             default_validator_kwargs.update(validator_kwargs)
             return default_validator_kwargs
 
-    def _bootstrap_prompt_kwargs(
+    def _get_default_prompt_kwargs(
         self,
         completer_cls: type[Completer] | None,
         completer_kwargs: dict[str, Any],
@@ -232,23 +242,23 @@ class Repl:
         prompt_kwargs: dict[str, Any],
     ) -> dict[str, Any]:
         """
-        Generates bootstrap keyword arguments for initializing a
+        Generates default keyword arguments for initializing a
         :class:`~prompt_toolkit.PromptSession` object, either
         using default values or user-defined values, if available.
 
         Parameters
         ----------
-        completer_cls : type[Completer]
+        completer_cls
             A :class:`~prompt_toolkit.completion.Completer` type class.
 
-        completer_kwargs : dict[str, Any]
+        completer_kwargs
             Contains keyword arguments that to be passed to the
             :class:`~prompt_toolkit.completer.Completer` class.
 
-        validator_cls : type[Validator]
+        validator_cls
             A :class:`~prompt_toolkit.validation.Validator` type class.
 
-        validator_kwargs : dict[str, Any]
+        validator_kwargs
             Contains keyword arguments that has to be passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
 
@@ -278,14 +288,14 @@ class Repl:
         if completer_cls is not None:
             default_prompt_kwargs.update(
                 completer=completer_cls(
-                    **self._bootstrap_completer_kwargs(completer_cls, completer_kwargs)
+                    **self._get_default_completer_kwargs(completer_cls, completer_kwargs)
                 )
             )
 
         if validator_cls is not None:
             default_prompt_kwargs.update(
                 validator=validator_cls(
-                    **self._bootstrap_validator_kwargs(validator_cls, validator_kwargs)
+                    **self._get_default_validator_kwargs(validator_cls, validator_kwargs)
                 )
             )
 
@@ -313,7 +323,7 @@ class Repl:
 
         Parameters
         ----------
-        command : str
+        command
             The command string that needs to be parsed and executed.
         """
 
@@ -332,7 +342,7 @@ class Repl:
 
         Parameters
         ----------
-        command : str
+        command
             The command string that needs to be parsed and executed.
         """
 
@@ -354,7 +364,7 @@ class Repl:
                         # the previously executed command.
                         self.bottom_bar.reset_state()
 
-                    command = self.get_command().strip()
+                    command = self._get_command().strip()
 
                 except KeyboardInterrupt:
                     continue
@@ -416,33 +426,34 @@ def repl(
 
     Parameters
     ----------
-    group_ctx : click.Context
+    group_ctx
         The current click context object.
 
-    prompt_kwargs : dict[str, Any]
-        Parameters passed to `prompt_toolkit.PromptSession`.
+    prompt_kwargs
+        Parameters passed to :class:`~prompt_toolkit.PromptSession`.
         These parameters configure the prompt appearance and behavior,
         such as prompt message, history, completion, etc.
 
-    cls : type[Repl]
-        Repl class to use for the click_repl app. if `None`, the
-        `click_repl._repl.Repl` class is used by default. This allows
+    cls
+        Repl class to use for the click_repl app. if ``None``, the
+        :class:`~.Repl` class is used by default. This allows
         customization of the REPL behavior by providing a custom Repl subclass.
 
-    **attrs : Any
+    **attrs
         Extra keyword arguments to be passed to the Repl class. These additional
         arguments can be used to further customize the behavior of the Repl class.
 
     Notes
     -----
-    - You don't have to pass the `Completer` and `Validator` class, and their
-    arguments via the `prompt_kwargs` dictionary. Pass them separately in the
-    `completer_cls` and `validator_cls` arguments respectively.
+    - You don't have to pass the :class:`~prompt_toolkit.completionCompleter` and
+    :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
+    ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
+    ``validator_cls`` arguments respectively.
 
     - Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
     to determine the content that will be displayed in the bottom toolbar via the
-    `bottom_toolbar` key in the `prompt_kwargs` dictionary. To disable the bottom
-    toolbar, pass `None` as the value for this key.
+    ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
+    toolbar, pass ``None`` as the value for this key.
     """
 
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()

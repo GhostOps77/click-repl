@@ -42,14 +42,14 @@ logger.setLevel(logger_level)
 
 class ClickValidator(Validator):
     """
-    Custom prompt input validation for the click_repl app.
+    Custom prompt input validation for the REPL.
 
     Parameters
     ----------
-    ctx : click.Context
+    ctx
         The current click context object.
 
-    display_all_errors : bool
+    display_all_errors
         Flag that determines whether to raise generic Python Exceptions, and not to
         display them in the :class:`~Validator` bar, resulting in the full error traceback
         being redirected to a log file in the REPL mode.
@@ -74,14 +74,13 @@ class ClickValidator(Validator):
     def validate(self, document: Document) -> None:
         """
         Validates the input from the prompt by raising a
-        `prompt_toolkit.validation.ValidationError` if it is invalid.
-        Any raised errors are displayed in the Validator bar.
+        :exc:`~prompt_toolkit.validation.ValidationError` if it is invalid.
+        Any raised errors are displayed in the :class:`~Validator` bar.
 
         Parameters
         ----------
-        document : prompt_toolkit.document.Document
-            A :class:`~prompt_toolkit.document.Document` object
-            containing the incomplete string from the REPL.
+        document
+            Contains the incomplete string from the REPL prompt.
 
         Raises
         ------
