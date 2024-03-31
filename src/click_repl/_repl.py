@@ -521,12 +521,12 @@ def repl(
 
     Notes
     -----
-    - You don't have to pass the :class:`~prompt_toolkit.completionCompleter` and
+    You don't have to pass the :class:`~prompt_toolkit.completionCompleter` and
     :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
     ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
     ``validator_cls`` arguments respectively.
 
-    - Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
+    Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
     to determine the content that will be displayed in the bottom toolbar via the
     ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
     toolbar, pass `None` as the value for this key.

@@ -24,7 +24,7 @@ _CompletionStyleDictKeys = Literal[
 ]
 
 
-@dataclass(slots=True)
+@dataclass
 class CompletionDisplayStyleDict:
     completion_style: str = ""
     selected_style: str = ""
