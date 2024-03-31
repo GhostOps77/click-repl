@@ -8,11 +8,12 @@ from __future__ import annotations
 import os
 import sys
 import typing as t
+from dataclasses import dataclass
 from threading import local
 from typing import Dict, NoReturn
 
 import click
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing_extensions import Literal, TypeAlias
 
 if t.TYPE_CHECKING:
     from .core import ReplContext
@@ -23,12 +24,15 @@ _CompletionStyleDictKeys = Literal[
 ]
 
 
-class _CompletionStyleDict(TypedDict):
-    completion_style: str
-    selected_completion_style: str
+@dataclass(slots=True)
+class CompletionDisplayStyleDict:
+    completion_style: str = ""
+    selected_style: str = ""
 
 
-CompletionStyleDict: TypeAlias = Dict[_CompletionStyleDictKeys, _CompletionStyleDict]
+CompletionStyleDict: TypeAlias = Dict[
+    _CompletionStyleDictKeys, CompletionDisplayStyleDict
+]
 
 
 DEFAULT_COMPLETION_STYLE_CONFIG = {
@@ -65,19 +69,13 @@ DEFAULT_COMPLETION_STYLE_CONFIG = {
 """Default token style configuration for :class:`~click_repl.completer.ClickCompleter`"""
 
 DEFAULT_COMPLETION_STYLE_DICT: CompletionStyleDict = {
-    "internal-command": {
-        "completion_style": "",
-        "selected_completion_style": "",
-    },
-    "command": {"completion_style": "", "selected_completion_style": ""},
-    "group": {
-        "completion_style": "",
-        "selected_completion_style": "",
-    },
-    "argument": {"completion_style": "", "selected_completion_style": ""},
-    "option": {"completion_style": "", "selected_completion_style": ""},
+    "internal-command": CompletionDisplayStyleDict(),
+    "command": CompletionDisplayStyleDict(),
+    "group": CompletionDisplayStyleDict(),
+    "argument": CompletionDisplayStyleDict(),
+    "option": CompletionDisplayStyleDict(),
 }
-"""Default token configuration for :class:`~`"""
+"""Default display text configuration for :class:`~prompt_toolkit.completion.Completion`"""
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     # Group
@@ -170,7 +168,7 @@ ISATTY = sys.stdin.isatty()
 _IS_WINDOWS = os.name == "nt"
 
 AUTO_COMPLETION_FUNC_ATTR = (
-    "``_custom_shell_complete``" if HAS_CLICK_GE_8 else "autocompletion"
+    "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
 )
 """The attribute name of the custom autocompletion function for a
    :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8``.

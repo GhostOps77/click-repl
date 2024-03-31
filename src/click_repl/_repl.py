@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import sys
 import traceback
-from typing import Any, Sequence, cast
+from contextlib import contextmanager
+from typing import Any, Callable, Generator, Sequence, cast
 
 import click
 from click import Context, Group
@@ -30,7 +31,18 @@ from .parser import split_arg_string
 from .utils import _generate_next_click_ctx, _get_group_ctx, print_error
 from .validator import ClickValidator
 
-__all__ = ["Repl", "repl"]
+__all__ = ["Repl", "repl", "ReplCli"]
+
+
+@contextmanager
+def handle_lifetime(self_obj: ReplCli) -> Generator[None, None, None]:
+    if self_obj.startup is not None:
+        self_obj.startup()
+
+    yield
+
+    if self_obj.cleanup is not None:
+        self_obj.cleanup()
 
 
 class Repl:
@@ -190,7 +202,7 @@ class Repl:
             return {}
 
         default_completer_kwargs = {
-            "ctx": self.group_ctx,
+            "group_ctx": self.group_ctx,
             "internal_commands_system": self.internal_commands_system,
             "bottom_bar": self.bottom_bar,
         }
@@ -230,7 +242,7 @@ class Repl:
 
         if validator_cls is not None:
             default_validator_kwargs = {
-                "ctx": self.group_ctx,
+                "group_ctx": self.group_ctx,
                 "internal_commands_system": self.internal_commands_system,
             }
 
@@ -414,6 +426,66 @@ class Repl:
 
                 except Exception:
                     traceback.print_exc()
+
+
+class ReplCli(click.Group):
+    """
+    Custom :class:`~click.Group` subclass for invoking the REPL.
+
+    This class extends the functionality of the :class:`~click.Group`
+    class and is designed to be used as a wrapper to automatically
+    invoke the :func:`.repl` function when the group is invoked
+    without any sub-command.
+
+    Parameters
+    ----------
+    prompt
+        The message that should be displayed for every prompt input.
+
+    startup
+        The callback function that gets called before invoking the REPL.
+
+    cleanup
+        The callback function that gets invoked after exiting out of the REPL.
+
+    repl_kwargs
+        The keyword arguments that needs to be sent to the :func:`.repl` function.
+
+    **attrs
+        Extra keyword arguments that need to be passed to the :class:`click.Group` class.
+    """
+
+    def __init__(
+        self,
+        prompt: str = "> ",
+        startup: Callable[[], None] | None = None,
+        cleanup: Callable[[], None] | None = None,
+        repl_kwargs: dict[str, Any] = {},
+        **attrs: Any,
+    ) -> None:
+        """
+        Initialize the `ReplCli` class.
+        """
+
+        attrs["invoke_without_command"] = True
+        super().__init__(**attrs)
+
+        self.prompt = prompt
+        self.startup = startup
+        self.cleanup = cleanup
+
+        repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": prompt})
+
+        self.repl_kwargs = repl_kwargs
+
+    def invoke(self, ctx: Context) -> Any:
+        if ctx.invoked_subcommand or ctx.protected_args:
+            return super().invoke(ctx)
+
+        with handle_lifetime(self):
+            return_val = super().invoke(ctx)
+            repl(ctx, **self.repl_kwargs)
+            return return_val
 
 
 def repl(

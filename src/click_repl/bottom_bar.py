@@ -93,6 +93,10 @@ class BottomBar:
         self.current_repl_ctx: ReplContext | None = None
         """Context object of the current Repl session."""
 
+        self.parent_token_class_name: str = "bottom-bar"
+        """
+        Parent class name for tokens that are related to :class:`~.BottomBar`."""
+
     def __call__(self) -> ListOfTokens:
         return self.get_formatted_text()
 
@@ -135,14 +139,14 @@ class BottomBar:
         self.state = state
         self._recent_formatted_text = self.make_formatted_text()
 
-    def get_group_metavar_template(self) -> tuple[ListOfTokens, ListOfTokens]:
+    def get_group_metavar_template(self) -> Marquee:
         """
         Gets the metavar to describe the CLI Group, indicating
         whether it is a chained Group or not.
 
         Returns
         -------
-        tuple[ListOfTokens,ListOfTokens]
+        click_repl.formatting.Marquee
             Pre-defined set of metavar tokens for both :attr:`.Marquee.prefix` and
             :attr:`.Marquee.text` attributes.
         """
@@ -166,7 +170,7 @@ class BottomBar:
 
         if not current_group.list_commands(state.current_ctx):
             # Empty string if there are no subcommands.
-            return prefix, []
+            return Marquee([], prefix)
 
         content: ListOfTokens = []
 
@@ -202,7 +206,10 @@ class BottomBar:
                 ("symbol.ellipsis", "..."),
             ]
 
-        return prefix, content
+        return Marquee(
+            TokenizedFormattedText(content, self.parent_token_class_name),
+            TokenizedFormattedText(prefix, self.parent_token_class_name),
+        )
 
     def get_param_usage_state_token(self, param: Parameter) -> str:
         """
@@ -423,7 +430,7 @@ class BottomBar:
 
         return nargs_info
 
-    def format_metavar_for_param_with_nargs(
+    def format_metavar_tokens_for_param_with_nargs(
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
         param_name = param_info["name"]
@@ -442,7 +449,7 @@ class BottomBar:
         res += nargs_info
         return res
 
-    def get_param_info(self, param: Parameter) -> ListOfTokens:
+    def get_param_info_tokens(self, param: Parameter) -> ListOfTokens:
         assert self.state is not None, "state cannot be None"
 
         param_info: ParamInfo = {
@@ -458,9 +465,20 @@ class BottomBar:
             param_info["type_info"] = self.get_param_type_info_tokens(param, param.type)
             param_info["nargs_info"] = self.get_param_nargs_info_tokens(param, param_info)
 
-        return self.format_metavar_for_param_with_nargs(param, param_info)
+        return self.format_metavar_tokens_for_param_with_nargs(param, param_info)
 
     def make_formatted_text(self) -> Marquee:
+        """
+        Constructs tokens list to describe the current
+        :class:`~click_repl.parser.ReplParsingState` of input in prompt.
+
+        Returns
+        -------
+        click_repl._formatting.Marquee
+            :class:`~click_repl._formatting.Marquee` object that needs to be display
+            the updated info about the current
+            :class:`~click_repl.parser.ReplParsingState`.
+        """
         state = self.state
 
         if state is None:
@@ -473,11 +491,7 @@ class BottomBar:
             # the function returns the metavar template of the
             # parent/CLI/current Group.
 
-            _prefix, _content = self.get_group_metavar_template()
-            return Marquee(
-                TokenizedFormattedText(_content, "bottom-bar"),
-                TokenizedFormattedText(_prefix, "bottom-bar"),
-            )
+            return self.get_group_metavar_template()
 
         if isinstance(current_command, click.Group):
             command_type = "multicommand"
@@ -507,7 +521,7 @@ class BottomBar:
                 # Display all the non-hidden parameters, except if the hidden param
                 # is the current parameter.
 
-                formatted_params_info += self.get_param_info(param)
+                formatted_params_info += self.get_param_info_tokens(param)
                 formatted_params_info.append(("space", " "))
 
         if formatted_params_info:
@@ -518,19 +532,27 @@ class BottomBar:
             ]
 
         return Marquee(
-            TokenizedFormattedText(formatted_params_info, "bottom-bar"),
-            prefix=TokenizedFormattedText(prefix, "bottom-bar"),
+            TokenizedFormattedText(formatted_params_info, self.parent_token_class_name),
+            prefix=TokenizedFormattedText(prefix, self.parent_token_class_name),
         )
 
-    def display_exception(self, err: Exception) -> None:
+    def display_exception(self, exc: Exception) -> None:
+        """
+        Displays the given ``exc`` :class:`~Exception` object in the bottom bar.
+
+        Parameters
+        ----------
+        exc
+            The :class:`~Exception` object that needs to be displayed.
+        """
         self._recent_formatted_text = Marquee(
             TokenizedFormattedText(
                 [
-                    ("error.exception-class-name", type(err).__name__),
+                    ("error.exception-class-name", type(exc).__name__),
                     ("symbol,error", ":"),
                     ("space,error", " "),
-                    ("error.message", str(err)),
+                    ("error.message", str(exc)),
                 ],
-                "bottom-bar",
+                self.parent_token_class_name,
             )
         )

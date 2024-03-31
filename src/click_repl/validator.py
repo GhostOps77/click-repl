@@ -25,19 +25,27 @@ logger = logging.getLogger(f"click_repl-{__name__}")
 if CLICK_REPL_DEV_ENV:
     logger_level = logging.DEBUG
 
-    log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
-    formatter = logging.Formatter(log_format)
+    # log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
+    # formatter = logging.Formatter(log_format)
 
-    log_file = ".click-repl-err.log"
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    # log_file = ".click-repl-err.log"
+    # file_handler = logging.FileHandler(log_file)
+    # file_handler.setFormatter(formatter)
+    # logger.addHandler(file_handler)
 
 
 else:
     logger_level = logging.WARNING
 
 logger.setLevel(logger_level)
+
+log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
+formatter = logging.Formatter(log_format)
+
+log_file = ".click-repl-err.log"
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 
 class ClickValidator(Validator):
@@ -46,7 +54,7 @@ class ClickValidator(Validator):
 
     Parameters
     ----------
-    ctx
+    group_ctx
         The current :class:`~click.Context` object.
 
     display_all_errors
@@ -58,7 +66,7 @@ class ClickValidator(Validator):
 
     def __init__(
         self,
-        ctx: Context,
+        group_ctx: Context,
         internal_commands_system: InternalCommandSystem,
         display_all_errors: bool = True,
     ) -> None:
@@ -66,8 +74,8 @@ class ClickValidator(Validator):
         Initializes a `ClickValidator` object.
         """
 
-        self.cli_ctx: Final[Context] = ctx
-        self.cli: Final[Group] = self.cli_ctx.command  # type: ignore[assignment]
+        self.group_ctx: Final[Context] = group_ctx
+        self.group: Final[Group] = self.group_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system
         self.display_all_errors = display_all_errors
@@ -102,7 +110,7 @@ class ClickValidator(Validator):
             return
 
         try:
-            _, state, _ = _resolve_state(self.cli_ctx, document.text_before_cursor)
+            _, state, _ = _resolve_state(self.group_ctx, document.text_before_cursor)
 
             if ISATTY:
                 bottombar = get_current_repl_ctx().bottombar  # type:ignore[union-attr]
@@ -130,8 +138,8 @@ class ClickValidator(Validator):
                 # self.catch_all_errors is set to True.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            if CLICK_REPL_DEV_ENV:
-                # Error tracebacks are displayed during the REPL loop if
-                # self.catch_all_errors is set to False. The short error
-                # messages are also logged into a click-repl-err.log file.
-                logger.exception("%s: %s", type(e).__name__, e)
+            # if CLICK_REPL_DEV_ENV:
+            # Error tracebacks are displayed during the REPL loop if
+            # self.catch_all_errors is set to False. The short error
+            # messages are also logged into a click-repl-err.log file.
+            logger.exception("%s: %s", type(e).__name__, e)

@@ -7,10 +7,11 @@ from __future__ import annotations
 import subprocess
 from collections import defaultdict
 from collections.abc import Generator, Iterator, Sequence
-from typing import Any, Callable, Dict, List, NoReturn, Tuple
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, ItemsView, List, NoReturn, Tuple
 
 import click
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypeAlias
 
 from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException, PrefixNotFound, SamePrefix, WrongType
@@ -21,9 +22,13 @@ InternalCommandDict: TypeAlias = Dict[str, Tuple[CallableNone, str]]
 InfoTable: TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
 
 
-class PrefixTable(TypedDict):
+@dataclass
+class PrefixTable:
     internal: str | None
     system: str | None
+
+    def items(self) -> ItemsView[str, str | None]:
+        return self.__dict__.items()
 
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
@@ -122,10 +127,10 @@ class InternalCommandSystem:
         self.check_prefix_validity(internal_command_prefix, "internal_command_prefix")
         self.check_prefix_validity(system_command_prefix, "system_command_prefix")
 
-        self.prefix_table: PrefixTable = {
-            "internal": internal_command_prefix,
-            "system": system_command_prefix,
-        }
+        self.prefix_table: PrefixTable = PrefixTable(
+            internal_command_prefix,
+            system_command_prefix,
+        )
         """Table to keep track of the prefixes."""
 
         self.shell: bool = shell
@@ -155,16 +160,16 @@ class InternalCommandSystem:
         :exc:`~click_repl.exceptions.SamePrefix`
             If the new prefix thats being assigned is the same as the current prefix.
         """
-        return self.prefix_table["internal"]
+        return self.prefix_table.internal
 
     @internal_command_prefix.setter
     def internal_command_prefix(self, value: str | None) -> None:
         self.check_prefix_validity(value, "internal_command_prefix")
 
-        if value is not None and value == self.prefix_table["system"]:
+        if value is not None and value == self.prefix_table.system:
             raise SamePrefix(value)
 
-        self.prefix_table["internal"] = value
+        self.prefix_table.internal = value
 
     @property
     def system_command_prefix(self) -> str | None:
@@ -184,16 +189,16 @@ class InternalCommandSystem:
         click_repl.exceptions.SamePrefix
             If the new prefix thats being assigned is the same as the current prefix.
         """
-        return self.prefix_table["system"]
+        return self.prefix_table.system
 
     @system_command_prefix.setter
     def system_command_prefix(self, value: str | None) -> None:
         self.check_prefix_validity(value, "system_command_prefix")
 
-        if value is not None and value == self.prefix_table["internal"]:
+        if value is not None and value == self.prefix_table.internal:
             raise SamePrefix(value)
 
-        self.prefix_table["system"] = value
+        self.prefix_table.system = value
 
     def check_prefix_validity(self, prefix: str | None, var_name: str) -> None:
         """

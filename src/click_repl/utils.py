@@ -5,7 +5,6 @@ Utilities to facilitate the functionality of the module.
 from __future__ import annotations
 
 import os
-from collections.abc import Generator
 from difflib import get_close_matches
 from functools import lru_cache
 from typing import Any, Iterable
@@ -73,14 +72,6 @@ def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDict
         return "group"
 
     return "command"
-
-
-def _add_quotes(text: str) -> str:
-    if " " in text and text[0] != '"' != text[-1]:
-        text = text.strip('"').replace('"', '\\"')
-        return f'"{text}"'
-
-    return text
 
 
 def _expand_envvars(text: str) -> str:
@@ -160,7 +151,6 @@ def is_param_value_incomplete(
         and None in value
     )
 
-    # value = ctx.params.get(param_name, None)
     # return value in (None, ()) or (
     #     check_if_tuple_has_none and isinstance(value, tuple) and None in value
     # )
@@ -197,7 +187,7 @@ def _get_group_ctx(ctx: Context) -> Context:
     Checks and returns the appropriate :class:`~click.Context` object to
     start repl on it.
 
-    If there's a parent context object and its command type is click.Group,
+    If there's a parent context object and its command type is :class:`~click.Group`,
     we return its parent context object. A parent context object should be
     available most of the time. If not, then we return the original context object.
 
@@ -218,31 +208,6 @@ def _get_group_ctx(ctx: Context) -> Context:
     return ctx
 
 
-def _get_visible_subcommands(
-    ctx: Context,
-    multicommand: Group,
-    incomplete: str,
-    show_hidden_commands: bool = False,
-) -> Generator[tuple[str, Command], None, None]:
-    """
-    Get all the subcommands from the given ``multicommand`` whose name
-    starts with the given ``incomplete`` prefix string.
-    """
-
-    for command_name in multicommand.list_commands(ctx):
-        if not command_name.startswith(incomplete):
-            continue
-
-        subcommand = multicommand.get_command(ctx, command_name)
-
-        if subcommand is None or (subcommand.hidden and not show_hidden_commands):
-            # We skip if there's no command found or it's a hidden command
-            # and show_hidden_commands is False.
-            continue
-
-        yield command_name, subcommand
-
-
 @lru_cache(maxsize=128)
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
@@ -254,7 +219,7 @@ def get_info_dict(
 
     Parameters
     ----------
-    obj : click.Context | click.Command | click.Parameter | click.ParamType
+    obj
         Click object for which the info dict needs to be generated.
 
     Returns
@@ -265,11 +230,20 @@ def get_info_dict(
 
     References
     ----------
-    .. [:class:`~click.Context.get_info_dict`]
-    .. [:class:`~click.Command.get_info_dict`]
-    .. [:class:`~click.Group.get_info_dict`]
-    .. [:class:`~click.Context.get_info_dict`]
-    .. [:class:`~click.Context.get_info_dict`]
+    | .. [1] :meth:`click.Context.get_info_dict <click.Context.get_info_dict>`
+    | :meth:`click.Command.get_info_dict <click.Command.get_info_dict>`
+    | :meth:`click.Group.get_info_dict <click.Group.get_info_dict>`
+    | :meth:`click.Parameter.get_info_dict <click.Parameter.get_info_dict>`
+    | :meth:`click.Option.get_info_dict <click.Option.get_info_dict>`
+    | :meth:`click.ParamType.get_info_dict <click.ParamType.get_info_dict>`
+    | :meth:`click.Choice.get_info_dict <click.Choice.get_info_dict>`
+    | :meth:`click.DateTime.get_info_dict <click.DateTime.get_info_dict>`
+    | :meth:`click.File.get_info_dict <click.File.get_info_dict>`
+    | :meth:`click.Path.get_info_dict <click.Path.get_info_dict>`
+    | :meth:`click.Tuple.get_info_dict <click.Tuple.get_info_dict>`
+    | :meth:`click.IntRange.get_info_dict <click.IntRange.get_info_dict>`
+    | :meth:`click.FloatRange.get_info_dict <click.FloatRange.get_info_dict>`
+    | :meth:`click.types.FuncParamType.get_info_dict <click.types.FuncParamType.get_info_dict>`
     """
 
     if isinstance(obj, click.Context):
@@ -289,7 +263,7 @@ def get_info_dict(
             callback=obj.callback,
         )
 
-        if isinstance(obj, click.Group):
+        if isinstance(obj, (click.Group, click.CommandCollection)):
             commands = {}
 
             for name in obj.list_commands(ctx):
@@ -370,7 +344,7 @@ def get_info_dict(
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    multicommand: Group,
+    group: Group,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
@@ -383,7 +357,7 @@ def _generate_next_click_ctx(
     # list format, we explicitly convert args into a list.
     _args = list(_expand_envvars(i) for i in args)
 
-    name, cmd, _args = multicommand.resolve_command(parent_ctx, _args)
+    name, cmd, _args = group.resolve_command(parent_ctx, _args)
 
     if cmd is None:
         return parent_ctx, None
@@ -454,19 +428,19 @@ def _resolve_state(
 
     Parameters
     ----------
-    ctx : click.Context
-        The current click context object of the parent group.
+    ctx
+        The current :class:`click.Context` object of the parent group.
 
-    document_text : str
+    document_text
         Text that's currently entered in the prompt.
 
     Returns
     -------
-    tuple[Context, ReplParsingState, Incomplete]
+    tuple[Context,ReplParsingState,Incomplete]
         Returns the appropriate `click.Context` constructed from parsing
-        the given input from prompt, current `ReplParsingState` object,
-        and the `Incomplete` object that holds the incomplete data that
-        requires suggestions.
+        the given input from prompt, current :class:`click_repl.parser.ReplParsingState`
+        object, and the :class:`click_repl.parser.Incomplete` object that holds the
+        incomplete data that requires suggestions.
     """
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args, proxy=True)
