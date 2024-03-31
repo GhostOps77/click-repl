@@ -14,7 +14,7 @@ from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Final, TypeAlias
+from typing_extensions import Final
 
 from ._formatting import TokenizedFormattedText
 from ._globals import (
@@ -41,7 +41,6 @@ from .utils import (
     options_flags_joiner,
 )
 
-_MultiCommand: TypeAlias = Group | CommandCollection
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
 
@@ -835,7 +834,7 @@ class ClickCompleter(Completer):
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
-    ) -> _MultiCommand | None:
+    ) -> Group | CommandCollection | None:
         """
         Returns the appropriate :class:`~click.Group` object that should be used
         to generate auto-completions for subcommands of a group.
@@ -886,7 +885,7 @@ class ClickCompleter(Completer):
     def _get_visible_subcommands(
         self,
         ctx: Context,
-        group: _MultiCommand,
+        group: Group | CommandCollection,
         incomplete: str,
         show_hidden_commands: bool = False,
     ) -> Generator[tuple[str, Command], None, None]:
@@ -1103,7 +1102,7 @@ class ReplCompletion(Completion):
 
             if " " in text and no_surrounding_quotes:
                 # Surrounding text by quotes, as it has space in it.
-                text = text.strip('"').replace('"', '\\"')
+                text = text.replace('"', '\\"')
                 text = f'"{text}"'
 
         if isinstance(incomplete, Incomplete):
