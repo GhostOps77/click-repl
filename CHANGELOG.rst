@@ -1,24 +1,27 @@
-# Change History
+Change History
+==============
 
-## v0.3.0
+v0.3.0
+------
 
-**Release-date:** 15 Jun, 2023
-**Release-by:** Asif Saif Uddin
+| **Release-date**: 15 Jun, 2023
+| **Release-by**: Asif Saif Uddin
 
-- Drop Python 2 support, remove `~six`.
-- Uses `PromptSession()` class from prompt_toolkit instead of `prompt()` function (#63).
+- Drop Python 2 support, remove ``six``.
+- Uses ``PromptSession()`` class from prompt_toolkit instead of ``prompt()`` function (#63).
 - Added filter for hidden commands and options (#86).
 - Added click's autocompletion support (#88).
-- Added tab-completion for `Path` and `BOOL` type arguments (#95).
+- Added tab-completion for ``Path`` and ``BOOL`` type arguments (#95).
 - Added 'expand environmental variables in path' feature (#96).
 - Delegate command dispatching to the actual group command.
 - Updated completer class and tests based on new fix #92 (#102).
 - Python 3.11 support.
 
-## v0.2.0
+v0.2.0
+------
 
-**Release-date:** 31 May, 2021
-**Release-by:** untitaker
+| **Release-date**: 31 May, 2021
+| **Release-by**: untitaker
 
 - Backwards compatibility between click v7 & v8
 - support for click v8 changes

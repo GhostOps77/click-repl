@@ -21,12 +21,7 @@ from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext
-from .exceptions import (
-    ClickExit,
-    ExitReplException,
-    InternalCommandException,
-    PrefixNotFound,
-)
+from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
 from .parser import split_arg_string
 from .utils import _generate_next_click_ctx, _get_group_ctx, print_error
 from .validator import ClickValidator
@@ -405,7 +400,7 @@ class Repl:
                 try:
                     self.execute_command(command)
 
-                except (ClickExit, SystemExit):
+                except (click.exceptions.Exit, SystemExit):
                     continue
 
                 except click.UsageError as e:

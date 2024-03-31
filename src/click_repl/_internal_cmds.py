@@ -154,7 +154,7 @@ class InternalCommandSystem:
 
         Raises
         ------
-        click_repl.exceptions.WrongType
+        :exc:`~click_repl.exceptions.WrongType`
             If the value being assigned is not a str type.
 
         :exc:`~click_repl.exceptions.SamePrefix`
@@ -183,10 +183,10 @@ class InternalCommandSystem:
 
         Raises
         ------
-        click_repl.exceptions.WrongType
+        :exc:`~click_repl.exceptions.WrongType`
             If the value being assigned is not a :class:`str` type.
 
-        click_repl.exceptions.SamePrefix
+        :exc:`~click_repl.exceptions.SamePrefix`
             If the new prefix thats being assigned is the same as the current prefix.
         """
         return self.prefix_table.system
@@ -202,7 +202,7 @@ class InternalCommandSystem:
 
     def check_prefix_validity(self, prefix: str | None, var_name: str) -> None:
         """
-        Checks the validity of the prefix.
+        Raises an error if the given ``prefix`` is not in the expected format.
 
         Parameters
         ----------
@@ -214,7 +214,7 @@ class InternalCommandSystem:
 
         Raises
         ------
-        click_repl.exceptions.WrongType
+        :exc:`~click_repl.exceptions.WrongType`
             If the prefix is not of type :class:`str` or `None`.
 
         ValueError
@@ -272,51 +272,51 @@ class InternalCommandSystem:
         description: str | None = None,
     ) -> Callable[[CallableNone], CallableNone] | CallableNone:
         """
-        A decorator used to register a new internal command from a given function.
+                A decorator used to register a new internal command from a given function.
 
-        internal commands are case-insensitive, and this decorator allows
-        for easy registration of command names and aliases.
+                internal commands are case-insensitive, and this decorator allows
+                for easy registration of command names and aliases.
+        d
+                Parameters
+                ----------
+                target
+                    The callback function for the internal command.
 
-        Parameters
-        ----------
-        target
-            The callback function for the internal command.
+                names
+                    Contains command names and aliases.
 
-        names
-            Contains command names and aliases.
+                description
+                    Help text for the internal command.
 
-        description
-            Help text for the internal command.
+                Returns
+                -------
+                Callable[[CallableNone],CallableNone] | CallableNone
+                    The same function object passed into this decorator,
+                    or a function that takes and returns the same function when called.
 
-        Returns
-        -------
-        Callable[[CallableNone],CallableNone] | CallableNone
-            The same function object passed into this decorator,
-            or a function that takes and returns the same function when called.
+                Example
+                -------
+                The following example demonstrate how to register the ``kill``
+                function as an internal command:
 
-        Example
-        -------
-        The following example demonstrate how to register the ``kill``
-        function as an internal command:
+                .. code-block:: python
 
-        .. code-block:: python
+                    from click_repl._internal_cmds import InternalCommandSystem
+                    ics_obj = InternalCommandSystem()
 
-            from click_repl._internal_cmds import InternalCommandSystem
-            ics_obj = InternalCommandSystem()
+                    # Register it with some custom aliases
+                    @ics_obj.register_command(
+                        names=['kill', 'pkill],
+                        description='Kills certain process'
+                    )
+                    def kill():
+                        ...
 
-            # Register it with some custom aliases
-            @ics_obj.register_command(
-                names=['kill', 'pkill],
-                description='Kills certain process'
-            )
-            def kill():
-                ...
-
-            # Function's docstring is the command's description.
-            @ics_obj.register_command
-            def kill():
-                '''Kills certain process'''
-                ...
+                    # Function's docstring is the command's description.
+                    @ics_obj.register_command
+                    def kill():
+                        '''Kills certain process'''
+                        ...
 
         """
 
@@ -441,7 +441,7 @@ class InternalCommandSystem:
 
         Raises
         ------
-        :class:`~click_repl.exceptions.PrefixNotFound`
+        :exc:`~click_repl.exceptions.PrefixNotFound`
             If there's no internal prefix used in the given command.
         """
 

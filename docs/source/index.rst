@@ -11,9 +11,9 @@ Welcome to click-repl's Documentation
    :caption: Contents:
 
 .. include:: ../../README.rst
-    :start-line: 23
+    :start-line: 30
 
-.. include:: ../../CHANGELOG.md
+.. include:: ../../CHANGELOG.rst
 
 
 Indices and tables
@@ -22,4 +22,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-* :doc:`../../CHANGELOG.md`

@@ -2,23 +2,40 @@ click-repl
 ==========
 
 .. image:: https://github.com/GhostOps77/click-repl/actions/workflows/workflow.yml/badge.svg?branch=GhostOps77-patch-1
-    :target: https://github.com/GhostOps77/click-repl/actions/workflows/workflow.yml
+   :target: https://github.com/GhostOps77/click-repl/actions/workflows/workflow.yml
+   :alt: Tests
 .. image:: https://img.shields.io/pypi/l/click-repl?label=License
-    :target: https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/LICENSE
+   :target: https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/LICENSE
+   :alt: License
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
+   :target: https://github.com/psf/black
+   :alt: Code style: black
 .. image:: https://img.shields.io/badge/python-3%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue
-    :target: https://img.shields.io/badge/python-3%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue
+   :alt: Python - Version
 .. image:: https://img.shields.io/badge/pypi-v0.2.0-blue
-    :target: https://pypi.org/project/click-repl/
+   :target: https://pypi.org/project/click-repl/
+   :alt: PyPI - Version
 .. image:: https://img.shields.io/piwheels/v/click-repl?label=wheel
-    :target: https://img.shields.io/piwheels/v/click-repl?label=wheel
+   :alt: wheels
 .. image:: https://img.shields.io/pypi/status/click
+   :alt: PyPI - Status
 .. image:: https://img.shields.io/pypi/dm/click-repl
+   :alt: PyPI - Downloads
 .. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
-    :target: https://github.com/pre-commit/pre-commit
+   :target: https://github.com/pre-commit/pre-commit
+   :alt: pre-commit
 .. image:: https://results.pre-commit.ci/badge/github/GhostOps77/click-repl/main.svg?branch=GhostOps77-patch-1
-    :target: https://results.pre-commit.ci/latest/github/GhostOps77/click-repl/GhostOps77-patch-1
+   :target: https://results.pre-commit.ci/latest/github/GhostOps77/click-repl/GhostOps77-patch-1
+
+
+``click-repl`` is an extension for the `click <https://click.palletsprojects.com/en/>`_ module,
+designed to integrate a REPL (Read-Eval-Print Loop) within your click application.
+This module allows for seamless interaction with your CLI commands with auto-completion
+features in your shell environment, while offering a platform to execute shell commands,
+without the necessity to tweak your ``.bashrc`` or ``.ps1`` configuration files.
+
+All customizations can be conveniently handled using pure Python code.
+
 
 .. _installation:
 Installation
@@ -28,14 +45,14 @@ Installation is done via pip:
 
 .. code-block:: shell
 
-  pip install click-repl
+    pip install click-repl
 
 .. _usage:
 Usage
 =====
 
 There are many facilitating ways to create your click-repl app
-All you have to do in your ``click`` app is either -
+All you have to do in your `click <https://click.palletsprojects.com/en/>`_ app is either -
 
 1. Use ``register_repl()`` function to add ``repl`` command to your click app:
 
@@ -59,47 +76,47 @@ In the shell:
 
 .. code-block:: shell
 
-  $ my_app repl
-  Entering REPL...
-  >>> hello
-  Hello world!
-  Exiting REPL...
-  >>> :exit
-  $ echo hello | my_app repl
-  Hello World!
-  $
+    $ my_app repl
+    Entering REPL...
+    >>> hello
+    Hello world!
+    Exiting REPL...
+    >>> :exit
+    $ echo hello | my_app repl
+    Hello World!
+    $
 
 2. Use the ``Repl`` class in the ``cls`` parameter of the ``click.group()`` decorator:
 
 .. code-block:: python
 
-  import click
-  from click_repl import Repl
+    import click
+    from click_repl import Repl
 
-  @click.group(
-      cls=ReplCli,
-      prompt='>>> ',
-      startup=lambda: print("Entering REPL..."),
-      cleanup=lambda: print("Exiting REPL...")
-  )
-  def cli():
-      pass
+    @click.group(
+        cls=ReplCli,
+        prompt='>>> ',
+        startup=lambda: print("Entering REPL..."),
+        cleanup=lambda: print("Exiting REPL...")
+    )
+    def cli():
+        pass
 
-  @cli.command()
-  def hello():
-      click.echo("Hello world!")
+    @cli.command()
+    def hello():
+        click.echo("Hello world!")
 
-  register_repl(cli)
-  cli()
+    register_repl(cli)
+    cli()
 
 In the shell:
 
 .. code-block:: shell
 
-  $ my_app
-  >>> hello
-  Hello world!
-  >>> :q
+    $ my_app
+    >>> hello
+    Hello world!
+    >>> :q
 
 3. Invoke the ``repl`` function manually wherever as you want:
 
@@ -131,6 +148,8 @@ In the shell:
   Hello world!
   > :q
 
+
+.. _features not shown:
 Features not shown:
 -------------------
 

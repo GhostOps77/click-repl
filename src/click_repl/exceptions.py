@@ -6,14 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from click import Argument, Command
-from click.exceptions import Exit as ClickExit
-
-__all__ = [
-    "InternalCommandException",
-    "ExitReplException",
-    "ClickExit",
-]
+import click
 
 
 class InternalCommandException(Exception):
@@ -122,7 +115,9 @@ class ArgumentPositionError(ParserError):
         the given command.
     """
 
-    def __init__(self, command: Command, argument: Argument, position: int) -> None:
+    def __init__(
+        self, command: click.Command, argument: click.Argument, position: int
+    ) -> None:
         super().__init__(
             f"The argument '{argument.name}' with nargs=-1, in command "
             f"'{command.name}' must be defined at the end of the parameter list, "
