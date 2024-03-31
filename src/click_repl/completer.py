@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import click
 from click import Command, CommandCollection, Context, Group, Parameter
@@ -14,7 +14,7 @@ from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Final
+from typing_extensions import Final, TypeAlias
 
 from ._formatting import TokenizedFormattedText
 from ._globals import (
@@ -41,6 +41,7 @@ from .utils import (
     options_flags_joiner,
 )
 
+_MultiCommand: TypeAlias = Union[Group, CommandCollection]
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
 
@@ -834,7 +835,7 @@ class ClickCompleter(Completer):
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
-    ) -> Group | CommandCollection | None:
+    ) -> _MultiCommand | None:
         """
         Returns the appropriate :class:`~click.Group` object that should be used
         to generate auto-completions for subcommands of a group.
@@ -885,7 +886,7 @@ class ClickCompleter(Completer):
     def _get_visible_subcommands(
         self,
         ctx: Context,
-        group: Group | CommandCollection,
+        group: _MultiCommand,
         incomplete: str,
         show_hidden_commands: bool = False,
     ) -> Generator[tuple[str, Command], None, None]:
