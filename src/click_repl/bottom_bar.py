@@ -141,14 +141,14 @@ class BottomBar:
 
     def get_group_metavar_template(self) -> Marquee:
         """
-        Gets the metavar to describe the CLI Group, indicating
-        whether it is a chained Group or not.
+        Gets the metavar to describe the CLI Group, indicating whether
+        it is a :class:`~click.Group` or a :class:`~click.Command`.
 
         Returns
         -------
-        click_repl.formatting.Marquee
-            Pre-defined set of metavar tokens for both :attr:`.Marquee.prefix` and
-            :attr:`.Marquee.text` attributes.
+        :class:`.Marquee`
+            Pre-defined set of metavar tokens for both :attr:`.Marquee.prefix`
+            and :attr:`.Marquee.text` attributes.
         """
 
         state = self.state
@@ -213,7 +213,8 @@ class BottomBar:
 
     def get_param_usage_state_token(self, param: Parameter) -> str:
         """
-        Determine the usage state of a parameter in the context of a REPL.
+        Returns a token class name that describes the usage state of a
+        parameter in the context of a REPL.
 
         Parameters
         ----------
@@ -223,8 +224,7 @@ class BottomBar:
         Returns
         -------
         str
-            A token class representing the usage state of the parameter. It indicates
-            whether the parameter has already received values via REPL or not.
+            The string describing the given ``param``'s usage state.
         """
         state = self.state
         assert state is not None, "state cannot be None"

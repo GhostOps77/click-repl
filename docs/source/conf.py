@@ -4,7 +4,13 @@
 
 from __future__ import annotations
 
+import typing as t
+
 import click_repl
+
+if t.TYPE_CHECKING:
+    from sphinx.application import Sphinx
+
 
 project = "click-repl"
 author = "Markus Unterwaditzer"
@@ -140,6 +146,27 @@ napoleon_attr_annotations = True
 #     app.add_post_transform(NumberSections)
 #     # app.connect("html-page-context", add_version_to_css)
 #     app.add_lexer("myst", MystLexer)
+
+
+def autoapi_skip_member(app, what, name, obj, skip, options):
+    """Exclude all private attributes, methods, and dunder methods from Sphinx."""
+    import re
+
+    exclude = re.match(r"\._.*__$", name)  # and what != 'module'
+    return skip or exclude
+
+
+def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
+    # print(f'{name = }')
+    import re
+
+    exclude = re.findall(r"\._.*__$", str(obj)) and what != "module"
+    return skip or exclude
+
+
+def setup(app: Sphinx):
+    # app.connect('autoapi-skip-member', autoapi_skip_member)
+    app.connect("autodoc-skip-member", autodoc_skip_member)
 
 
 def linkcode_resolve(domain: str, info: dict[str, str]) -> str:

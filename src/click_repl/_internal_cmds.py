@@ -140,8 +140,6 @@ class InternalCommandSystem:
         self._internal_commands: InternalCommandDict = {}
         """Directory of internal commands."""
 
-        self._register_default_internal_commands()
-
     @property
     def internal_command_prefix(self) -> str | None:
         """
@@ -232,8 +230,8 @@ class InternalCommandSystem:
 
     def dispatch_system_commands(self, command: str) -> None:
         """
-        Execute System commands entered in the REPL. system commands start with the
-        :attr:`.system_command_prefix` string in the REPL.
+        Execute System commands entered in the REPL. system commands
+        start with the :attr:`.system_command_prefix` string in the REPL.
 
         Parameters
         ----------
@@ -272,51 +270,51 @@ class InternalCommandSystem:
         description: str | None = None,
     ) -> Callable[[CallableNone], CallableNone] | CallableNone:
         """
-                A decorator used to register a new internal command from a given function.
+        A decorator used to register a new internal command from a given function.
 
-                internal commands are case-insensitive, and this decorator allows
-                for easy registration of command names and aliases.
-        d
-                Parameters
-                ----------
-                target
-                    The callback function for the internal command.
+        internal commands are case-insensitive, and this decorator allows
+        for easy registration of command names and aliases.
 
-                names
-                    Contains command names and aliases.
+        Parameters
+        ----------
+        target
+            The callback function for the internal command.
 
-                description
-                    Help text for the internal command.
+        names
+            Contains command names and aliases.
 
-                Returns
-                -------
-                Callable[[CallableNone],CallableNone] | CallableNone
-                    The same function object passed into this decorator,
-                    or a function that takes and returns the same function when called.
+        description
+            Help text for the internal command.
 
-                Example
-                -------
-                The following example demonstrate how to register the ``kill``
-                function as an internal command:
+        Returns
+        -------
+        Callable[[CallableNone],CallableNone] | CallableNone
+            The same function object passed into this decorator,
+            or a function that takes and returns the same function when called.
 
-                .. code-block:: python
+        Example
+        -------
+        The following example demonstrate how to register the ``kill``
+        function as an internal command:
 
-                    from click_repl._internal_cmds import InternalCommandSystem
-                    ics_obj = InternalCommandSystem()
+        .. code-block:: python
 
-                    # Register it with some custom aliases
-                    @ics_obj.register_command(
-                        names=['kill', 'pkill],
-                        description='Kills certain process'
-                    )
-                    def kill():
-                        ...
+            from click_repl._internal_cmds import InternalCommandSystem
+            ics_obj = InternalCommandSystem()
 
-                    # Function's docstring is the command's description.
-                    @ics_obj.register_command
-                    def kill():
-                        '''Kills certain process'''
-                        ...
+            # Register it with some custom aliases
+            @ics_obj.register_command(
+                names=['kill', 'pkill],
+                description='Kills certain process'
+            )
+            def kill():
+                ...
+
+            # Function's docstring is the command's description.
+            @ics_obj.register_command
+            def kill():
+                '''Kills certain process'''
+                ...
 
         """
 
@@ -390,14 +388,14 @@ class InternalCommandSystem:
             The name of the desired internal command.
 
         default
-            The sentinel value to be returned if the internal command
-            with the given name is not found.
+            The sentinel value that has to be returned if the
+            internal command with the given name is not found.
 
         Returns
         -------
         CallableNone | Any
             The callback function of the internal command if found. If not
-            found, it returns the value specified in the `default` parameter.
+            found, it returns the value specified in the ``default`` parameter.
         """
 
         target_info = self._internal_commands.get(name, None)
