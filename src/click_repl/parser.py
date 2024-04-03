@@ -9,7 +9,7 @@ import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Generator, Optional, Sequence, Tuple
 
 import click
 from click import Argument as CoreArgument
@@ -154,6 +154,28 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
         raw_incomplete_with_quotes = _tmp
 
     return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
+
+
+def put_nargs_minus_one_at_last_if_exist(
+    command: Command,
+) -> Generator[Parameter, None, None]:
+    nargs_minus_one_param: tuple[click.Argument, int] | None = None
+
+    for idx, param in enumerate(command.params):
+        if isinstance(param, click.Argument) and param.nargs == -1:
+            nargs_minus_one_param = (param, idx)
+
+        elif nargs_minus_one_param is not None:
+            minus_one_param, mnius_one_param_idx = nargs_minus_one_param
+            raise ArgumentPositionError(command, minus_one_param, mnius_one_param_idx)
+
+        else:
+            yield param
+
+    if nargs_minus_one_param:
+        yield nargs_minus_one_param[0]
+
+    return
 
 
 class ReplParsingState:
@@ -310,22 +332,14 @@ class ReplParsingState:
         return None
 
     def parse_param_arg(self, current_command: Command) -> click.Argument | None:
-        nargs_minus_one_param = None
-
-        for idx, param in enumerate(current_command.params):
+        for param in put_nargs_minus_one_at_last_if_exist(current_command):
             if not isinstance(param, click.Argument):
                 continue
-
-            if nargs_minus_one_param is not None:
-                raise ArgumentPositionError(current_command, param, idx)
-
-            if param.nargs == -1:
-                nargs_minus_one_param = param
 
             elif utils.is_param_value_incomplete(self.current_ctx, param):
                 return param
 
-        return nargs_minus_one_param
+        return None
 
 
 @lru_cache(maxsize=3)

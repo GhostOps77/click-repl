@@ -140,6 +140,8 @@ class InternalCommandSystem:
         self._internal_commands: InternalCommandDict = {}
         """Directory of internal commands."""
 
+        self._register_default_internal_commands()
+
     @property
     def internal_command_prefix(self) -> str | None:
         """

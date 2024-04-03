@@ -138,6 +138,9 @@ def is_param_value_incomplete(
     if param.name is None:
         return False
 
+    if param.nargs == -1:
+        return True
+
     value = ctx.params.get(param.name, None)
 
     check_if_tuple_has_none = (

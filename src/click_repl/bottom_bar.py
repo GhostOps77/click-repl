@@ -15,7 +15,7 @@ from typing_extensions import TypedDict
 
 from ._formatting import Marquee, TokenizedFormattedText
 from ._globals import HAS_CLICK_GE_8, ISATTY, RANGE_TYPES
-from .parser import ReplParsingState
+from .parser import ReplParsingState, put_nargs_minus_one_at_last_if_exist
 from .utils import append_classname_to_all_tokens, is_param_value_incomplete
 
 if t.TYPE_CHECKING:
@@ -512,7 +512,10 @@ class BottomBar:
         ]
 
         formatted_params_info = []
-        unique_params = {param.name: param for param in current_command.params}.values()
+        unique_params = {
+            param.name: param
+            for param in put_nargs_minus_one_at_last_if_exist(current_command)
+        }.values()
 
         for param in unique_params:
             if not getattr(param, "hidden", False) or (
