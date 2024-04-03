@@ -1,13 +1,64 @@
 from __future__ import annotations
 
 import os
+from typing import Iterable
 
+import click
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 
-from ._globals import ISATTY
+from ._globals import ISATTY, _CompletionStyleDictKeys
 
 __all__ = ["TokenizedFormattedText", "Marquee"]
+
+
+def append_classname_to_all_tokens(
+    tokens_list: ListOfTokens, classes: Iterable[str] = []
+) -> ListOfTokens:
+
+    if not classes:
+        return tokens_list
+
+    res: ListOfTokens = []
+
+    for token, *_ in tokens_list:
+        res.append((f"{token},{','.join(classes)}", *_))  # type:ignore[arg-type]
+
+    return res
+
+
+def option_flag_tokens_joiner(
+    items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
+) -> ListOfTokens:
+    if not items:
+        return []
+
+    sep_elem = (sep_token, sep)
+    iterator = iter(items)
+    res: ListOfTokens = [(item_token, next(iterator))]
+
+    for item in iterator:
+        res.append(sep_elem)
+        res.append((item_token, item))
+
+    return res
+
+
+def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDictKeys:
+    if isinstance(obj, click.Parameter):
+        if isinstance(obj, click.Argument):
+            return "argument"
+
+        elif isinstance(obj, click.Option):
+            return "option"
+
+        else:
+            return "parameter"
+
+    elif isinstance(obj, click.Group):
+        return "group"
+
+    return "command"
 
 
 class TokenizedFormattedText(FormattedText):

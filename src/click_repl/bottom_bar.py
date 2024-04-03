@@ -13,10 +13,10 @@ from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import TypedDict
 
-from ._formatting import Marquee, TokenizedFormattedText
 from ._globals import HAS_CLICK_GE_8, ISATTY, RANGE_TYPES
 from .parser import ReplParsingState, put_nargs_minus_one_at_last_if_exist
-from .utils import append_classname_to_all_tokens, is_param_value_incomplete
+from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
+from .utils import is_param_value_incomplete
 
 if t.TYPE_CHECKING:
     from .core import ReplContext

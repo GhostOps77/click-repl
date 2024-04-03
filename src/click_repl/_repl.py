@@ -22,8 +22,9 @@ from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
+from .formatting import print_error
 from .parser import split_arg_string
-from .utils import _generate_next_click_ctx, _get_group_ctx, print_error
+from .utils import _generate_next_click_ctx, _get_group_ctx
 from .validator import ClickValidator
 
 __all__ = ["Repl", "repl", "ReplCli"]

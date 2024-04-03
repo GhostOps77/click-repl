@@ -15,7 +15,7 @@ from typing_extensions import TypeAlias
 
 from ._globals import get_current_repl_ctx
 from .exceptions import ExitReplException, PrefixNotFound, SamePrefix, WrongType
-from .utils import print_error
+from .formatting import print_error
 
 CallableNone: TypeAlias = Callable[[], None]
 InternalCommandDict: TypeAlias = Dict[str, Tuple[CallableNone, str]]

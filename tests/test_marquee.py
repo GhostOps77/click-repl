@@ -5,8 +5,8 @@ from collections import namedtuple
 
 import pytest
 
-from click_repl._formatting import Marquee, TokenizedFormattedText
 from click_repl.bottom_bar import BottomBar
+from click_repl.tokenizer import Marquee, TokenizedFormattedText
 
 terminal_size = namedtuple("terminal_size", ["columns", "lines"])
 

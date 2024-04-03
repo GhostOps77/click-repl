@@ -7,14 +7,12 @@ from __future__ import annotations
 import os
 from difflib import get_close_matches
 from functools import lru_cache
-from typing import Any, Iterable
+from typing import Any
 
 import click
 from click import Command, Context, Group, Parameter
-from click.parser import split_opt
-from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 
-from ._globals import RANGE_TYPES, _CompletionStyleDictKeys
+from ._globals import RANGE_TYPES
 from .parser import (
     Incomplete,
     InfoDict,
@@ -23,55 +21,6 @@ from .parser import (
     _resolve_repl_parsing_state,
 )
 from .proxies import _create_proxy_command
-
-
-def append_classname_to_all_tokens(
-    tokens_list: ListOfTokens, classes: Iterable[str] = []
-) -> ListOfTokens:
-
-    if not classes:
-        return tokens_list
-
-    res: ListOfTokens = []
-
-    for token, *_ in tokens_list:
-        res.append((f"{token},{','.join(classes)}", *_))  # type:ignore[arg-type]
-
-    return res
-
-
-def options_flags_joiner(
-    items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
-) -> ListOfTokens:
-    if not items:
-        return []
-
-    sep_elem = (sep_token, sep)
-    iterator = iter(items)
-    res: ListOfTokens = [(item_token, next(iterator))]
-
-    for item in iterator:
-        res.append(sep_elem)
-        res.append((item_token, item))
-
-    return res
-
-
-def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDictKeys:
-    if isinstance(obj, click.Parameter):
-        if isinstance(obj, click.Argument):
-            return "argument"
-
-        elif isinstance(obj, click.Option):
-            return "option"
-
-        else:
-            return "parameter"
-
-    elif isinstance(obj, click.Group):
-        return "group"
-
-    return "command"
 
 
 def _expand_envvars(text: str) -> str:
@@ -104,11 +53,6 @@ def _is_help_option(param: click.Option) -> bool:
         and param.is_eager
         and has_help_msg_as_help_text
     )
-
-
-def print_error(text: str) -> None:
-    """Prints the given text to stderr, in red colour."""
-    click.secho(text, color=True, err=True, fg="red")
 
 
 def is_param_value_incomplete(
@@ -159,32 +103,6 @@ def is_param_value_incomplete(
     # )
 
 
-def get_option_flag_sep(options: list[str]) -> str:
-    any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in options)
-    return ";" if any_prefix_is_slash else "/"
-
-
-def join_options(options: list[str]) -> tuple[list[str], str]:
-    """
-    Same implementation as :func:`~click.formatting.join_options`, but much simpler.
-
-    Given a list of option strings this joins them in the most appropriate
-    way and returns them in the form ``(formatted_string, any_prefix_is_slash)``
-    where the second item in the tuple is a flag that
-    indicates if any of the option prefixes was a slash.
-
-    Parameters
-    ----------
-    options
-        List of option flags that needs to be joined together.
-
-    References
-    ----------
-    .. [:class:`~click.formatting.join_options`]
-    """
-    return sorted(options, key=len), get_option_flag_sep(options)
-
-
 def _get_group_ctx(ctx: Context) -> Context:
     """
     Checks and returns the appropriate :class:`~click.Context` object to
@@ -204,7 +122,7 @@ def _get_group_ctx(ctx: Context) -> Context:
     click.Context
         The :class:`~click.Context` object that should be used to start repl on it.
     """
-    if ctx.parent is not None and not isinstance(ctx.command, click.Group):
+    if ctx.parent is not None and not isinstance(ctx.command, Group):
         ctx = ctx.parent
 
     ctx.protected_args = []
@@ -249,7 +167,7 @@ def get_info_dict(
     | :meth:`click.types.FuncParamType.get_info_dict <click.types.FuncParamType.get_info_dict>`
     """
 
-    if isinstance(obj, click.Context):
+    if isinstance(obj, Context):
         return {
             "command": get_info_dict(obj.command),
             "params": obj.params,
@@ -257,8 +175,8 @@ def get_info_dict(
 
     info_dict: InfoDict = {}
 
-    if isinstance(obj, click.Command):
-        ctx = click.Context(obj)
+    if isinstance(obj, Command):
+        ctx = Context(obj)
 
         info_dict.update(
             name=obj.name,
@@ -266,7 +184,7 @@ def get_info_dict(
             callback=obj.callback,
         )
 
-        if isinstance(obj, (click.Group, click.CommandCollection)):
+        if isinstance(obj, (Group, click.CommandCollection)):
             commands = {}
 
             for name in obj.list_commands(ctx):
@@ -279,7 +197,7 @@ def get_info_dict(
 
             info_dict.update(commands=commands, chain=obj.chain)
 
-    elif isinstance(obj, click.Parameter):
+    elif isinstance(obj, Parameter):
         info_dict.update(
             name=obj.name,
             param_type_name=obj.param_type_name,
@@ -386,14 +304,9 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
     while args:
         command = ctx.command
 
-        if isinstance(command, click.Group):
+        if isinstance(command, Group):
             if not command.chain:
-                ctx, cmd = _generate_next_click_ctx(
-                    command,
-                    ctx,
-                    args,
-                    proxy=proxy,
-                )
+                ctx, cmd = _generate_next_click_ctx(command, ctx, args, proxy=proxy)
 
                 if cmd is None:
                     return ctx

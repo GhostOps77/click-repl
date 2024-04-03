@@ -16,7 +16,6 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final, TypeAlias
 
-from ._formatting import TokenizedFormattedText
 from ._globals import (
     _IS_WINDOWS,
     AUTO_COMPLETION_FUNC_ATTR,
@@ -30,16 +29,10 @@ from ._globals import (
 )
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
+from .formatting import get_option_flag_sep, join_options
 from .parser import Incomplete, ReplParsingState
-from .utils import (
-    _is_help_option,
-    _resolve_state,
-    get_option_flag_sep,
-    get_token_type,
-    is_param_value_incomplete,
-    join_options,
-    options_flags_joiner,
-)
+from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner
+from .utils import _is_help_option, _resolve_state, is_param_value_incomplete
 
 _MultiCommand: TypeAlias = Union[Group, CommandCollection]
 __all__ = ["ClickCompleter", "ReplCompletion"]
@@ -167,7 +160,7 @@ class ClickCompleter(Completer):
             ]
 
             if aliases_start_with_incomplete:
-                display = options_flags_joiner(
+                display = option_flag_tokens_joiner(
                     aliases,
                     "parameter.option.name",
                     "parameter.option.name.separator",
@@ -566,7 +559,7 @@ class ClickCompleter(Completer):
 
             item_token = f"parameter.type.bool.to{bool_val}"
 
-            display_lst = options_flags_joiner(
+            display_lst = option_flag_tokens_joiner(
                 flags_list,
                 item_token,
                 f"parameter.option.name.separator,{item_token}",
@@ -667,7 +660,9 @@ class ClickCompleter(Completer):
                     if not flag_token.startswith("parameter.option.name"):
                         flag_token = f"parameter.option.name.separator,{flag_token}"
 
-                    return options_flags_joiner(option_flags, flag_token, flag_token, sep)
+                    return option_flag_tokens_joiner(
+                        option_flags, flag_token, flag_token, sep
+                    )
 
                 flags_that_start_with_incomplete = [
                     min(flags_that_start_with_incomplete, key=len)
