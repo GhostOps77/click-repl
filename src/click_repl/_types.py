@@ -29,7 +29,7 @@ InfoTable: TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
 
 _PromptSession: TypeAlias = PromptSession[Dict[str, Any]]
 
-_KEY: TypeAlias = Tuple[
+_REPL_PARSING_STATE_KEY: TypeAlias = Tuple[
     Optional[InfoDict], Optional[InfoDict], Optional[InfoDict], Tuple[InfoDict, ...]
 ]
 

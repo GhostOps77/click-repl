@@ -9,15 +9,14 @@ import importlib
 import importlib.metadata
 import os
 import sys
-import typing as t
 from threading import local
-from typing import NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 import click
 
 from ._types import CompletionDisplayStyleDict, CompletionStyleDict
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .core import ReplContext
 
 
@@ -62,37 +61,47 @@ CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
 """click-repl Environmental flag. Enable it only for debugging."""
 
 DEFAULT_COMPLETION_STYLE_CONFIG = {
-    # Command
-    "autocompletion-menu.command.name": "",
-    "autocompletion-menu.group.name": "",
-    # Parameter types.
-    "autocompletion-menu.parameter.argument.name": "",
-    "autocompletion-menu.parameter.option.name": "",
-    "autocompletion-menu.parameter.option.name.separator": "",
-    # For Path types.
-    "autocompletion-menu.parameter.type.path.directory": "",
-    "autocompletion-menu.parameter.type.path.file": "",
-    "autocompletion-menu.parameter.type.path": "",
     # For Boolean type.
     "autocompletion-menu.parameter.type.bool.totrue": "fg:#44e80e",
     "autocompletion-menu.parameter.type.bool.tofalse": "fg:red",
-    "autocompletion-menu.parameter.type.bool": "",
-    # For Range types.
-    "autocompletion-menu.parameter.type.range.integer": "",
-    "autocompletion-menu.parameter.type.range.float": "",
-    # Internal Command
-    "autocompletion-menu.internalcommand.name": "",
-    # Default values text
-    "autocompletion-menu.parameter.default.text": "",
-    "autocompletion-menu.parameter.default.value": "",
-    # Flag values text
-    "autocompletion-menu.parameter.flag-value.text": "",
-    "autocompletion-menu.parameter.flag-value.value": "",
-    # Misc.
-    "autocompletion-menu.symbols.bracket": "",
-    "autocompletion-menu.space": "",
 }
 """Default token style configuration for :class:`~click_repl.completer.ClickCompleter`"""
+
+
+DEFAULT_COMPLETION_STYLE_CONFIG.update(
+    dict.fromkeys(
+        [
+            # Command
+            "autocompletion-menu.command.name",
+            "autocompletion-menu.group.name",
+            # Parameter types.
+            "autocompletion-menu.parameter.argument.name",
+            "autocompletion-menu.parameter.option.name",
+            "autocompletion-menu.parameter.option.name.separator",
+            # For Path types.
+            "autocompletion-menu.parameter.type.path.directory",
+            "autocompletion-menu.parameter.type.path.file",
+            "autocompletion-menu.parameter.type.path",
+            # For Boolean type.
+            "autocompletion-menu.parameter.type.bool",
+            # For Range types.
+            "autocompletion-menu.parameter.type.range.integer",
+            "autocompletion-menu.parameter.type.range.float",
+            # Internal Command
+            "autocompletion-menu.internalcommand.name",
+            # Default values text
+            "autocompletion-menu.parameter.default.text",
+            "autocompletion-menu.parameter.default.value",
+            # Flag values text
+            "autocompletion-menu.parameter.flag-value.text",
+            "autocompletion-menu.parameter.flag-value.value",
+            # Misc.
+            "autocompletion-menu.symbols.bracket",
+            "autocompletion-menu.space",
+        ],
+        "",
+    )
+)
 
 DEFAULT_COMPLETION_STYLE_DICT: CompletionStyleDict = {
     "internal-command": CompletionDisplayStyleDict(),
@@ -107,57 +116,70 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     # Group
     "bottom-bar.group.name": "bold",
     "bottom-bar.group.type": "bold",
-    "bottom-bar.group.metavar": "",
     # Command
     "bottom-bar.command.name": "bold",
     "bottom-bar.command.type": "bold",
-    "bottom-bar.command.metavar": "",
-    "bottom-bar.parameter.type.name": "",
-    # Primitive datatypes.
-    "bottom-bar.parameter.type.string": "",
-    "bottom-bar.parameter.type.integer": "",
-    "bottom-bar.parameter.type.float": "",
-    # Range types.
-    "bottom-bar.parameter.type.range.integer": "",
-    "bottom-bar.parameter.type.range.float": "",
-    "bottom-bar.parameter.type.range.descriptor": "",
-    # Path types.
-    "bottom-bar.parameter.type.path": "",
-    "bottom-bar.parameter.type.file": "",
-    # For Boolean type options.
-    "bottom-bar.parameter.type.bool": "",
-    # Other arbitrary types.
-    "bottom-bar.parameter.type.composite": "",
-    "bottom-bar.parameter.type.choice": "",
-    "bottom-bar.parameter.type.datetime": "",
-    "bottom-bar.parameter.type.uuid": "",
-    "bottom-bar.parameter.type.unprocessed": "",
     # Misc. for Parameter.
-    "bottom-bar.parameter.nargs": "",
     "bottom-bar.parameter.nargs.counter": "fg:green",
-    "bottom-bar.parameter.argument.name": "",
-    "bottom-bar.parameter.option.name": "",
     # Base Paramter
-    "bottom-bar.paramter.name": "",
-    "bottom-bar.parameter.type": "",
-    "bottom-bar.parameter.unused": "",
     "bottom-bar.parameter.inuse": "bold underline",
     "bottom-bar.parameter.used": "strike",
     # ParamType tokens especially for Tuple type.
-    "bottom-bar.parameter.type.unused": "",
     "bottom-bar.parameter.type.inuse": "bold underline",
     "bottom-bar.parameter.type.used": "strike",
-    # Misc.
-    "bottom-bar.space": "",
-    "bottom-bar.symbol": "",
-    "bottom-bar.ellipsis": "",
-    "bottom-bar.symbol.bracket": "",
     # For displaying Exceptions
     "bottom-bar.error": "fg:white bg:red",
     "bottom-bar.error.exception-class-name": "bold",
     "bottom-bar.error.message": "bold",
 }
 """Default token style configuration for :class:`~click_repl.bottom_bar.BottomBar`"""
+
+DEFAULT_BOTTOMBAR_STYLE_CONFIG.update(
+    dict.fromkeys(
+        [
+            # Group
+            "bottom-bar.group.metavar",
+            # Command
+            "bottom-bar.command.metavar",
+            "bottom-bar.parameter.type.name",
+            # Primitive datatypes.
+            "bottom-bar.parameter.type.string",
+            "bottom-bar.parameter.type.integer",
+            "bottom-bar.parameter.type.float",
+            # Range types.
+            "bottom-bar.parameter.type.range.integer",
+            "bottom-bar.parameter.type.range.float",
+            "bottom-bar.parameter.type.range.descriptor",
+            # Path types.
+            "bottom-bar.parameter.type.path",
+            "bottom-bar.parameter.type.file",
+            # For Boolean type options.
+            "bottom-bar.parameter.type.bool",
+            # Other arbitrary types.
+            "bottom-bar.parameter.type.composite",
+            "bottom-bar.parameter.type.choice",
+            "bottom-bar.parameter.type.datetime",
+            "bottom-bar.parameter.type.uuid",
+            "bottom-bar.parameter.type.unprocessed",
+            # Misc.
+            "bottom-bar.space",
+            "bottom-bar.symbol",
+            "bottom-bar.ellipsis",
+            "bottom-bar.symbol.bracket",
+            # Misc. for Parameter.
+            "bottom-bar.parameter.nargs",
+            "bottom-bar.parameter.argument.name",
+            "bottom-bar.parameter.option.name",
+            # Base Paramter
+            "bottom-bar.paramter.name",
+            "bottom-bar.parameter.type",
+            "bottom-bar.parameter.unused",
+            # ParamType tokens especially for Tuple type.
+            "bottom-bar.parameter.type.unused",
+        ],
+        "",
+    )
+)
 
 DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
     "bottom-toolbar": "fg:lightblue bg:default noreverse"
@@ -183,7 +205,7 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     Parameters
     ----------
     silent
-        If set to ``True``, the return value is None if no context
+        If set to ``True``, the return value is ``None`` if no context
         is available. The default behavior is to raise a :exc:`~RuntimeError`.
 
     Returns

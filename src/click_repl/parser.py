@@ -9,7 +9,7 @@ import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 import click
 from click import Argument as CoreArgument
@@ -19,10 +19,10 @@ from click.parser import Argument as _Argument
 from click.parser import Option, OptionParser, ParsingState, normalize_opt
 
 from . import utils
-from ._globals import HAS_CLICK_GE_8
+from ._globals import HAS_CLICK_GE_8, get_current_repl_ctx
 
-if t.TYPE_CHECKING:
-    from ._types import _KEY, InfoDict
+if TYPE_CHECKING:
+    from ._types import _REPL_PARSING_STATE_KEY, InfoDict
 
 
 _flag_needs_value = object()
@@ -31,7 +31,7 @@ _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 # Just gonna assume that people use only '-' and '--' as prefix for option flags
 # _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(r"^(--?[a-z][\w-]*)=(.*)$", re.I)
 _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
-    r"^(([^a-z\d\s])\2?[a-z]+(?:-[a-z\d]+)?)=(.*)$", re.I
+    r"^(([^a-z\d\s])\2?[a-z]+(?:[\w-]+)?)=(.*)$", re.I
 )
 
 
@@ -115,8 +115,14 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
 
     if equal_sign_match:
-        opt, _, incomplete = equal_sign_match.groups()
-        args.append(opt)
+        ctx_opt_prefixes = (
+            get_current_repl_ctx().current_state.current_ctx._opt_prefixes  # type:ignore
+        )
+        opt, opt_prefix, _incomplete = equal_sign_match.groups()
+
+        if opt_prefix not in ctx_opt_prefixes:
+            args.append(opt)
+            incomplete = _incomplete
 
     _args = tuple(args)
 
@@ -197,7 +203,7 @@ class ReplParsingState:
     def __repr__(self) -> str:
         return f'"{str(self)}"'
 
-    def __key(self) -> _KEY:
+    def __key(self) -> _REPL_PARSING_STATE_KEY:
         keys: list[InfoDict | None] = []
 
         for i in (
@@ -345,7 +351,8 @@ def _resolve_state(
         object, and the :class:`click_repl.parser.Incomplete` object that holds the
         incomplete data that requires suggestions.
     """
-    args, incomplete = _resolve_incomplete(document_text)
+    args = tuple(split_arg_string(document_text))
+    _, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
 
