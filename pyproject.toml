@@ -1,12 +1,60 @@
-# [project]
-# name = "click-repl"
-# description = "dynamic"
-# readme = "dynamic"
-# version = "1.3.0"
+[project]
+name = "click-repl"
+description = "REPL plugin for Click"
+readme = "README.rst"
+license = { text = "MIT" }
+authors = [
+    { name = "Markus Unterwaditzer", email = "markus@unterwaditzer.net" },
+    { name = "Asif Saif Uddin", email = "auvipy@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: Implementation",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Terminals",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+keywords = ["click", "click-repl", "repl", "click_repl"]
+requires-python = ">=3.7"
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/click-contrib/click-repl/issues"
+"Source Code" = "https://github.com/click-contrib/click-repl/"
+"Documentation" = "https://github.com/click-contrib/click-repl#readme"
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic.version]
+attr = "click_repl.__version__"
+
+[tool.setuptools.package-data]
+"click_repl" = ["py.typed"]
+
+[tool.setuptools.dynamic.dependencies]
+file = ["requirements/requirements.txt"]
+
+[tool.setuptools.dynamic.optional-dependencies]
+dev = { file = ["requirements/requirements-dev.txt"] }
 
 [tool.pytest.ini_options]
 addopts = [
