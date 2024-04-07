@@ -19,7 +19,7 @@ from click.parser import Argument as _Argument
 from click.parser import Option, OptionParser, ParsingState, normalize_opt
 
 from . import utils
-from ._globals import HAS_CLICK_GE_8, get_current_repl_ctx
+from ._globals import HAS_CLICK_GE_8
 
 if TYPE_CHECKING:
     from ._types import _REPL_PARSING_STATE_KEY, InfoDict
@@ -115,14 +115,15 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
 
     if equal_sign_match:
-        ctx_opt_prefixes = (
-            get_current_repl_ctx().current_state.current_ctx._opt_prefixes  # type:ignore
-        )
-        opt, opt_prefix, _incomplete = equal_sign_match.groups()
+        # ctx_opt_prefixes = (
+        #     get_current_repl_ctx().current_state.current_ctx._opt_prefixes  # type:ignore
+        # )
+        opt, _, incomplete = equal_sign_match.groups()
+        args.append(opt)
 
-        if opt_prefix not in ctx_opt_prefixes:
-            args.append(opt)
-            incomplete = _incomplete
+        # if opt_prefix not in ctx_opt_prefixes:
+        #     args.append(opt)
+        #     incomplete = _incomplete
 
     _args = tuple(args)
 
@@ -132,16 +133,13 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     raw_incomplete_with_quotes = ""
     secondary_check = False
 
-    space_splitted_args = document_text.split(" ")
+    args_splitted_by_space = document_text.split(" ")
 
     if equal_sign_match:
-        opt_len = len(opt)
-        space_splitted_args[-1:] = [
-            space_splitted_args[-1][:opt_len],
-            space_splitted_args[-1][opt_len + 1 :],
-        ]
+        args_splitted_by_space.pop()
+        args_splitted_by_space.extend([args[-1], incomplete])
 
-    for token in reversed(space_splitted_args):
+    for token in reversed(args_splitted_by_space):
         _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
 
         if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
@@ -351,8 +349,8 @@ def _resolve_state(
         object, and the :class:`click_repl.parser.Incomplete` object that holds the
         incomplete data that requires suggestions.
     """
-    args = tuple(split_arg_string(document_text))
-    _, incomplete = _resolve_incomplete(document_text)
+    # args = tuple(split_arg_string(document_text))
+    args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
 

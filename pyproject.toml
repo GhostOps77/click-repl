@@ -54,7 +54,7 @@ attr = "click_repl.__version__"
 file = ["requirements/requirements.txt"]
 
 [tool.setuptools.dynamic.optional-dependencies]
-dev = { file = ["requirements/requirements-dev.txt"] }
+testing = { file = ["requirements/requirements-dev.txt"] }
 
 [tool.pytest.ini_options]
 addopts = [
