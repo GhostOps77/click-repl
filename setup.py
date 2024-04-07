@@ -2,13 +2,32 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from setuptools import setup
 
-with open("requirements/requirements.txt", encoding="utf-8") as f:
-    requirements = f.read().splitlines()
+lib_folder = Path(__file__).parent
 
-with open("requirements/requirements_dev.txt", encoding="utf-8") as f:
-    extras_require = {"testing": f.read().splitlines()}
+requirements = []
+
+with open(lib_folder / "requirements/requirements.txt", encoding="utf-8") as f:
+    for line in f.read().splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+
+        requirements.append(line.strip())
+
+
+testing_requirements = []
+
+with open(lib_folder / "requirements/requirements_dev.txt", encoding="utf-8") as f:
+    for line in f.read().splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+
+        testing_requirements.append(line.strip())
+    extras_require = {"testing": testing_requirements}
+
 
 if __name__ == "__main__":
     setup(
