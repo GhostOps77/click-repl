@@ -15,7 +15,7 @@ from typing_extensions import Final
 
 from ._globals import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
-from .utils import _resolve_state
+from .parser import _resolve_state
 
 __all__ = ["ClickValidator"]
 

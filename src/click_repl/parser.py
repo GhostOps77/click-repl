@@ -9,7 +9,7 @@ import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import Any, Dict, Generator, Optional, Sequence, Tuple
+from typing import Any, Sequence
 
 import click
 from click import Argument as CoreArgument
@@ -17,20 +17,13 @@ from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
 from click.parser import Argument as _Argument
 from click.parser import Option, OptionParser, ParsingState, normalize_opt
-from typing_extensions import TypeAlias
 
 from . import utils
 from ._globals import HAS_CLICK_GE_8
-from .exceptions import ArgumentPositionError
 
-InfoDict: TypeAlias = Dict[str, Any]
+if t.TYPE_CHECKING:
+    from ._types import _KEY, InfoDict
 
-_KEY: TypeAlias = Tuple[
-    Optional[InfoDict],
-    Optional[InfoDict],
-    Optional[InfoDict],
-    Tuple[InfoDict, ...],
-]
 
 _flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
@@ -154,28 +147,6 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
         raw_incomplete_with_quotes = _tmp
 
     return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
-
-
-def put_nargs_minus_one_at_last_if_exist(
-    command: Command,
-) -> Generator[Parameter, None, None]:
-    nargs_minus_one_param: tuple[click.Argument, int] | None = None
-
-    for idx, param in enumerate(command.params):
-        if isinstance(param, click.Argument) and param.nargs == -1:
-            nargs_minus_one_param = (param, idx)
-
-        elif nargs_minus_one_param is not None:
-            minus_one_param, mnius_one_param_idx = nargs_minus_one_param
-            raise ArgumentPositionError(command, minus_one_param, mnius_one_param_idx)
-
-        else:
-            yield param
-
-    if nargs_minus_one_param:
-        yield nargs_minus_one_param[0]
-
-    return
 
 
 class ReplParsingState:
@@ -332,7 +303,7 @@ class ReplParsingState:
         return None
 
     def parse_param_arg(self, current_command: Command) -> click.Argument | None:
-        for param in put_nargs_minus_one_at_last_if_exist(current_command):
+        for param in utils.iterate_command_params(current_command):
             if not isinstance(param, click.Argument):
                 continue
 
@@ -349,6 +320,36 @@ def _resolve_repl_parsing_state(
     args: tuple[str, ...],
 ) -> ReplParsingState:
     return ReplParsingState(cli_ctx, current_ctx, args)
+
+
+@lru_cache(maxsize=3)
+def _resolve_state(
+    ctx: Context, document_text: str
+) -> tuple[Context, ReplParsingState, Incomplete]:
+    """
+    Resolves the parsing state of the arguments in the REPL prompt.
+
+    Parameters
+    ----------
+    ctx
+        The current :class:`click.Context` object of the parent group.
+
+    document_text
+        Text that's currently entered in the prompt.
+
+    Returns
+    -------
+    tuple[Context,ReplParsingState,Incomplete]
+        Returns the appropriate `click.Context` constructed from parsing
+        the given input from prompt, current :class:`click_repl.parser.ReplParsingState`
+        object, and the :class:`click_repl.parser.Incomplete` object that holds the
+        incomplete data that requires suggestions.
+    """
+    args, incomplete = _resolve_incomplete(document_text)
+    parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
+    state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
+
+    return parsed_ctx, state, incomplete
 
 
 class ArgumentParamParser(_Argument):

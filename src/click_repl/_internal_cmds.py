@@ -7,29 +7,14 @@ from __future__ import annotations
 import subprocess
 from collections import defaultdict
 from collections.abc import Generator, Iterator, Sequence
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, ItemsView, List, NoReturn, Tuple
+from typing import Any, Callable, NoReturn
 
 import click
-from typing_extensions import TypeAlias
 
 from ._globals import get_current_repl_ctx
+from ._types import CallableNone, InfoTable, InternalCommandDict, PrefixTable
 from .exceptions import ExitReplException, PrefixNotFound, SamePrefix, WrongType
 from .formatting import print_error
-
-CallableNone: TypeAlias = Callable[[], None]
-InternalCommandDict: TypeAlias = Dict[str, Tuple[CallableNone, str]]
-InfoTable: TypeAlias = Dict[Tuple[CallableNone, str], List[str]]
-
-
-@dataclass
-class PrefixTable:
-    internal: str | None
-    system: str | None
-
-    def items(self) -> ItemsView[str, str | None]:
-        return self.__dict__.items()
-
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
 

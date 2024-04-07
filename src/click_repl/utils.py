@@ -7,20 +7,17 @@ from __future__ import annotations
 import os
 from difflib import get_close_matches
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any, Generator
 
 import click
 from click import Command, Context, Group, Parameter
 
 from ._globals import RANGE_TYPES
-from .parser import (
-    Incomplete,
-    InfoDict,
-    ReplParsingState,
-    _resolve_incomplete,
-    _resolve_repl_parsing_state,
-)
+from .exceptions import ArgumentPositionError
 from .proxies import _create_proxy_command
+
+if TYPE_CHECKING:
+    from ._types import InfoDict
 
 
 def _expand_envvars(text: str) -> str:
@@ -103,6 +100,49 @@ def is_param_value_incomplete(
     # )
 
 
+def iterate_command_params(
+    command: Command,
+) -> Generator[Parameter, None, None]:
+    """
+    This function is to iterate over parameters of a command in an order such that
+    the parameters with `nargs=-1` will be yielded at the very end.
+
+    Parameters
+    ----------
+    command
+        The :class:`~click.Command` object to iterate over it's parameters.
+
+    Yields
+    ------
+    click.Parameter
+        The parameters of the given command.
+
+    Raises
+    ------
+    ArgumentPositionError
+        If the :class:`~click.Argument` object with `nargs=-1` is not
+        defined at the very end among other parameters.
+    """
+
+    nargs_minus_one_param: tuple[click.Argument, int] | None = None
+
+    for idx, param in enumerate(command.params):
+        if isinstance(param, click.Argument) and param.nargs == -1:
+            nargs_minus_one_param = (param, idx)
+
+        elif nargs_minus_one_param is not None:
+            minus_one_param, minus_one_param_idx = nargs_minus_one_param
+            raise ArgumentPositionError(command, minus_one_param, minus_one_param_idx)
+
+        else:
+            yield param
+
+    if nargs_minus_one_param:
+        yield nargs_minus_one_param[0]
+
+    return
+
+
 def _get_group_ctx(ctx: Context) -> Context:
     """
     Checks and returns the appropriate :class:`~click.Context` object to
@@ -151,20 +191,20 @@ def get_info_dict(
 
     References
     ----------
-    | .. [1] :meth:`click.Context.get_info_dict <click.Context.get_info_dict>`
-    | :meth:`click.Command.get_info_dict <click.Command.get_info_dict>`
-    | :meth:`click.Group.get_info_dict <click.Group.get_info_dict>`
-    | :meth:`click.Parameter.get_info_dict <click.Parameter.get_info_dict>`
-    | :meth:`click.Option.get_info_dict <click.Option.get_info_dict>`
-    | :meth:`click.ParamType.get_info_dict <click.ParamType.get_info_dict>`
-    | :meth:`click.Choice.get_info_dict <click.Choice.get_info_dict>`
-    | :meth:`click.DateTime.get_info_dict <click.DateTime.get_info_dict>`
-    | :meth:`click.File.get_info_dict <click.File.get_info_dict>`
-    | :meth:`click.Path.get_info_dict <click.Path.get_info_dict>`
-    | :meth:`click.Tuple.get_info_dict <click.Tuple.get_info_dict>`
-    | :meth:`click.IntRange.get_info_dict <click.IntRange.get_info_dict>`
-    | :meth:`click.FloatRange.get_info_dict <click.FloatRange.get_info_dict>`
-    | :meth:`click.types.FuncParamType.get_info_dict <click.types.FuncParamType.get_info_dict>`
+    | :meth:`~click.Context.get_info_dict`
+    | :meth:`~click.Command.get_info_dict`
+    | :meth:`~click.Group.get_info_dict`
+    | :meth:`~click.Parameter.get_info_dict`
+    | :meth:`~click.Option.get_info_dict`
+    | :meth:`~click.ParamType.get_info_dict`
+    | :meth:`~click.Choice.get_info_dict`
+    | :meth:`~click.DateTime.get_info_dict`
+    | :meth:`~click.File.get_info_dict`
+    | :meth:`~click.Path.get_info_dict`
+    | :meth:`~click.Tuple.get_info_dict`
+    | :meth:`~click.IntRange.get_info_dict`
+    | :meth:`~click.FloatRange.get_info_dict`
+    | :meth:`~click.types.FuncParamType.get_info_dict`
     """
 
     if isinstance(obj, Context):
@@ -333,33 +373,3 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
             break
 
     return ctx
-
-
-@lru_cache(maxsize=3)
-def _resolve_state(
-    ctx: Context, document_text: str
-) -> tuple[Context, ReplParsingState, Incomplete]:
-    """
-    Resolves the parsing state of the arguments in the REPL prompt.
-
-    Parameters
-    ----------
-    ctx
-        The current :class:`click.Context` object of the parent group.
-
-    document_text
-        Text that's currently entered in the prompt.
-
-    Returns
-    -------
-    tuple[Context,ReplParsingState,Incomplete]
-        Returns the appropriate `click.Context` constructed from parsing
-        the given input from prompt, current :class:`click_repl.parser.ReplParsingState`
-        object, and the :class:`click_repl.parser.Incomplete` object that holds the
-        incomplete data that requires suggestions.
-    """
-    args, incomplete = _resolve_incomplete(document_text)
-    parsed_ctx = _resolve_context(ctx, args, proxy=True)
-    state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
-
-    return parsed_ctx, state, incomplete

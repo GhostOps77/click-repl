@@ -16,7 +16,7 @@ def get_option_flag_sep(options: list[str]) -> str:
 
 def join_options(options: list[str]) -> tuple[list[str], str]:
     """
-    Same implementation as :func:`~click.formatting.join_options`, but much simpler.
+    Same implementation as :meth:`~click.formatting.join_options`, but much simpler.
 
     Given a list of option strings this joins them in the most appropriate
     way and returns them in the form ``(formatted_string, any_prefix_is_slash)``
@@ -30,6 +30,6 @@ def join_options(options: list[str]) -> tuple[list[str], str]:
 
     References
     ----------
-    .. [:class:`~click.formatting.join_options`]
+    :meth:`~click.formatting.join_options`
     """
     return sorted(options, key=len), get_option_flag_sep(options)

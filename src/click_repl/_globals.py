@@ -5,35 +5,61 @@ all the files in this module.
 
 from __future__ import annotations
 
+import importlib
+import importlib.metadata
 import os
 import sys
 import typing as t
-from dataclasses import dataclass
 from threading import local
-from typing import Dict, NoReturn
+from typing import NoReturn
 
 import click
-from typing_extensions import Literal, TypeAlias
+
+from ._types import CompletionDisplayStyleDict, CompletionStyleDict
 
 if t.TYPE_CHECKING:
     from .core import ReplContext
 
 
-_CompletionStyleDictKeys = Literal[
-    "internal-command", "command", "group", "argument", "option", "parameter"
-]
+CLICK_VERSION: tuple[int, int, int] = tuple(  # type:ignore[assignment]
+    int(i) for i in importlib.metadata.version("click").split(".")
+)
 
+HAS_CLICK_GE_8 = CLICK_VERSION[0] >= 8
 
-@dataclass
-class CompletionDisplayStyleDict:
-    completion_style: str = ""
-    selected_style: str = ""
+RANGE_TYPES = (click.IntRange, click.FloatRange)
+"""Range types that are used as a :class:`~click.Parameter`'s type in :mod:`~click`.
 
+   :class:`~click.types._NumberRangeBase` class is defined in click v8.
+   Therefore, this tuple is used to check for the
+   range type :class:`~click.types.ParamType` objects.
+"""
 
-CompletionStyleDict: TypeAlias = Dict[
-    _CompletionStyleDictKeys, CompletionDisplayStyleDict
-]
+if HAS_CLICK_GE_8:
+    RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
 
+PARAM_TYPES_WITH_METAVAR = (click.Choice, click.DateTime)
+"""The only :class:`~click.types.ParamType` classes that have their
+   :meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
+
+PATH_TYPES = (click.Path, click.File)
+""":class:`~click.types.ParamType` classes that expect path as values."""
+
+ISATTY = sys.stdin.isatty()
+"""If it is ``False``, then we're not gonna run any code
+   to generate auto-completions. Most of the code will be inactive"""
+
+_IS_WINDOWS = os.name == "nt"
+
+AUTO_COMPLETION_FUNC_ATTR = (
+    "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
+)
+"""The attribute name of the custom autocompletion function for a
+   :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8``.
+"""
+
+CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
+"""click-repl Environmental flag. Enable it only for debugging."""
 
 DEFAULT_COMPLETION_STYLE_CONFIG = {
     # Command
@@ -141,41 +167,6 @@ DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_BOTTOMBAR_STYLE_CONFIG)
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_COMPLETION_STYLE_CONFIG)
 
-HAS_CLICK_GE_8 = click.__version__[0] >= "8"
-
-RANGE_TYPES = (click.IntRange, click.FloatRange)
-"""Range types that are used as a :class:`~click.Parameter`'s type in :mod:`~click`.
-
-   :class:`~click.types._NumberRangeBase` class is defined in click v8.
-   Therefore, this tuple is used to check for the
-   range type :class:`~click.types.ParamType` objects.
-"""
-
-if HAS_CLICK_GE_8:
-    RANGE_TYPES += (click.types._NumberRangeBase,)  # type:ignore[assignment]
-
-PARAM_TYPES_WITH_METAVAR = (click.Choice, click.DateTime)
-"""The only :class:`~click.types.ParamType` classes that have their
-   :meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
-
-PATH_TYPES = (click.Path, click.File)
-""":class:`~click.types.ParamType` classes that expect path as values."""
-
-ISATTY = sys.stdin.isatty()
-"""If it is ``False``, then we're not gonna run any code
-   to generate auto-completions. Most of the code will be inactive"""
-
-_IS_WINDOWS = os.name == "nt"
-
-AUTO_COMPLETION_FUNC_ATTR = (
-    "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
-)
-"""The attribute name of the custom autocompletion function for a
-   :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8``.
-"""
-
-CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
-"""click-repl Environmental flag. Enable it only for debugging."""
 
 # To store the ReplContext objects generated throughout the Runtime.
 _locals = local()

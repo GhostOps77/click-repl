@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import click
 from prompt_toolkit.formatted_text import FormattedText
-from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 
-from ._globals import ISATTY, _CompletionStyleDictKeys
+from ._globals import ISATTY
+
+if TYPE_CHECKING:
+    from ._types import ListOfTokens, _CompletionStyleDictKeys
+
 
 __all__ = ["TokenizedFormattedText", "Marquee"]
 

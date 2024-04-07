@@ -4,30 +4,19 @@ Core functionality of the module.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Generator
+from typing import TYPE_CHECKING, Any, Generator
 
 from click import Context
 from prompt_toolkit import PromptSession
-from typing_extensions import Final, TypeAlias, TypedDict
+from typing_extensions import Final
 
 from ._globals import ISATTY, _pop_context, _push_context
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import ReplParsingState
 
-_PromptSession: TypeAlias = PromptSession[Dict[str, Any]]
-
-
-class InfoDict(TypedDict):
-    group_ctx: Context
-    prompt_kwargs: dict[str, Any]
-    session: _PromptSession | None
-    internal_command_system: InternalCommandSystem
-    parent: ReplContext | None
-    _history: list[str]
-    current_state: ReplParsingState | None
-    bottombar: BottomBar | None
-
+if TYPE_CHECKING:
+    from ._types import ReplContextInfoDict, _PromptSession
 
 __all__ = ["ReplContext"]
 
@@ -134,17 +123,17 @@ class ReplContext:
         if ISATTY and self.session is not None:
             self.session.message = value
 
-    def to_info_dict(self) -> InfoDict:
+    def to_info_dict(self) -> ReplContextInfoDict:
         """
         Provides the most minimal info about the current REPL.
 
         Returns
         -------
-        InfoDict
+        ReplContextInfoDict
             A dictionary that has the instance variables and its values.
         """
 
-        res: InfoDict = {
+        res: ReplContextInfoDict = {
             "group_ctx": self.group_ctx,
             "prompt_kwargs": self.prompt_kwargs,
             "internal_command_system": self.internal_command_system,

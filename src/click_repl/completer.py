@@ -6,35 +6,42 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import click
-from click import Command, CommandCollection, Context, Group, Parameter
+from click import Command, Context, Group, Parameter
 from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Final, TypeAlias
+from typing_extensions import Final
 
 from ._globals import (
     _IS_WINDOWS,
     AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
+    CLICK_VERSION,
     DEFAULT_COMPLETION_STYLE_DICT,
     HAS_CLICK_GE_8,
     ISATTY,
     PATH_TYPES,
-    CompletionStyleDict,
     get_current_repl_ctx,
 )
 from ._internal_cmds import InternalCommandSystem
+from ._types import CompletionStyleDict
 from .bottom_bar import BottomBar
 from .formatting import get_option_flag_sep, join_options
-from .parser import Incomplete, ReplParsingState
+from .parser import Incomplete, ReplParsingState, _resolve_state
 from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner
-from .utils import _is_help_option, _resolve_state, is_param_value_incomplete
+from .utils import _is_help_option, is_param_value_incomplete
 
-_MultiCommand: TypeAlias = Union[Group, CommandCollection]
+if CLICK_VERSION < (8, 2):
+    from click.core import MultiCommand as _MultiCommand
+
+else:
+    from click.core import _MultiCommand  # type:ignore
+
+
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
 

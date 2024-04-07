@@ -3,7 +3,7 @@ from __future__ import annotations
 import click
 import pytest
 
-from click_repl.utils import _resolve_state
+from click_repl.parser import _resolve_state
 
 
 @click.group()

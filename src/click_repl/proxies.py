@@ -14,7 +14,7 @@ from typing_extensions import Self
 from ._globals import HAS_CLICK_GE_8
 from .parser import ReplOptionParser
 
-_T = t.TypeVar("_T")
+T = t.TypeVar("T")
 
 
 @t.overload
@@ -22,7 +22,8 @@ def _create_proxy_command(obj: Command) -> ProxyCommand: ...
 
 
 @t.overload
-def _create_proxy_command(obj: Group) -> ProxyGroup: ...  # type:ignore[misc]
+def _create_proxy_command(obj: Group) -> ProxyGroup:  # type:ignore[misc]
+    ...
 
 
 def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
@@ -92,7 +93,7 @@ class Proxy:
         Object to which attribute access is delegated.
     """
 
-    def __init__(self, obj: _T) -> None:
+    def __init__(self, obj: T) -> None:
         """
         Initializes a `Proxy` object.
         """

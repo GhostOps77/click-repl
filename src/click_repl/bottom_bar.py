@@ -9,26 +9,18 @@ import typing as t
 import click
 from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
-from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
-from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import TypedDict
 
 from ._globals import HAS_CLICK_GE_8, ISATTY, RANGE_TYPES
-from .parser import ReplParsingState, put_nargs_minus_one_at_last_if_exist
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
-from .utils import is_param_value_incomplete
+from .utils import is_param_value_incomplete, iterate_command_params
 
 if t.TYPE_CHECKING:
+    from ._types import ListOfTokens, ParamInfo, Token
     from .core import ReplContext
+    from .parser import ReplParsingState
 
 
 __all__ = ["BottomBar"]
-
-
-class ParamInfo(TypedDict):
-    name: Token
-    type_info: ListOfTokens
-    nargs_info: ListOfTokens
 
 
 def _describe_click_range_paramtype(param_type: IntRange | FloatRange) -> str:
@@ -513,8 +505,7 @@ class BottomBar:
 
         formatted_params_info = []
         unique_params = {
-            param.name: param
-            for param in put_nargs_minus_one_at_last_if_exist(current_command)
+            param.name: param for param in iterate_command_params(current_command)
         }.values()
 
         for param in unique_params:
