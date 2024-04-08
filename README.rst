@@ -173,30 +173,38 @@ Any arguments that can be passed to the `python-prompt-toolkit <https://github.c
    :target: https://github.com/GhostOps77/click-repl/actions/workflows/workflow.yml
    :alt: Tests
    :height: 20
+
 .. |License| image:: https://img.shields.io/pypi/l/click-repl?label=License
    :target: https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/LICENSE
    :alt: License
    :height: 20
+
 .. |Code style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/psf/black
    :alt: Code style: black
-   |Python - Version| :height: 20
-.. image:: https://img.shields.io/badge/python-3%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue
+   :height: 20
+
+.. |Python - Version| image:: https://img.shields.io/badge/python-3%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue
    :alt: Python - Version
    :height: 20
+
 .. |PyPI - Version| image:: https://img.shields.io/badge/pypi-v0.2.0-blue
    :target: https://pypi.org/project/click-repl/
    :alt: PyPI - Version
-   |wheels| :height: 20
-.. image:: https://img.shields.io/piwheels/v/click-repl?label=wheel
+   :height: 20
+
+.. |wheels| image:: https://img.shields.io/piwheels/v/click-repl?label=wheel
    :alt: wheels
-   |PyPI - Status| :height: 20
-.. image:: https://img.shields.io/pypi/status/click
+   :height: 20
+
+.. |PyPI - Status| image:: https://img.shields.io/pypi/status/click
    :alt: PyPI - Status
-   |PyPI - Downloads| :height: 20
-.. image:: https://img.shields.io/pypi/dm/click-repl
+   :height: 20
+
+.. |PyPI - Downloads| image:: https://img.shields.io/pypi/dm/click-repl
    :alt: PyPI - Downloads
    :height: 20
+
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
    :target: https://github.com/pre-commit/pre-commit
    :alt: pre-commit
