@@ -5,8 +5,6 @@ all the files in this module.
 
 from __future__ import annotations
 
-import importlib
-import importlib.metadata
 import os
 import sys
 from threading import local
@@ -16,12 +14,17 @@ import click
 
 from ._types import CompletionDisplayStyleDict, CompletionStyleDict
 
+if sys.version_info < (3, 8):
+    from importlib_metadata import version
+else:
+    from importlib.metadata import version
+
 if TYPE_CHECKING:
     from .core import ReplContext
 
 
 CLICK_VERSION: tuple[int, int, int] = tuple(  # type:ignore[assignment]
-    int(i) for i in importlib.metadata.version("click").split(".")
+    int(i) for i in version("click").split(".")
 )
 
 HAS_CLICK_GE_8 = CLICK_VERSION[0] >= 8

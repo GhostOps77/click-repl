@@ -2,9 +2,11 @@
 name = "click-repl"
 description = "REPL plugin for Click"
 readme = "README.rst"
-license = { text = "MIT" }
+license = { text = "MIT License" }
 authors = [
-    { name = "Markus Unterwaditzer", email = "markus@unterwaditzer.net" },
+    { name = "Markus Unterwaditzer", email = "markus@unterwaditzer.net" }
+]
+maintainers = [
     { name = "Asif Saif Uddin", email = "auvipy@gmail.com" },
 ]
 classifiers = [
