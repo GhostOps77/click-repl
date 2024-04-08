@@ -16,8 +16,7 @@ RANGE_TYPES: TypeAlias = Union[click.IntRange, click.FloatRange]
 """
 
 RANGE_TYPES_TUPLE = (click.IntRange, click.FloatRange)
-"""Same thing, but this is used for :py:func:`isinstance` checks.
-"""
+"""Same thing, but this is used for :py:func:`isinstance` checks."""
 
 PARAM_TYPES_WITH_METAVAR: TypeAlias = Union[click.Choice, click.DateTime]
 """The only :class:`~click.types.ParamType` classes that have their
@@ -25,6 +24,9 @@ PARAM_TYPES_WITH_METAVAR: TypeAlias = Union[click.Choice, click.DateTime]
 
 PATH_TYPES: TypeAlias = Union[click.Path, click.File]
 """:class:`~click.types.ParamType` classes that expect path as values."""
+
+PATH_TYPES_TUPLE = (click.Path, click.File)
+"""Same thing, but this is used for :py:func:`isinstance` checks."""
 
 AUTO_COMPLETION_FUNC_ATTR = (
     "_custom_shell_complete" if HAS_CLICK_GE_8 else "autocompletion"
@@ -59,6 +61,7 @@ __all__ = [
     "RANGE_TYPES_TUPLE",
     "PARAM_TYPES_WITH_METAVAR",
     "PATH_TYPES",
+    "PATH_TYPES_TUPLE",
     "AUTO_COMPLETION_FUNC_ATTR",
     "MultiCommand",
     "OptionParser",

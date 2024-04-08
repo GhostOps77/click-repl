@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import click
 from click import Command, Context, Group, Parameter
@@ -16,7 +16,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final
 
-from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES, MultiCommand
+from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
 from ._globals import (
     CLICK_REPL_DEV_ENV,
     DEFAULT_COMPLETION_STYLE_DICT,
@@ -475,8 +475,7 @@ class ClickCompleter(Completer):
         elif isinstance(param_type, click.types.BoolParamType):
             yield from self.get_completion_for_boolean_type(param, incomplete)
 
-        elif isinstance(param_type, PATH_TYPES):  # type:ignore
-            param_type = cast(PATH_TYPES, param_type)
+        elif isinstance(param_type, PATH_TYPES_TUPLE):  # type:ignore
             # Both click.Path and click.File types are expected
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)
