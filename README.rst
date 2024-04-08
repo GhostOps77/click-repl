@@ -13,6 +13,7 @@ All customizations can be conveniently handled using pure Python code.
 
 
 .. _installation:
+
 Installation
 ============
 
@@ -23,6 +24,7 @@ Installation is done via pip:
     pip install click-repl
 
 .. _usage:
+
 Usage
 =====
 
@@ -125,6 +127,7 @@ In the shell:
 
 
 .. _features not shown:
+
 Features not shown:
 -------------------
 
@@ -137,6 +140,7 @@ Features not shown:
 
 
 .. _advanced usage:
+
 Advanced Usage
 ==============
 
