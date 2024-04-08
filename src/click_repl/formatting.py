@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import click
-from click.parser import split_opt
+
+from ._compat import split_opt
 
 
 def print_error(text: str) -> None:

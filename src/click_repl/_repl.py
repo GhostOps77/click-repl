@@ -10,12 +10,13 @@ from contextlib import contextmanager
 from typing import Any, Callable, Generator, Sequence, cast
 
 import click
-from click import Context, Group
+from click import Context
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style, merge_styles
 from prompt_toolkit.validation import Validator
 
+from ._compat import MultiCommand
 from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
 from ._internal_cmds import InternalCommandSystem
 from .bottom_bar import BottomBar
@@ -100,7 +101,7 @@ class Repl:
         self.group_ctx: Context = _get_group_ctx(ctx)
         """Parent group for the repl to retrieve subcommands from."""
 
-        self.group: Group = cast(Group, self.group_ctx.command)
+        self.group: MultiCommand = cast(MultiCommand, self.group_ctx.command)
         """Group used in the `group_ctx`"""
 
         self.internal_commands_system: InternalCommandSystem = InternalCommandSystem(

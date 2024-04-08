@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import click
 from click import Command, Context, Group, Parameter
@@ -16,15 +16,13 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final
 
+from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES, MultiCommand
 from ._globals import (
-    _IS_WINDOWS,
-    AUTO_COMPLETION_FUNC_ATTR,
     CLICK_REPL_DEV_ENV,
-    CLICK_VERSION,
     DEFAULT_COMPLETION_STYLE_DICT,
     HAS_CLICK_GE_8,
+    IS_WINDOWS,
     ISATTY,
-    PATH_TYPES,
     get_current_repl_ctx,
 )
 from ._internal_cmds import InternalCommandSystem
@@ -34,13 +32,6 @@ from .formatting import get_option_flag_sep, join_options
 from .parser import Incomplete, ReplParsingState, _resolve_state
 from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner
 from .utils import _is_help_option, is_param_value_incomplete
-
-if CLICK_VERSION < (8, 2):
-    from click.core import MultiCommand as _MultiCommand
-
-else:
-    from click.core import _MultiCommand  # type:ignore
-
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
@@ -358,7 +349,7 @@ class ClickCompleter(Completer):
 
             path_str = str(path)
 
-            if _IS_WINDOWS:
+            if IS_WINDOWS:
                 path_str = path_str.replace("\\\\", "\\")
 
             # if path.is_dir():
@@ -484,7 +475,8 @@ class ClickCompleter(Completer):
         elif isinstance(param_type, click.types.BoolParamType):
             yield from self.get_completion_for_boolean_type(param, incomplete)
 
-        elif isinstance(param_type, PATH_TYPES):
+        elif isinstance(param_type, PATH_TYPES):  # type:ignore
+            param_type = cast(PATH_TYPES, param_type)
             # Both click.Path and click.File types are expected
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)
@@ -837,7 +829,7 @@ class ClickCompleter(Completer):
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
-    ) -> _MultiCommand | None:
+    ) -> MultiCommand | None:
         """
         Returns the appropriate :class:`~click.Group` object that should be used
         to generate auto-completions for subcommands of a group.
@@ -888,7 +880,7 @@ class ClickCompleter(Completer):
     def _get_visible_subcommands(
         self,
         ctx: Context,
-        group: _MultiCommand,
+        group: MultiCommand,
         incomplete: str,
         show_hidden_commands: bool = False,
     ) -> Generator[tuple[str, Command], None, None]:

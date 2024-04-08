@@ -10,7 +10,8 @@ import click
 from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
 
-from ._globals import HAS_CLICK_GE_8, ISATTY, RANGE_TYPES
+from ._compat import RANGE_TYPES
+from ._globals import HAS_CLICK_GE_8, ISATTY
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
 from .utils import is_param_value_incomplete, iterate_command_params
 
@@ -346,7 +347,7 @@ class BottomBar:
         else:
             usage_state = "parameter.type.inuse"
 
-        if isinstance(param_type, RANGE_TYPES):
+        if isinstance(param_type, RANGE_TYPES):  # type:ignore
             range_num_type = (
                 "integer" if isinstance(param_type, click.IntRange) else "float"
             )
@@ -356,7 +357,7 @@ class BottomBar:
                 ("space", " "),
                 (
                     "parameter.type.range.descriptor",
-                    _describe_click_range_paramtype(param_type),
+                    _describe_click_range_paramtype(param_type),  # type:ignore
                 ),
             ]
 

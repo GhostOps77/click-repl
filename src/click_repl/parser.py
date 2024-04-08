@@ -15,10 +15,9 @@ import click
 from click import Argument as CoreArgument
 from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
-from click.parser import Argument as _Argument
-from click.parser import Option, OptionParser, ParsingState, normalize_opt
 
 from . import utils
+from ._compat import OptionParser, ParsingState, _Argument, _Option, normalize_opt
 from ._globals import HAS_CLICK_GE_8
 
 if TYPE_CHECKING:
@@ -470,7 +469,7 @@ class ReplOptionParser(OptionParser):
             state.largs.append(f"{prefix}{''.join(unknown_options)}")
 
     def _get_value_from_state(
-        self, option_name: str, option: Option, state: ParsingState
+        self, option_name: str, option: _Option, state: ParsingState
     ) -> Any:
         nargs = option.nargs
         rargs_len = len(state.rargs)
