@@ -7,12 +7,12 @@ from __future__ import annotations
 import os
 from difflib import get_close_matches
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Generator, cast
+from typing import TYPE_CHECKING, Any, Generator
 
 import click
 from click import Command, Context, Group, Parameter
 
-from ._compat import RANGE_TYPES
+from ._compat import RANGE_TYPES_TUPLE
 from .exceptions import ArgumentPositionError
 from .proxies import _create_proxy_command
 
@@ -275,9 +275,7 @@ def get_info_dict(
         elif isinstance(obj, click.DateTime):
             info_dict["formats"] = obj.formats
 
-        elif isinstance(obj, RANGE_TYPES):  # type:ignore
-            obj = cast(RANGE_TYPES, obj)
-
+        elif isinstance(obj, RANGE_TYPES_TUPLE):
             info_dict.update(
                 min=obj.min,
                 max=obj.max,

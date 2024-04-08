@@ -15,6 +15,10 @@ RANGE_TYPES: TypeAlias = Union[click.IntRange, click.FloatRange]
    range type :class:`~click.types.ParamType` objects.
 """
 
+RANGE_TYPES_TUPLE = (click.IntRange, click.FloatRange)
+"""Same thing, but this is used for :py:func:`isinstance` checks.
+"""
+
 PARAM_TYPES_WITH_METAVAR: TypeAlias = Union[click.Choice, click.DateTime]
 """The only :class:`~click.types.ParamType` classes that have their
    :meth:`~click.types.ParamType.get_metavar` method's functionality defined."""
@@ -31,26 +35,28 @@ AUTO_COMPLETION_FUNC_ATTR = (
 
 
 if HAS_CLICK_GE_8_2:
-    from click.core import _MultiCommand as MultiCommand  # type:ignore[attr-defined]
-    from click.parser import _Argument
-    from click.parser import _normalize_opt as normalize_opt
-    from click.parser import _Option
-    from click.parser import _OptionParser as OptionParser  # type:ignore[attr-defined]
-    from click.parser import _ParsingState as ParsingState
-    from click.parser import _split_opt as split_opt
+    from click.core import _MultiCommand as MultiCommand  # type:ignore
+    from click.parser import _Argument  # type:ignore
+    from click.parser import _Option  # type:ignore
+    from click.parser import _normalize_opt as normalize_opt  # type:ignore
+    from click.parser import _OptionParser as OptionParser  # type:ignore
+    from click.parser import _ParsingState as ParsingState  # type:ignore
+    from click.parser import _split_opt as split_opt  # type:ignore
 
 else:
-    from click.core import MultiCommand  # type:ignore[attr-defined]
-    from click.parser import Argument as _Argument  # type:ignore[attr-defined]
-    from click.parser import Option as _Option
+    from click.core import MultiCommand  # type:ignore
+    from click.parser import Argument as _Argument  # type:ignore
+    from click.parser import Option as _Option  # type:ignore
     from click.parser import OptionParser, ParsingState, normalize_opt, split_opt
 
     if HAS_CLICK_GE_8:
         RANGE_TYPES = click.types._NumberRangeBase  # type:ignore
+        RANGE_TYPES_TUPLE = (click.types._NumberRangeBase,)  # type:ignore
 
 
 __all__ = [
     "RANGE_TYPES",
+    "RANGE_TYPES_TUPLE",
     "PARAM_TYPES_WITH_METAVAR",
     "PATH_TYPES",
     "AUTO_COMPLETION_FUNC_ATTR",
