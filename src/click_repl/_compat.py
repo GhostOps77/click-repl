@@ -1,3 +1,8 @@
+"""
+Provdies objects that's declared specifically
+for every click version with breaking changes.
+"""
+
 from __future__ import annotations
 
 from typing import Union

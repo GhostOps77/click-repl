@@ -1,3 +1,7 @@
+"""
+Type aliases that are required throughout the module.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,7 +14,7 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
-    from ._internal_cmds import InternalCommandSystem
+    from ._internal_command import InternalCommandSystem
     from .bottom_bar import BottomBar
     from .core import ReplContext
     from .parser import ReplParsingState

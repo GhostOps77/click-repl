@@ -13,10 +13,19 @@ import click
 
 from ._globals import get_current_repl_ctx
 from ._types import CallableNone, InfoTable, InternalCommandDict, PrefixTable
-from .exceptions import ExitReplException, PrefixNotFound, SamePrefix, WrongType
+from .exceptions import (
+    ExitReplException,
+    InternalCommandNotFound,
+    PrefixNotFound,
+    SamePrefix,
+    WrongType,
+)
 from .formatting import print_error
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
+
+
+_MISSING = object()
 
 
 def _exit_internal() -> NoReturn:
@@ -98,7 +107,6 @@ class InternalCommandSystem:
         self,
         internal_command_prefix: str | None = ":",
         system_command_prefix: str | None = "!",
-        shell: bool = True,
     ) -> None:
         """
         Initializes a `InternalCommandSystem` object.
@@ -117,10 +125,6 @@ class InternalCommandSystem:
             system_command_prefix,
         )
         """Table to keep track of the prefixes."""
-
-        self.shell: bool = shell
-        """Determines whether the system commands should be executed
-        through the shell or not."""
 
         self._internal_commands: InternalCommandDict = {}
         """Directory of internal commands."""
@@ -226,7 +230,7 @@ class InternalCommandSystem:
             Contains the system command that needs to be executed.
         """
         try:
-            subprocess.run(command, shell=self.shell)
+            subprocess.run(command, shell=True)
 
         except Exception as e:
             print_error(f"{type(e).__name__}: {e}")
@@ -278,31 +282,6 @@ class InternalCommandSystem:
         Callable[[CallableNone],CallableNone] | CallableNone
             The same function object passed into this decorator,
             or a function that takes and returns the same function when called.
-
-        Example
-        -------
-        The following example demonstrate how to register the ``kill``
-        function as an internal command:
-
-        .. code-block:: python
-
-            from click_repl._internal_cmds import InternalCommandSystem
-            ics_obj = InternalCommandSystem()
-
-            # Register it with some custom aliases
-            @ics_obj.register_command(
-                names=['kill', 'pkill],
-                description='Kills certain process'
-            )
-            def kill():
-                ...
-
-            # Function's docstring is the command's description.
-            @ics_obj.register_command
-            def kill():
-                '''Kills certain process'''
-                ...
-
         """
 
         def decorator(func: CallableNone) -> CallableNone:
@@ -311,24 +290,32 @@ class InternalCommandSystem:
             if target is None:
                 target = func
 
-            if not callable(target):
+            elif not callable(target):
                 raise WrongType(target, "target", "function that takes no arguments")
-
-            if names is None:
-                names = [target.__name__]
 
             if description is None:
                 description = target.__doc__ or ""
 
-            if isinstance(names, str):
+            if names is None:
+                names = [target.__name__]
+
+            elif isinstance(names, str):
                 names = [names]
 
             elif not isinstance(names, (Sequence, Generator, Iterator)):
                 raise WrongType(names, "names", "string, or a Sequence of strings")
 
-            for name in names:
-                self._internal_commands[name.lower()] = (target, description)
+            new_commands_dict: InternalCommandDict = {}
 
+            for name in dict.fromkeys(names):
+                if name in self._internal_commands:
+                    raise ValueError(
+                        f"internal command name/alias already exists: '{name}'"
+                    )
+
+                new_commands_dict[name.lower()] = (target, description)
+
+            self._internal_commands.update(new_commands_dict)
             return func
 
         if target is None:
@@ -363,7 +350,7 @@ class InternalCommandSystem:
         """
         return list(self._group_commands_by_callback_and_desc().values())
 
-    def get_command(self, name: str, default: Any = None) -> CallableNone | Any:
+    def get_command(self, name: str, default: Any = _MISSING) -> CallableNone | Any:
         """
         Retrieves the callback function of the internal command,
         if available. Otherwise, returns the provided sentinel value
@@ -390,7 +377,40 @@ class InternalCommandSystem:
         if target_info:
             return target_info[0]
 
+        if default == _MISSING:
+            raise InternalCommandNotFound(name)
+
         return default
+
+    def remove_command(self, name: str, remove_all_aliases: bool = True) -> None:
+        """
+        Removes the given name of an internal command, if exists.
+
+        Parameters
+        ----------
+        name
+            Possible name of an internal command.
+
+        Raises
+        ------
+        InternalCommandNotFound
+            if there's no such internal command, as mentioned.
+        """
+        name = name.lower()
+        info_table = self._group_commands_by_callback_and_desc()
+
+        if not remove_all_aliases and name in self._internal_commands:
+            self._internal_commands.pop(name)
+            return
+
+        else:
+            for _, mnemonics in info_table.items():
+                if name in mnemonics:
+                    for mnemonic in mnemonics:
+                        self._internal_commands.pop(mnemonic)
+                    return
+
+        raise InternalCommandNotFound(name)
 
     def get_prefix(self, command: str) -> tuple[str, str | None]:
         """

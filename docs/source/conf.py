@@ -148,12 +148,12 @@ napoleon_attr_annotations = True
 #     app.add_lexer("myst", MystLexer)
 
 
-def autoapi_skip_member(app, what, name, obj, skip, options):
-    """Exclude all private attributes, methods, and dunder methods from Sphinx."""
-    import re
+# def autoapi_skip_member(app, what, name, obj, skip, options):
+#     """Exclude all private attributes, methods, and dunder methods from Sphinx."""
+#     import re
 
-    exclude = re.match(r"\._.*__$", name)  # and what != 'module'
-    return skip or exclude
+#     exclude = re.match(r"\._.[^.]*__$", name)  # and what != 'module'
+#     return skip or exclude
 
 
 def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):

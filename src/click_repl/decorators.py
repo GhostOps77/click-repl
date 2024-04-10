@@ -54,7 +54,7 @@ def register_repl(
     group: Group | None = None,
     *,
     name: str = "repl",
-    remove_cmd_before_repl: bool = False,
+    remove_command_before_repl: bool = False,
 ) -> Callable[[Group], Group] | Group:
     """
     A decorator that registers :func:`~click_repl._repl.repl()` as sub-command
@@ -68,7 +68,7 @@ def register_repl(
     name
         The name of the repl command in the given Group.
 
-    remove_cmd_before_repl
+    remove_command_before_repl
         Flag that determines whether to remove the repl command from the group,
         before it's execution or not.
 
@@ -101,7 +101,7 @@ def register_repl(
 
         @wraps(repl)
         def _repl(ctx: click.Context, *args: Any, **kwargs: Any) -> None:
-            if remove_cmd_before_repl:
+            if remove_command_before_repl:
                 _group.commands.pop(name)
 
             repl(ctx, *args, **kwargs)

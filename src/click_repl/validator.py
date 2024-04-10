@@ -14,7 +14,7 @@ from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
 from ._globals import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
-from ._internal_cmds import InternalCommandSystem
+from ._internal_command import InternalCommandSystem
 from .parser import _resolve_state
 
 __all__ = ["ClickValidator"]

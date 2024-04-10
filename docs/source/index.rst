@@ -1,19 +1,32 @@
-.. click-repl documentation master file, created by
-   sphinx-quickstart on Wed Mar 27 18:59:19 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to click-repl's Documentation
 =====================================
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+   :hidden:
+   :maxdepth: 1
+   :caption: Project Links
+
+   PyPI Releases <https://pypi.org/project/click-repl/>
+   Issue Tracker <https://github.com/click-contrib/click-repl/issues>
+   Source Code <https://github.com/click-contrib/click-repl>
+
+   :caption: Contents
+
+
+.. toctree::
+   :hidden:
+   :caption: Documentation
+
+   documentation/index
+
+
+Intoduction
+===========
 
 .. include:: ../../README.rst
-    :start-line: 30
+    :start-line: 5
 
-.. include:: ../../CHANGELOG.rst
+.. include:: changelog.rst
 
 
 Indices and tables

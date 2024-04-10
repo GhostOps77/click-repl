@@ -25,7 +25,7 @@ from ._globals import (
     ISATTY,
     get_current_repl_ctx,
 )
-from ._internal_cmds import InternalCommandSystem
+from ._internal_command import InternalCommandSystem
 from ._types import CompletionStyleDict
 from .bottom_bar import BottomBar
 from .formatting import get_option_flag_sep, join_options
@@ -120,60 +120,6 @@ class ClickCompleter(Completer):
 
         self.parent_token_class_name: str = "autocompletion-menu"
         """Parent class name for tokens that are related to :class:`~ClickCompleter`."""
-
-    def get_completions_for_internal_commands(
-        self, prefix: str, incomplete: str
-    ) -> Generator[Completion, None, None]:
-        """
-        Generates auto-completions based on the given prefix present
-        in the current incomplete prompt.
-
-        Parameters
-        ----------
-        prefix
-            The prefix string thats present in the start of the prompt.
-
-        incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
-
-        Yields
-        ------
-        prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt.
-        """
-
-        incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
-        info_table = self.internal_commands_system._group_commands_by_callback_and_desc()
-
-        internal_cmd_style = self.style["internal-command"]
-
-        for (_, desc), aliases in info_table.items():
-            aliases_start_with_incomplete = [
-                alias
-                for alias in aliases
-                if alias.startswith(incomplete) and alias != incomplete
-            ]
-
-            if aliases_start_with_incomplete:
-                display = option_flag_tokens_joiner(
-                    aliases,
-                    "parameter.option.name",
-                    "parameter.option.name.separator",
-                    "/",
-                )
-
-                yield ReplCompletion(
-                    aliases_start_with_incomplete[0],
-                    incomplete,
-                    display=TokenizedFormattedText(display, self.parent_token_class_name),
-                    display_meta=desc,
-                    quote=False,
-                    style=internal_cmd_style.completion_style,
-                    selected_style=internal_cmd_style.selected_style,
-                )
 
     def get_completion_from_autocompletion_functions(
         self,
@@ -969,23 +915,77 @@ class ClickCompleter(Completer):
                 selected_style=selected_style,
             )
 
+    def get_completions_for_internal_commands(
+        self, prefix: str, incomplete: str
+    ) -> Generator[Completion, None, None]:
+        """
+        Generates auto-completions based on the given prefix present
+        in the current incomplete prompt.
+
+        Parameters
+        ----------
+        prefix
+            The prefix string thats present in the start of the prompt.
+
+        incomplete
+            An object that holds the unfinished string in the REPL prompt,
+            and its parsed state, that requires further input or completion.
+
+        Yields
+        ------
+        prompt_toolkit.completion.Completion
+            The :class:`prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion
+            of the incomplete prompt.
+        """
+
+        incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
+        info_table = self.internal_commands_system._group_commands_by_callback_and_desc()
+
+        internal_cmd_style = self.style["internal-command"]
+
+        for (_, desc), aliases in info_table.items():
+            aliases_start_with_incomplete = [
+                alias
+                for alias in aliases
+                if alias.startswith(incomplete) and alias != incomplete
+            ]
+
+            if aliases_start_with_incomplete:
+                display = option_flag_tokens_joiner(
+                    aliases,
+                    "parameter.option.name",
+                    "parameter.option.name.separator",
+                    "/",
+                )
+
+                yield ReplCompletion(
+                    aliases_start_with_incomplete[0],
+                    incomplete,
+                    display=TokenizedFormattedText(display, self.parent_token_class_name),
+                    display_meta=desc,
+                    quote=False,
+                    style=internal_cmd_style.completion_style,
+                    selected_style=internal_cmd_style.selected_style,
+                )
+
     def handle_internal_commands_request(
         self, document_text: str
     ) -> Generator[Completion, None, bool]:
         flag, ics_prefix = self.internal_commands_system.get_prefix(document_text)
 
-        internal_cmds_requested = flag == "internal"
+        internal_commands_requested = flag == "internal"
 
         if ics_prefix is not None:
             if ISATTY and self.bottom_bar is not None:
                 self.bottom_bar.reset_state()
 
-            if internal_cmds_requested:
+            if internal_commands_requested:
                 yield from self.get_completions_for_internal_commands(
                     ics_prefix, document_text
                 )
 
-        return internal_cmds_requested
+        return internal_commands_requested
 
     def get_completions(
         self, document: Document, complete_event: CompleteEvent | None = None
@@ -1011,11 +1011,11 @@ class ClickCompleter(Completer):
             objects for command line autocompletion.
         """
 
-        internal_cmds_requested = yield from self.handle_internal_commands_request(
+        internal_commands_requested = yield from self.handle_internal_commands_request(
             document.text_before_cursor
         )
 
-        if internal_cmds_requested:
+        if internal_commands_requested:
             return  # type:ignore[unreachable]
 
         try:

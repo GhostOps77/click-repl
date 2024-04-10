@@ -42,8 +42,8 @@ def cli(ctx, arg, opt):
 
 
 @cli.command()
-@click.argument("cmd_arg", type=click.Choice(["foo", "foo2"]))
-def cmd(cmd_arg):
+@click.argument("command_and_arg", type=click.Choice(["foo", "foo2"]))
+def cmd(command_arg):
     pass
 
 
@@ -62,14 +62,14 @@ def test_subcommand_invocation_for_group_with_opts(test_input, expected):
 
 
 @pytest.mark.parametrize(
-    "remove_cmd_before_repl, check",
+    "remove_command_before_repl, check",
     [
         (False, lambda x: x is not None),
         (True, lambda x: x is None),
     ],
 )
-def test_register_repl_as_decorator(remove_cmd_before_repl, check):
-    @click_repl.register_repl(remove_cmd_before_repl=remove_cmd_before_repl)
+def test_register_repl_as_decorator(remove_command_before_repl, check):
+    @click_repl.register_repl(remove_command_before_repl=remove_command_before_repl)
     @click.group()
     def cli2():
         pass

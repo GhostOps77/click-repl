@@ -3,7 +3,7 @@ from __future__ import annotations
 import click
 import pytest
 
-from click_repl._internal_cmds import InternalCommandSystem
+from click_repl._internal_command import InternalCommandSystem
 from click_repl.core import ReplContext
 from click_repl.exceptions import ExitReplException, PrefixNotFound
 
@@ -13,7 +13,7 @@ def dummy_cmd():
     pass
 
 
-internal_command_system = InternalCommandSystem(":", "!")
+internal_command_system = InternalCommandSystem()
 repl_ctx = ReplContext(click.Context(dummy_cmd), internal_command_system)
 
 
@@ -47,10 +47,10 @@ def test_internal_exit_commands(test_input):
         internal_command_system.execute(test_input)
 
 
-no_internal_cmds_obj = InternalCommandSystem(None, None)
+no_internal_commands_obj = InternalCommandSystem(None, None)
 
 
 @pytest.mark.parametrize("test_input", [":exit", ":quit", ":q"])
 def test_no_internal_commands(capfd, test_input):
     with pytest.raises(PrefixNotFound):
-        no_internal_cmds_obj.execute(test_input)
+        no_internal_commands_obj.execute(test_input)

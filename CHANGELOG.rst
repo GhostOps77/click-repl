@@ -7,7 +7,7 @@ v0.3.0
 | **Release-date**: 15 Jun, 2023
 | **Release-by**: Asif Saif Uddin
 
-- Drop Python 2 support, remove ``six``.
+- Drop Python 2 support, remove ``six``. (#78)
 - Uses ``PromptSession()`` class from prompt_toolkit instead of ``prompt()`` function (#63).
 - Added filter for hidden commands and options (#86).
 - Added click's autocompletion support (#88).

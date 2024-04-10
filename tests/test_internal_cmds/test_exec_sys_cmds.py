@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from click_repl._internal_cmds import InternalCommandSystem
+from click_repl._internal_command import InternalCommandSystem
 from click_repl.exceptions import PrefixNotFound
 
-sys_cmds_only_obj = InternalCommandSystem(None)
+sys_commands_only_obj = InternalCommandSystem(None)
 
 
 @pytest.mark.parametrize(
@@ -16,13 +16,13 @@ sys_cmds_only_obj = InternalCommandSystem(None)
     ],
 )
 def test_system_commands(capfd, test_input, expected):
-    sys_cmds_only_obj.execute(test_input)
+    sys_commands_only_obj.execute(test_input)
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert captured_stdout == expected
 
 
-no_sys_cmds_obj = InternalCommandSystem(None, None)
+no_sys_commands_obj = InternalCommandSystem(None, None)
 
 
 @pytest.mark.parametrize(
@@ -31,4 +31,4 @@ no_sys_cmds_obj = InternalCommandSystem(None, None)
 )
 def test_no_system_commands(test_input):
     with pytest.raises(PrefixNotFound):
-        no_sys_cmds_obj.execute(test_input)
+        no_sys_commands_obj.execute(test_input)

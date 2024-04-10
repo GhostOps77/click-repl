@@ -4,7 +4,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl._internal_cmds import InternalCommandSystem
+from click_repl._internal_command import InternalCommandSystem
 from click_repl.completer import ClickCompleter
 
 

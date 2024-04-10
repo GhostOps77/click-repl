@@ -11,7 +11,7 @@ from prompt_toolkit import PromptSession
 from typing_extensions import Final
 
 from ._globals import ISATTY, _pop_context, _push_context
-from ._internal_cmds import InternalCommandSystem
+from ._internal_command import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .parser import ReplParsingState
 
@@ -40,7 +40,7 @@ class ReplContext:
         The :class:`~click.Context` object that belong to the CLI/parent Group.
 
     internal_command_system
-        The :class:`~click_repl._internal_cmds.InternalCommandSystem` object that
+        The :class:`~click_repl._internal_commands.InternalCommandSystem` object that
         holds information about the internal commands and their prefixes.
 
     bottom_bar

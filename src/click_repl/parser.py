@@ -5,11 +5,10 @@ Parsing functionalities for the module.
 from __future__ import annotations
 
 import re
-import typing as t
 from functools import lru_cache
 from gettext import gettext as _
 from shlex import shlex
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import click
 from click import Argument as CoreArgument
@@ -32,6 +31,38 @@ _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
     r"^(([^a-z\d\s])\2?[a-z]+(?:[\w-]+)?)=(.*)$", re.I
 )
+
+
+class Incomplete:
+    __slots__ = ("raw_str", "parsed_str")
+
+    def __init__(self, raw_str: str, parsed_str: str) -> None:
+        self.raw_str = raw_str.strip()
+        self.parsed_str = parsed_str
+
+    def __str__(self) -> str:
+        return self.parsed_str
+
+    def __repr__(self) -> str:
+        return repr(self.parsed_str)
+
+    def __bool__(self) -> bool:
+        return bool(self.raw_str)
+
+    def __len__(self) -> int:
+        return len(self.parsed_str)
+
+    def expand_envvars(self) -> str:
+        self.parsed_str = utils._expand_envvars(self.parsed_str).strip()
+        return self.parsed_str
+
+    def reverse_prefix_envvars(self, value: str) -> str:
+        expanded_incomplete = self.expand_envvars()
+
+        if value.startswith(expanded_incomplete):
+            value = self.parsed_str + value[len(expanded_incomplete) :]
+
+        return value
 
 
 def split_arg_string(string: str, posix: bool = True) -> list[str]:
@@ -67,38 +98,6 @@ def split_arg_string(string: str, posix: bool = True) -> list[str]:
         out.append(lex.token)
 
     return out
-
-
-class Incomplete:
-    __slots__ = ("raw_str", "parsed_str")
-
-    def __init__(self, raw_str: str, parsed_str: str) -> None:
-        self.raw_str = raw_str.strip()
-        self.parsed_str = parsed_str
-
-    def __str__(self) -> str:
-        return self.parsed_str
-
-    def __repr__(self) -> str:
-        return repr(self.parsed_str)
-
-    def __bool__(self) -> bool:
-        return bool(self.raw_str)
-
-    def __len__(self) -> int:
-        return len(self.parsed_str)
-
-    def expand_envvars(self) -> str:
-        self.parsed_str = utils._expand_envvars(self.parsed_str).strip()
-        return self.parsed_str
-
-    def reverse_prefix_envvars(self, value: str) -> str:
-        expanded_incomplete = self.expand_envvars()
-
-        if value.startswith(expanded_incomplete):
-            value = self.parsed_str + value[len(expanded_incomplete) :]
-
-        return value
 
 
 @lru_cache(maxsize=3)
@@ -172,7 +171,7 @@ class ReplParsingState:
         args: tuple[str, ...],
     ) -> None:
         self.cli_ctx = cli_ctx
-        self.cli = t.cast(Group, self.cli_ctx.command)
+        self.cli = cast(Group, self.cli_ctx.command)
 
         self.current_ctx = current_ctx
         self.args = args
@@ -243,7 +242,7 @@ class ReplParsingState:
         if self.current_ctx.parent is not None:
             current_group = self.current_ctx.parent.command
 
-        current_group = t.cast(Group, current_group)
+        current_group = cast(Group, current_group)
 
         cmd_arguments_list = [
             param

@@ -188,7 +188,7 @@ from lvl2 command
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-def internal_cmd_test_group(ctx):
+def internal_command_test_group(ctx):
     if not ctx.invoked_subcommand:
         click_repl.repl(ctx)
 
@@ -196,7 +196,7 @@ def internal_cmd_test_group(ctx):
 def test_internal_commands(capfd):
     with mock_stdin(":help\n:exit\n"):
         with pytest.raises((SystemExit, click_repl.exceptions.ExitReplException)):
-            internal_cmd_test_group(args=[])
+            internal_command_test_group(args=[])
 
     captured_stdout = capfd.readouterr().out.replace("\r\n", "\n")
     assert (

@@ -4,7 +4,7 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl._internal_cmds import InternalCommandSystem
+from click_repl._internal_command import InternalCommandSystem
 from click_repl.completer import ClickCompleter
 
 
@@ -27,6 +27,6 @@ completer = ClickCompleter(click.Context(main), InternalCommandSystem(";", "!"))
         (";cls", set()),
     ],
 )
-def test_internal_cmd_suggestion(test_input, expected):
+def test_internal_command_suggestion(test_input, expected):
     completions = completer.get_completions(Document(test_input))
     assert {i.text for i in completions} == expected

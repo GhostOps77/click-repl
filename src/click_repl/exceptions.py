@@ -12,10 +12,10 @@ import click
 class InternalCommandException(Exception):
     """
     Base Class for all Exceptions raised by the
-    :class:`~click_repl._internal_cmds.InternalCommandSystem`.
+    :class:`~click_repl._internal_commands.InternalCommandSystem`.
 
     This class is used to replace errors raised inside the
-    :class:`~click_repl._internal_cmds.InternalCommandSystem`
+    :class:`~click_repl._internal_commands.InternalCommandSystem`
     class in order to display their error messages separately in the REPL.
     """
 
@@ -25,6 +25,14 @@ class InternalCommandException(Exception):
 class ParserError(Exception):
     """
     Exceptions that are raised when parsing given input of click objects.
+    """
+
+    pass
+
+
+class InternalCommandNotFound(InternalCommandException):
+    """
+    Exception raised when the given command name is not an internal command.
     """
 
     pass
@@ -42,7 +50,7 @@ class PrefixNotFound(InternalCommandException):
 class WrongType(InternalCommandException):
     """
     Exception raised when an object with an invalid type is passed to one of
-    the methods in :class:`~click_repl._internal_cmds.InternalCommandSystem`.
+    the methods in :class:`~click_repl._internal_commands.InternalCommandSystem`.
 
     Parameters
     ----------
@@ -65,17 +73,17 @@ class WrongType(InternalCommandException):
 
 class SamePrefix(InternalCommandException):
     """
-    Exception raised when :class:`~click_repl._internal_cmds.InternalCommandSystem`
-    assigns both :attr:`~click_repl._internal_cmds.InternalCommandSystem.internal_command_prefix`
-    and :attr:`~click_repl._internal_cmds.InternalCommandSystem.system_command_prefix` as the same
+    Exception raised when :class:`~click_repl._internal_commands.InternalCommandSystem`
+    assigns both :attr:`~click_repl._internal_commands.InternalCommandSystem.internal_command_prefix`
+    and :attr:`~click_repl._internal_commands.InternalCommandSystem.system_command_prefix` as the same
     prefix string.
 
     Parameters
     ----------
     prefix_str
         The prefix string that is assigned to both
-        :attr:`~click_repl._internal_cmds.InternalCommandSystem.internal_command_prefix`
-        and :attr:`~click_repl._internal_cmds.InternalCommandSystem.system_command_prefix`.
+        :attr:`~click_repl._internal_commands.InternalCommandSystem.internal_command_prefix`
+        and :attr:`~click_repl._internal_commands.InternalCommandSystem.system_command_prefix`.
     """
 
     def __init__(self, prefix_str: str) -> None:

@@ -18,7 +18,7 @@ from prompt_toolkit.validation import Validator
 
 from ._compat import MultiCommand
 from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
-from ._internal_cmds import InternalCommandSystem
+from ._internal_command import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext

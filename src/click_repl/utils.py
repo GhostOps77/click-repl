@@ -191,20 +191,20 @@ def get_info_dict(
 
     References
     ----------
-    | :meth:`~click.Context.get_info_dict`
-    | :meth:`~click.Command.get_info_dict`
-    | :meth:`~click.Group.get_info_dict`
-    | :meth:`~click.Parameter.get_info_dict`
-    | :meth:`~click.Option.get_info_dict`
-    | :meth:`~click.ParamType.get_info_dict`
-    | :meth:`~click.Choice.get_info_dict`
-    | :meth:`~click.DateTime.get_info_dict`
-    | :meth:`~click.File.get_info_dict`
-    | :meth:`~click.Path.get_info_dict`
-    | :meth:`~click.Tuple.get_info_dict`
-    | :meth:`~click.IntRange.get_info_dict`
-    | :meth:`~click.FloatRange.get_info_dict`
-    | :meth:`~click.types.FuncParamType.get_info_dict`
+    :meth:`~click.Context.get_info_dict`
+    :meth:`~click.Command.get_info_dict`
+    :meth:`~click.Group.get_info_dict`
+    :meth:`~click.Parameter.get_info_dict`
+    :meth:`~click.Option.get_info_dict`
+    :meth:`~click.ParamType.get_info_dict`
+    :meth:`~click.Choice.get_info_dict`
+    :meth:`~click.DateTime.get_info_dict`
+    :meth:`~click.File.get_info_dict`
+    :meth:`~click.Path.get_info_dict`
+    :meth:`~click.Tuple.get_info_dict`
+    :meth:`~click.IntRange.get_info_dict`
+    :meth:`~click.FloatRange.get_info_dict`
+    :meth:`~click.types.FuncParamType.get_info_dict`
     """
 
     if isinstance(obj, Context):
