@@ -1,12 +1,15 @@
+Documentation
+=============
+
+Index tree to navigate between code documentation:
+
 .. toctree::
-   :maxdepth: 1
-   :titlesonly:
 
    getting_started.rst
    internal_commands.rst
    modify_repl_behaviour.rst
-   auto_completin.rst
+   auto_completion.rst
    bottom_bar.rst
    group_and_context.rst
-   text tokens.rst
+   text_as_tokens.rst
    validator.rst

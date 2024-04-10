@@ -33,6 +33,11 @@ Add/Remove internal commands
 This object can also be used to define and add your own internal command. It's done by using the :func:`~click_repl._internal_cmds.InternalCommandSystem.register_command` decorator.
 It takes in a function, names/aliases and description for it. The function's name and docstring is the command's only name and description by default.
 
+.. note::
+
+	The callback function for your custom internal command must be in the type of `Callable[[], None]`.
+	That is, It shouldn't take in any arguments, and should return nothing.
+
 .. admonition:: Example
 
     You can register your internal command from anywhere.
@@ -53,7 +58,7 @@ It takes in a function, names/aliases and description for it. The function's nam
             if not ctx.invoked_subcommand:
                 ics_obj = repl_ctx.internal_command_system
 
-                # Allows aliases.
+                # Allows multiple aliases.
                 @ics_obj.register_command(
                     names=['kill', 'pkill'],
                     description='Stops a certain process'
@@ -71,6 +76,14 @@ Remove internal commands
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Pass in any one of the aliases of the command into :meth:`!click_repl._internal_cmds.InternalCommandSystem.remove_command` to remove the command, along with all of it's aliases.
+
+.. code-block:: python
+
+		@click.group()
+		@click.option('-i', '--interactive', flag=True)
+		@click.pass_context
+		def main(ctx: click.Context, interactive: bool):
+			pass
 
 
 Default internal commands
