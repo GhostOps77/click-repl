@@ -129,8 +129,5 @@ class ClickValidator(Validator):
                 # displayed in the Validator bar.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            if CLICK_REPL_DEV_ENV:
-                # Error tracebacks are displayed during the REPL loop if
-                # its a development environment. The short error
-                # messages are also logged into a click-repl-err.log file.
-                logger.exception("%s: %s", type(e).__name__, e)
+            # The error messages are logged into a click-repl-err.log file.
+            logger.exception("%s: %s", type(e).__name__, e)
