@@ -19,13 +19,14 @@ from prompt_toolkit.validation import Validator
 
 from ._compat import MultiCommand, split_arg_string
 from .bottom_bar import BottomBar
+from .click_utils import _generate_next_click_ctx
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
 from .formatting import print_error
 from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
-from .utils import _generate_next_click_ctx, _get_group_ctx
+from .utils import _get_group_ctx
 from .validator import ClickValidator
 
 __all__ = ["Repl", "repl", "ReplCli"]

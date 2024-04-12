@@ -4,24 +4,14 @@ Utilities to facilitate the functionality of the module.
 
 from __future__ import annotations
 
-import os
 from difflib import get_close_matches
-from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Generator
+from typing import Generator
 
 import click
 from click import Command, Context, Parameter
 
-from ._compat import RANGE_TYPES_TUPLE, MultiCommand
+from ._compat import MultiCommand
 from .exceptions import ArgumentPositionError
-from .proxies import _create_proxy_command
-
-if TYPE_CHECKING:
-    from ._types import InfoDict
-
-
-def _expand_envvars(text: str) -> str:
-    return os.path.expandvars(os.path.expanduser(text))
 
 
 def _is_help_option(param: click.Option) -> bool:
@@ -79,7 +69,7 @@ def is_param_value_incomplete(
     if param.name is None:
         return False
 
-    if param.nargs == -1:
+    if param.nargs == -1 or param.multiple:
         return True
 
     value = ctx.params.get(param.name, None)
@@ -166,210 +156,4 @@ def _get_group_ctx(ctx: Context) -> Context:
         ctx = ctx.parent
 
     ctx.protected_args = []
-    return ctx
-
-
-@lru_cache(maxsize=128)
-def get_info_dict(
-    obj: Context | Command | Parameter | click.ParamType,
-) -> InfoDict:
-    """
-    Similar to the ``get_info_dict`` method implementation in click objects,
-    but it only retrieves the essential attributes required to
-    differentiate between different ``ReplParsingState`` objects.
-
-    Parameters
-    ----------
-    obj
-        Click object for which the info dict needs to be generated.
-
-    Returns
-    -------
-    InfoDict
-        Dictionary that holds crucial details about the given click object
-        that can be used to uniquely identify it.
-
-    References
-    ----------
-    :meth:`~click.Context.get_info_dict`
-    :meth:`~click.Command.get_info_dict`
-    :meth:`~click.Group.get_info_dict`
-    :meth:`~click.Parameter.get_info_dict`
-    :meth:`~click.Option.get_info_dict`
-    :meth:`~click.ParamType.get_info_dict`
-    :meth:`~click.Choice.get_info_dict`
-    :meth:`~click.DateTime.get_info_dict`
-    :meth:`~click.File.get_info_dict`
-    :meth:`~click.Path.get_info_dict`
-    :meth:`~click.Tuple.get_info_dict`
-    :meth:`~click.IntRange.get_info_dict`
-    :meth:`~click.FloatRange.get_info_dict`
-    :meth:`~click.types.FuncParamType.get_info_dict`
-    """
-
-    if isinstance(obj, Context):
-        return {
-            "command": get_info_dict(obj.command),
-            "params": obj.params,
-        }
-
-    info_dict: InfoDict = {}
-
-    if isinstance(obj, Command):
-        ctx = Context(obj)
-
-        info_dict.update(
-            name=obj.name,
-            params=tuple(get_info_dict(param) for param in obj.get_params(ctx)),
-            callback=obj.callback,
-        )
-
-        if isinstance(obj, MultiCommand):
-            commands = {}
-
-            for name in obj.list_commands(ctx):
-                command = obj.get_command(ctx, name)
-
-                if command is None:
-                    continue
-
-                commands[name] = get_info_dict(command)
-
-            info_dict.update(commands=commands, chain=obj.chain)
-
-    elif isinstance(obj, Parameter):
-        info_dict.update(
-            name=obj.name,
-            param_type_name=obj.param_type_name,
-            opts=obj.opts,
-            secondary_opts=obj.secondary_opts,
-            type=get_info_dict(obj.type),
-            required=obj.required,
-            nargs=obj.nargs,
-            multiple=obj.multiple,
-        )
-
-        if isinstance(obj, click.Option):
-            info_dict.update(
-                is_flag=obj.is_flag,
-                flag_value=obj.flag_value,
-                count=obj.count,
-                hidden=obj.hidden,
-            )
-
-    elif isinstance(obj, click.ParamType):
-        param_type = type(obj).__name__.partition("ParamType")[0]
-        param_type = param_type.partition("ParameterType")[0]
-
-        # Custom subclasses might not remember to set a name.
-        name = getattr(obj, "name", param_type)
-        info_dict.update(param_type=param_type, name=name)
-
-        if isinstance(obj, click.types.FuncParamType):
-            info_dict["func"] = obj.func
-
-        elif isinstance(obj, click.Choice):
-            info_dict["choices"] = obj.choices
-            info_dict["case_sensitive"] = obj.case_sensitive
-
-        elif isinstance(obj, click.DateTime):
-            info_dict["formats"] = obj.formats
-
-        elif isinstance(obj, RANGE_TYPES_TUPLE):
-            info_dict.update(
-                min=obj.min,
-                max=obj.max,
-                min_open=getattr(obj, "min_open", False),
-                max_open=getattr(obj, "max_open", False),
-                clamp=obj.clamp,
-            )
-
-        elif isinstance(obj, click.File):
-            info_dict.update(mode=obj.mode, encoding=obj.encoding)
-
-        elif isinstance(obj, click.Path):
-            info_dict.update(
-                exists=obj.exists,
-                file_okay=obj.file_okay,
-                dir_okay=obj.dir_okay,
-                writable=obj.writable,
-                readable=obj.readable,
-                allow_dash=obj.allow_dash,
-            )
-
-        elif isinstance(obj, click.Tuple):
-            info_dict["types"] = tuple(get_info_dict(t) for t in obj.types)
-
-    return info_dict
-
-
-@lru_cache(maxsize=3)
-def _generate_next_click_ctx(
-    group: MultiCommand,
-    parent_ctx: Context,
-    args: tuple[str, ...],
-    proxy: bool = False,
-    **ctx_kwargs: dict[str, Any],
-) -> tuple[Context, Command | None]:
-    if not args:
-        return parent_ctx, None
-
-    # Since the resolve_command method only accepts string arguments in a
-    # list format, we explicitly convert args into a list.
-    _args = list(_expand_envvars(i) for i in args)
-
-    name, cmd, _args = group.resolve_command(parent_ctx, _args)
-
-    if cmd is None:
-        return parent_ctx, None
-
-    if proxy:
-        # When using click.parser.OptionParser.parse_args, incomplete
-        # string arguments that do not meet the nargs requirement of
-        # the current parameter are normally ignored. However, in our
-        # case, we want to handle these incomplete arguments. To
-        # achieve this, we use a proxy command object to modify
-        # the command parsing behavior in click.
-        with _create_proxy_command(cmd) as _command:
-            ctx = _command.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
-
-    else:
-        ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
-
-    return ctx, cmd
-
-
-@lru_cache(maxsize=3)
-def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
-    while args:
-        command = ctx.command
-
-        if isinstance(command, MultiCommand):
-            if not command.chain:
-                ctx, cmd = _generate_next_click_ctx(command, ctx, args, proxy=proxy)
-
-                if cmd is None:
-                    return ctx
-
-            else:
-                while args:
-                    sub_ctx, cmd = _generate_next_click_ctx(
-                        command,
-                        ctx,
-                        args,
-                        proxy=proxy,
-                        allow_extra_args=True,
-                        allow_interspersed_args=False,
-                    )
-
-                    if cmd is None:
-                        return ctx
-
-                    args = tuple(sub_ctx.args)
-                ctx = sub_ctx
-            args = tuple(ctx.protected_args + ctx.args)
-
-        else:
-            break
-
     return ctx

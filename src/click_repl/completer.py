@@ -19,7 +19,7 @@ from typing_extensions import Final
 
 from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
 from .bottom_bar import BottomBar
-from .formatting import get_option_flag_sep, join_options
+from .click_utils import get_option_flag_sep, join_options
 from .globals_ import (
     CLICK_REPL_DEV_ENV,
     HAS_CLICK_GE_8,

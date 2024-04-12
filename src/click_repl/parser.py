@@ -1,39 +1,10 @@
-# Copyright 2014 Pallets
-# Copyright 2024 GhostOps77
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its contributors
-#    may be used to endorse or promote products derived from this software
-#    without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
-
 """
 Parsing functionalities for the module.
 """
 
 from __future__ import annotations
 
+import os
 import re
 from functools import lru_cache
 from gettext import gettext as _
@@ -44,7 +15,7 @@ from click import Argument as CoreArgument
 from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
 
-from . import utils
+from . import click_utils, utils
 from ._compat import (
     OptionParser,
     ParsingState,
@@ -89,7 +60,7 @@ class Incomplete:
         return len(self.parsed_str)
 
     def expand_envvars(self) -> str:
-        self.parsed_str = utils._expand_envvars(self.parsed_str).strip()
+        self.parsed_str = os.path.expandvars(os.path.expanduser(self.parsed_str)).strip()
         return self.parsed_str
 
     def reverse_prefix_envvars(self, value: str) -> str:
@@ -158,11 +129,11 @@ class ReplParsingState:
             self.current_param,
             self.current_ctx,
         ):
-            keys.append(None if i is None else utils.get_info_dict(i))
+            keys.append(None if i is None else click_utils.get_info_dict(i))
 
         return (  # type: ignore[return-value]
             *keys,
-            tuple(utils.get_info_dict(param) for param in self.remaining_params),
+            tuple(click_utils.get_info_dict(param) for param in self.remaining_params),
         )
 
     def __eq__(self, other: object) -> bool:
@@ -342,7 +313,7 @@ def _resolve_state(
         incomplete data that requires suggestions.
     """
     args, incomplete = _resolve_incomplete(document_text)
-    parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
+    parsed_ctx = click_utils._resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
 
     return parsed_ctx, state, incomplete
