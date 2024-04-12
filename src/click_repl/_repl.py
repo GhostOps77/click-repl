@@ -12,6 +12,7 @@ from typing import Any, Callable, Generator, Sequence, cast
 import click
 from click import Context
 from prompt_toolkit.completion import Completer
+from prompt_toolkit.formatted_text import AnyFormattedText
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style, merge_styles
 from prompt_toolkit.validation import Validator
@@ -109,7 +110,7 @@ class Repl:
         )
         """Handles and executes internal commands that are invoked in repl."""
 
-        self.bottom_bar: BottomBar | None = None
+        self.bottom_bar: AnyFormattedText | BottomBar = None
         """To change the command description that's displayed in the bottom bar
            accordingly based on the current parsing state."""
 
@@ -123,7 +124,7 @@ class Repl:
 
             elif bottom_bar is not None:
                 raise TypeError(
-                    "Expected bottom_bar to be a type of BottomBar or None, "
+                    "Expected bottom_bar to be a type of AnyFormattedText, or BottomBar, "
                     f"but got {type(bottom_bar).__name__}"
                 )
 
@@ -137,7 +138,7 @@ class Repl:
             prompt_kwargs,
         )
 
-        self.repl_ctx: ReplContext = ReplContext(
+        self.repl_ctx = ReplContext(
             self.group_ctx,
             self.internal_commands_system,
             bottombar=self.bottom_bar,
@@ -285,6 +286,9 @@ class Repl:
         if not ISATTY:
             return {}
 
+        if completer_cls is None:
+            raise ValueError("'completer_cls' cannot be None.")
+
         default_prompt_kwargs = {
             "history": InMemoryHistory(),
             "message": "> ",
@@ -297,9 +301,6 @@ class Repl:
 
         if self.bottom_bar:
             default_prompt_kwargs.update(bottom_toolbar=self.bottom_bar)
-
-        if completer_cls is None:
-            raise ValueError("'completer_cls' cannot be None.")
 
         default_prompt_kwargs.update(
             completer=completer_cls(
@@ -373,7 +374,7 @@ class Repl:
         with self.repl_ctx:
             while True:
                 try:
-                    if ISATTY and self.bottom_bar is not None:
+                    if ISATTY and isinstance(self.bottom_bar, BottomBar):
                         # Resetting the toolbar to clear its text content,
                         # ensuring that it doesn't display command info from
                         # the previously executed command.

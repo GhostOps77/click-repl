@@ -32,7 +32,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "autoapi.extension",
-    "sphinxnotes.strike",
+    # "sphinxnotes.strike",
     # "myst_parser",
     # "sphinx_autodoc_typehints",
 ]

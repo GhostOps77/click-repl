@@ -12,27 +12,25 @@ The prompt will not accept the input if the validator reports that it's in an in
 This is mostly useful for dislaying :exc:`~click.exceptions.UsageError` exception's formatted message from it's
 :meth:`~click.exceptions.UsageError.format_message` method.
 
-.. admonition:: Example
+.. code-block:: python
 
-    .. code-block:: python
+    import click
+    from click_repl import repl
 
-        import click
-        from click_repl import repl
+    @click.group()
+    @click.pass_context
+    def main():
+        pass
 
-        @click.group()
-        @click.pass_context
-        def main():
-            pass
+    @main.command()
+    @click.argument('num', type=int)
+    @click.option('--error', shell_complete=mock_error_during_shell_complete)
+        def get_number(num):
+        print(num)
 
-        @main.command()
-        @click.argument('num', type=int)
-        @click.option('--error', shell_complete=mock_error_during_shell_complete)
-            def get_number(num):
-            print(num)
+    main()
 
-        main()
-
-    <insert image>
+<insert image>
 
 Custom Validator
 ----------------

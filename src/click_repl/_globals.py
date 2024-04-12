@@ -10,8 +10,6 @@ import sys
 from threading import local
 from typing import TYPE_CHECKING, NoReturn
 
-from ._types import CompletionDisplayStyleDict, CompletionStyleDict
-
 if sys.version_info < (3, 8):
     from importlib_metadata import version
 else:
@@ -79,15 +77,6 @@ DEFAULT_COMPLETION_STYLE_CONFIG.update(
         "",
     )
 )
-
-DEFAULT_COMPLETION_STYLE_DICT: CompletionStyleDict = {
-    "internal-command": CompletionDisplayStyleDict(),
-    "command": CompletionDisplayStyleDict(),
-    "group": CompletionDisplayStyleDict(),
-    "argument": CompletionDisplayStyleDict(),
-    "option": CompletionDisplayStyleDict(),
-}
-"""Default display text configuration for :class:`~prompt_toolkit.completion.Completion`"""
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     # Group

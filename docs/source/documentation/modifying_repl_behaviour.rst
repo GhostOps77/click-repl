@@ -288,3 +288,11 @@ So, please don't accidentally switch them.
     def command(ctx, repl_ctx):
         # You can do whatever you want with the current repl session's context object.
         ...
+
+:class:`~prompt_toolkit.PromptSession` object
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+click-repl uses this object, which is resopnsible for the repl functionality in this module. This object can be accessed
+via :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext` object. You can use
+this to extend the functionality of the repl. Refer to :mod:`~prompt_toolkit`'s
+`PromptSession <https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#the-promptsession-object>` docs.

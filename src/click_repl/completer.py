@@ -13,19 +13,18 @@ from click import Command, Context, Group, Parameter
 from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
+from prompt_toolkit.formatted_text import AnyFormattedText
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final
 
 from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
 from ._globals import (
     CLICK_REPL_DEV_ENV,
-    DEFAULT_COMPLETION_STYLE_DICT,
     HAS_CLICK_GE_8,
     IS_WINDOWS,
     ISATTY,
     get_current_repl_ctx,
 )
-from ._types import CompletionStyleDict
 from .bottom_bar import BottomBar
 from .formatting import get_option_flag_sep, join_options
 from .internal_commands import InternalCommandSystem
@@ -73,24 +72,18 @@ class ClickCompleter(Completer):
     expand_envvars
         Determines whether to return completion with Environmental variables
         as expanded or not.
-
-    style
-        A dictionary denoting different styles for
-        :class:`~prompt_toolkit.completion.Completion` objects for
-        ``command``, ``argument``, and ``option``.
     """
 
     def __init__(
         self,
         group_ctx: Context,
         internal_commands_system: InternalCommandSystem,
-        bottom_bar: BottomBar | None = None,
+        bottom_bar: AnyFormattedText | BottomBar = None,
         shortest_opt_names_only: bool = False,
         show_only_unused_options: bool = False,
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
         expand_envvars: bool = False,
-        style: CompletionStyleDict | None = None,
     ) -> None:
         """
         Initialize the `ClickCompleter` class.
@@ -111,12 +104,6 @@ class ClickCompleter(Completer):
         self.expand_envvars = expand_envvars
 
         self.internal_commands_system = internal_commands_system
-
-        if style is None:
-            # style = t.cast(CompletionStyleDict, DEFAULT_COMPLETION_STYLE_DICT)
-            style = DEFAULT_COMPLETION_STYLE_DICT
-
-        self.style = style
 
         self.parent_token_class_name: str = "autocompletion-menu"
         """Parent class name for tokens that are related to :class:`~ClickCompleter`."""
@@ -152,38 +139,24 @@ class ClickCompleter(Completer):
                 ctx, state.args, incomplete.parsed_str
             )
 
-        param_style = self.style[get_token_type(param)]
-
         for autocomplete in autocompletions:
             if isinstance(autocomplete, tuple):
                 yield ReplCompletion(
                     autocomplete[0],
                     incomplete,
                     display_meta=autocomplete[1],
-                    style=param_style.completion_style,
-                    selected_style=param_style.selected_style,
                 )
 
             elif HAS_CLICK_GE_8 and isinstance(
                 autocomplete, click.shell_completion.CompletionItem
             ):
-                yield ReplCompletion(
-                    autocomplete.value,
-                    incomplete,
-                    style=param_style.completion_style,
-                    selected_style=param_style.selected_style,
-                )
+                yield ReplCompletion(autocomplete.value, incomplete)
 
             elif isinstance(autocomplete, Completion):
                 yield autocomplete
 
             else:
-                yield ReplCompletion(
-                    str(autocomplete),
-                    incomplete,
-                    style=param_style.completion_style,
-                    selected_style=param_style.selected_style,
-                )
+                yield ReplCompletion(str(autocomplete), incomplete)
 
     def get_completion_from_choices_type(
         self, param: Parameter, param_type: click.Choice, incomplete: Incomplete
@@ -225,8 +198,6 @@ class ClickCompleter(Completer):
         if case_insensitive:
             _incomplete = _incomplete.lower()
 
-        param_style = self.style[get_token_type(param)]
-
         for choice in param_type.choices:
             _choice = choice.lower() if case_insensitive else choice
 
@@ -234,12 +205,7 @@ class ClickCompleter(Completer):
                 # if not self.expand_envvars:
                 #     choice = incomplete.parsed_str + choice[len(_incomplete) :]
 
-                yield ReplCompletion(
-                    choice,
-                    incomplete,
-                    style=param_style.completion_style,
-                    selected_style=param_style.selected_style,
-                )
+                yield ReplCompletion(choice, incomplete)
 
     def get_completion_for_path_types(
         self,
@@ -281,8 +247,6 @@ class ClickCompleter(Completer):
         search_pattern = _incomplete.strip("\"'") + "*"
         temp_path_obj = Path(search_pattern)
 
-        param_style = self.style[get_token_type(param)]
-
         for path in temp_path_obj.parent.glob(temp_path_obj.name):
             if param_type.name == "directory" and path.is_file():
                 continue
@@ -311,8 +275,6 @@ class ClickCompleter(Completer):
                     [(path_style, path.name)], self.parent_token_class_name
                 ),
                 start_position=-len(incomplete.raw_str),
-                style=param_style.completion_style,
-                selected_style=param_style.selected_style,
             )
 
     def get_completion_for_boolean_type(
@@ -347,8 +309,6 @@ class ClickCompleter(Completer):
             "false": ("0", "false", "f", "no", "n", "off"),
         }
 
-        param_style = self.style[get_token_type(param)]
-
         for value, aliases in boolean_mapping.items():
             if any(alias.startswith(_incomplete) for alias in aliases):
                 if not self.expand_envvars:
@@ -362,8 +322,6 @@ class ClickCompleter(Completer):
                         self.parent_token_class_name,
                     ),
                     display_meta="/".join(aliases),
-                    style=param_style.completion_style,
-                    selected_style=param_style.selected_style,
                 )
 
     def get_completion_from_param_type(
@@ -908,10 +866,6 @@ class ClickCompleter(Completer):
         ):
             cmd_token_type = get_token_type(command)
 
-            cmd_style = self.style[cmd_token_type]
-            completion_style = cmd_style.completion_style
-            selected_style = cmd_style.selected_style
-
             yield ReplCompletion(
                 name,
                 incomplete,
@@ -919,8 +873,6 @@ class ClickCompleter(Completer):
                     [(f"class:{cmd_token_type}.name", name)], self.parent_token_class_name
                 ),
                 display_meta=command.get_short_help_str(),
-                style=completion_style,
-                selected_style=selected_style,
             )
 
     def get_completions_for_internal_commands(
@@ -950,8 +902,6 @@ class ClickCompleter(Completer):
         incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
         info_table = self.internal_commands_system._group_commands_by_callback_and_desc()
 
-        internal_command_style = self.style["internal-command"]
-
         for (_, desc), aliases in info_table.items():
             aliases_start_with_incomplete = [
                 alias
@@ -972,8 +922,6 @@ class ClickCompleter(Completer):
                     incomplete,
                     display=TokenizedFormattedText(display, self.parent_token_class_name),
                     display_meta=desc,
-                    style=internal_command_style.completion_style,
-                    selected_style=internal_command_style.selected_style,
                 )
 
     def handle_internal_commands_request(
@@ -984,7 +932,7 @@ class ClickCompleter(Completer):
         internal_commands_requested = flag == "internal"
 
         if ics_prefix is not None:
-            if ISATTY and self.bottom_bar is not None:
+            if ISATTY and isinstance(self.bottom_bar, BottomBar):
                 self.bottom_bar.reset_state()
 
             if internal_commands_requested:
@@ -1037,7 +985,7 @@ class ClickCompleter(Completer):
             if ISATTY:
                 get_current_repl_ctx().update_state(state)  # type:ignore[union-attr]
 
-                if self.bottom_bar is not None:
+                if isinstance(self.bottom_bar, BottomBar):
                     self.bottom_bar.update_state(state)
 
             yield from self.get_completions_for_subcommands(parsed_ctx, state, incomplete)

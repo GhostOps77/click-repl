@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ItemsView, List, Optional
 
 from click import Context
 from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import AnyFormattedText
 from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Literal, TypeAlias, TypedDict
@@ -46,7 +47,7 @@ class ReplContextInfoDict(TypedDict):
     parent: ReplContext | None
     _history: list[str]
     current_state: ReplParsingState | None
-    bottombar: BottomBar | None
+    bottombar: AnyFormattedText | BottomBar
 
 
 class ParamInfo(TypedDict):

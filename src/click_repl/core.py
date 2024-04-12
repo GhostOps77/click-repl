@@ -72,7 +72,7 @@ class ReplContext:
         self,
         group_ctx: Context,
         internal_command_system: InternalCommandSystem,
-        bottombar: BottomBar | None = None,
+        bottombar: AnyFormattedText | BottomBar = None,
         prompt_kwargs: dict[str, Any] = {},
         parent: ReplContext | None = None,
     ) -> None:
@@ -83,7 +83,7 @@ class ReplContext:
 
         if ISATTY:
             session = PromptSession(**prompt_kwargs)
-            if bottombar is not None:
+            if isinstance(bottombar, BottomBar):
                 bottombar.current_repl_ctx = self
 
         else:

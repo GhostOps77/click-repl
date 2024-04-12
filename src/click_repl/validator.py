@@ -14,6 +14,7 @@ from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
 from ._globals import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
+from .bottom_bar import BottomBar
 from .internal_commands import InternalCommandSystem
 from .parser import _resolve_state
 
@@ -106,7 +107,7 @@ class ClickValidator(Validator):
             if ISATTY:
                 bottombar = get_current_repl_ctx().bottombar  # type:ignore[union-attr]
 
-                if bottombar is not None:
+                if isinstance(bottombar, BottomBar):
                     bottombar.update_state(state)
 
         except UsageError as ue:
