@@ -4,7 +4,7 @@ import contextlib
 import sys
 from io import StringIO
 
-from click_repl._internal_command import InfoTable, InternalCommandSystem
+from click_repl.internal_commands import InfoTable, InternalCommandSystem
 
 
 class DummyInternalCommandSystem(InternalCommandSystem):

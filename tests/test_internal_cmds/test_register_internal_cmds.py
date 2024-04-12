@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from click_repl._internal_command import InternalCommandSystem, _exit_internal
 from click_repl.exceptions import ExitReplException, WrongType
+from click_repl.internal_commands import InternalCommandSystem, _exit_internal
 
 internal_command_system = InternalCommandSystem()
 

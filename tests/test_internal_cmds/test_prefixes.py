@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from click_repl._internal_command import InternalCommandSystem
-from click_repl._internal_command import repl_exit as repl_exit
 from click_repl.exceptions import PrefixNotFound, SamePrefix, WrongType
+from click_repl.internal_commands import InternalCommandSystem
+from click_repl.internal_commands import repl_exit as repl_exit
 
 ics = InternalCommandSystem()
 

@@ -4,8 +4,8 @@ import click
 import pytest
 from prompt_toolkit.document import Document
 
-from click_repl._internal_command import InternalCommandSystem
 from click_repl.completer import ClickCompleter
+from click_repl.internal_commands import InternalCommandSystem
 
 
 def test_command_collection():

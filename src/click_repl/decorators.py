@@ -9,9 +9,9 @@ from functools import wraps
 from typing import Any, Callable
 
 import click
-from click import Group
 from typing_extensions import Concatenate, ParamSpec
 
+from ._compat import MultiCommand
 from ._globals import get_current_repl_ctx
 from ._repl import repl
 from .core import ReplContext
@@ -51,11 +51,11 @@ def pass_context(
 
 
 def register_repl(
-    group: Group | None = None,
+    group: MultiCommand | None = None,
     *,
     name: str = "repl",
     remove_command_before_repl: bool = False,
-) -> Callable[[Group], Group] | Group:
+) -> Callable[[MultiCommand], MultiCommand] | MultiCommand:
     """
     A decorator that registers :func:`~click_repl._repl.repl()` as sub-command
     named ``name`` within the ``group``.
@@ -84,13 +84,13 @@ def register_repl(
         If the given group is not an instance of click Group.
     """
 
-    def decorator(_group: Group) -> Group:
+    def decorator(_group: MultiCommand) -> MultiCommand:
         nonlocal group
 
         if group is not None:
             _group = group
 
-        if not isinstance(_group, Group):
+        if not isinstance(_group, MultiCommand):
             raise TypeError(
                 "Expected 'group' to be a type of click.Group, "
                 f"but got {type(_group).__name__}"

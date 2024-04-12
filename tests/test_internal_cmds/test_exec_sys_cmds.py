@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from click_repl._internal_command import InternalCommandSystem
 from click_repl.exceptions import PrefixNotFound
+from click_repl.internal_commands import InternalCommandSystem
 
 sys_commands_only_obj = InternalCommandSystem(None)
 

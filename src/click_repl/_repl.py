@@ -18,12 +18,12 @@ from prompt_toolkit.validation import Validator
 
 from ._compat import MultiCommand
 from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
-from ._internal_command import InternalCommandSystem
 from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
 from .formatting import print_error
+from .internal_commands import InternalCommandSystem
 from .parser import split_arg_string
 from .utils import _generate_next_click_ctx, _get_group_ctx
 from .validator import ClickValidator
@@ -87,7 +87,7 @@ class Repl:
         self,
         ctx: Context,
         prompt_kwargs: dict[str, Any] = {},
-        completer_cls: type[Completer] | None = ClickCompleter,
+        completer_cls: type[Completer] = ClickCompleter,
         validator_cls: type[Validator] | None = ClickValidator,
         completer_kwargs: dict[str, Any] = {},
         validator_kwargs: dict[str, Any] = {},
@@ -248,7 +248,7 @@ class Repl:
 
     def _get_default_prompt_kwargs(
         self,
-        completer_cls: type[Completer] | None,
+        completer_cls: type[Completer],
         completer_kwargs: dict[str, Any],
         validator_cls: type[Validator] | None,
         validator_kwargs: dict[str, Any],
@@ -298,12 +298,14 @@ class Repl:
         if self.bottom_bar:
             default_prompt_kwargs.update(bottom_toolbar=self.bottom_bar)
 
-        if completer_cls is not None:
-            default_prompt_kwargs.update(
-                completer=completer_cls(
-                    **self._get_default_completer_kwargs(completer_cls, completer_kwargs)
-                )
+        if completer_cls is None:
+            raise ValueError("'completer_cls' cannot be None.")
+
+        default_prompt_kwargs.update(
+            completer=completer_cls(
+                **self._get_default_completer_kwargs(completer_cls, completer_kwargs)
             )
+        )
 
         if validator_cls is not None:
             default_prompt_kwargs.update(

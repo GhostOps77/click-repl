@@ -42,7 +42,7 @@ AUTO_COMPLETION_FUNC_ATTR = (
 
 
 if HAS_CLICK_GE_8_2:
-    from click.core import _MultiCommand as MultiCommand  # type:ignore
+    from click.core import Group as MultiCommand  # type:ignore
     from click.parser import _Argument  # type:ignore
     from click.parser import _Option  # type:ignore
     from click.parser import _normalize_opt as normalize_opt  # type:ignore

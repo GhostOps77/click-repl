@@ -37,7 +37,7 @@ def repl_exit() -> NoReturn:
     _exit_internal()
 
 
-def _help_internal_cmd() -> None:
+def _help_internal_command() -> None:
     """Displays general help information."""
 
     formatter = click.HelpFormatter()
@@ -480,7 +480,7 @@ class InternalCommandSystem:
         )
 
         self.register_command(
-            target=_help_internal_cmd,
+            target=_help_internal_command,
             names=("?", "h", "help"),
         )
 

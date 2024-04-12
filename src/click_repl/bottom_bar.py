@@ -10,7 +10,7 @@ import click
 from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
 
-from ._compat import RANGE_TYPES_TUPLE
+from ._compat import RANGE_TYPES_TUPLE, MultiCommand
 from ._globals import HAS_CLICK_GE_8, ISATTY
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
 from .utils import is_param_value_incomplete, iterate_command_params
@@ -24,7 +24,7 @@ if t.TYPE_CHECKING:
 __all__ = ["BottomBar"]
 
 
-def _describe_click_range_paramtype(param_type: IntRange | FloatRange) -> str:
+def _describe_click_range_param_type(param_type: IntRange | FloatRange) -> str:
     """
     Returns the metavar of the range-type :class:`~click.types.ParamType` type objects.
 
@@ -357,7 +357,7 @@ class BottomBar:
                 ("space", " "),
                 (
                     "parameter.type.range.descriptor",
-                    _describe_click_range_paramtype(param_type),
+                    _describe_click_range_param_type(param_type),
                 ),
             ]
 
@@ -486,7 +486,7 @@ class BottomBar:
 
             return self.get_group_metavar_template()
 
-        if isinstance(current_command, click.Group):
+        if isinstance(current_command, MultiCommand):
             command_type = "multicommand"
             command_type_metavar = type(current_command).__name__
 

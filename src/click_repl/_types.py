@@ -14,9 +14,9 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
-    from ._internal_command import InternalCommandSystem
     from .bottom_bar import BottomBar
     from .core import ReplContext
+    from .internal_commands import InternalCommandSystem
     from .parser import ReplParsingState
 
 

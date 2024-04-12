@@ -16,7 +16,6 @@ project = "click-repl"
 author = "Markus Unterwaditzer"
 repo_link = "https://github.com/GhostOps77/click-repl"
 repo_branch = "GhostOps77-patch-1"
-
 version = click_repl.__version__
 
 # General configuration
@@ -33,6 +32,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "autoapi.extension",
+    "sphinxnotes.strike",
     # "myst_parser",
     # "sphinx_autodoc_typehints",
 ]
@@ -53,9 +53,14 @@ intersphinx_mapping = {
     "typing_extensions": ("https://typing-extensions.readthedocs.io/en/latest/", None),
 }
 
+html_experimental_html5_writer = True
 html_show_sphinx = False
 html_context = {"default_mode": "dark"}
+html_title = "click-repl Documentation"
 html_theme = "furo"
+# html_static_path = ["_static"]
+# templates_path = ["_templates"]
+source_suffix = ".rst"
 
 html_theme_options = {
     "footer_icons": [
@@ -77,8 +82,6 @@ pygments_style = "friendly"
 intersphinx_disabled_domains = ["std"]
 exclude_patterns = ["build", "_build", "Thumbs.db", ".DS_Store"]
 
-# html_static_path = ["_static"]
-# templates_path = ["_templates"]
 
 # autodoc_member_order = 'alphabetical'
 autoapi_dirs = ["../../src/click_repl/"]

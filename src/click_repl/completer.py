@@ -25,10 +25,10 @@ from ._globals import (
     ISATTY,
     get_current_repl_ctx,
 )
-from ._internal_command import InternalCommandSystem
 from ._types import CompletionStyleDict
 from .bottom_bar import BottomBar
 from .formatting import get_option_flag_sep, join_options
+from .internal_commands import InternalCommandSystem
 from .parser import Incomplete, ReplParsingState, _resolve_state
 from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner
 from .utils import _is_help_option, is_param_value_incomplete
@@ -51,14 +51,14 @@ class ClickCompleter(Completer):
     internal_commands_system
         Object that holds information about the internal commands and their prefixes.
 
-    shortest_opts_only
-        Determines whether only the shortest flag of an option parameter
-        is used for auto-completion.
+    shortest_opt_names_only
+        Determines whether only the shortest name of an option parameter
+        should be used for auto-completion.
 
         It is utilized when the user is requesting option flags without
-        providing any text. They are not considered for flag options.
+        providing any text. They are not considered for option flags.
 
-    show_only_unused_opts
+    show_only_unused_options
         Determines whether the options that are already mentioned or
         used in the current prompt will be displayed during auto-completion.
 
@@ -85,8 +85,8 @@ class ClickCompleter(Completer):
         group_ctx: Context,
         internal_commands_system: InternalCommandSystem,
         bottom_bar: BottomBar | None = None,
-        shortest_opts_only: bool = False,
-        show_only_unused_opts: bool = False,
+        shortest_opt_names_only: bool = False,
+        show_only_unused_options: bool = False,
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
         expand_envvars: bool = False,
@@ -103,8 +103,8 @@ class ClickCompleter(Completer):
 
         self.bottom_bar = bottom_bar
 
-        self.shortest_opts_only = shortest_opts_only
-        self.show_only_unused_opts = show_only_unused_opts
+        self.shortest_opt_names_only = shortest_opt_names_only
+        self.show_only_unused_options = show_only_unused_options
 
         self.show_hidden_commands = show_hidden_commands
         self.show_hidden_params = show_hidden_params
@@ -406,14 +406,18 @@ class ClickCompleter(Completer):
 
         if isinstance(param_type, click.Tuple):
             values = state.current_ctx.params[param.name]  # type: ignore[index]
-            if None in values:
-                yield from self.get_completion_from_param_type(
-                    ctx, param, param_type.types[values.index(None)], state, incomplete
-                )
+            index_of_none = values.index(None)
 
-        # shell_complete method for click.Choice class is introduced in click-v8.
-        # So, we're implementing shell_complete for Choice, exclusively.
-        elif isinstance(param_type, click.Choice):
+            if index_of_none == -1:
+                return
+
+            yield from self.get_completion_from_param_type(
+                ctx, param, param_type.types[index_of_none], state, incomplete
+            )
+
+        # shell_complete method for click.Choice class is introduced in click v8.
+        # So, we're implementing shell_complete for Choice, separately.
+        elif isinstance(param_type, click.Choice) and not HAS_CLICK_GE_8:
             yield from self.get_completion_from_choices_type(
                 param, param_type, incomplete
             )
@@ -421,7 +425,7 @@ class ClickCompleter(Completer):
         elif isinstance(param_type, click.types.BoolParamType):
             yield from self.get_completion_for_boolean_type(param, incomplete)
 
-        elif isinstance(param_type, PATH_TYPES_TUPLE):  # type:ignore
+        elif isinstance(param_type, PATH_TYPES_TUPLE):
             # Both click.Path and click.File types are expected
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)
@@ -570,7 +574,7 @@ class ClickCompleter(Completer):
                 continue
 
             hide = (
-                self.show_only_unused_opts
+                self.show_only_unused_options
                 and already_used
                 and not (option.multiple or option.count)
             )
@@ -578,9 +582,13 @@ class ClickCompleter(Completer):
             if hide:
                 continue
 
-            is_shortest_opts_only = self.shortest_opts_only and not _incomplete
+            is_shortest_opt_names_only = self.shortest_opt_names_only and not _incomplete
 
-            if is_shortest_opts_only and option.is_bool_flag and option.secondary_opts:
+            if (
+                is_shortest_opt_names_only
+                and option.is_bool_flag
+                and option.secondary_opts
+            ):
                 yield from self.get_completions_for_joined_boolean_option_flags(
                     ctx, option, state, incomplete
                 )
@@ -597,7 +605,7 @@ class ClickCompleter(Completer):
 
             flag_token = "parameter.option.name"
 
-            if is_shortest_opts_only:
+            if is_shortest_opt_names_only:
                 option_flags, sep = join_options(flags_that_start_with_incomplete)
 
                 def display_text_func(flag_token: str) -> ListOfTokens:
@@ -613,7 +621,7 @@ class ClickCompleter(Completer):
                 ]
 
             for option_flag in flags_that_start_with_incomplete:
-                if not is_shortest_opts_only:
+                if not is_shortest_opt_names_only:
 
                     def display_text_func(flag_token: str) -> ListOfTokens:
                         return [(flag_token, option_flag)]
@@ -814,7 +822,7 @@ class ClickCompleter(Completer):
         if any_argument_param_incomplete:
             return None
 
-        if isinstance(ctx.command, (click.Group, click.CommandCollection)):
+        if isinstance(ctx.command, MultiCommand):
             return ctx.command
 
         if state.current_group.chain:
@@ -942,7 +950,7 @@ class ClickCompleter(Completer):
         incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
         info_table = self.internal_commands_system._group_commands_by_callback_and_desc()
 
-        internal_cmd_style = self.style["internal-command"]
+        internal_command_style = self.style["internal-command"]
 
         for (_, desc), aliases in info_table.items():
             aliases_start_with_incomplete = [
@@ -964,9 +972,8 @@ class ClickCompleter(Completer):
                     incomplete,
                     display=TokenizedFormattedText(display, self.parent_token_class_name),
                     display_meta=desc,
-                    quote=False,
-                    style=internal_cmd_style.completion_style,
-                    selected_style=internal_cmd_style.selected_style,
+                    style=internal_command_style.completion_style,
+                    selected_style=internal_command_style.selected_style,
                 )
 
     def handle_internal_commands_request(
@@ -1056,10 +1063,6 @@ class ReplCompletion(Completion):
         It's used to get the :attr:`.start_position` for the Completion to
         swap text with, in the prompt.
 
-    quote
-        Boolean value to determine whether the given incomplete
-        text with space should be double-quoted.
-
     *args
         Additional arguments should be passed as keyword arguments to the
         :class:`~prompt_toolkit.completion.Completion` class.
@@ -1083,7 +1086,6 @@ class ReplCompletion(Completion):
         self,
         text: str,
         incomplete: Incomplete | str,
-        quote: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -1091,13 +1093,12 @@ class ReplCompletion(Completion):
         Initializes the `ReplCompletion` class.
         """
 
-        if quote:
-            no_surrounding_quotes = not (text.startswith('"') or text.endswith('"'))
+        no_surrounding_quotes = not (text.startswith('"') or text.endswith('"'))
 
-            if " " in text and no_surrounding_quotes:
-                # Surrounding text by quotes, as it has space in it.
-                text = text.replace('"', '\\"')
-                text = f'"{text}"'
+        if " " in text and no_surrounding_quotes:
+            # Surrounding text by quotes, as it has space in it.
+            text = text.replace('"', '\\"')
+            text = f'"{text}"'
 
         if isinstance(incomplete, Incomplete):
             incomplete = incomplete.raw_str

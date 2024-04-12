@@ -27,7 +27,7 @@ def tuple_arg_cmd():
 
 ctx = click.Context(main)
 
-c = ClickCompleter(ctx, DummyInternalCommandSystem(), show_only_unused_opts=True)
+c = ClickCompleter(ctx, DummyInternalCommandSystem(), show_only_unused_options=True)
 
 current_dir_list = {str(p) for p in Path().iterdir()}
 

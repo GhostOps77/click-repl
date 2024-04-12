@@ -11,11 +11,13 @@ from prompt_toolkit import PromptSession
 from typing_extensions import Final
 
 from ._globals import ISATTY, _pop_context, _push_context
-from ._internal_command import InternalCommandSystem
 from .bottom_bar import BottomBar
+from .internal_commands import InternalCommandSystem
 from .parser import ReplParsingState
 
 if TYPE_CHECKING:
+    from prompt_toolkit.formatted_text import AnyFormattedText
+
     from ._types import ReplContextInfoDict, _PromptSession
 
 __all__ = ["ReplContext"]
@@ -105,21 +107,21 @@ class ReplContext:
         _pop_context()
 
     @property
-    def prompt_message(self) -> str | None:
+    def prompt(self) -> AnyFormattedText:
         """
         The message displayed for every prompt input in the REPL.
 
         Returns
         -------
-        :class:`str` | None
-            Prompt string if :func:`~sys.stdin.isatty` is ``True``, else ``None``
+        :obj:`~prompt_toolkit.formatted_text.AnyFormattedText`
+            Returns prompt object if :func:`~sys.stdin.isatty` is ``True``, else ``None``
         """
         if ISATTY and self.session is not None:
-            return str(self.session.message)
+            return self.session.message
         return None
 
-    @prompt_message.setter
-    def prompt_message(self, value: str) -> None:
+    @prompt.setter
+    def prompt(self, value: AnyFormattedText) -> None:
         if ISATTY and self.session is not None:
             self.session.message = value
 

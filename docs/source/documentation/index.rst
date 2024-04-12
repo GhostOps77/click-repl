@@ -7,9 +7,9 @@ Index tree to navigate between code documentation:
 
    getting_started.rst
    internal_commands.rst
-   modify_repl_behaviour.rst
    auto_completion.rst
    bottom_bar.rst
-   group_and_context.rst
+   repl_context.rst
+   modifying_repl_behaviour.rst
    text_as_tokens.rst
    validator.rst

@@ -10,9 +10,9 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Generator
 
 import click
-from click import Command, Context, Group, Parameter
+from click import Command, Context, Parameter
 
-from ._compat import RANGE_TYPES_TUPLE
+from ._compat import RANGE_TYPES_TUPLE, MultiCommand
 from .exceptions import ArgumentPositionError
 from .proxies import _create_proxy_command
 
@@ -100,9 +100,7 @@ def is_param_value_incomplete(
     # )
 
 
-def iterate_command_params(
-    command: Command,
-) -> Generator[Parameter, None, None]:
+def iterate_command_params(command: Command) -> Generator[Parameter, None, None]:
     """
     This function is to iterate over parameters of a command in an order such that
     the parameters with `nargs=-1` will be yielded at the very end.
@@ -127,10 +125,12 @@ def iterate_command_params(
     nargs_minus_one_param: tuple[click.Argument, int] | None = None
 
     for idx, param in enumerate(command.params):
-        if isinstance(param, click.Argument) and param.nargs == -1:
-            nargs_minus_one_param = (param, idx)
+        is_param_argument = isinstance(param, click.Argument)
 
-        elif nargs_minus_one_param is not None:
+        if is_param_argument and param.nargs == -1:
+            nargs_minus_one_param = (param, idx)  # type: ignore[assignment]
+
+        elif nargs_minus_one_param is not None and is_param_argument:
             minus_one_param, minus_one_param_idx = nargs_minus_one_param
             raise ArgumentPositionError(command, minus_one_param, minus_one_param_idx)
 
@@ -162,7 +162,7 @@ def _get_group_ctx(ctx: Context) -> Context:
     click.Context
         The :class:`~click.Context` object that should be used to start repl on it.
     """
-    if ctx.parent is not None and not isinstance(ctx.command, Group):
+    if ctx.parent is not None and not isinstance(ctx.command, MultiCommand):
         ctx = ctx.parent
 
     ctx.protected_args = []
@@ -224,7 +224,7 @@ def get_info_dict(
             callback=obj.callback,
         )
 
-        if isinstance(obj, (Group, click.CommandCollection)):
+        if isinstance(obj, MultiCommand):
             commands = {}
 
             for name in obj.list_commands(ctx):
@@ -305,7 +305,7 @@ def get_info_dict(
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    group: Group,
+    group: MultiCommand,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
@@ -330,8 +330,8 @@ def _generate_next_click_ctx(
         # case, we want to handle these incomplete arguments. To
         # achieve this, we use a proxy command object to modify
         # the command parsing behavior in click.
-        with _create_proxy_command(cmd) as _cmd:
-            ctx = _cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
+        with _create_proxy_command(cmd) as _command:
+            ctx = _command.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
 
     else:
         ctx = cmd.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
@@ -344,7 +344,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
     while args:
         command = ctx.command
 
-        if isinstance(command, Group):
+        if isinstance(command, MultiCommand):
             if not command.chain:
                 ctx, cmd = _generate_next_click_ctx(command, ctx, args, proxy=proxy)
 
