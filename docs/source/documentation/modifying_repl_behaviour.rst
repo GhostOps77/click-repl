@@ -128,7 +128,7 @@ of :class:`~click_repl._repl.ReplCli`.
 Custom prompt
 -------------
 
-click-repl uses  ``> `` as it's prompt by default. But you can assign custom prompt instead of the default prompt by -
+click-repl uses ``>`` as it's prompt by default. But you can assign custom prompt instead of the default prompt by -
 
 #. Assigning your prompt to ``message`` key in :func:`~click_repl._repl.repl`'s ``prompt_kwargs`` dictionary.
 

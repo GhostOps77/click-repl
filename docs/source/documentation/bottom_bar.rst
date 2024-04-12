@@ -33,9 +33,18 @@ It also keeps track of number of arguments that a parameter with nargs>1 has rec
         repl(ctx)
 
     @main.command()
-    @click.argument('source_files', nargs=-1, type=click.File())
-    @click.option('-o', '--output-file', type=click.Path())
-    def compile(source_files, output_file):
+    @click.option('--student-name')
+    @click.argument('marks', nargs=5, type=float)
+    def get_marks(student_name, marks):
         ...
 
 <insert image>
+
+:class:`~click_repl.bottombar.BottomBar`
+----------------------------------------
+
+This class is responsible for generating text that should be displayed at the bottom bar. It's object returns a
+:class:`~click_repl.formatting.Marquee` object, which will yield the appropriate chunk of text for every iteration to imitate
+the behaviour of ``<marquee></marquee>`` html tag, to display the text that overflows the terminal window.
+
+For more about it's behaviour, Refer from here: `Marquee <marquee>`_

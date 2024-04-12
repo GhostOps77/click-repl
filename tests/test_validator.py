@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import click
 import pytest
 from prompt_toolkit.document import Document
@@ -36,7 +38,7 @@ validator = ClickValidator(click.Context(main), InternalCommandSystem())
 
 @pytest.mark.parametrize("test_input", ["!echo hi", ":cls"])
 def test_validator_ignores_internal_commands(test_input):
-    validator.validate(Document(test_input)) is None
+    assert validator.validate(Document(test_input)) is None
 
 
 @pytest.mark.parametrize(
@@ -76,7 +78,11 @@ def test_display_all_errors_false_no_change_on_click_exc(test_input, expected_er
 
 
 def test_dont_show_all_errors_hides_other_exc():
+    os.environ["CLICK_REPL_DEV_ENV"] = "true"
+
     validator_dont_show_all_errors.validate(Document("command --opt2 "))
 
     with open(".click-repl-err.log") as log_file:
         assert log_file.readlines()[-1].strip() == "Exception: sample standard error"
+
+    os.environ.pop("CLICK_REPL_DEV_ENV")
