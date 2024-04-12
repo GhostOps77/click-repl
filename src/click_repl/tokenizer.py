@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Iterable
 import click
 from prompt_toolkit.formatted_text import FormattedText
 
-from ._globals import ISATTY
+from .globals_ import ISATTY
 
 if TYPE_CHECKING:
     from ._types import ListOfTokens, _CompletionStyleDictKeys

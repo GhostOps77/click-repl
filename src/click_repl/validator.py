@@ -13,8 +13,8 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
-from ._globals import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
 from .bottom_bar import BottomBar
+from .globals_ import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
 from .parser import _resolve_state
 

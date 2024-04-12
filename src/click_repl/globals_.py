@@ -64,14 +64,8 @@ DEFAULT_COMPLETION_STYLE_CONFIG.update(
             "autocompletion-menu.parameter.type.range.float",
             # Internal Command
             "autocompletion-menu.internalcommand.name",
-            # Default values text
-            "autocompletion-menu.parameter.default.text",
-            "autocompletion-menu.parameter.default.value",
-            # Flag values text
-            "autocompletion-menu.parameter.flag-value.text",
-            "autocompletion-menu.parameter.flag-value.value",
             # Misc.
-            "autocompletion-menu.symbols.bracket",
+            "autocompletion-menu.symbol.bracket",
             "autocompletion-menu.space",
         ],
         "",
@@ -79,6 +73,9 @@ DEFAULT_COMPLETION_STYLE_CONFIG.update(
 )
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
+    # MultiCommand
+    "bottom-bar.multicommand.name": "bold",
+    "bottom-bar.multicommand.type": "bold",
     # Group
     "bottom-bar.group.name": "bold",
     "bottom-bar.group.type": "bold",
@@ -87,27 +84,24 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     "bottom-bar.command.type": "bold",
     # Misc. for Parameter.
     "bottom-bar.parameter.nargs.counter": "fg:green",
-    # Base Paramter
-    "bottom-bar.parameter.inuse": "bold underline",
-    "bottom-bar.parameter.used": "strike",
+    # Base Parameter
+    "bottom-bar.parameter.usage.inuse": "bold underline",
+    "bottom-bar.parameter.usage.used": "strike",
     # ParamType tokens especially for Tuple type.
-    "bottom-bar.parameter.type.inuse": "bold underline",
-    "bottom-bar.parameter.type.used": "strike",
-    # For displaying Exceptions
-    "bottom-bar.error": "fg:white bg:red",
-    "bottom-bar.error.exception-class-name": "bold",
-    "bottom-bar.error.message": "bold",
+    "bottom-bar.parameter.type.usage.inuse": "bold underline",
+    "bottom-bar.parameter.type.usage.used": "strike",
 }
 """Default token style configuration for :class:`~click_repl.bottom_bar.BottomBar`"""
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG.update(
     dict.fromkeys(
         [
+            # MultiCommand
+            "bottom-bar.multicommand.metavar",
             # Group
             "bottom-bar.group.metavar",
             # Command
             "bottom-bar.command.metavar",
-            "bottom-bar.parameter.type.name",
             # Primitive datatypes.
             "bottom-bar.parameter.type.string",
             "bottom-bar.parameter.type.integer",
@@ -127,21 +121,22 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG.update(
             "bottom-bar.parameter.type.datetime",
             "bottom-bar.parameter.type.uuid",
             "bottom-bar.parameter.type.unprocessed",
+            # Base Parameter
+            "bottom-bar.parameter.name",
+            "bottom-bar.parameter.type",
+            # Parameter usage.
+            "bottom-bar.parameter.usage.unused",
+            # ParamType tokens especially for Tuple type.
+            "bottom-bar.parameter.type.usage.unused",
             # Misc.
             "bottom-bar.space",
-            "bottom-bar.symbol",
             "bottom-bar.ellipsis",
+            "bottom-bar.symbol",
             "bottom-bar.symbol.bracket",
             # Misc. for Parameter.
             "bottom-bar.parameter.nargs",
             "bottom-bar.parameter.argument.name",
             "bottom-bar.parameter.option.name",
-            # Base Paramter
-            "bottom-bar.paramter.name",
-            "bottom-bar.parameter.type",
-            "bottom-bar.parameter.unused",
-            # ParamType tokens especially for Tuple type.
-            "bottom-bar.parameter.type.unused",
         ],
         "",
     )

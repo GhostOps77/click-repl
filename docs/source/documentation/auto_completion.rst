@@ -8,15 +8,15 @@ It uses :class:`~click_repl.completer.ClickCompleter` by default.
 It can yield out completions from every click component's ``shell_complete`` (or ``autocompletion`` in version 7) method.
 It also does generate auto completion specific to each of click components.
 
-:class:`~click_repl.completer.ReplCompletion`
----------------------------------------------
+ReplCompletion
+---------------
 
-It's implemented by using :class:`~prompt_toolkit.completion.Completion` as the base class.
+:class:`~click_repl.completer.ReplCompletion` is implemented by using :class:`~prompt_toolkit.completion.Completion` as the base class.
 Objects of this type holds the information about the possible suggestion for the incomplete text in repl prompt.
 These objects are submitted from prompt to appear as suggestions in terminal.
 
-:class:`~click_repl.completer.ReplCompletion` vs :class:`~prompt_toolkit.completion.Completion`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ReplCompletion vs Completion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The only difference between :class:`~click_repl.completer.ReplCompletion`and :class:`~prompt_toolkit.completion.Completion`
 is, :class:`~click_repl.completer.ReplCompletion` calculates the starting position, relative to the text cursor, from
@@ -146,12 +146,11 @@ You can make your own completer class. And in order to use it, pass it into the 
 
 Refer to ``ClickCompleter``'s `API Docs <~click_repl.completer.ClickCompleter>`_ to know about component specific methods.
 
-
 .. note::
 
     You cannot disable completer in the same way just like for the validator. The completer is the crucial component of the click-repl module.
 
-Completer kwargs
+completer_kwargs
 ----------------
 
 If you want to pass in extra keyword arguments to the completer, you can pass it through ``completer_kwargs`` parameter
@@ -172,9 +171,9 @@ of :func:`~click_repl._repl.repl` function.
 This keyword arguments dictionary will be updated with the default keyword arguments of completer, that will be supplied to
 the completer while initializing the repl. The default arguments for :class:`~click-repl.completer.ClickCompleter` are -
 
-    #. ``ctx`` - :class:`~click.Context` of the invoked group.
-    #. ``internal_command_system`` - :class:`~click_repl.internal_commands.InternalCommandSystem` object, and
-    #. ``bottom_bar`` - :class:`~click_repl.bottom_bar.BottomBar` object of the current repl session.
+#. ``ctx`` - :class:`~click.Context` of the invoked group.
+#. ``internal_command_system`` - :class:`~click_repl.internal_commands.InternalCommandSystem` object, and
+#. ``bottom_bar`` - :class:`~click_repl.bottom_bar.BottomBar` object of the current repl session.
 
 These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_completer_kwargs` method.
 

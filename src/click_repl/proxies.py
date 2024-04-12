@@ -11,7 +11,7 @@ import click
 from click import Argument, Command, Context, Group, Option, Parameter
 from typing_extensions import Self
 
-from ._globals import HAS_CLICK_GE_8
+from .globals_ import HAS_CLICK_GE_8
 from .parser import ReplOptionParser
 
 T = t.TypeVar("T")

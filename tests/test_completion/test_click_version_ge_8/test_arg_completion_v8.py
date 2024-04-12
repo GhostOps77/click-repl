@@ -5,8 +5,8 @@ import pytest
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 
-from click_repl._globals import HAS_CLICK_GE_8
 from click_repl.completer import ClickCompleter
+from click_repl.globals_ import HAS_CLICK_GE_8
 from tests import DummyInternalCommandSystem
 
 if HAS_CLICK_GE_8:

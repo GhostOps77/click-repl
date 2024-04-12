@@ -1,3 +1,33 @@
+# Copyright 2014 Pallets
+# Copyright 2024 GhostOps77
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
 """
 Parsing functionalities for the module.
 """
@@ -7,7 +37,6 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 from gettext import gettext as _
-from shlex import shlex
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 import click
@@ -16,8 +45,15 @@ from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
 
 from . import utils
-from ._compat import OptionParser, ParsingState, _Argument, _Option, normalize_opt
-from ._globals import HAS_CLICK_GE_8
+from ._compat import (
+    OptionParser,
+    ParsingState,
+    _Argument,
+    _Option,
+    normalize_opt,
+    split_arg_string,
+)
+from .globals_ import HAS_CLICK_GE_8
 
 if TYPE_CHECKING:
     from ._types import _REPL_PARSING_STATE_KEY, InfoDict
@@ -63,92 +99,6 @@ class Incomplete:
             value = self.parsed_str + value[len(expanded_incomplete) :]
 
         return value
-
-
-def split_arg_string(string: str, posix: bool = True) -> list[str]:
-    """
-    Split a command line string into a list of tokens.
-    Using the same implementation as in `click.parser.split_arg_string`
-
-    This function behaves similarly to `shlex.split`, but it does not fail
-    if the string is incomplete. It handles missing closing quotes or incomplete
-    escape sequences by treating the partial token as-is.
-
-    Parameters
-    ----------
-    string : str
-        The string to be split into tokens.
-
-    posix : bool
-        Determines whether to split the string in POSIX style.
-
-    Returns
-    -------
-    A list of string tokens parsed from the input string.
-    """
-
-    lex = shlex(string, posix=posix, punctuation_chars=True)
-    lex.whitespace_split = True
-    lex.escape = ""
-    out: list[str] = []
-
-    try:
-        out.extend(lex)
-    except ValueError:
-        out.append(lex.token)
-
-    return out
-
-
-@lru_cache(maxsize=3)
-def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
-    args = split_arg_string(document_text)
-    cursor_within_command = not document_text[-1:].isspace()
-
-    if args and cursor_within_command:
-        incomplete = args.pop()
-    else:
-        incomplete = ""
-
-    equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
-
-    if equal_sign_match:
-        # ctx_opt_prefixes = (
-        #     get_current_repl_ctx().current_state.current_ctx._opt_prefixes  # type:ignore
-        # )
-        opt, _, incomplete = equal_sign_match.groups()
-        args.append(opt)
-
-        # if opt_prefix not in ctx_opt_prefixes:
-        #     args.append(opt)
-        #     incomplete = _incomplete
-
-    _args = tuple(args)
-
-    if not incomplete:
-        return _args, Incomplete("", "")
-
-    raw_incomplete_with_quotes = ""
-    secondary_check = False
-
-    args_splitted_by_space = document_text.split(" ")
-
-    if equal_sign_match:
-        args_splitted_by_space.pop()
-        args_splitted_by_space.extend([args[-1], incomplete])
-
-    for token in reversed(args_splitted_by_space):
-        _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
-
-        if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
-            secondary_check = True
-
-        elif secondary_check:
-            break
-
-        raw_incomplete_with_quotes = _tmp
-
-    return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
 
 
 class ReplParsingState:
@@ -316,6 +266,50 @@ class ReplParsingState:
 
 
 @lru_cache(maxsize=3)
+def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
+    args = split_arg_string(document_text)
+    cursor_within_command = not document_text[-1:].isspace()
+
+    if args and cursor_within_command:
+        incomplete = args.pop()
+    else:
+        incomplete = ""
+
+    equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
+
+    if equal_sign_match:
+        opt, _, incomplete = equal_sign_match.groups()
+        args.append(opt)
+
+    _args = tuple(args)
+
+    if not incomplete:
+        return _args, Incomplete("", "")
+
+    raw_incomplete_with_quotes = ""
+    secondary_check = False
+
+    args_splitted_by_space = document_text.split(" ")
+
+    if equal_sign_match:
+        args_splitted_by_space.pop()
+        args_splitted_by_space.extend([args[-1], incomplete])
+
+    for token in reversed(args_splitted_by_space):
+        _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
+
+        if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
+            secondary_check = True
+
+        elif secondary_check:
+            break
+
+        raw_incomplete_with_quotes = _tmp
+
+    return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
+
+
+@lru_cache(maxsize=3)
 def _resolve_repl_parsing_state(
     cli_ctx: Context,
     current_ctx: Context,
@@ -347,7 +341,6 @@ def _resolve_state(
         object, and the :class:`click_repl.parser.Incomplete` object that holds the
         incomplete data that requires suggestions.
     """
-    # args = tuple(split_arg_string(document_text))
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)

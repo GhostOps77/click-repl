@@ -10,7 +10,7 @@ from typing import Union
 import click
 from typing_extensions import TypeAlias
 
-from ._globals import HAS_CLICK_GE_8, HAS_CLICK_GE_8_2
+from .globals_ import HAS_CLICK_GE_8, HAS_CLICK_GE_8_2
 
 RANGE_TYPES: TypeAlias = Union[click.IntRange, click.FloatRange]
 """Range types that are used as a :class:`~click.Parameter`'s type in :mod:`~click`.
@@ -40,7 +40,8 @@ AUTO_COMPLETION_FUNC_ATTR = (
    :class:`~click.Parameter` is different in ``click <= 7`` and ``click >= 8``.
 """
 
-
+# Several things are deprecated in click v8.2
+# Therefore, we're importing them based on their new name.
 if HAS_CLICK_GE_8_2:
     from click.core import Group as MultiCommand  # type:ignore
     from click.parser import _Argument  # type:ignore
@@ -49,12 +50,19 @@ if HAS_CLICK_GE_8_2:
     from click.parser import _OptionParser as OptionParser  # type:ignore
     from click.parser import _ParsingState as ParsingState  # type:ignore
     from click.parser import _split_opt as split_opt  # type:ignore
+    from click.shell_completion import split_arg_string
 
 else:
     from click.core import MultiCommand  # type:ignore
     from click.parser import Argument as _Argument  # type:ignore
     from click.parser import Option as _Option  # type:ignore
-    from click.parser import OptionParser, ParsingState, normalize_opt, split_opt
+    from click.parser import (
+        OptionParser,
+        ParsingState,
+        normalize_opt,
+        split_arg_string,
+        split_opt,
+    )
 
     if HAS_CLICK_GE_8:
         RANGE_TYPES = click.types._NumberRangeBase  # type:ignore
@@ -75,4 +83,5 @@ __all__ = [
     "_Option",
     "normalize_opt",
     "split_opt",
+    "split_arg_string",
 ]

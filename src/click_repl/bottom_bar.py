@@ -11,7 +11,7 @@ from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
 
 from ._compat import RANGE_TYPES_TUPLE, MultiCommand
-from ._globals import HAS_CLICK_GE_8, ISATTY
+from .globals_ import HAS_CLICK_GE_8, ISATTY
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
 from .utils import is_param_value_incomplete, iterate_command_params
 
@@ -240,7 +240,7 @@ class BottomBar:
             # # Same goes for Parameters awaiting for values.
             usage_state = "unused"
 
-        return "parameter." + usage_state
+        return "parameter.usage." + usage_state
 
     def get_param_name_token(self, param: Parameter) -> Token:
         """
@@ -298,17 +298,17 @@ class BottomBar:
                 ]
 
             if value_in_ctx is not None:
-                usage_state = "parameter.type.used"
+                usage_state = "used"
 
             elif not found_current_type_in_tuple:
-                usage_state = "parameter.type.inuse"
+                usage_state = "inuse"
                 found_current_type_in_tuple = True
 
             else:
-                usage_state = "parameter.type.unused"
+                usage_state = "unused"
 
             type_info_tokens += [
-                (f"{token.rsplit(',', 1)[0]},{usage_state}", val, *_)
+                (f"{token.rsplit(',', 1)[0]},parameter.type.usage.{usage_state}", val, *_)
                 for token, val, *_ in res
             ]
             type_info_tokens.append(("space", " "))
@@ -342,10 +342,10 @@ class BottomBar:
             return self.get_param_tuple_type_info_tokens(param)
 
         if not is_param_value_incomplete(self.state.current_ctx, param):
-            usage_state = "parameter.type.used"
+            usage_state = "used"
 
         else:
-            usage_state = "parameter.type.inuse"
+            usage_state = "inuse"
 
         if isinstance(param_type, RANGE_TYPES_TUPLE):
             range_num_type = (
@@ -376,7 +376,7 @@ class BottomBar:
             ]
 
             type_info_tokens = append_classname_to_all_tokens(
-                type_info_tokens, [usage_state]
+                type_info_tokens, [f"parameter.type.usage.{usage_state}"]
             )
 
         return type_info_tokens
@@ -488,18 +488,18 @@ class BottomBar:
 
         if isinstance(current_command, MultiCommand):
             command_type = "multicommand"
-            command_type_metavar = type(current_command).__name__
+            command_type_name = type(current_command).__name__
 
         else:
             command_type = "command"
-            command_type_metavar = "Command"
+            command_type_name = "Command"
 
         current_command_name = current_command.name
         if current_command_name is None:
             current_command_name = "..."
 
         prefix: ListOfTokens = [
-            (f"{command_type}.type", command_type_metavar),
+            (f"{command_type}.type", command_type_name),
             ("space", " "),
             (f"{command_type}.name", current_command_name),
         ]
@@ -529,25 +529,4 @@ class BottomBar:
         return Marquee(
             TokenizedFormattedText(formatted_params_info, self.parent_token_class_name),
             prefix=TokenizedFormattedText(prefix, self.parent_token_class_name),
-        )
-
-    def display_exception(self, exc: Exception) -> None:
-        """
-        Displays the given ``exc`` :class:`~Exception` object in the bottom bar.
-
-        Parameters
-        ----------
-        exc
-            The :class:`~Exception` object that needs to be displayed.
-        """
-        self._recent_formatted_text = Marquee(
-            TokenizedFormattedText(
-                [
-                    ("error.exception-class-name", type(exc).__name__),
-                    ("symbol,error", ":"),
-                    ("space,error", " "),
-                    ("error.message", str(exc)),
-                ],
-                self.parent_token_class_name,
-            )
         )

@@ -10,8 +10,8 @@ from click import Context
 from prompt_toolkit import PromptSession
 from typing_extensions import Final
 
-from ._globals import ISATTY, _pop_context, _push_context
 from .bottom_bar import BottomBar
+from .globals_ import ISATTY, _pop_context, _push_context
 from .internal_commands import InternalCommandSystem
 from .parser import ReplParsingState
 
@@ -53,8 +53,8 @@ class ReplContext:
     prompt_kwargs
         The extra keyword arguments for :class:`~prompt_toolkit.PromptSession` class.
 
-    styles
-        A dictionary that denote the style schema of the prompt.
+    parent
+        Parent :class:`~click_repl.core.ReplContext` object of the parent repl session.
     """
 
     __slots__ = (
@@ -158,6 +158,18 @@ class ReplContext:
         if ISATTY and self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)
 
+    def update_state(self, state: ReplParsingState) -> None:
+        """
+        Updates the current parsing state of the repl.
+
+        Parameters
+        ----------
+        state
+            :class:`~click_repl.parser.ReplParsingState` object that keeps track
+            of the current parsing state.
+        """
+        self.current_state = state
+
     def history(self) -> Generator[str, None, None]:
         """
         Generates the history of past executed commands.
@@ -174,6 +186,3 @@ class ReplContext:
 
         else:
             yield from reversed(self._history)
-
-    def update_state(self, state: ReplParsingState) -> None:
-        self.current_state = state

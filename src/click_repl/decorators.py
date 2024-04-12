@@ -12,9 +12,9 @@ import click
 from typing_extensions import Concatenate, ParamSpec
 
 from ._compat import MultiCommand
-from ._globals import get_current_repl_ctx
 from ._repl import repl
 from .core import ReplContext
+from .globals_ import get_current_repl_ctx
 
 P = ParamSpec("P")
 R = t.TypeVar("R")

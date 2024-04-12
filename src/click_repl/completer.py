@@ -18,15 +18,15 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final
 
 from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
-from ._globals import (
+from .bottom_bar import BottomBar
+from .formatting import get_option_flag_sep, join_options
+from .globals_ import (
     CLICK_REPL_DEV_ENV,
     HAS_CLICK_GE_8,
     IS_WINDOWS,
     ISATTY,
     get_current_repl_ctx,
 )
-from .bottom_bar import BottomBar
-from .formatting import get_option_flag_sep, join_options
 from .internal_commands import InternalCommandSystem
 from .parser import Incomplete, ReplParsingState, _resolve_state
 from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner

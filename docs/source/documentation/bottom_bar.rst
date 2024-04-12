@@ -46,8 +46,8 @@ It also keeps track of number of arguments that a parameter with `nargs>1` has r
 
 <insert image>
 
-:class:`~click_repl.bottom_bar.BottomBar`
-----------------------------------------
+BottomBar
+---------
 
 This class is responsible for generating text that should be displayed at the bottom bar. It's object returns a
 :class:`~click_repl.tokenizer.Marquee` object, which will yield the appropriate chunk of text for every iteration to imitate

@@ -17,15 +17,14 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style, merge_styles
 from prompt_toolkit.validation import Validator
 
-from ._compat import MultiCommand
-from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
+from ._compat import MultiCommand, split_arg_string
 from .bottom_bar import BottomBar
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
 from .formatting import print_error
+from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
-from .parser import split_arg_string
 from .utils import _generate_next_click_ctx, _get_group_ctx
 from .validator import ClickValidator
 
@@ -57,20 +56,20 @@ class Repl:
         class.
 
     completer_cls
-        :class:`~prompt_toolkit.completion.Completer` class to generate
+        :class:`~prompt_toolkit.completion.Completer` type class to generate
         :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
         :class:`~click_repl.completer.ClickCompleter` class is used by default.
 
     validator_cls
-        :class:`~prompt_toolkit.validation.Validator` class to display error messages
-        in the bottom bar during auto-completion.
+        :class:`~prompt_toolkit.validation.Validator` type class to display error
+        messages in the bottom bar during auto-completion.
         :class:`~click_repl.validator.ClickValidator` class is used by default.
 
     completer_kwargs
-        Keyword arguments thats sent to the ``completer_cls`` class constructor.
+        Keyword arguments that's sent to the ``completer_cls`` class constructor.
 
     validator_kwargs
-        Keyword arguments thats sent to the ``validator_cls`` class constructor.
+        Keyword arguments that's sent to the ``validator_cls`` class constructor.
 
     internal_command_prefix
         Prefix that triggers internal commands within the REPL.
@@ -186,7 +185,7 @@ class Repl:
             A :class:`~prompt_toolkit.completion.Completer` type class.
 
         completer_kwargs
-            Contains keyword arguments that to be passed to the
+            Contains keyword arguments tha's passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
 
         Returns
@@ -228,7 +227,7 @@ class Repl:
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that has to be passed to the
+            Contains keyword arguments that's passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
         """
 
@@ -254,6 +253,7 @@ class Repl:
         validator_cls: type[Validator] | None,
         validator_kwargs: dict[str, Any],
         prompt_kwargs: dict[str, Any],
+        style_config_dict: dict[str, str] = {},
     ) -> dict[str, Any]:
         """
         Generates default keyword arguments for initializing a
@@ -266,14 +266,14 @@ class Repl:
             A :class:`~prompt_toolkit.completion.Completer` type class.
 
         completer_kwargs
-            Contains keyword arguments that to be passed to the
+            Contains keyword arguments that's passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
 
         validator_cls
             A :class:`~prompt_toolkit.validation.Validator` type class.
 
         validator_kwargs
-            Contains keyword arguments that has to be passed to the
+            Contains keyword arguments that's passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
 
         Returns
@@ -315,7 +315,10 @@ class Repl:
                 )
             )
 
-        styles = Style.from_dict(DEFAULT_PROMPTSESSION_STYLE_CONFIG)
+        style_dict = DEFAULT_PROMPTSESSION_STYLE_CONFIG.copy()
+        style_dict.update(style_config_dict)
+
+        styles = Style.from_dict(style_dict)
 
         if "style" in prompt_kwargs:
             _style = prompt_kwargs.pop("style")

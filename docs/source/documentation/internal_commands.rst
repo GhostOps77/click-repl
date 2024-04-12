@@ -5,15 +5,18 @@ click-repl allows usage of certain prefixes to use the system shell commands.
 It also has other pre-defined, helpful Internal commands registered in it.
 These commands are not :class:`~click.Command` types.
 
+.. _Internal Commands:
+
 Internal Commands
 -----------------
 
 The internal commands can be invoked with a prefix associated to refer to their name (Default: ``:``).
 Run ``:help`` in a repl to know about it's usage.
 
+<insert image>
 
-:class:`~click_repl.internal_commands.InternalCommandSystem`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+InternalCommandSystem
+~~~~~~~~~~~~~~~~~~~~~
 
 All the internal commands are defined and accessed from :class:`~click_repl.internal_commands.InternalCommandSystem` object.
 You can get this object from :attr:`~click_repl.core.ReplContext.internal_command_system` attribute of the current repl
@@ -26,7 +29,7 @@ session's :class:`~click_repl.ReplContext` object.
     ics_obj = get_current_repl_ctx().internal_command_system # <class 'InternalCommandSystem'>
 
 
-Add/Remove internal commands
+Add/Remove Internal Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This object can also be used to define and add your own internal command. It's done by using the
@@ -85,7 +88,7 @@ For this example, we register the ``hi`` function as an internal command, and de
     Hi!
     'hi', command not found
 
-Default internal commands
+Default Internal Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are 3 internal commands registered by default. They are:

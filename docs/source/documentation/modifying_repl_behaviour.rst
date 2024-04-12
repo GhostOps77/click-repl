@@ -43,10 +43,10 @@ in :func:`~click_repl.decorators.register_repl`.
 
 <insert image>
 
-:class:`~click_repl._repl.ReplCli`
-----------------------------------
+ReplCli
+-------
 
-This class inherits from :class:`~click.Group`, which can also be used to invoke repl.
+:class:`~click_repl._repl.ReplCli` class inherits from :class:`~click.Group`, which can also be used to invoke repl.
 
 .. code-block:: python
 
@@ -186,8 +186,8 @@ click-repl uses ``>`` as it's prompt by default. But you can assign custom promp
            repl_ctx.prompt = f"user@{resolved_path}$ "
 
 
-``prompt_kwargs``
------------------
+prompt_kwargs
+-------------
 
 click-repl uses an instance :class:`~prompt_toolkit.PromptSession` as it's prompt interface. You can supply custom arguments to
 the :class:`~prompt_toolkit.PromptSession` instance via :func:`~click_repl._repl.repl` or :class:`~click_repl._repl.ReplCli`'s
@@ -225,14 +225,14 @@ that will be supplied to it while initializing the repl. The default arguments a
 These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_prompt_kwargs` method. Refer to
 :class:`~prompt_toolkit.PromptSession` docs for details about these parameters.
 
-:class:`~click_repl._repl.Repl`
--------------------------------
+Repl
+----
 
-This class is the curcial part of this module which configures and performs the repl action via it's
+:class:`~click_repl._repl.Repl` class is the curcial part of this module which configures and performs the repl action via it's
 :meth:`~click_repl._repl.Repl.loop` method.
 
-Custom :class:`~click_repl._repl.Repl`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Custom Repl
+~~~~~~~~~~~
 
 If you really want to customize every aspects of the repl configuration and execution, you can create your own Repl class
 that has the same blueprint/template of :class:`~click_repl._repl.Repl`. It's better if you inherit and use it
@@ -255,10 +255,10 @@ After creating one, you can use it by passing it into ``cls`` parameter of :func
         repl(ctx, cls=MyRepl)
 
 
-:class:`~click_repl.core.ReplContext`
--------------------------------------
+ReplContext
+-----------
 
-Unlike :class:`~click.Context`, this class is instantiated for every new repl session.
+Unlike :class:`~click.Context`, :class:`~click_repl.core.ReplContext` class is instantiated for every new repl session.
 This object keeps track of the current repl's state, while it's parsing arguments from the prompt while typing.
 
 You can also obtain many objects that's responsible for the functionality of the repl, from this context object,
@@ -289,10 +289,10 @@ So, please don't accidentally switch them.
         # You can do whatever you want with the current repl session's context object.
         ...
 
-:class:`~prompt_toolkit.PromptSession` object
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PromptSession object
+~~~~~~~~~~~~~~~~~~~~
 
-click-repl uses this object, which is resopnsible for the repl functionality in this module. This object can be accessed
-via :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext` object. You can use
-this to extend the functionality of the repl. Refer to :mod:`~prompt_toolkit`'s
+click-repl uses :class:`~prompt_toolkit.PromptSession` object, which is resopnsible for the repl functionality in this module.
+This object can be accessed via :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext`
+object. You can use this to extend the functionality of the repl. Refer to :mod:`~prompt_toolkit`'s
 `PromptSession <https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#the-promptsession-object>` docs.

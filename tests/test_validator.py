@@ -5,7 +5,7 @@ import pytest
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError
 
-from click_repl._globals import HAS_CLICK_GE_8
+from click_repl.globals_ import HAS_CLICK_GE_8
 from click_repl.internal_commands import InternalCommandSystem
 from click_repl.validator import ClickValidator
 from tests import DummyInternalCommandSystem

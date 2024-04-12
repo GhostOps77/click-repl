@@ -11,7 +11,6 @@ from typing import Any, Callable, NoReturn
 
 import click
 
-from ._globals import get_current_repl_ctx
 from ._types import CallableNone, InfoTable, InternalCommandDict, PrefixTable
 from .exceptions import (
     ExitReplException,
@@ -21,6 +20,7 @@ from .exceptions import (
     WrongType,
 )
 from .formatting import print_error
+from .globals_ import get_current_repl_ctx
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
 

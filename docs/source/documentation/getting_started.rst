@@ -39,7 +39,6 @@ click-repl can be integrated with your click application in various ways. Each o
            pass
 
        @cli.command()
-
        def hello():
            click.echo("Hello world!")
 

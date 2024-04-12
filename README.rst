@@ -11,7 +11,6 @@ without the necessity to tweak your ``.bashrc`` or ``.ps1`` configuration files.
 
 All customizations can be conveniently handled using pure Python code.
 
-
 Installation
 ============
 
@@ -20,7 +19,6 @@ Installation is done via pip:
 .. code-block:: shell
 
     pip install click-repl
-
 
 Usage
 =====

@@ -56,7 +56,6 @@ necessary values to it's parameters.
 			# Implement your logic on validating input text in prompt.
 			...
 
-
 	@click.group()
 	@click.pass_context
 	def main():
@@ -73,7 +72,7 @@ You can also disable it in the same way, by passing in ``None`` to the ``validat
 
 This disables the usage of validator. Therefore, no validation of input is done while typing in prompt.
 
-Validator kwargs
+validator_kwargs
 ----------------
 
 If you want to pass in extra keyword arguments to the validator, you can pass it through ``validator_kwargs`` parameter
@@ -93,8 +92,8 @@ of :func:`~click_repl._repl.repl` function.
 This keyword arguments dictionary will be updated with the default keyword arguments of validator, that will be supplied
 to the validator while initializing the repl. The default arguments for :class:`~click-repl.validator.ClickValidator` are -
 
-    #. ``ctx`` - :class:`~click.Context` of the invoked group.
-    #. ``internal_command_system`` - :class:`~click_repl.internal_commands.InternalCommandSystem` object of the current repl session.
+#. ``ctx`` - :class:`~click.Context` of the invoked group.
+#. ``internal_command_system`` - :class:`~click_repl.internal_commands.InternalCommandSystem` object of the current repl session.
 
 These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_validator_kwargs` method.
 
@@ -104,9 +103,9 @@ Display all errors
 By default, :class:`~click_repl.validator.ClickValidator` displays all the exceptions, that are raised while typing in prompt,
 in validator bar, including generic python exceptions.
 
-In order to change this default behaviour, set ``display_all_errors`` parameter to ``False`` in the validator kwargs.
-The flag :attr:`~click_repl.validator.ClickValidator.display_all_errors` determines whether to raise generic
-Python Exceptions, and not to display them in the validator bar, resulting in the full error traceback being
+In order to change this default behaviour, set :attr:`~click_repl.validator.ClickValidator.display_all_errors` parameter to
+``False`` in the validator kwargs. The flag :attr:`~click_repl.validator.ClickValidator.display_all_errors` determines
+whether to raise generic Python Exceptions, and not to display them in the validator bar, resulting in the full error traceback being
 redirected to a log file in the REPL mode.
 
 By default it's ``True``, which means, All errors raised while typing in prompt are
