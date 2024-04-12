@@ -4,26 +4,23 @@ Parsing functionalities for the module.
 
 from __future__ import annotations
 
+import os
 import re
 from functools import lru_cache
-from gettext import gettext as _
-from shlex import shlex
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import Any, Dict, cast
 
 import click
-from click import Argument as CoreArgument
 from click import Command, Context, Group, Parameter
-from click.exceptions import BadOptionUsage, NoSuchOption
+from typing_extensions import TypeAlias
 
-from . import utils
-from ._compat import OptionParser, ParsingState, _Argument, _Option, normalize_opt
-from ._globals import HAS_CLICK_GE_8
+from ._compat import split_arg_string, split_opt
+from .click_custom.shell_completion import _resolve_context
+from .globals_ import get_current_repl_ctx
+from .utils import is_param_value_incomplete, iterate_command_params
 
-if TYPE_CHECKING:
-    from ._types import _REPL_PARSING_STATE_KEY, InfoDict
+InfoDict: TypeAlias = Dict[str, Any]
+# Dictionary that has info about the click objects.
 
-
-_flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 
 # Just gonna assume that people use only '-' and '--' as prefix for option flags
@@ -34,126 +31,78 @@ _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
 
 
 class Incomplete:
-    __slots__ = ("raw_str", "parsed_str")
-
-    def __init__(self, raw_str: str, parsed_str: str) -> None:
-        self.raw_str = raw_str.strip()
-        self.parsed_str = parsed_str
-
-    def __str__(self) -> str:
-        return self.parsed_str
-
-    def __repr__(self) -> str:
-        return repr(self.parsed_str)
-
-    def __bool__(self) -> bool:
-        return bool(self.raw_str)
-
-    def __len__(self) -> int:
-        return len(self.parsed_str)
-
-    def expand_envvars(self) -> str:
-        self.parsed_str = utils._expand_envvars(self.parsed_str).strip()
-        return self.parsed_str
-
-    def reverse_prefix_envvars(self, value: str) -> str:
-        expanded_incomplete = self.expand_envvars()
-
-        if value.startswith(expanded_incomplete):
-            value = self.parsed_str + value[len(expanded_incomplete) :]
-
-        return value
-
-
-def split_arg_string(string: str, posix: bool = True) -> list[str]:
     """
-    Split a command line string into a list of tokens.
-    Using the same implementation as in `click.parser.split_arg_string`
-
-    This function behaves similarly to `shlex.split`, but it does not fail
-    if the string is incomplete. It handles missing closing quotes or incomplete
-    escape sequences by treating the partial token as-is.
+    Stores the last incomplete text token in the current prompt input, that requires
+    suggestions. It stores the incomplete last text token in its raw form in
+    :attr:`~.raw_str` attribute, and in its parsed form in
+    :attr:`~.parsed_str` attribute. The parsed form has no unpaired quotes
+    surrounding it if the draw form had any.
 
     Parameters
     ----------
-    string : str
-        The string to be split into tokens.
+    raw_str
+        Raw form of the incomplete text.
 
-    posix : bool
-        Determines whether to split the string in POSIX style.
-
-    Returns
-    -------
-    A list of string tokens parsed from the input string.
+    parsed_str
+        Parsed form of the raw incomplete text.
     """
 
-    lex = shlex(string, posix=posix, punctuation_chars=True)
-    lex.whitespace_split = True
-    lex.escape = ""
-    out: list[str] = []
+    __slots__ = ("raw_str", "parsed_str")
 
-    try:
-        out.extend(lex)
-    except ValueError:
-        out.append(lex.token)
+    def __init__(self, raw_str: str, parsed_str: str) -> None:
+        """Initializes the `Incomplete` class."""
 
-    return out
+        self.raw_str = raw_str.strip()
+        """Raw form of the incomplete text."""
 
+        self.parsed_str = parsed_str
+        """Parsed form of the raw incomplete text."""
 
-@lru_cache(maxsize=3)
-def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
-    args = split_arg_string(document_text)
-    cursor_within_command = not document_text[-1:].isspace()
+    # def __str__(self) -> str:
+    #     return self.parsed_str
 
-    if args and cursor_within_command:
-        incomplete = args.pop()
-    else:
-        incomplete = ""
+    # def __repr__(self) -> str:
+    #     return repr(self.parsed_str)
 
-    equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
+    # def __bool__(self) -> bool:
+    #     return bool(self.raw_str)
 
-    if equal_sign_match:
-        # ctx_opt_prefixes = (
-        #     get_current_repl_ctx().current_state.current_ctx._opt_prefixes  # type:ignore
-        # )
-        opt, _, incomplete = equal_sign_match.groups()
-        args.append(opt)
+    # def __len__(self) -> int:
+    #     return len(self.parsed_str)
 
-        # if opt_prefix not in ctx_opt_prefixes:
-        #     args.append(opt)
-        #     incomplete = _incomplete
+    def expand_envvars(self) -> str:
+        """
+        Expands Environmental variables in :attr:`~.parsed_str` and returns
+        it as a new string.
 
-    _args = tuple(args)
-
-    if not incomplete:
-        return _args, Incomplete("", "")
-
-    raw_incomplete_with_quotes = ""
-    secondary_check = False
-
-    args_splitted_by_space = document_text.split(" ")
-
-    if equal_sign_match:
-        args_splitted_by_space.pop()
-        args_splitted_by_space.extend([args[-1], incomplete])
-
-    for token in reversed(args_splitted_by_space):
-        _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
-
-        if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
-            secondary_check = True
-
-        elif secondary_check:
-            break
-
-        raw_incomplete_with_quotes = _tmp
-
-    return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
+        Returns
+        -------
+        str
+            String with all the Environmental in :attr:`~.parsed_str`
+            variables expanded.
+        """
+        return os.path.expandvars(os.path.expanduser(self.parsed_str)).strip()
 
 
-class ReplParsingState:
+class ReplInputState:
+    """
+    Describes about the current input state of the text in the current prompt.
+    It includes the details about the current click group, command and parameter
+    the user is requesting autocompletions for.
+
+    Parameters
+    ----------
+    cli_ctx
+        The click context object of the main group.
+
+    current_ctx
+        The most recently created click context object, after parsing :attr:`~.args`.
+
+    args
+        List of text that's entered in the prompt.
+    """
+
     __slots__ = (
-        "cli",
         "current_ctx",
         "cli_ctx",
         "args",
@@ -170,57 +119,67 @@ class ReplParsingState:
         current_ctx: Context,
         args: tuple[str, ...],
     ) -> None:
+        """
+        Initializes the `ReplInputState` class.
+        """
+
         self.cli_ctx = cli_ctx
-        self.cli = cast(Group, self.cli_ctx.command)
+        """The click context object of the main group."""
 
         self.current_ctx = current_ctx
+        """
+        The most recently created click context object,
+        after parsing :attr:`~.args`
+        """
+
         self.args = args
+        """List of text that's entered into the prompt."""
 
         self.remaining_params: list[Parameter] = []
+        """List of unused parameters of the current command."""
+
         self.double_dash_found = getattr(current_ctx, "_double_dash_found", False)
+        """Determines whether there's a ``'--'`` in :attr:`~.args`."""
 
-        self.current_group, self.current_command, self.current_param = self.parse()
+        current_group, current_command, current_param = self.parse()
 
-    def __str__(self) -> str:
-        res = [str(self.current_group.name)]
+        self.current_group = current_group
+        """The current click group the user is in."""
 
-        cmd = getattr(self.current_command, "name", None)
-        if cmd is not None:
-            res.append(cmd)
+        self.current_command = current_command
+        """The current click command the user is in."""
 
-        param = getattr(self.current_param, "name", None)
-        if param is not None:
-            if len(res) == 1:
-                res.append("None")
-            res.append(param)
+        self.current_param = current_param
+        """The current click parameter the user is on."""
 
-        return " > ".join(res)
+    # def __str__(self) -> str:
+    #     res = [str(self.current_group.name)]
 
-    def __repr__(self) -> str:
-        return f'"{str(self)}"'
+    #     cmd = getattr(self.current_command, "name", None)
+    #     if cmd is not None:
+    #         res.append(cmd)
 
-    def __key(self) -> _REPL_PARSING_STATE_KEY:
-        keys: list[InfoDict | None] = []
+    #     param = getattr(self.current_param, "name", None)
+    #     if param is not None:
+    #         if len(res) == 1:
+    #             res.append("None")
+    #         res.append(param)
 
-        for i in (
-            self.current_group,
-            self.current_command,
-            self.current_param,
-            self.current_ctx,
-        ):
-            keys.append(None if i is None else utils.get_info_dict(i))
+    #     return " > ".join(res)
 
-        return (  # type: ignore[return-value]
-            *keys,
-            tuple(utils.get_info_dict(param) for param in self.remaining_params),
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ReplParsingState):
-            return NotImplemented  # type:ignore[no-any-return]
-        return self.__key() == other.__key()
+    # def __repr__(self) -> str:
+    #     return f'"{str(self)}"'
 
     def parse(self) -> tuple[Group, Command | None, Parameter | None]:
+        """
+        Parse the :attr`~.current_ctx` and returns the current click group, command
+        and paramter that's been requested in the prompt.
+
+        Returns
+        -------
+        tuple[Group,Command | None,Parameter | None]
+            The current click group, command and parameter, if requested, in the prompt.
+        """
         current_group, current_command = self.get_current_group_and_command()
         current_param = None
 
@@ -230,12 +189,21 @@ class ReplParsingState:
         return current_group, current_command, current_param
 
     def get_current_group_and_command(self) -> tuple[Group, Command | None]:
+        """
+        Parse the :attr:`~.current_ctx` and returns the current click group
+        and command that's been requested in the prompt.
+
+        Returns
+        -------
+        tuple[Group,Command | None]
+            The current click group and command, if requested, in the prompt.
+        """
         current_ctx_command = self.current_ctx.command
 
         current_group = current_ctx_command
         current_command = None
 
-        if current_ctx_command == self.cli:
+        if current_ctx_command == self.cli_ctx.command:
             return current_group, current_command  # type:ignore[return-value]
 
         # If parent ctx exist, we change current_group to the parent ctx's command.
@@ -251,7 +219,7 @@ class ReplParsingState:
         ]
 
         all_arguments_got_values = all(
-            not utils.is_param_value_incomplete(self.current_ctx, param)
+            not is_param_value_incomplete(self.current_ctx, param)
             for param in cmd_arguments_list
         )
 
@@ -270,17 +238,45 @@ class ReplParsingState:
         return current_group, current_command
 
     def get_current_param(self, current_command: Command) -> Parameter | None:
+        """
+        Parse the :attr:`~.current_ctx` and returns the current click parameter
+        from the given :attr:`~.current_command` that's been requested in the prompt.
+
+        Parameters
+        ----------
+        current_command
+            The current click command.
+
+        Returns
+        -------
+        Parameter | None
+            The current click parameter, if requested, in the prompt.
+        """
         self.remaining_params = [
             param
             for param in current_command.params
-            if utils.is_param_value_incomplete(self.current_ctx, param)
+            if is_param_value_incomplete(self.current_ctx, param)
         ]
 
-        return self.parse_param_opt(current_command) or self.parse_param_arg(
+        return self.get_current_opt(current_command) or self.get_current_arg(
             current_command
         )
 
-    def parse_param_opt(self, current_command: Command) -> click.Option | None:
+    def get_current_opt(self, current_command: Command) -> click.Option | None:
+        """
+        Parse the :attr:`~.current_ctx` and returns the current click option
+        from the given :attr:`~.current_command` that's been requested in the prompt.
+
+        Parameters
+        ----------
+        current_command
+            The current click command.
+
+        Returns
+        -------
+        click.Option | None
+            The current click option, if requested, in the prompt.
+        """
         if "--" in self.args:
             # click parses all input strings after "--" as values for click.Argument
             # type parameters. So, we don't check for click.Optional parameters.
@@ -304,202 +300,179 @@ class ReplParsingState:
 
         return None
 
-    def parse_param_arg(self, current_command: Command) -> click.Argument | None:
-        for param in utils.iterate_command_params(current_command):
+    def get_current_arg(self, current_command: Command) -> click.Argument | None:
+        """
+        Parse the :attr:`~.current_ctx` and returns the current click argument
+        from the given :attr:`~.current_command` that's been requested in the prompt.
+
+        Parameters
+        ----------
+        current_command
+            The current click command.
+
+        Returns
+        -------
+        click.Argument | None
+            The current click argument, if requested, in the prompt.
+        """
+        for param in iterate_command_params(current_command):
             if not isinstance(param, click.Argument):
                 continue
 
-            elif utils.is_param_value_incomplete(self.current_ctx, param):
+            elif is_param_value_incomplete(self.current_ctx, param):
                 return param
 
         return None
 
 
 @lru_cache(maxsize=3)
-def _resolve_repl_parsing_state(
+def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
+    """
+    Resolves the last incomplete string token from the prompt to
+    generate suggestions based on it.
+
+    Parameters
+    ----------
+    document_text
+        The text currently in the prompt.
+
+    Returns
+    -------
+    tuple[tuple[str,...],Incomplete]
+        A tuple that containing:
+            - A list of text, lexically split from the text in prompt.
+            - An Incomplete object that has the recent incomplete text token.
+    """
+
+    # Expand environmental variables in the input text.
+    args = split_arg_string(document_text)
+
+    # Assess and retrieve the last incomplete text in the prompt.
+    cursor_within_command = not document_text[-1:].isspace()
+
+    if args and cursor_within_command:
+        incomplete = args.pop()
+    else:
+        incomplete = ""
+
+    # Check if the 'incomplete' resembles an option name, and has an '=' after that
+    # option name. If yes, split it and append the option name to args, and use the
+    # incomplete text's explicit value as the new incomplete text.
+    equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
+
+    if equal_sign_match:
+        opt, _, incomplete = equal_sign_match.groups()
+        args.append(opt)
+
+    # This case matches short option names that has their values along with it, with
+    # no space between them. They're splitted separately and the opt is pushed
+    # back into args.
+    opt, _incomplete = split_opt(incomplete)
+    short_opt_joint_with_value = len(opt) == 1 and _incomplete[1:]
+
+    if short_opt_joint_with_value:
+        args.append(opt + _incomplete[0])
+        incomplete = _incomplete[1:]
+
+    _args = tuple(args)
+
+    # If the user hasn't requested anything with an incomplete text,
+    # No need to resolve the incomplete text anymore further.
+    if not incomplete:
+        return _args, Incomplete("", "")
+
+    # Retrieve the last incomplete token from the raw text from the prompt to
+    # reference it to calculate its length and insert the suggestions
+    # from the prompt at the right place. This step is done especially to
+    # handle incomplete texts that has unclosed quotes.
+
+    raw_incomplete_with_quotes = ""
+    secondary_check = False
+
+    args_splitted_by_space = document_text.split(" ")
+
+    # Handles the equals sign with option name as its prefix condition.
+    if equal_sign_match or short_opt_joint_with_value:
+        args_splitted_by_space.pop()
+        args_splitted_by_space.extend([args[-1], incomplete])
+
+    # elif short_opt_attacehed_with_value:
+    #     args_splitted_by_space.pop()
+    #     args_splitted_by_space.extend([args[-1], incomplete])
+
+    for token in reversed(args_splitted_by_space):
+        _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
+
+        if _tmp.translate(_quotes_to_empty_str_dict).strip() == incomplete:
+            secondary_check = True
+
+        elif secondary_check:
+            break
+
+        raw_incomplete_with_quotes = _tmp
+
+    return _args, Incomplete(raw_incomplete_with_quotes, incomplete)
+
+
+@lru_cache(maxsize=3)
+def _resolve_repl_input_state(
     cli_ctx: Context,
     current_ctx: Context,
     args: tuple[str, ...],
-) -> ReplParsingState:
-    return ReplParsingState(cli_ctx, current_ctx, args)
+) -> ReplInputState:
+    """
+    Initializes :class:`~click_repl.parser.ReplInputState` class if its arguments
+    are not cached. Otherwise, returns the cached ReplInputState object.
+
+    Parameters
+    ----------
+    cli_ctx
+        The click context object of the parent group.
+
+    current_ctx
+        The current click context object.
+
+    args
+        Tuple of strings containing the arguments.
+
+    Returns
+    -------
+    ReplInputState
+        Object that describes the current input state.
+    """
+    return ReplInputState(cli_ctx, current_ctx, args)
 
 
 @lru_cache(maxsize=3)
 def _resolve_state(
     ctx: Context, document_text: str
-) -> tuple[Context, ReplParsingState, Incomplete]:
+) -> tuple[Context, ReplInputState, Incomplete]:
     """
-    Resolves the parsing state of the arguments in the REPL prompt.
+    Resolves the input state of the arguments in the REPL prompt.
 
     Parameters
     ----------
     ctx
-        The current :class:`click.Context` object of the parent group.
+        The current click context object of the parent group.
 
     document_text
-        Text that's currently entered in the prompt.
+        The text currently in the prompt.
 
     Returns
     -------
-    tuple[Context,ReplParsingState,Incomplete]
-        Returns the appropriate `click.Context` constructed from parsing
-        the given input from prompt, current :class:`click_repl.parser.ReplParsingState`
-        object, and the :class:`click_repl.parser.Incomplete` object that holds the
-        incomplete data that requires suggestions.
+    tuple[Context,ReplInputState,Incomplete]
+        A tuple that contains:
+            - click context object constructed from parsing the given input from prompt.
+            - Current REPL input state object.
+            - Object that holds the incomplete text token that requires suggestions.
     """
-    # args = tuple(split_arg_string(document_text))
+
     args, incomplete = _resolve_incomplete(document_text)
-    parsed_ctx = utils._resolve_context(ctx, args, proxy=True)
-    state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
+    parsed_ctx = _resolve_context(ctx, args)
+    state = _resolve_repl_input_state(ctx, parsed_ctx, args)
+
+    repl_ctx = get_current_repl_ctx(silent=True)
+    if repl_ctx is not None:
+        repl_ctx.update_state(state)
 
     return parsed_ctx, state, incomplete
-
-
-class ArgumentParamParser(_Argument):
-    def process(
-        self,
-        value: str | Sequence[str | None] | None,
-        state: ParsingState,
-    ) -> None:
-        if self.nargs > 1 and value is not None:
-            holes = value.count(None)
-            if holes == len(value):
-                value = None  # responsible for adding None value if arg is empty
-
-        state.opts[self.dest] = value  # type: ignore[index]
-        state.order.append(self.obj)
-
-
-class ReplOptionParser(OptionParser):
-    def __init__(self, ctx: Context) -> None:
-        super().__init__(ctx)
-
-        for opt in ctx.command.params:
-            opt.add_to_parser(self, ctx)
-
-    def add_argument(self, obj: CoreArgument, dest: str | None, nargs: int = 1) -> None:
-        self._args.append(ArgumentParamParser(obj=obj, dest=dest, nargs=nargs))
-
-    def _process_args_for_options(self, state: ParsingState) -> None:
-        while state.rargs:
-            arg = state.rargs.pop(0)
-            arglen = len(arg)
-
-            # Double dashes always handled explicitly regardless of what
-            # prefixes are valid.
-
-            if arg == "--":
-                # Dynamic attribute in click.Context object that helps to
-                # denote to the completer class to stop generating
-                # completions for option flags.
-                self.ctx._double_dash_found = True  # type: ignore[union-attr]
-                return
-
-            elif arg[:1] in self._opt_prefixes and arglen > 1:
-                self._process_opts(arg, state)
-
-            elif self.allow_interspersed_args:
-                state.largs.append(arg)
-
-            else:
-                state.rargs.insert(0, arg)
-                return
-
-    def _match_long_opt(
-        self, opt: str, explicit_value: str | None, state: ParsingState
-    ) -> None:
-        if opt not in self._long_opt:
-            from difflib import get_close_matches
-
-            possibilities = get_close_matches(opt, self._long_opt)
-            raise NoSuchOption(opt, possibilities=possibilities, ctx=self.ctx)
-
-        option = self._long_opt[opt]
-        if option.takes_value:
-            if explicit_value is not None:
-                state.rargs.insert(0, explicit_value)
-
-            value = self._get_value_from_state(opt, option, state)
-
-        elif explicit_value is not None:
-            raise BadOptionUsage(opt, _(f"Option {opt!r} does not take a value."))
-
-        else:
-            value = None
-
-        option.process(value, state)
-
-    def _match_short_opt(self, arg: str, state: ParsingState) -> None:
-        stop = False
-        i = 1
-        prefix = arg[0]
-        unknown_options = []
-
-        for ch in arg[1:]:
-            opt = normalize_opt(f"{prefix}{ch}", self.ctx)
-            option = self._short_opt.get(opt)
-            i += 1
-
-            if not option:
-                if self.ignore_unknown_options:
-                    unknown_options.append(ch)
-                    continue
-
-                raise NoSuchOption(opt, ctx=self.ctx)
-
-            if option.takes_value:
-                # Any characters left in arg?  Pretend they're the
-                # next arg, and stop consuming characters of arg.
-                if i < len(arg):
-                    state.rargs.insert(0, arg[i:])
-                    stop = True
-
-                value = self._get_value_from_state(opt, option, state)
-
-            else:
-                value = None
-
-            option.process(value, state)
-
-            if stop:
-                break
-
-        if self.ignore_unknown_options and unknown_options:
-            state.largs.append(f"{prefix}{''.join(unknown_options)}")
-
-    def _get_value_from_state(
-        self, option_name: str, option: _Option, state: ParsingState
-    ) -> Any:
-        nargs = option.nargs
-        rargs_len = len(state.rargs)
-
-        if rargs_len < nargs:
-            if HAS_CLICK_GE_8 and option.obj._flag_needs_value:
-                # Option allows omitting the value.
-                value = _flag_needs_value
-            else:
-                # Fills up missing values with None.
-                if nargs == 1:
-                    value = None
-                else:
-                    value = tuple(state.rargs + [None] * (nargs - rargs_len))
-                state.rargs = []
-
-        elif nargs == 1:
-            next_rarg = state.rargs[0]
-
-            if (
-                HAS_CLICK_GE_8
-                and option.obj._flag_needs_value
-                and isinstance(next_rarg, str)
-                and next_rarg[:1] in self._opt_prefixes
-                and len(next_rarg) > 1
-            ):
-                value = _flag_needs_value
-            else:
-                value = state.rargs.pop(0)
-        else:
-            value = tuple(state.rargs[:nargs])
-            del state.rargs[:nargs]
-
-        return value

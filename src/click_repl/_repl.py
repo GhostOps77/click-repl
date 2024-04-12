@@ -6,70 +6,72 @@ from __future__ import annotations
 
 import sys
 import traceback
+import warnings
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Sequence, cast
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Generator, Sequence
 
 import click
-from click import Context
-from prompt_toolkit.completion import Completer
-from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.styles import Style, merge_styles
-from prompt_toolkit.validation import Validator
+from click import Group
 
-from ._compat import MultiCommand
-from ._globals import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
-from .bottom_bar import BottomBar
-from .completer import ClickCompleter
+from ._compat import split_arg_string
+from .click_custom.shell_completion import _expand_args, _generate_next_click_ctx
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
-from .formatting import print_error
+from .globals_ import ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
-from .parser import split_arg_string
-from .utils import _generate_next_click_ctx, _get_group_ctx
-from .validator import ClickValidator
+from .utils import print_error
 
-__all__ = ["Repl", "repl", "ReplCli"]
+if TYPE_CHECKING:
+    from click import Context
+    from prompt_toolkit.completion import Completer
+    from prompt_toolkit.formatted_text import AnyFormattedText
+    from prompt_toolkit.validation import Validator
 
 
-@contextmanager
-def handle_lifetime(self_obj: ReplCli) -> Generator[None, None, None]:
-    if self_obj.startup is not None:
-        self_obj.startup()
+if ISATTY:
+    from prompt_toolkit.history import InMemoryHistory
+    from prompt_toolkit.styles import Style, merge_styles
 
-    yield
+    from .bottom_bar import BottomBar
+    from .completer import ClickCompleter
+    from .styles import DEFAULT_PROMPTSESSION_STYLE_CONFIG
+    from .validator import ClickValidator
 
-    if self_obj.cleanup is not None:
-        self_obj.cleanup()
+
+__all__ = ["Repl", "repl", "ReplGroup", "register_repl"]
+
+
+_MISSING = object()
 
 
 class Repl:
     """
-    Responsible for executing and maintaining the REPL.
+    Executes the REPL with proper necessary arrangements.
 
     Parameters
     ----------
     ctx
-        The "class:`~click.Context` object of the root/parent/CLI group.
+        The root/parent/CLI group's context  object.
 
     prompt_kwargs
-        Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
-        class.
+        Keyword arguments passed to the :class:`~prompt_toolkit.shortcuts.PromptSession` class.
 
     completer_cls
-        :class:`~prompt_toolkit.completion.Completer` class to generate
-        :class:`~prompt_toolkit.completion.Completion` objects for auto-completion.
+        Completer type class to generate :class:`~prompt_toolkit.completion.Completion
+        objects for auto-completion.
         :class:`~click_repl.completer.ClickCompleter` class is used by default.
 
     validator_cls
-        :class:`~prompt_toolkit.validation.Validator` class to display error messages
-        in the bottom bar during auto-completion.
+        Validator class to display error messages in the validator bar
+        during input validation.
         :class:`~click_repl.validator.ClickValidator` class is used by default.
 
     completer_kwargs
-        Keyword arguments thats sent to the ``completer_cls`` class constructor.
+        Keyword arguments passed to the constructor of ``completer_cls`` class.
 
     validator_kwargs
-        Keyword arguments thats sent to the ``validator_cls`` class constructor.
+        Keyword arguments passed to the constructor of ``validator_cls`` class.
 
     internal_command_prefix
         Prefix that triggers internal commands within the REPL.
@@ -81,14 +83,15 @@ class Repl:
     ----
     You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
     :class:`~prompt_toolkit.validation.Validator` objects via ``prompt_kwargs``.
+    But if its still done, then the REPL uses the completer and validator from it.
     """
 
     def __init__(
         self,
         ctx: Context,
         prompt_kwargs: dict[str, Any] = {},
-        completer_cls: type[Completer] = ClickCompleter,
-        validator_cls: type[Validator] | None = ClickValidator,
+        completer_cls: type[Completer] = _MISSING,  # type:ignore[assignment]
+        validator_cls: type[Validator] | None = _MISSING,  # type:ignore[assignment]
         completer_kwargs: dict[str, Any] = {},
         validator_kwargs: dict[str, Any] = {},
         internal_command_prefix: str | None = ":",
@@ -98,23 +101,34 @@ class Repl:
         Initializes the `Repl` class.
         """
 
-        self.group_ctx: Context = _get_group_ctx(ctx)
-        """Parent group for the repl to retrieve subcommands from."""
+        # Check if there's a parent command, if its there, then use it.
+        if ctx.parent is not None and not isinstance(ctx.command, Group):
+            ctx = ctx.parent
 
-        self.group: MultiCommand = cast(MultiCommand, self.group_ctx.command)
-        """Group used in the `group_ctx`"""
+        ctx.protected_args = []
+
+        self.group_ctx: Context = ctx
+        """click context of the parent/CLI group the to retrieve its subcommands."""
 
         self.internal_commands_system: InternalCommandSystem = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
         )
         """Handles and executes internal commands that are invoked in repl."""
 
-        self.bottom_bar: BottomBar | None = None
-        """To change the command description that's displayed in the bottom bar
-           accordingly based on the current parsing state."""
+        self.bottom_bar: AnyFormattedText | BottomBar = None
+        """
+        Text or callable returning text, that should be displayed in the
+        bottom toolbar of the :class:`~prompt_toolkit.shortcuts.PromptSession` object.
+
+        Alternatively, it can be a :class:`~.bottom_bar.BottomBar` object
+        to dynamically adjust the command description displayed in the
+        bottom bar based on the user's current input state.
+        """
 
         if ISATTY:
-            bottom_bar = prompt_kwargs.get("bottom_toolbar", BottomBar())
+            bottom_bar: AnyFormattedText | BottomBar = prompt_kwargs.get(
+                "bottom_toolbar", BottomBar()
+            )
 
             if isinstance(bottom_bar, BottomBar):
                 bottom_bar.show_hidden_params = completer_kwargs.get(
@@ -123,13 +137,13 @@ class Repl:
 
             elif bottom_bar is not None:
                 raise TypeError(
-                    "Expected bottom_bar to be a type of BottomBar or None, "
+                    "Expected bottom_bar to be a type of AnyFormattedText, or BottomBar, "
                     f"but got {type(bottom_bar).__name__}"
                 )
 
             self.bottom_bar = bottom_bar
 
-        prompt_kwargs = self._get_default_prompt_kwargs(
+        prompt_kwargs = self.get_default_prompt_kwargs(
             completer_cls,
             completer_kwargs,
             validator_cls,
@@ -144,7 +158,7 @@ class Repl:
             prompt_kwargs=prompt_kwargs,
             parent=get_current_repl_ctx(silent=True),
         )
-        """Context object for the current repl session."""
+        """Context object for the current REPL session."""
 
         if ISATTY:
             # If stdin is a TTY, prompt the user for input using PromptSession.
@@ -158,20 +172,21 @@ class Repl:
                 self.repl_ctx._history.append(inp)
                 return inp
 
-        self._get_command = _get_command
+        self._get_command: Callable[[], str] = _get_command
 
     def get_command(self) -> str:
-        """Retrieves input for the repl.
+        """
+        Retrieves input for the REPL.
 
         Returns
         -------
         str
-            Input text from repl prompt.
+            Input text from REPL prompt.
         """
         # "split_arg_string" is called here to strip out shell comments.
         return " ".join(split_arg_string(self._get_command()))
 
-    def _get_default_completer_kwargs(
+    def get_default_completer_kwargs(
         self, completer_cls: type[Completer] | None, completer_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """
@@ -182,20 +197,19 @@ class Repl:
         Parameters
         ----------
         completer_cls
-            A :class:`~prompt_toolkit.completion.Completer` type class.
+            A completer class.
 
         completer_kwargs
-            Contains keyword arguments that to be passed to the
-            :class:`~prompt_toolkit.completion.Completer` class.
+            Keyword arguments passed to the ``completer_cls`` class.
 
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that to be passed to the
+            Keyword arguments that should be passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
         """
 
-        if not ISATTY or completer_cls is None:
+        if not ISATTY:
             return {}
 
         default_completer_kwargs = {
@@ -207,7 +221,7 @@ class Repl:
         default_completer_kwargs.update(completer_kwargs)
         return default_completer_kwargs
 
-    def _get_default_validator_kwargs(
+    def get_default_validator_kwargs(
         self, validator_cls: type[Validator] | None, validator_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """
@@ -218,17 +232,15 @@ class Repl:
         Parameters
         ----------
         validator_cls
-            A :class:`~prompt_toolkit.validation.Validator` type class
+            A validator class.
 
         validator_kwargs
-            Contains keyword arguments that has to be passed to the
-            :class:`~prompt_toolkit.validation.Validator` class.
+            Keyword arguments passed to the ``validator_cls`` class.
 
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that has to be passed to the
-            :class:`~prompt_toolkit.validation.Validator` class.
+            Keyword arguments that should be passed to the ``validator_cls`` class.
         """
 
         if not ISATTY or validator_cls is None:
@@ -246,44 +258,56 @@ class Repl:
             default_validator_kwargs.update(validator_kwargs)
             return default_validator_kwargs
 
-    def _get_default_prompt_kwargs(
+    def get_default_prompt_kwargs(
         self,
         completer_cls: type[Completer],
         completer_kwargs: dict[str, Any],
         validator_cls: type[Validator] | None,
         validator_kwargs: dict[str, Any],
         prompt_kwargs: dict[str, Any],
+        style_config_dict: dict[str, str] = {},
     ) -> dict[str, Any]:
         """
         Generates default keyword arguments for initializing a
-        :class:`~prompt_toolkit.PromptSession` object, either
+        :class:`~prompt_toolkit.shortcuts.PromptSession` object, either
         using default values or user-defined values, if available.
 
         Parameters
         ----------
         completer_cls
-            A :class:`~prompt_toolkit.completion.Completer` type class.
+            A completer class.
 
         completer_kwargs
-            Contains keyword arguments that to be passed to the
-            :class:`~prompt_toolkit.completion.Completer` class.
+            Keyword arguments passed to the ``completer_cls`` class.
 
         validator_cls
-            A :class:`~prompt_toolkit.validation.Validator` type class.
+            A validator class.
 
         validator_kwargs
-            Contains keyword arguments that has to be passed to the
-            :class:`~prompt_toolkit.validation.Validator` class.
+            Keyword arguments passed to the ``validator_cls`` class.
+
+        prompt_kwargs
+            Keyword arguments passed to the
+            :class:`~prompt_toolkit.shortcuts.PromptSession` class.
+
+        style_config_dict
+            Style configuration for the REPL.
 
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that has to be passed to the
-            :class:`~prompt_toolkit.PromptSession` class.
+            Keyword arguments that should be passed to the
+            :class:`~prompt_toolkit.shortcuts.PromptSession` class.
         """
 
         if not ISATTY:
             return {}
+
+        if completer_cls is None:
+            raise ValueError("'completer_cls' cannot be None.")
+
+        elif completer_cls == _MISSING:
+            completer_cls = ClickCompleter
 
         default_prompt_kwargs = {
             "history": InMemoryHistory(),
@@ -298,23 +322,28 @@ class Repl:
         if self.bottom_bar:
             default_prompt_kwargs.update(bottom_toolbar=self.bottom_bar)
 
-        if completer_cls is None:
-            raise ValueError("'completer_cls' cannot be None.")
-
-        default_prompt_kwargs.update(
-            completer=completer_cls(
-                **self._get_default_completer_kwargs(completer_cls, completer_kwargs)
-            )
+        prompt_kwargs.setdefault(
+            "completer",
+            completer_cls(
+                **self.get_default_completer_kwargs(completer_cls, completer_kwargs)
+            ),
         )
 
+        if validator_cls == _MISSING:
+            validator_cls = ClickValidator
+
         if validator_cls is not None:
-            default_prompt_kwargs.update(
-                validator=validator_cls(
-                    **self._get_default_validator_kwargs(validator_cls, validator_kwargs)
-                )
+            prompt_kwargs.setdefault(
+                "validator",
+                validator_cls(
+                    **self.get_default_validator_kwargs(validator_cls, validator_kwargs)
+                ),
             )
 
-        styles = Style.from_dict(DEFAULT_PROMPTSESSION_STYLE_CONFIG)
+        style_dict = DEFAULT_PROMPTSESSION_STYLE_CONFIG.copy()
+        style_dict.update(style_config_dict)
+
+        styles = Style.from_dict(style_dict)
 
         if "style" in prompt_kwargs:
             _style = prompt_kwargs.pop("style")
@@ -334,12 +363,12 @@ class Repl:
 
     def execute_command(self, command: str) -> None:
         """
-        Executes commands from the given command string received from the REPL.
+        Executes commands received from the REPL.
 
         Parameters
         ----------
         command
-            The command string that needs to be parsed and executed.
+            The command string to be parsed and executed.
         """
 
         if not command:
@@ -353,27 +382,28 @@ class Repl:
 
     def execute_click_command(self, command: str | Sequence[str]) -> None:
         """
-        Executes click commands by parsing the given command string.
+        Executes click command received from the REPL.
 
         Parameters
         ----------
         command
-            The command string that needs to be parsed and executed.
+            The command string to be parsed and executed.
         """
 
         if isinstance(command, str):
             command = split_arg_string(command)
 
-        ctx, _ = _generate_next_click_ctx(self.group, self.group_ctx, tuple(command))
+        command = _expand_args(command)
+        ctx, _ = _generate_next_click_ctx(self.group_ctx, tuple(command))
         ctx.command.invoke(ctx)
 
     def loop(self) -> None:
-        """Runs the main REPL loop."""
+        """Starts the REPL."""
 
         with self.repl_ctx:
             while True:
                 try:
-                    if ISATTY and self.bottom_bar is not None:
+                    if ISATTY and isinstance(self.bottom_bar, BottomBar):
                         # Resetting the toolbar to clear its text content,
                         # ensuring that it doesn't display command info from
                         # the previously executed command.
@@ -427,31 +457,31 @@ class Repl:
                     traceback.print_exc()
 
 
-class ReplCli(click.Group):
+class ReplGroup(click.Group):
     """
-    Custom :class:`~click.Group` subclass for invoking the REPL.
+    Custom :class:`~click.Group` subclass for initialing the REPL.
 
     This class extends the functionality of the :class:`~click.Group`
     class and is designed to be used as a wrapper to automatically
-    invoke the :func:`.repl` function when the group is invoked
+    invoke the :func:`~.repl` function when the group is invoked
     without any sub-command.
 
     Parameters
     ----------
     prompt
-        The message that should be displayed for every prompt input.
+        The prompt text for the REPL.
 
     startup
         The callback function that gets called before invoking the REPL.
 
     cleanup
-        The callback function that gets invoked after exiting out of the REPL.
+        The callback function that gets invoked after exiting the REPL.
 
     repl_kwargs
-        The keyword arguments that needs to be sent to the :func:`.repl` function.
+        The keyword arguments that needs to be sent to the :func:`~.repl` function.
 
     **attrs
-        Extra keyword arguments that need to be passed to the :class:`click.Group` class.
+        Extra keyword arguments to be passed to the :class:`click.Group` class.
     """
 
     def __init__(
@@ -463,25 +493,43 @@ class ReplCli(click.Group):
         **attrs: Any,
     ) -> None:
         """
-        Initialize the `ReplCli` class.
+        Initializes the `ReplGroup` class.
         """
 
         attrs["invoke_without_command"] = True
         super().__init__(**attrs)
 
         self.prompt = prompt
+        """The prompt text for the REPL."""
+
         self.startup = startup
+        """The callback function that gets called before invoking the REPL."""
+
         self.cleanup = cleanup
+        """The callback function that gets invoked after exiting the REPL."""
 
         repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": prompt})
 
         self.repl_kwargs = repl_kwargs
+        """
+        The keyword arguments that needs to be sent to the :func:`~.repl` function.
+        """
+
+    @contextmanager
+    def _handle_lifetime(self) -> Generator[None, None, None]:
+        if self.startup is not None:
+            self.startup()
+
+        yield
+
+        if self.cleanup is not None:
+            self.cleanup()
 
     def invoke(self, ctx: Context) -> Any:
         if ctx.invoked_subcommand or ctx.protected_args:
             return super().invoke(ctx)
 
-        with handle_lifetime(self):
+        with self._handle_lifetime():
             return_val = super().invoke(ctx)
             repl(ctx, **self.repl_kwargs)
             return return_val
@@ -494,25 +542,25 @@ def repl(
     **attrs: Any,
 ) -> None:
     """
-    Start an Interactive Shell. All subcommands are available in it.
+    Starts an Interactive Shell where all subcommands are available.
 
-    If stdin is not a TTY, No prompt will be printed, but only subcommands
+    If stdin is not a TTY, no prompt will be printed, but only subcommands
     can be read from stdin.
 
     Parameters
     ----------
     group_ctx
-        The current :class:`~click.Context` object.
+        The current click context object.
 
     prompt_kwargs
-        Parameters passed to :class:`~prompt_toolkit.PromptSession`.
+        Parameters that should be passed to :class:`~prompt_toolkit.shortcuts.PromptSession`.
         These parameters configure the prompt appearance and behavior,
         such as prompt message, history, completion, etc.
 
     cls
-        Repl class to use for the click_repl app. if ``None``, the
-        :class:`~.Repl` class is used by default. This allows
-        customization of the REPL behavior by providing a custom Repl subclass.
+        Repl class to use for the click_repl app. if :obj:`None`, the
+        :class:`~.Repl` class is used by default. This allows customization
+        of the REPL behavior by providing a custom Repl subclass.
 
     **attrs
         Extra keyword arguments to be passed to the Repl class. These additional
@@ -520,15 +568,96 @@ def repl(
 
     Notes
     -----
-    You don't have to pass the :class:`~prompt_toolkit.completionCompleter` and
-    :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
-    ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
-    ``validator_cls`` arguments respectively.
+    * You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
+      :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
+      ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
+      ``validator_cls`` arguments respectively.
 
-    Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
-    to determine the content that will be displayed in the bottom toolbar via the
-    ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
-    toolbar, pass `None` as the value for this key.
+    * Provide a text, a function, or a :class:`~click_repl.bottom_bar.BottomBar` object
+      to determine the content that will be displayed in the bottom toolbar via the
+      ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
+      toolbar, pass :obj:`None` as the value for this key.
     """
 
+    if not attrs.pop("allow_internal_commands", True):
+        warnings.warn(
+            "'allow_internal_commands=False' in repl() is deprecated. "
+            "Use 'internal_command_prefix=None' instead."
+        )
+        attrs["internal_command_prefix"] = None
+
+    if not attrs.pop("allow_system_commands", True):
+        warnings.warn(
+            "'allow_internal_commands=False' in repl() is deprecated. "
+            "Use 'internal_command_prefix=None' instead."
+        )
+        attrs["system_command_prefix"] = None
+
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()
+
+
+def register_repl(
+    group: Group | None = None,
+    *,
+    name: str = "repl",
+    remove_command_before_repl: bool = False,
+) -> Callable[[Group], Group] | Group:
+    """
+    Decorator that registers :func:`~click_repl._repl.repl` as a sub-command
+    named ``name`` within the ``group``.
+
+    Parameters
+    ----------
+    group
+        The parent click group object to which the REPL command
+        will be registered.
+
+    name
+        The name of the repl command to be in the given ``group``.
+
+    remove_command_before_repl
+        Determines whether to remove the REPL command from the group,
+        before its execution or not.
+
+    Returns
+    -------
+    Callable[[Group],Group] | Group
+        The same ``group`` or a callback that returns the same group with
+        the REPL command registered to it.
+
+    Raises
+    ------
+    TypeError
+        If the given ``group`` is not an instance of :class:`~click.Group`.
+    """
+
+    def decorator(_group: Group) -> Group:
+        nonlocal group
+
+        if group is not None:
+            _group = group
+
+        if not isinstance(_group, Group):
+            raise TypeError(
+                "Expected 'group' to be a type of click.Group, "
+                f"but got {type(_group).__name__}"
+            )
+
+        if name in _group.commands:
+            raise ValueError(f"Command {name!r} already exists in Group {_group.name!r}")
+
+        @wraps(repl)
+        def _repl(ctx: click.Context, *args: Any, **kwargs: Any) -> None:
+            if remove_command_before_repl:
+                _group.commands.pop(name)
+
+            repl(ctx, *args, **kwargs)
+            _group.command(name=name)(click.pass_context(_repl))
+
+        _group.command(name=name)(click.pass_context(_repl))
+
+        return _group
+
+    if group is None:
+        return decorator
+    return decorator(group)

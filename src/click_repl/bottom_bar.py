@@ -7,58 +7,38 @@ from __future__ import annotations
 import typing as t
 
 import click
-from click import Parameter
-from click.types import FloatRange, IntRange, ParamType
+from click import Group
+from click.types import ParamType
+from typing_extensions import TypedDict
 
-from ._compat import RANGE_TYPES_TUPLE, MultiCommand
-from ._globals import HAS_CLICK_GE_8, ISATTY
+from ._compat import RANGE_TYPES_TUPLE
+from .click_custom.utils import _describe_click_range_param_type
+from .globals_ import ISATTY
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
 from .utils import is_param_value_incomplete, iterate_command_params
 
 if t.TYPE_CHECKING:
-    from ._types import ListOfTokens, ParamInfo, Token
-    from .core import ReplContext
-    from .parser import ReplParsingState
+    from click import Parameter
+    from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
+    from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+
+    from .parser import ReplInputState
 
 
 __all__ = ["BottomBar"]
 
 
-def _describe_click_range_param_type(param_type: IntRange | FloatRange) -> str:
-    """
-    Returns the metavar of the range-type :class:`~click.types.ParamType` type objects.
-
-    Parameter
-    ---------
-    param_type
-        :class:`~click.types.ParamType` object, whose metavar should be generated.
-
-    Returns
-    -------
-    str
-        Metavar that describes about the given range-like
-        :class:`~click.types.ParamType` object.
-    """
-
-    if HAS_CLICK_GE_8:
-        res = param_type._describe_range()
-
-    elif param_type.min is None:
-        res = f"x<={param_type.max}"
-
-    elif param_type.max is None:
-        res = f"x>={param_type.min}"
-
-    else:
-        res = f"{param_type.min}<=x<={param_type.max}"
-
-    clamp = " clamped" if param_type.clamp else ""
-    return res + clamp  # type:ignore[no-any-return]
+# Dictionary type that holds the name, type and nargs info and their metavar
+# templates in it, to display them in the bottom bar.
+class ParamInfo(TypedDict):
+    name: Token
+    type_info: ListOfTokens
+    nargs_info: ListOfTokens
 
 
 class BottomBar:
     """
-    Toolbar class to manage the text in the bottom toolbar.
+    Manage the text displayed in the bottom bar.
 
     Parameters
     ----------
@@ -71,41 +51,39 @@ class BottomBar:
         show_hidden_params: bool = False,
     ) -> None:
         """
-        Initialize the `BottomBar` class.
+        Initializes the `BottomBar` class.
         """
 
-        self.state: ReplParsingState | None = None
-        """Current Repl parsing state object."""
+        self.state: ReplInputState | None = None
+        """Current REPL input state object."""
 
         self._recent_formatted_text: ListOfTokens | Marquee = []
         """Stores recently generated text for bottom bar as cache."""
 
         self.show_hidden_params = show_hidden_params
-        """Flag that determines whether to display hidden params at bottom bar"""
-
-        self.current_repl_ctx: ReplContext | None = None
-        """Context object of the current Repl session."""
+        """Determines whether to display hidden params at bottom bar"""
 
         self.parent_token_class_name: str = "bottom-bar"
         """
-        Parent class name for tokens that are related to :class:`~.BottomBar`."""
+        Parent class name for tokens that are related to :class:`~.BottomBar`.
+        """
 
     def __call__(self) -> ListOfTokens:
         return self.get_formatted_text()
 
     def clear(self) -> None:
-        """Clears the bottom bar's content."""
+        """Clears the text content of the bottom bar."""
         self._recent_formatted_text = []
 
     def get_formatted_text(self) -> ListOfTokens:
         """
-        Gives the next chunk of text that's sliced from :attr:`~.Marquee.text` object
-        that needs to be displayed in bottom bar.
+        Retrieves the next chunk of text to be displayed in the bottom bar,
+        sliced from the :attr:`~.Marquee.text` object.
 
         Returns
         -------
         ListOfTokens
-            Next chunk of text that should be displayed in bottom bar.
+            The next chunk of text to be displayed in bottom bar.
         """
         if isinstance(self._recent_formatted_text, Marquee):
             return self._recent_formatted_text.get_current_text_chunk()
@@ -113,18 +91,20 @@ class BottomBar:
         return self._recent_formatted_text
 
     def reset_state(self) -> None:
-        """Reset the current parsing state object and content in bottom bar."""
+        """
+        Resets the current input state object and clears the content in the bottom bar.
+        """
         self.state = None
         self.clear()
 
-    def update_state(self, state: ReplParsingState) -> None:
+    def update_state(self, state: ReplInputState) -> None:
         """
-        Updates the current Repl parsing state object in :class:`.BottomBar`.
+        Updates the current input state object in the :class:`~.BottomBar`.
 
         Parameters
         ----------
         state
-            Current parsing state of the prompt.
+            Current input state of the prompt.
         """
         if not ISATTY or state is None or state == self.state:
             return
@@ -139,9 +119,9 @@ class BottomBar:
 
         Returns
         -------
-        :class:`.Marquee`
-            Pre-defined set of metavar tokens for both :attr:`.Marquee.prefix`
-            and :attr:`.Marquee.text` attributes.
+        Marquee
+            A pre-defined set of metavar tokens for both the
+            :attr:`~.Marquee.prefix` and :attr:`~.Marquee.text` attributes.
         """
 
         state = self.state
@@ -154,16 +134,19 @@ class BottomBar:
             current_group_name = "..."
 
         prefix: ListOfTokens = [
-            ("multicommand.type", "Group"),
+            ("multicommand.type", type(current_group).__name__),
             ("space", " "),
             ("multicommand.name", current_group_name),
-            ("symbol", ":"),
-            ("space", " "),
         ]
 
         if not current_group.list_commands(state.current_ctx):
             # Empty string if there are no subcommands.
             return Marquee([], prefix)
+
+        prefix += [
+            ("symbol", ":"),
+            ("space", " "),
+        ]
 
         content: ListOfTokens = []
 
@@ -212,12 +195,12 @@ class BottomBar:
         Parameters
         ----------
         param
-            The parameter for which to determine it's usage state.
+            The click parameter for which to determine its usage state.
 
         Returns
         -------
         str
-            The string describing the given ``param``'s usage state.
+            A string describing the given ``param``'s usage state.
         """
         state = self.state
         assert state is not None, "state cannot be None"
@@ -240,16 +223,17 @@ class BottomBar:
             # # Same goes for Parameters awaiting for values.
             usage_state = "unused"
 
-        return "parameter." + usage_state
+        return "parameter.usage." + usage_state
 
     def get_param_name_token(self, param: Parameter) -> Token:
         """
-        Returns the token name accordingly to the given ``param``'s type.
+        Returns the token representing the name of the given ``param``,
+        based on its type.
 
         Parameters
         ----------
         param
-            The parameter for which to determine it's usage state.
+            The click parameter for which to determine its name token.
 
         Returns
         -------
@@ -276,6 +260,21 @@ class BottomBar:
         )
 
     def get_param_tuple_type_info_tokens(self, param: Parameter) -> ListOfTokens:
+        """
+        Constructs tokens list to describe the given ``param``'s
+        :class:`~click.Tuple` type.
+
+        Parameters
+        ----------
+        param
+            The click parameter for which its types in :class:`~click.Tuple`
+            needs to be described.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describe the given ``param``'s type.
+        """
         assert self.state is not None, "state cannot be None"
 
         if param.name is None:
@@ -298,17 +297,17 @@ class BottomBar:
                 ]
 
             if value_in_ctx is not None:
-                usage_state = "parameter.type.used"
+                usage_state = "used"
 
             elif not found_current_type_in_tuple:
-                usage_state = "parameter.type.inuse"
+                usage_state = "inuse"
                 found_current_type_in_tuple = True
 
             else:
-                usage_state = "parameter.type.unused"
+                usage_state = "unused"
 
             type_info_tokens += [
-                (f"{token.rsplit(',', 1)[0]},{usage_state}", val, *_)
+                (f"{token.rsplit(',', 1)[0]},parameter.type.usage.{usage_state}", val, *_)
                 for token, val, *_ in res
             ]
             type_info_tokens.append(("space", " "))
@@ -320,19 +319,22 @@ class BottomBar:
         self, param: Parameter, param_type: ParamType
     ) -> ListOfTokens:
         """
+        Constructs tokens list to describe the ``param_type`` of the given ``param``.
 
         Parameters
         ----------
         param
-            The parameter for which to determine it's usage state.
+            The parameter for which its type must be described.
 
         param_type
-            The :class:`~click.types.ParamType` of the given ``param``.
+            The ParamType of the given ``param``. This can be an individual
+            ParamType object from the list in :class:`~click.types.Tuple`.
 
         Returns
         -------
         ListOfTokens
-            Tokens that represents the given ``param``'s type.
+            Tokens that describe the type of the given ``param``,
+            based on the specified ``param_type``.
         """
         assert self.state is not None, "state cannot be None"
 
@@ -342,10 +344,10 @@ class BottomBar:
             return self.get_param_tuple_type_info_tokens(param)
 
         if not is_param_value_incomplete(self.state.current_ctx, param):
-            usage_state = "parameter.type.used"
+            usage_state = "used"
 
         else:
-            usage_state = "parameter.type.inuse"
+            usage_state = "inuse"
 
         if isinstance(param_type, RANGE_TYPES_TUPLE):
             range_num_type = (
@@ -376,7 +378,7 @@ class BottomBar:
             ]
 
             type_info_tokens = append_classname_to_all_tokens(
-                type_info_tokens, [usage_state]
+                type_info_tokens, [f"parameter.type.usage.{usage_state}"]
             )
 
         return type_info_tokens
@@ -384,6 +386,24 @@ class BottomBar:
     def get_param_nargs_info_tokens(
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
+        """
+        Constructs tokens list to describe the :attr:`~click.Parameter.nargs`
+        information of the given ``param``.
+
+        Parameters
+        ----------
+        param
+            The parameter for which its nargs information must be described.
+
+        param_info
+            A dictionary that has tokens lists that describe about the given parameter.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describe the nargs information of the given ``param``
+            with proper metavar content.
+        """
         type_info = param_info["type_info"]
 
         if param.nargs == 1:
@@ -426,6 +446,24 @@ class BottomBar:
     def format_metavar_tokens_for_param_with_nargs(
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
+        """
+        Constructs the final tokens list to describe the given ``param``,
+        incorporating information from the provided ``param_info`` dictionary.
+
+        Parameters
+        ----------
+        param
+            The parameter to be described.
+
+        param_info
+            A dictionary that has tokens lists that describe about the given parameter.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describe the given ``param``, including
+            appropriate metavar templates and formatting.
+        """
         param_name = param_info["name"]
         nargs_info = param_info["nargs_info"]
 
@@ -443,6 +481,26 @@ class BottomBar:
         return res
 
     def get_param_info_tokens(self, param: Parameter) -> ListOfTokens:
+        """
+        Constructs the final tokens list to describe the given ``param``.
+        This method constructs the ``param_info`` dictionary internally and passes it
+        along to other methods to feed in the description about the ``param``.
+
+        Parameters
+        ----------
+        param
+            The parameter to be described.
+
+        param_info
+            A dictionary that has tokens lists that describe about the given parameter.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describe the given ``param`` with appropriate metavar templates
+            and formatting.
+        """
+
         assert self.state is not None, "state cannot be None"
 
         param_info: ParamInfo = {
@@ -462,15 +520,14 @@ class BottomBar:
 
     def make_formatted_text(self) -> Marquee:
         """
-        Constructs tokens list to describe the current
-        :class:`~click_repl.parser.ReplParsingState` of input in prompt.
+        Constructs a Marquee object containing tokens to describe
+        the current REPL input state of the prompt.
 
         Returns
         -------
-        click_repl._formatting.Marquee
-            :class:`~click_repl._formatting.Marquee` object that needs to be display
-            the updated info about the current
-            :class:`~click_repl.parser.ReplParsingState`.
+        click_repl.tokenizer.Marquee
+            Marquee object that needs to be displayed to show the updated information
+            about the current REPL input state.
         """
         state = self.state
 
@@ -486,20 +543,20 @@ class BottomBar:
 
             return self.get_group_metavar_template()
 
-        if isinstance(current_command, MultiCommand):
+        if isinstance(current_command, Group):
             command_type = "multicommand"
-            command_type_metavar = type(current_command).__name__
+            command_type_name = type(current_command).__name__
 
         else:
             command_type = "command"
-            command_type_metavar = "Command"
+            command_type_name = "Command"
 
         current_command_name = current_command.name
         if current_command_name is None:
             current_command_name = "..."
 
         prefix: ListOfTokens = [
-            (f"{command_type}.type", command_type_metavar),
+            (f"{command_type}.type", command_type_name),
             ("space", " "),
             (f"{command_type}.name", current_command_name),
         ]
@@ -533,13 +590,19 @@ class BottomBar:
 
     def display_exception(self, exc: Exception) -> None:
         """
-        Displays the given ``exc`` :class:`~Exception` object in the bottom bar.
+        Displays the provided exception, which was raised during auto-completion
+        generation, in the bottom bar. The exception appears as text with a
+        red background, replacing the display of the metavar description for the
+        current group or the current command's arguments.
 
-        Parameters
-        ----------
+        Parameter
+        ---------
         exc
-            The :class:`~Exception` object that needs to be displayed.
+            The exception that should be displayed in the bottom bar.
         """
+
+        self.reset_state()
+
         self._recent_formatted_text = Marquee(
             TokenizedFormattedText(
                 [

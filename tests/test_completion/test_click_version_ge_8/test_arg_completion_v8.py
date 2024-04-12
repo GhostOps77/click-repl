@@ -5,11 +5,11 @@ import pytest
 from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 
-from click_repl._globals import HAS_CLICK_GE_8
 from click_repl.completer import ClickCompleter
+from click_repl.globals_ import IS_CLICK_GE_8
 from tests import DummyInternalCommandSystem
 
-if HAS_CLICK_GE_8:
+if IS_CLICK_GE_8:
     from click.shell_completion import CompletionItem
 
 
@@ -28,7 +28,7 @@ c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 def test_shell_complete_arg_v8_class_type():
@@ -52,7 +52,7 @@ def test_shell_complete_arg_v8_class_type():
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 def test_shell_complete_arg_v8_func_completionitem_return_type():
@@ -71,7 +71,7 @@ def test_shell_complete_arg_v8_func_completionitem_return_type():
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 def test_shell_complete_arg_v8_func_completion_return_type():
@@ -89,42 +89,6 @@ def test_shell_complete_arg_v8_func_completion_return_type():
     assert {x.text for x in completions} == {"foo", "bar"}
 
 
-def return_type_tuple_shell_complete(ctx, param, incomplete):
-    return [
-        i
-        for i in [
-            ("Hi", "hi"),
-            ("Please", "please"),
-            ("Hey", "hey"),
-            ("Aye", "aye"),
-        ]
-        if i[1].startswith(incomplete)
-    ]
-
-
-@pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
-    reason="click-v8 shell complete function is not available, so skipped",
-)
-@pytest.mark.parametrize(
-    "test_input, expected",
-    [
-        ("tuple-type-autocompletion-cmd ", {"Hi", "Please", "Hey", "Aye"}),
-        ("tuple-type-autocompletion-cmd h", {"Hi", "Hey"}),
-    ],
-)
-def test_tuple_return_type_shell_complete_func(test_input, expected):
-    @root_command.command()
-    @click.argument("foo", shell_complete=return_type_tuple_shell_complete)
-    def tuple_type_autocompletion_cmd(foo):
-        pass
-
-    completions = list(c.get_completions(Document(test_input)))
-    assert {x.text for x in completions} == expected and {
-        x.display_meta[0][-1] for x in completions
-    } == {i.lower() for i in expected}
-
-
 @root_command.command()
 @click.argument("choice", type=click.Choice(("FOO", "Bar"), case_sensitive=False))
 def case_insensitive_choices(choice):
@@ -132,7 +96,7 @@ def case_insensitive_choices(choice):
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="""Test skipped as click v8 is not available
 case_sensitive attribute is introduced in click.Choice in click v8""",
 )

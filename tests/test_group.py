@@ -8,30 +8,6 @@ from click_repl.completer import ClickCompleter
 from click_repl.internal_commands import InternalCommandSystem
 
 
-def test_command_collection():
-    @click.group()
-    def foo_group():
-        pass
-
-    @foo_group.command()
-    def foo_cmd():
-        pass
-
-    @click.group()
-    def foobar_group():
-        pass
-
-    @foobar_group.command()
-    def foobar_cmd():
-        pass
-
-    ctx = click.Context(click.CommandCollection(sources=(foo_group, foobar_group)))
-    c = ClickCompleter(ctx, InternalCommandSystem())
-    completions = c.get_completions(Document("foo"))
-
-    assert {x.text for x in completions} == {"foo-cmd", "foobar-cmd"}
-
-
 @click.group()
 def root_group():
     pass

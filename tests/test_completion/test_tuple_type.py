@@ -37,8 +37,11 @@ current_dir_list = {str(p) for p in Path().iterdir()}
     [
         ("tuple-arg-cmd --tuple-opt ", set()),
         ("tuple-arg-cmd --tuple-opt 123 ", current_dir_list),
-        ("tuple-arg-cmd --tuple-opt 123 .click-repl-err.log ", current_dir_list),
-        ("tuple-arg-cmd --tuple-opt 123 .click-repl-err.log /some/path/ ", set()),
+        ("tuple-arg-cmd --tuple-opt 123 tests/test_repl.py ", current_dir_list),
+        (
+            "tuple-arg-cmd --tuple-opt 123 tests/test_repl.py /some/path/ ",
+            set(),
+        ),
     ],
 )
 def test_tuple_type(test_input, expected):

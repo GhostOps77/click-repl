@@ -1,0 +1,36 @@
+name: "Sphinx: Render docs"
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python Environment
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.12'
+
+    - name: Install docs dependencies
+      run: |
+        python3 -m pip install -U pip
+        pip install -r requirements/requirements-docs.txt
+        pip install -e .
+
+    - name: Build Sphinx docs
+      run: |
+        cd docs/
+        make html
+
+    - name: Deploy docs to Github Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        publish_branch: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build/html/

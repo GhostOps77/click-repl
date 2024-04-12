@@ -11,18 +11,27 @@ Welcome to click-repl's Documentation
    Source Code <https://github.com/click-contrib/click-repl>
 
 
+<hr>
+
 .. toctree::
    :hidden:
    :caption: Contents
 
    documentation/index
 
+<hr>
 
-Intoduction
-===========
+.. toctree::
+   :hidden:
+   :caption: Others
 
-.. include:: ../../README.rst
-    :start-line: 5
+   api
+   changelog
+
+
+.. include:: intro.rst
+
+<hr>
 
 .. include:: changelog.rst
 

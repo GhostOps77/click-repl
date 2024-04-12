@@ -1,15 +1,14 @@
-# Configuration file for the Sphinx documentation builder.
-
-# Project information
-
 from __future__ import annotations
 
+import importlib
+import inspect
+import types
 import typing as t
 
 import click_repl
 
 if t.TYPE_CHECKING:
-    from sphinx.application import Sphinx
+    pass
 
 
 project = "click-repl"
@@ -18,11 +17,8 @@ repo_link = "https://github.com/GhostOps77/click-repl"
 repo_branch = "GhostOps77-patch-1"
 version = click_repl.__version__
 
-# General configuration
-
 extensions = [
     "sphinx.ext.duration",
-    # "sphinx.ext.doctest",
     "notfound.extension",
     "sphinx.ext.linkcode",
     "sphinx.ext.autodoc",
@@ -31,10 +27,6 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "autoapi.extension",
-    "sphinxnotes.strike",
-    # "myst_parser",
-    # "sphinx_autodoc_typehints",
 ]
 
 extlinks = {
@@ -82,18 +74,14 @@ pygments_style = "friendly"
 intersphinx_disabled_domains = ["std"]
 exclude_patterns = ["build", "_build", "Thumbs.db", ".DS_Store"]
 
-
-# autodoc_member_order = 'alphabetical'
 autoapi_dirs = ["../../src/click_repl/"]
 autoapi_python_use_implicit_namespaces = True
 
-# autodoc_type_aliases = {}
 autodoc_typehints_format = "short"
 autodoc_default_options = {
     "special-members": False,
 }
 
-# Options for EPUB output
 epub_show_urls = "footnote"
 
 # Napoleon settings
@@ -112,80 +100,6 @@ napoleon_preprocess_types = True
 napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
-# # sphinx-autodoc-typehints settings
-# always_document_param_types = True
-# typehints_use_signature = True
-# typehints_use_signature_return = False
-
-# myst config
-# myst_enable_extensions = [
-#     "dollarmath",
-#     "amsmath",
-#     "deflist",
-#     "fieldlist",
-#     "html_admonition",
-#     "html_image",
-#     "colon_fence",
-#     "smartquotes",
-#     "replacements",
-#     "linkify",
-#     "strikethrough",
-#     "substitution",
-#     "tasklist",
-#     "attrs_inline",
-#     "attrs_block",
-# ]
-# myst_heading_anchors = 2
-
-
-# def setup(app: Sphinx):
-#     """Add functions to the Sphinx setup."""
-#     from myst_parser._docs import (
-#         DirectiveDoc,
-#         DocutilsCliHelpDirective,
-#         MystAdmonitionDirective,
-#         MystConfigDirective,
-#         MystExampleDirective,
-#         MystLexer,
-#         MystToHTMLDirective,
-#         MystWarningsDirective,
-#         NumberSections,
-#         StripUnsupportedLatex,
-#     )
-
-#     app.add_directive("myst-config", MystConfigDirective)
-#     app.add_directive("docutils-cli-help", DocutilsCliHelpDirective)
-#     app.add_directive("doc-directive", DirectiveDoc)
-#     app.add_directive("myst-warnings", MystWarningsDirective)
-#     app.add_directive("myst-example", MystExampleDirective)
-#     app.add_directive("myst-admonitions", MystAdmonitionDirective)
-#     app.add_directive("myst-to-html", MystToHTMLDirective)
-#     app.add_post_transform(StripUnsupportedLatex)
-#     app.add_post_transform(NumberSections)
-#     # app.connect("html-page-context", add_version_to_css)
-#     app.add_lexer("myst", MystLexer)
-
-
-# def autoapi_skip_member(app, what, name, obj, skip, options):
-#     """Exclude all private attributes, methods, and dunder methods from Sphinx."""
-#     import re
-
-#     exclude = re.match(r"\._.[^.]*__$", name)  # and what != 'module'
-#     return skip or exclude
-
-
-def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
-    # print(f'{name = }')
-    import re
-
-    exclude = re.findall(r"\._.*__$", str(obj)) and what != "module"
-    return skip or exclude
-
-
-def setup(app: Sphinx):
-    # app.connect('autoapi-skip-member', autoapi_skip_member)
-    app.connect("autodoc-skip-member", autodoc_skip_member)
-
 
 def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
     """linkcode_resolve."""
@@ -194,10 +108,6 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
 
     if not info["module"]:
         return None
-
-    import importlib
-    import inspect
-    import types
 
     mod = importlib.import_module(info["module"])
 

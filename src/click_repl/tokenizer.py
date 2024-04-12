@@ -1,23 +1,48 @@
+"""
+Utilities to create and manage tokens.
+"""
+
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable
 
 import click
 from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+from typing_extensions import Literal
 
-from ._globals import ISATTY
-
-if TYPE_CHECKING:
-    from ._types import ListOfTokens, _CompletionStyleDictKeys
-
+from .globals_ import ISATTY
 
 __all__ = ["TokenizedFormattedText", "Marquee"]
+
+
+TokenClassForClickObjectTypes = Literal[
+    "internal-command", "command", "group", "argument", "option", "parameter"
+]
+# Parent token class names for click classes.
 
 
 def append_classname_to_all_tokens(
     tokens_list: ListOfTokens, classes: Iterable[str] = []
 ) -> ListOfTokens:
+    """
+    Appends the given list of token ``classes`` to all the classes strings
+    in every token in ``tokens_list``.
+
+    Parameters
+    ----------
+    tokens_list
+        List of tokens to which each of their token's classes needs to be updated.
+
+    classes
+        List of class names to append to the pre-existing classes.
+
+    Returns
+    -------
+    ListOfTokens
+        Updated ``tokens_list`` with ``classes`` appended to each token's classes string.
+    """
 
     if not classes:
         return tokens_list
@@ -31,23 +56,66 @@ def append_classname_to_all_tokens(
 
 
 def option_flag_tokens_joiner(
-    items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
+    contents: Iterable[str],
+    content_token_class: str,
+    sep_token_class: str,
+    sep: str = " ",
 ) -> ListOfTokens:
-    if not items:
+    """
+    Joins the given ``contents`` of strings into a token string with the given
+    ``content_token_class``, ``sep`` string, and its token's class ``sep_token_class``.
+
+    Parameters
+    ----------
+    contents
+        List of strings that should be tokens.
+
+    content_token_class
+        Token class name(s) for strings in ``contents``.
+
+    sep_token_class
+        Token class name(s) for ``sep``.
+
+    sep
+        String that separates ``contents`` when displayed together.
+
+    Returns
+    -------
+    ListOfTokens
+        Given ``contents`` separated by ``sep``, as a list of tokens with
+        given classes string.
+    """
+    if not contents:
         return []
 
-    sep_elem = (sep_token, sep)
-    iterator = iter(items)
-    res: ListOfTokens = [(item_token, next(iterator))]
+    sep_elem = (sep_token_class, sep)
+    iterator = iter(contents)
+    res: ListOfTokens = [(content_token_class, next(iterator))]
 
     for item in iterator:
         res.append(sep_elem)
-        res.append((item_token, item))
+        res.append((content_token_class, item))
 
     return res
 
 
-def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDictKeys:
+def get_token_class_for_click_obj_type(
+    obj: click.Command | click.Parameter,
+) -> TokenClassForClickObjectTypes:
+    """
+    Retrieves the token class name suitable for the provided object ``obj``
+    from a class within the click module.
+
+    Parameters
+    ----------
+    obj
+        The object for which the token class name is to be determined.
+
+    Returns
+    -------
+    TokenClassForClickObjectTypes
+        The token class name corresponding to the provided object.
+    """
     if isinstance(obj, click.Parameter):
         if isinstance(obj, click.Argument):
             return "argument"
@@ -67,7 +135,7 @@ def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDict
 class TokenizedFormattedText(FormattedText):
     """
     Sub-class of :class:`~prompt_toolkit.formatted_text.FormattedText`,
-    but has custom slicing method, based on it's display text.
+    but has custom slicing method, based on its display text.
 
     Parameters
     ----------
@@ -92,9 +160,13 @@ class TokenizedFormattedText(FormattedText):
                 class_names = token_tuple[0]
 
                 if class_names and not class_names.startswith("class:"):
-                    class_names = "class:" + ",".join(
+                    class_names_with_parent_token_class_iter = (
                         f"{parent_token_class}.{class_name}"
                         for class_name in class_names.split(",")
+                    )
+
+                    class_names = "class:" + ",".join(
+                        class_names_with_parent_token_class_iter
                     )
 
                 tokens_list[index] = (class_names, *token_tuple[1:])
@@ -117,19 +189,18 @@ class TokenizedFormattedText(FormattedText):
 
     def content_length(self) -> int:
         """
-        Returns the length of the :class:`~prompt_toolkit.formatted_text.FormattedText`
-        based on the length of the display text in each token.
+        Returns the length based on the length of text content in each token.
 
         Returns
         -------
         int
-            Length of the content altogether in the tokens list.
+            Total length of text content in the tokens list.
         """
         return sum(len(token[1]) for token in self)
 
     def slice_by_textual_content(self, start: int, stop: int) -> TokenizedFormattedText:
         """
-        Slices the tokens based on the display text in them.
+        Slices the tokens based on the text content in them.
 
         Parameters
         ----------
@@ -142,7 +213,7 @@ class TokenizedFormattedText(FormattedText):
         Returns
         -------
         TokenizedFormattedText
-            Returns a new slice that contains the text content within that slice range.
+            A new slice that contains the text content within that slice range.
         """
         if start >= stop:
             return []  # type:ignore[return-value]
@@ -169,16 +240,18 @@ class TokenizedFormattedText(FormattedText):
 
 class Marquee:
     """
-    Displays the given text in the form of Marquee in terminal.
+    Displays the given text in the form of a marquee in terminal.
 
     Parameters
     ----------
     text
-        The text tokens that will be displayed in the marquee style.
+        The text tokens that will be displayed in the marquee style, if
+        the terminal width is insufficient to display the entire text.
+        Otherwise, the entire text is displayed statically.
 
     prefix
-        This text will be displayed as a prefix before :attr:`.text`, and
-        it will not be moved in the terminal display as a marquee.
+        This text will be displayed as a prefix before :attr:`~.text`, and
+        stays at the left most end of the bottom bar and remains static.
     """
 
     __slots__ = (
@@ -199,59 +272,75 @@ class Marquee:
         prefix: ListOfTokens = [],
     ) -> None:
         """
-        Initialize the `Marquee` class.
+        Initializes the `Marquee` class.
         """
 
         if not isinstance(text, TokenizedFormattedText):
             text = TokenizedFormattedText(text)
 
         self.text: TokenizedFormattedText = text
-        """The text tokens that'll be displayed in the marquee style."""
+        """
+        Text that will be displayed in the marquee style, if
+        the terminal width is insufficient to display the entire text.
+        Otherwise, the entire text is displayed statically.
+        """
 
         if not isinstance(prefix, TokenizedFormattedText):
             prefix = TokenizedFormattedText(prefix)
 
         self.prefix: TokenizedFormattedText = prefix
-        """This text will be displayed as a prefix before :attr:`.text`."""
+        """
+        Prefix that appear before :attr:`~.text`, and stays at the
+        left-most end of the bottom bar and remains static.        """
 
         self.pointer_position: int = 0
-        """Keeps track of the next starting position to slice the :attr:`.text` from."""
+        """Keeps track of the next starting position to slice the :attr:`~.text` from."""
 
         self.is_pointer_direction_left: bool = True
-        """To keep track on the current direction on pointer's movement."""
+        """Keeps track on the current direction on pointer's movement."""
 
         self.hit_boundary: bool = True
-        """Flag that tells if the pointer has hit either the left or right-most end."""
+        """
+        Indicates whether the pointer has hit either the
+        left or right-most end.
+        """
 
         self.max_wait_in_iterations: int = 5
-        """Maximum number of iterations the pointer can stay
-            idle once it has hit either of the ends."""
+        """
+        Maximum number of iterations the pointer can stay
+        idle once it has hit either of the ends.
+        """
 
         self.no_of_iterations_waited_for: int = self.max_wait_in_iterations
-        """The pointer stays at the very end once it has touched the boundary, for next
-            :attr:`.no_of_iterations_waited_for` iterations."""
+        """
+        The pointer stays at the very end once it has touched the boundary, for next
+        :attr:`~.no_of_iterations_waited_for` iterations.
+        """
 
         self._is_text_length_le_window_size: bool = False
-        # Flag that tells whether the window size that displays the
-        # text's content is greater than the length of the text.
+        """
+        Indicates whether the window size that displays the
+        text's content is greater than the length of the text.
+        """
 
         self._recent_text: TokenizedFormattedText = []  # type:ignore[assignment]
-        # Used to cache recently generated string.
+        """Used to cache recently generated string."""
 
     def get_window_size(self) -> int:
         """
-        Returns the appropriate window size to display it's content as marquee.
+        Returns the window size to display the :attr:`~.text` as a marquee.
 
         Returns
         -------
         int
-            New window size to display a chunk of :attr:`.text`
+            New window size to display a chunk of :attr:`~.text`.
         """
         return os.get_terminal_size().columns - self.prefix.content_length()
 
     def adjust_pointer_position(self) -> None:
         """
-        Updates the :attr:`.pointer_position` for the next iteration for updating the text.
+        Updates the :attr:`~.pointer_position` for the next iteration, for updating the text
+        from the next offset location.
         """
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
@@ -302,26 +391,27 @@ class Marquee:
 
     def get_full_formatted_text(self) -> TokenizedFormattedText:
         """
-        Returns the whole text along with the :attr:`.prefix`, without being sliced.
+        Returns the complete content of :attr:`~.text` along with the :attr:`~.prefix`,
+        without slicing them.
 
         Returns
         -------
         TokenizedFormattedText
-            Contains the entire content of both :attr:`.prefix` and the :attr:`.text`
+            The entire content of both :attr:`~.prefix` and the :attr:`~.text`.
         """
         return TokenizedFormattedText(self.prefix + self.text, "bottom-bar")
 
     def get_current_text_chunk(self) -> TokenizedFormattedText:
         """
-        Returns the updated text chunk, along with the :attr:`.prefix`, that currently
-        should be displayed in the bottom bar.
+        Returns the updated :attr:`~.text` chunk, along with the :attr:`~.prefix`,
+        that should currently be displayed in the bottom bar.
 
         Returns
         -------
         TokenizedFormattedText
-            The entire :attr:`.text` with the :attr:`.prefix` if the terminal window
-            length is sufficient. Otherwise, returns a sliced portion of the
-            :attr:`.text` that fits the current window size.
+            The entire :attr:`~.text` with the :attr:`~.prefix` if the terminal
+            window length is sufficient. Otherwise, returns a sliced portion of
+            the :attr:`~.text` that fits the current window size.
         """
 
         window_size = self.get_window_size()
