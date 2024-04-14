@@ -20,8 +20,8 @@ from .exceptions import (
     SamePrefix,
     WrongType,
 )
-from .formatting import print_error
 from .globals_ import get_current_repl_ctx
+from .utils import print_error
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
 

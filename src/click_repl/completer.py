@@ -46,13 +46,13 @@ class ClickCompleter(Completer):
     Parameters
     ----------
     group_ctx
-        The current :class:`click.Context` object.
+        The :class:`~click.Context` object of the main group.
 
     bottom_bar
-        Object thats used to update the text displayed in the bottom bar.
+        Used to update the text displayed in the bottom bar.
 
     internal_commands_system
-        Object that holds information about the internal commands and their prefixes.
+        Holds information about the internal commands and their prefixes.
 
     shortest_option_names_only
         Determines whether only the shortest name of an option parameter
@@ -93,20 +93,41 @@ class ClickCompleter(Completer):
         Initialize the `ClickCompleter` class.
         """
         self.group_ctx: Final[Context] = group_ctx
+        """The :class:`~click.Context` object of the main group."""
 
         if not ISATTY:
             bottom_bar = None
 
         self.bottom_bar = bottom_bar
+        """Used to update the text displayed in the bottom bar."""
 
         self.shortest_option_names_only = shortest_option_names_only
+        """Determines whether only the shortest name of an option parameter
+        should be used for auto-completion.
+        """
+
         self.show_only_unused_options = show_only_unused_options
+        """Determines whether the options that are already mentioned or
+        used in the current prompt will be displayed during auto-completion.
+        """
 
         self.show_hidden_commands = show_hidden_commands
+        """Determines whether the hidden commands should be shown
+        in autocompletion or not.
+        """
+
         self.show_hidden_params = show_hidden_params
+        """Determines whether the hidden parameters should be shown
+        in autocompletion or not.
+        """
+
         self.expand_envvars = expand_envvars
+        """Determines whether to return completion with Environmental variables
+        as expanded or not.
+        """
 
         self.internal_commands_system = internal_commands_system
+        """Holds information about the internal commands and their prefixes."""
 
         self.parent_token_class_name: str = "autocompletion-menu"
         """Parent class name for tokens that are related to :class:`~ClickCompleter`."""

@@ -25,6 +25,8 @@ if t.TYPE_CHECKING:
 __all__ = ["BottomBar"]
 
 
+# Dictionary type that holds the name, type and nargs info and their metavar
+# templates in it, to display them in the bottom bar.
 class ParamInfo(TypedDict):
     name: Token
     type_info: ListOfTokens
@@ -281,6 +283,25 @@ class BottomBar:
         )
 
     def get_param_tuple_type_info_tokens(self, param: Parameter) -> ListOfTokens:
+        """
+        Constructs tokens list to describe the given :class:`~click.Parameter`'s
+        :class:`~click.Tuple` type.
+
+        Parameters
+        ----------
+        param
+            The :class:`~click.Parameter` object for which it's types in
+            :class:`~click.Tuple` must be described.
+
+        param_type
+            The :class:`~click.types.ParamType` object of the given ``param``, on which it's
+            usage state must be checked.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describes the given ``param``'s type.
+        """
         assert self.state is not None, "state cannot be None"
 
         if param.name is None:
@@ -325,19 +346,20 @@ class BottomBar:
         self, param: Parameter, param_type: ParamType
     ) -> ListOfTokens:
         """
+        Constructs tokens list to describe the given :class:`~click.Parameter`'s type.
 
         Parameters
         ----------
         param
-            The parameter for which to determine it's usage state.
+            The :class:`~click.Parameter` object for which it's type must be described.
 
         param_type
-            The :class:`~click.types.ParamType` of the given ``param``.
+            The :class:`~click.types.ParamType` object of the given ``param``.
 
         Returns
         -------
         ListOfTokens
-            Tokens that represents the given ``param``'s type.
+            Tokens that describes the given ``param``'s type.
         """
         assert self.state is not None, "state cannot be None"
 
@@ -389,6 +411,26 @@ class BottomBar:
     def get_param_nargs_info_tokens(
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
+        """
+        Constructs tokens list to describe the given :class:`~click.Parameter`'s
+        nargs information.
+
+        Parameters
+        ----------
+        param
+            The :class:`~click.Parameter` object for which it's nargs information
+            must be described.
+
+        param_info
+            The :obj:`.PrefixTable` type dictionary that has tokens lists that describe
+            about the given parameter.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describes the given ``param``'s nargs information
+            with proper metavar.
+        """
         type_info = param_info["type_info"]
 
         if param.nargs == 1:
@@ -431,6 +473,25 @@ class BottomBar:
     def format_metavar_tokens_for_param_with_nargs(
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
+        """
+        Constructs the final tokens list to describe the given
+        :class:`~click.Parameter` with the help of ``param_info`` dictionary.
+
+        Parameters
+        ----------
+        param
+            The :class:`~click.Parameter` object which needs to be described.
+
+        param_info
+            The :obj:`.PrefixTable` type dictionary that has tokens lists that describe
+            about the given parameter.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describes the given ``param`` with appropriate metavar templates
+            and formatting.
+        """
         param_name = param_info["name"]
         nargs_info = param_info["nargs_info"]
 
@@ -448,6 +509,28 @@ class BottomBar:
         return res
 
     def get_param_info_tokens(self, param: Parameter) -> ListOfTokens:
+        """
+        Constructs the final tokens list to describe the given
+        :class:`~click.Parameter`. This method constructs the ``param_info``
+        dictionary and passes it along with other methods to feed in the
+        description about the ``param`` parameter.
+
+        Parameters
+        ----------
+        param
+            The :class:`~click.Parameter` object which needs to be described.
+
+        param_info
+            The :obj:`.PrefixTable` type dictionary that has tokens lists that describe
+            about the given parameter.
+
+        Returns
+        -------
+        ListOfTokens
+            Tokens that describes the given ``param`` with appropriate metavar templates
+            and formatting.
+        """
+
         assert self.state is not None, "state cannot be None"
 
         param_info: ParamInfo = {

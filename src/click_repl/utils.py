@@ -13,6 +13,11 @@ from click import Command, Context, Parameter
 from .exceptions import ArgumentPositionError
 
 
+def print_error(text: str) -> None:
+    """Prints the given text to stderr, in red colour."""
+    click.secho(text, color=True, err=True, fg="red")
+
+
 def _is_help_option(param: click.Option) -> bool:
     """
     Checks whether the given :class:`~click.Option` object is a help option or not.

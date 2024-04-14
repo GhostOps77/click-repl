@@ -50,7 +50,7 @@ class ClickValidator(Validator):
         The current :class:`~click.Context` object.
 
     display_all_errors
-        Flag that determines whether to raise generic python exceptions, and not to
+        Determines whether to raise generic python exceptions, and not to
         display them in the :class:`~prompt_toolkit.validation.Validator` bar,
         resulting in the full error traceback being redirected to a log file
         in the REPL mode.
@@ -67,10 +67,17 @@ class ClickValidator(Validator):
         """
 
         self.group_ctx: Final[Context] = group_ctx
+        """The :class:`~click.Context` object of the main group."""
 
         self.internal_commands_system = internal_commands_system
+        """The :class:`~click_repl.internal_commands.InternalCommandSystem` object
+        of the current repl session.
+        """
 
         self.display_all_errors = display_all_errors
+        """Determines whether to raise generic python exceptions, and not to display
+        them in the :class:`~prompt_toolkit.validation.Validator` bar.
+        """
 
     def validate(self, document: Document) -> None:
         """
@@ -83,7 +90,7 @@ class ClickValidator(Validator):
         Parameters
         ----------
         document
-            Contains the incomplete string from the REPL prompt.
+            The incomplete string from the REPL prompt.
 
         Raises
         ------

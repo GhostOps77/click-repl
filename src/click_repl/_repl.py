@@ -23,9 +23,9 @@ from .click_utils import _generate_next_click_ctx
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
-from .formatting import print_error
 from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
+from .utils import print_error
 from .validator import ClickValidator
 
 __all__ = ["Repl", "repl", "ReplCli"]
@@ -534,7 +534,7 @@ def repl(
 
     Notes
     -----
-    You don't have to pass the :class:`~prompt_toolkit.completionCompleter` and
+    You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
     :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
     ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
     ``validator_cls`` arguments respectively.
