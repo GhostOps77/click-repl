@@ -472,8 +472,8 @@ class BottomBar:
 
         Returns
         -------
-        click_repl._formatting.Marquee
-            :class:`~click_repl._formatting.Marquee` object that needs to be display
+        click_repl.tokenizer.Marquee
+            :class:`~click_repl.tokenizer.Marquee` object that needs to be display
             the updated info about the current
             :class:`~click_repl.parser.ReplParsingState`.
         """

@@ -298,7 +298,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        Callable[[Callable[[], None]],Callable[[], None]] | Callable[[], None]
+        Callable[[Callable[[],None]],Callable[[],None]] | Callable[[],None]
             The same function object passed into this decorator,
             or a function that takes and returns the same function when called.
         """
@@ -465,7 +465,7 @@ class InternalCommandSystem:
 
         Raises
         ------
-        :exc:`~click_repl.exceptions.PrefixNotFound`
+        PrefixNotFound
             If there's no internal prefix used in the given command.
         """
 

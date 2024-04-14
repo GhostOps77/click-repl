@@ -25,7 +25,18 @@ CLICK_VERSION: tuple[int, int, int] = tuple(  # type:ignore[assignment]
 )
 
 HAS_CLICK_GE_8 = CLICK_VERSION[0] >= 8
+"""
+Is click version >= 8
+
+The shell complete method is implemented for almost every classes in click.
+"""
+
 HAS_CLICK_GE_8_2 = CLICK_VERSION >= (8, 2)
+"""
+Is click version >= 8.2
+
+click deprecated many things in this version.
+"""
 
 IS_WINDOWS = os.name == "nt"
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing as t
 
 import click_repl
@@ -83,7 +84,6 @@ exclude_patterns = ["build", "_build", "Thumbs.db", ".DS_Store"]
 autoapi_dirs = ["../../src/click_repl/"]
 autoapi_python_use_implicit_namespaces = True
 
-# autodoc_type_aliases = {}
 autodoc_typehints_format = "short"
 autodoc_default_options = {
     "special-members": False,
@@ -162,28 +162,34 @@ napoleon_attr_annotations = True
 #     app.add_lexer("myst", MystLexer)
 
 
-# def autoapi_skip_member(app, what, name, obj, skip, options):
-#     """Exclude all private attributes, methods, and dunder methods from Sphinx."""
-#     import re
+def autoapi_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
+    # print(f'auto api {what=} {name=}', file=open('file.txt', 'w'))
 
-#     exclude = re.match(r"\._.[^.]*__$", name)  # and what != 'module'
-#     return skip or exclude
+    last_elem = name.rsplit(".")[-1]
 
-
-def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
-    # print(f'{name = }')
-    import re
-
-    if skip:
+    if last_elem in ("_ctx_stack",):
         return True
 
-    exclude = re.findall(r"\._.*__$", str(obj)) and what != "module"
-    return exclude
+    if last_elem in ("__init__",):
+        return False
+
+    exclude = re.match(r"\._.[^.]*__$", name) and what != "module"
+    return skip or exclude
+
+
+# def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
+#     import re
+#     print(f'auto doc {what=} {name=}', file=open('file.txt', 'w'))
+#     if skip:
+#         return True
+
+#     exclude = re.findall(r"\._.*__$", str(obj)) and what != "module"
+#     return exclude
 
 
 def setup(app: Sphinx):
-    # app.connect('autoapi-skip-member', autoapi_skip_member)
-    app.connect("autodoc-skip-member", autodoc_skip_member)
+    app.connect("autoapi-skip-member", autoapi_skip_member)
+    # app.connect("autodoc-skip-member", autodoc_skip_member)
 
 
 def linkcode_resolve(domain: str, info: dict[str, str]) -> str:

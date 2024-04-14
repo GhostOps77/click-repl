@@ -20,6 +20,9 @@ def get_option_flag_sep(option_names: list[str]) -> str:
 
 
 def join_options(options: list[str]) -> tuple[list[str], str]:
+    """
+    Reference: :meth:`~click.formatting.join_options`
+    """
     # Same implementation as :meth:`~click.formatting.join_options`, but much simpler.
 
     # Parameters
@@ -37,6 +40,13 @@ def join_options(options: list[str]) -> tuple[list[str], str]:
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> InfoDict:
+    """
+    :meth:`~click.Context.get_info_dict`
+    :meth:`~click.Command.get_info_dict`
+    :meth:`~click.Group.get_info_dict`
+    :meth:`~click.Parameter.get_info_dict`
+    :meth:`~click.ParamType.get_info_dict`
+    """
     # Similar to the ``get_info_dict`` method implementation in click objects,
     # but it only retrieves the essential attributes required to
     # differentiate between different ``ReplParsingState`` objects.
@@ -187,6 +197,9 @@ def _generate_next_click_ctx(
 
 @lru_cache(maxsize=3)
 def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
+    """
+    Reference: :func:`~click.shell_completion._resolve_context`
+    """
     while args:
         command = ctx.command
 
