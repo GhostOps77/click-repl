@@ -7,11 +7,12 @@ from __future__ import annotations
 import subprocess
 from collections import defaultdict
 from collections.abc import Generator, Iterator, Sequence
-from typing import Any, Callable, NoReturn
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, ItemsView, List, NoReturn, Tuple
 
 import click
+from typing_extensions import TypeAlias
 
-from ._types import CallableNone, InfoTable, InternalCommandDict, PrefixTable
 from .exceptions import (
     ExitReplException,
     InternalCommandNotFound,
@@ -23,6 +24,24 @@ from .formatting import print_error
 from .globals_ import get_current_repl_ctx
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
+
+
+InternalCommandDict: TypeAlias = Dict[str, Tuple[Callable[[], None], str]]
+# Dictionary that holds all the internal command's aliases with their callback, and
+# description.
+
+InfoTable: TypeAlias = Dict[Tuple[Callable[[], None], str], List[str]]
+# Dictionary that holds all the aliases of a command together in a key: value pair,
+# with it's callback and description.
+
+
+@dataclass
+class PrefixTable:
+    internal: str | None
+    system: str | None
+
+    def items(self) -> ItemsView[str, str | None]:
+        return self.__dict__.items()
 
 
 _MISSING = object()
@@ -255,11 +274,11 @@ class InternalCommandSystem:
 
     def register_command(
         self,
-        target: CallableNone | None = None,
+        target: Callable[[], None] | None = None,
         *,
         names: str | None | Sequence[str] = None,
         description: str | None = None,
-    ) -> Callable[[CallableNone], CallableNone] | CallableNone:
+    ) -> Callable[[Callable[[], None]], Callable[[], None]] | Callable[[], None]:
         """
         A decorator used to register a new internal command from a given function.
 
@@ -279,12 +298,12 @@ class InternalCommandSystem:
 
         Returns
         -------
-        Callable[[CallableNone],CallableNone] | CallableNone
+        Callable[[Callable[[], None]],Callable[[], None]] | Callable[[], None]
             The same function object passed into this decorator,
             or a function that takes and returns the same function when called.
         """
 
-        def decorator(func: CallableNone) -> CallableNone:
+        def decorator(func: Callable[[], None]) -> Callable[[], None]:
             nonlocal target, names, description
 
             if target is None:
@@ -350,7 +369,7 @@ class InternalCommandSystem:
         """
         return list(self._group_commands_by_callback_and_desc().values())
 
-    def get_command(self, name: str, default: Any = _MISSING) -> CallableNone | Any:
+    def get_command(self, name: str, default: Any = _MISSING) -> Callable[[], None] | Any:
         """
         Retrieves the callback function of the internal command,
         if available. Otherwise, returns the provided sentinel value
@@ -367,7 +386,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        CallableNone | Any
+        Callable[[],None] | Any
             The callback function of the internal command if found. If not
             found, it returns the value specified in the ``default`` parameter.
         """

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import click
-from click import Command, Context, Group, Parameter
+from click import Command, Context, Parameter
 from click.types import ParamType
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
@@ -29,7 +29,11 @@ from .globals_ import (
 )
 from .internal_commands import InternalCommandSystem
 from .parser import Incomplete, ReplParsingState, _resolve_state
-from .tokenizer import TokenizedFormattedText, get_token_type, option_flag_tokens_joiner
+from .tokenizer import (
+    TokenizedFormattedText,
+    get_token_class_for_click_obj_type,
+    option_flag_tokens_joiner,
+)
 from .utils import _is_help_option, is_param_value_incomplete
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
@@ -89,7 +93,6 @@ class ClickCompleter(Completer):
         Initialize the `ClickCompleter` class.
         """
         self.group_ctx: Final[Context] = group_ctx
-        self.group: Final[Group] = self.group_ctx.command  # type: ignore[assignment]
 
         if not ISATTY:
             bottom_bar = None
@@ -735,7 +738,7 @@ class ClickCompleter(Completer):
             current_command, click.Group
         )
 
-        return ctx.command != self.group and (
+        return ctx.command != self.group_ctx.command and (
             incomplete_visible_args
             or not (is_chained_command or is_current_command_a_group_or_none)
         )
@@ -866,7 +869,7 @@ class ClickCompleter(Completer):
         for name, command in self._get_visible_subcommands(
             ctx, multicommand, _incomplete, self.show_hidden_commands
         ):
-            cmd_token_type = get_token_type(command)
+            cmd_token_type = get_token_class_for_click_obj_type(command)
 
             yield ReplCompletion(
                 name,

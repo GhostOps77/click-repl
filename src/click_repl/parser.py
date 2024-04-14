@@ -8,12 +8,13 @@ import os
 import re
 from functools import lru_cache
 from gettext import gettext as _
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
 import click
 from click import Argument as CoreArgument
 from click import Command, Context, Group, Parameter
 from click.exceptions import BadOptionUsage, NoSuchOption
+from typing_extensions import TypeAlias
 
 from . import click_utils, utils
 from ._compat import (
@@ -26,8 +27,13 @@ from ._compat import (
 )
 from .globals_ import HAS_CLICK_GE_8
 
-if TYPE_CHECKING:
-    from ._types import _REPL_PARSING_STATE_KEY, InfoDict
+InfoDict: TypeAlias = Dict[str, Any]
+# Dictionary that has info about the click objects.
+
+_REPL_PARSING_STATE_KEY: TypeAlias = Tuple[
+    Optional[InfoDict], Optional[InfoDict], Optional[InfoDict], Tuple[InfoDict, ...]
+]
+# Tuple that's used for comparing 2 ReplParsingState objects.
 
 
 _flag_needs_value = object()

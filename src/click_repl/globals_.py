@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import os
 import sys
-from threading import local
+
+# from threading import local
 from typing import TYPE_CHECKING, NoReturn
 
 if sys.version_info < (3, 8):
@@ -152,9 +153,9 @@ DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_COMPLETION_STYLE_CONFIG)
 
 
 # To store the ReplContext objects generated throughout the Runtime.
-_locals = local()
+# _locals = local()
 _ctx_stack: list[ReplContext] = []
-_locals.ctx_stack = _ctx_stack
+# _locals.ctx_stack = _ctx_stack
 
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
@@ -199,9 +200,10 @@ def _push_context(ctx: ReplContext) -> None:
         :class:`~click_repl.core.ReplContext` object that should be
         added to the repl context stack.
     """
-    _locals.ctx_stack.append(ctx)
+    # _locals.ctx_stack.append(ctx)
+    _ctx_stack.append(ctx)
 
 
 def _pop_context() -> None:
     """Removes the top level repl context from the stack."""
-    _locals.ctx_stack.pop()
+    _ctx_stack.pop()

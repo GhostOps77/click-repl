@@ -7,7 +7,7 @@ from __future__ import annotations
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Sequence, cast
+from typing import Any, Callable, Generator, Sequence
 
 import click
 from click import Context
@@ -26,7 +26,6 @@ from .exceptions import ExitReplException, InternalCommandException, PrefixNotFo
 from .formatting import print_error
 from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
-from .utils import _get_group_ctx
 from .validator import ClickValidator
 
 __all__ = ["Repl", "repl", "ReplCli"]
@@ -50,7 +49,7 @@ class Repl:
     Parameters
     ----------
     ctx
-        The "class:`~click.Context` object of the root/parent/CLI group.
+        The :class:`~click.Context` object of the root/parent/CLI group.
 
     prompt_kwargs
         Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
@@ -99,11 +98,14 @@ class Repl:
         Initializes the `Repl` class.
         """
 
-        self.group_ctx: Context = _get_group_ctx(ctx)
-        """Parent group for the repl to retrieve subcommands from."""
+        # Check if there's a parent command, if it's there, then use it.
+        if ctx.parent is not None and not isinstance(ctx.command, MultiCommand):
+            ctx = ctx.parent
 
-        self.group: MultiCommand = cast(MultiCommand, self.group_ctx.command)
-        """Group used in the `group_ctx`"""
+        ctx.protected_args = []
+
+        self.group_ctx: Context = ctx
+        """Parent group for the repl to retrieve it's subcommands."""
 
         self.internal_commands_system: InternalCommandSystem = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
@@ -111,8 +113,10 @@ class Repl:
         """Handles and executes internal commands that are invoked in repl."""
 
         self.bottom_bar: AnyFormattedText | BottomBar = None
-        """To change the command description that's displayed in the bottom bar
-           accordingly based on the current parsing state."""
+        """:class:`~click_repl.bototm_bar.BottomBar` obeject to change the command
+        description that's displayed in the bottom bar accordingly based on the
+        current parsing state.
+        """
 
         if ISATTY:
             bottom_bar = prompt_kwargs.get("bottom_toolbar", BottomBar())
@@ -138,7 +142,7 @@ class Repl:
             prompt_kwargs,
         )
 
-        self.repl_ctx = ReplContext(
+        self.repl_ctx: ReplContext = ReplContext(
             self.group_ctx,
             self.internal_commands_system,
             bottombar=self.bottom_bar,
@@ -159,7 +163,7 @@ class Repl:
                 self.repl_ctx._history.append(inp)
                 return inp
 
-        self._get_command = _get_command
+        self._get_command: Callable[[], str] = _get_command
 
     def get_command(self) -> str:
         """Retrieves input for the repl.
@@ -219,7 +223,7 @@ class Repl:
         Parameters
         ----------
         validator_cls
-            A :class:`~prompt_toolkit.validation.Validator` type class
+            A :class:`~prompt_toolkit.validation.Validator` type class.
 
         validator_kwargs
             Contains keyword arguments that has to be passed to the
@@ -276,6 +280,9 @@ class Repl:
         validator_kwargs
             Contains keyword arguments that's passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
+
+        style_config_dict
+            Style configuration for the repl.
 
         Returns
         -------
@@ -369,11 +376,13 @@ class Repl:
         if isinstance(command, str):
             command = split_arg_string(command)
 
-        ctx, _ = _generate_next_click_ctx(self.group, self.group_ctx, tuple(command))
+        ctx, _ = _generate_next_click_ctx(
+            self.group_ctx.command, self.group_ctx, tuple(command)
+        )
         ctx.command.invoke(ctx)
 
     def loop(self) -> None:
-        """Runs the main REPL loop."""
+        """Starts the repl."""
 
         with self.repl_ctx:
             while True:

@@ -11,7 +11,7 @@ from ._compat import RANGE_TYPES_TUPLE, MultiCommand, split_opt
 from .proxies import _create_proxy_command
 
 if TYPE_CHECKING:
-    from ._types import InfoDict
+    from .parser import InfoDict
 
 
 def get_option_flag_sep(option_names: list[str]) -> str:
@@ -20,18 +20,16 @@ def get_option_flag_sep(option_names: list[str]) -> str:
 
 
 def join_options(options: list[str]) -> tuple[list[str], str]:
-    """
-    Same implementation as :meth:`~click.formatting.join_options`, but much simpler.
+    # Same implementation as :meth:`~click.formatting.join_options`, but much simpler.
 
-    Parameters
-    ----------
-    options
-        List of option flags that needs to be joined together.
+    # Parameters
+    # ----------
+    # options
+    #     List of option flags that needs to be joined together.
 
-    References
-    ----------
-    :meth:`~click.formatting.join_options`
-    """
+    # References
+    # ----------
+    # :meth:`~click.formatting.join_options`
     return sorted(options, key=len), get_option_flag_sep(options)
 
 
@@ -39,22 +37,20 @@ def join_options(options: list[str]) -> tuple[list[str], str]:
 def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> InfoDict:
-    """
-    Similar to the ``get_info_dict`` method implementation in click objects,
-    but it only retrieves the essential attributes required to
-    differentiate between different ``ReplParsingState`` objects.
+    # Similar to the ``get_info_dict`` method implementation in click objects,
+    # but it only retrieves the essential attributes required to
+    # differentiate between different ``ReplParsingState`` objects.
 
-    Parameters
-    ----------
-    obj
-        Click object for which the info dict needs to be generated.
+    # Parameters
+    # ----------
+    # obj
+    #     Click object for which the info dict needs to be generated.
 
-    Returns
-    -------
-    InfoDict
-        Dictionary that holds crucial details about the given click object
-        that can be used to uniquely identify it.
-    """
+    # Returns
+    # -------
+    # InfoDict
+    #     Dictionary that holds crucial details about the given click object
+    #     that can be used to uniquely identify it.
 
     if isinstance(obj, Context):
         return {
@@ -160,6 +156,7 @@ def _generate_next_click_ctx(
     proxy: bool = False,
     **ctx_kwargs: dict[str, Any],
 ) -> tuple[Context, Command | None]:
+
     if not args:
         return parent_ctx, None
 

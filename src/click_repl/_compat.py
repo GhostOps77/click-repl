@@ -50,7 +50,7 @@ if HAS_CLICK_GE_8_2:
     from click.parser import _OptionParser as OptionParser  # type:ignore
     from click.parser import _ParsingState as ParsingState  # type:ignore
     from click.parser import _split_opt as split_opt  # type:ignore
-    from click.shell_completion import split_arg_string
+    from click.shell_completion import split_arg_string  # type:ignore
 
 else:
     from click.core import MultiCommand  # type:ignore

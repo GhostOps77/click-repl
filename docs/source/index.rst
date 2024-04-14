@@ -17,6 +17,16 @@ Welcome to click-repl's Documentation
 
    documentation/index
 
+.. toctree::
+   :hidden:
+   :caption: Others
+
+    changelog.rst
+    :ref:`search`
+    :ref:`genindex`
+    :ref:`modindex`
+
+
 .. include:: intro.rst
 
 .. include:: changelog.rst

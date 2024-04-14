@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 
-from click import Context, Group
+from click import Context
 from click.exceptions import ClickException, UsageError
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
@@ -67,9 +67,9 @@ class ClickValidator(Validator):
         """
 
         self.group_ctx: Final[Context] = group_ctx
-        self.group: Final[Group] = self.group_ctx.command  # type: ignore[assignment]
 
         self.internal_commands_system = internal_commands_system
+
         self.display_all_errors = display_all_errors
 
     def validate(self, document: Document) -> None:

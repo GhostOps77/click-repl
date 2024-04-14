@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable, Literal
 
 import click
 from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 
 from .globals_ import ISATTY
 
-if TYPE_CHECKING:
-    from ._types import ListOfTokens, _CompletionStyleDictKeys
-
-
 __all__ = ["TokenizedFormattedText", "Marquee"]
+
+
+TokenClassForClickObjectTypes = Literal[
+    "internal-command", "command", "group", "argument", "option", "parameter"
+]
+# Parent token class names for click classes.
 
 
 def append_classname_to_all_tokens(
@@ -47,7 +50,9 @@ def option_flag_tokens_joiner(
     return res
 
 
-def get_token_type(obj: click.Command | click.Parameter) -> _CompletionStyleDictKeys:
+def get_token_class_for_click_obj_type(
+    obj: click.Command | click.Parameter,
+) -> TokenClassForClickObjectTypes:
     if isinstance(obj, click.Parameter):
         if isinstance(obj, click.Argument):
             return "argument"

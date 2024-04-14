@@ -9,6 +9,9 @@ import typing as t
 import click
 from click import Parameter
 from click.types import FloatRange, IntRange, ParamType
+from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
+from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+from typing_extensions import TypedDict
 
 from ._compat import RANGE_TYPES_TUPLE, MultiCommand
 from .globals_ import HAS_CLICK_GE_8, ISATTY
@@ -16,12 +19,16 @@ from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_
 from .utils import is_param_value_incomplete, iterate_command_params
 
 if t.TYPE_CHECKING:
-    from ._types import ListOfTokens, ParamInfo, Token
-    from .core import ReplContext
     from .parser import ReplParsingState
 
 
 __all__ = ["BottomBar"]
+
+
+class ParamInfo(TypedDict):
+    name: Token
+    type_info: ListOfTokens
+    nargs_info: ListOfTokens
 
 
 def _describe_click_range_param_type(param_type: IntRange | FloatRange) -> str:
@@ -83,12 +90,10 @@ class BottomBar:
         self.show_hidden_params = show_hidden_params
         """Flag that determines whether to display hidden params at bottom bar"""
 
-        self.current_repl_ctx: ReplContext | None = None
-        """Context object of the current Repl session."""
-
         self.parent_token_class_name: str = "bottom-bar"
         """
-        Parent class name for tokens that are related to :class:`~.BottomBar`."""
+        Parent class name for tokens that are related to :class:`~.BottomBar`.
+        """
 
     def __call__(self) -> ListOfTokens:
         return self.get_formatted_text()

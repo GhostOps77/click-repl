@@ -4,11 +4,11 @@ Core functionality of the module.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any, Dict, Generator
 
 from click import Context
 from prompt_toolkit import PromptSession
-from typing_extensions import Final
+from typing_extensions import Final, TypeAlias, TypedDict
 
 from .bottom_bar import BottomBar
 from .globals_ import ISATTY, _pop_context, _push_context
@@ -18,9 +18,22 @@ from .parser import ReplParsingState
 if TYPE_CHECKING:
     from prompt_toolkit.formatted_text import AnyFormattedText
 
-    from ._types import ReplContextInfoDict, _PromptSession
 
 __all__ = ["ReplContext"]
+
+
+_PromptSession: TypeAlias = PromptSession[Dict[str, Any]]
+
+
+class ReplContextInfoDict(TypedDict):
+    group_ctx: Context
+    prompt_kwargs: dict[str, Any]
+    session: _PromptSession | None
+    internal_command_system: InternalCommandSystem
+    parent: ReplContext | None
+    _history: list[str]
+    current_state: ReplParsingState | None
+    bottombar: AnyFormattedText | BottomBar
 
 
 class ReplContext:
@@ -83,8 +96,6 @@ class ReplContext:
 
         if ISATTY:
             session = PromptSession(**prompt_kwargs)
-            if isinstance(bottombar, BottomBar):
-                bottombar.current_repl_ctx = self
 
         else:
             session = None

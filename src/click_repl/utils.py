@@ -10,7 +10,6 @@ from typing import Generator
 import click
 from click import Command, Context, Parameter
 
-from ._compat import MultiCommand
 from .exceptions import ArgumentPositionError
 
 
@@ -29,7 +28,7 @@ def _is_help_option(param: click.Option) -> bool:
         If ``True``, The given :class:`~click.Option` object is a help option.
         else, ``False``.
     """
-    has_help_msg_as_help_text = bool(
+    has_help_message_as_help_text = bool(
         get_close_matches(param.help or "", ["Show this message and exit."], cutoff=0.5)
     )
 
@@ -38,7 +37,7 @@ def _is_help_option(param: click.Option) -> bool:
         and not param.expose_value
         and "--help" in param.opts
         and param.is_eager
-        and has_help_msg_as_help_text
+        and has_help_message_as_help_text
     )
 
 
@@ -131,29 +130,3 @@ def iterate_command_params(command: Command) -> Generator[Parameter, None, None]
         yield nargs_minus_one_param[0]
 
     return
-
-
-def _get_group_ctx(ctx: Context) -> Context:
-    """
-    Checks and returns the appropriate :class:`~click.Context` object to
-    start repl on it.
-
-    If there's a parent context object and its command type is :class:`~click.Group`,
-    we return its parent context object. A parent context object should be
-    available most of the time. If not, then we return the original context object.
-
-    Parameters
-    ----------
-    ctx
-        The :class:`~click.Context` object to check and start repl on it.
-
-    Returns
-    -------
-    click.Context
-        The :class:`~click.Context` object that should be used to start repl on it.
-    """
-    if ctx.parent is not None and not isinstance(ctx.command, MultiCommand):
-        ctx = ctx.parent
-
-    ctx.protected_args = []
-    return ctx
