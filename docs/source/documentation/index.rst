@@ -4,6 +4,7 @@ Documentation
 Index tree to navigate between code documentation:
 
 .. toctree::
+   :maxdepth: 1
 
    getting_started.rst
    internal_commands.rst

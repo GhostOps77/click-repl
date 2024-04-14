@@ -1,7 +1,3 @@
-# Configuration file for the Sphinx documentation builder.
-
-# Project information
-
 from __future__ import annotations
 
 import typing as t
@@ -178,8 +174,11 @@ def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, op
     # print(f'{name = }')
     import re
 
+    if skip:
+        return True
+
     exclude = re.findall(r"\._.*__$", str(obj)) and what != "module"
-    return skip or exclude
+    return exclude
 
 
 def setup(app: Sphinx):

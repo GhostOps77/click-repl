@@ -56,7 +56,7 @@ For this example, we register the ``hi`` function as an internal command, and de
     import click
     import click_repl
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         click_repl.repl(ctx)
@@ -146,7 +146,7 @@ You can use custom prefixes for the internal command utility, by passing in thos
     import click
     from click_repl import repl
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.option('-i', '--interactive', flag=True)
     @click.pass_context
     def main(ctx, interactive):
@@ -196,7 +196,7 @@ shell escape utilty.
     import click
     from click_repl import repl
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         repl(

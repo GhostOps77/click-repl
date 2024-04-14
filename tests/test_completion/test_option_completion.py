@@ -83,7 +83,7 @@ def shortest_only(foo, bar, foobar):
 c1 = ClickCompleter(
     click.Context(root_command),
     DummyInternalCommandSystem(),
-    shortest_opt_names_only=True,
+    shortest_option_names_only=True,
 )
 
 

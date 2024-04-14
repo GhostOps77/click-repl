@@ -33,28 +33,34 @@ It also keeps track of number of arguments that a parameter with `nargs>1` has r
     from click_repl import repl
 
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
-    def main():
+    def main(ctx):
         repl(ctx)
 
     @main.command()
     @click.option('--student-name')
     @click.argument('marks', nargs=5, type=float)
     def get_marks(student_name, marks):
-        ...
+        print(f'{student_name = }')
+        print(f'{marks = }')
 
-<insert image>
+.. image:: ../../assets/bottom_bar_example.gif
 
 BottomBar
 ---------
 
 This class is responsible for generating text that should be displayed at the bottom bar. It's object returns a
 :class:`~click_repl.tokenizer.Marquee` object, which will yield the appropriate chunk of text for every iteration to imitate
-the behaviour of `<marquee> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/marquee>` html tag, to display the text that overflows the terminal window (It's only meant to
-scroll the text left and right in the terminal screen).
+the behaviour of `<marquee> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/marquee>` html tag, to display the text that
+overflows the terminal window (It's only meant to scroll the text left and right in the terminal screen).
 
 For more about :class:`~click_repl.tokenizer.Marquee`'s behaviour, Refer from here: :ref:`marquee_class`
+
+The bottom bar also hides the detalis of hidden command and parameters by default. But when the whole name of a hidden
+command is entered into the repl, it shows the details about that command. But it still won't show hidden parameters. In order
+to make bottom bar display hidden parameters, set :class:`~click_repl.bottom_bar.BottomBar`'s
+:attr:`~click_repl.bottom_bar.BottomBar.show_hidden_params` argument to ``True``.
 
 Custom BottomBar
 ----------------
@@ -76,7 +82,7 @@ You can use your own bottom bar class by passing it through ``bottom_toolbar`` k
         # Implement your custom token generation methods.
         ...
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         repl(ctx, prompt_kwargs={

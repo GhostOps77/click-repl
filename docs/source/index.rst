@@ -17,12 +17,7 @@ Welcome to click-repl's Documentation
 
    documentation/index
 
-
-Intoduction
-===========
-
-.. include:: ../../README.rst
-    :start-line: 5
+.. include:: intro.rst
 
 .. include:: changelog.rst
 

@@ -119,7 +119,7 @@ click-repl can be integrated with your click application in various ways. Each o
        import click
        from click_repl import repl
 
-       @click.group()
+       @click.group(invoke_without_command=True)
        @click.option('-i', '--interactive', is_flag=True)
        @click.pass_context
        def cli(ctx, interactive):

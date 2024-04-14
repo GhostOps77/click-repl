@@ -50,7 +50,7 @@ class ClickCompleter(Completer):
     internal_commands_system
         Object that holds information about the internal commands and their prefixes.
 
-    shortest_opt_names_only
+    shortest_option_names_only
         Determines whether only the shortest name of an option parameter
         should be used for auto-completion.
 
@@ -79,7 +79,7 @@ class ClickCompleter(Completer):
         group_ctx: Context,
         internal_commands_system: InternalCommandSystem,
         bottom_bar: AnyFormattedText | BottomBar = None,
-        shortest_opt_names_only: bool = False,
+        shortest_option_names_only: bool = False,
         show_only_unused_options: bool = False,
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
@@ -96,7 +96,7 @@ class ClickCompleter(Completer):
 
         self.bottom_bar = bottom_bar
 
-        self.shortest_opt_names_only = shortest_opt_names_only
+        self.shortest_option_names_only = shortest_option_names_only
         self.show_only_unused_options = show_only_unused_options
 
         self.show_hidden_commands = show_hidden_commands
@@ -540,7 +540,9 @@ class ClickCompleter(Completer):
             if hide:
                 continue
 
-            is_shortest_opt_names_only = self.shortest_opt_names_only and not _incomplete
+            is_shortest_opt_names_only = (
+                self.shortest_option_names_only and not _incomplete
+            )
 
             if (
                 is_shortest_opt_names_only

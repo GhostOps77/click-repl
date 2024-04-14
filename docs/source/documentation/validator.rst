@@ -12,20 +12,24 @@ The prompt will not accept the input if the validator reports that it's in an in
 This is mostly useful for dislaying :exc:`~click.exceptions.UsageError` exception's formatted message from it's
 :meth:`~click.exceptions.UsageError.format_message` method.
 
+.. note::
+
+    Validator can only catch and display exceptions that are raised while parsing the prompt. It cannot catch the
+    errors that are raised while generating suggestions.
+
 .. code-block:: python
 
     import click
     from click_repl import repl
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
-    def main():
-        pass
+    def main(ctx):
+        repl(ctx)
 
     @main.command()
     @click.argument('num', type=int)
-    @click.option('--error', shell_complete=mock_error_during_shell_complete)
-        def get_number(num):
+    def get_number(num):
         print(num)
 
     main()
@@ -56,7 +60,7 @@ necessary values to it's parameters.
 			# Implement your logic on validating input text in prompt.
 			...
 
-	@click.group()
+	@click.group(invoke_without_command=True)
 	@click.pass_context
 	def main():
 		repl(ctx, validator_cls=MyValidator)  # Now, it'll use custom validator.
@@ -65,7 +69,7 @@ You can also disable it in the same way, by passing in ``None`` to the ``validat
 
 .. code-block:: python
 
-	@click.group()
+	@click.group(invoke_without_command=True)
 	@click.pass_context
 	def main():
 		repl(ctx, validator_cls=None)  # No validation is done during typing in prompt.
@@ -80,7 +84,7 @@ of :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
 
-	@click.group()
+	@click.group(invoke_without_command=True)
 	@click.pass_context
 	def main():
 		repl(ctx, validator_cls=MyValidator, validator_kwargs={
@@ -120,7 +124,7 @@ The error traceback and messages are also logged into ``.click-repl-err.log`` fi
 
 .. code-block:: python
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main():
         repl(ctx, validator_kwargs={
@@ -135,5 +139,3 @@ The error traceback and messages are also logged into ``.click-repl-err.log`` fi
     @click.option('--error', shell_complete=mock_error_during_shell_complete)
     def get_number(num):
         print(num)
-
-<insert image>

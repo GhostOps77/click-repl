@@ -41,7 +41,7 @@ You can use :class:`~click_repl.completer.ReplCompletion` in your custom ``shell
 
     games_list = os.listdir("my/games/directory")
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main():
         repl(ctx)
@@ -138,13 +138,13 @@ You can make your own completer class. And in order to use it, pass it into the 
             # Implement your logic on generating suggestions for incomplete text in prompt.
             ...
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main():
         repl(ctx, completer_cls=MyCompleter)  # Now, it'll use custom completer.
 
 
-Refer to ``ClickCompleter``'s `API Docs <~click_repl.completer.ClickCompleter>`_ to know about component specific methods.
+Refer to `ClickCompleter's API Docs <~click_repl.completer.ClickCompleter>`_ to know about component specific methods.
 
 .. note::
 
@@ -158,13 +158,13 @@ of :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
 
-	@click.group()
+	@click.group(invoke_without_command=True)
 	@click.pass_context
 	def main():
 		repl(ctx, completer_cls=MyCompleter, completer_kwargs={
             # Your extra keyword arguments goes here.
-            'shortest_opts_only': True,
-            'show_hidden_commands': False
+            'shortest_option_names_only': True,
+            'show_hidden_commands': True
             ...
         })
 
@@ -177,26 +177,25 @@ the completer while initializing the repl. The default arguments for :class:`~cl
 
 These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_completer_kwargs` method.
 
-Suggesting shortest opt names only for Options
-----------------------------------------------
+Suggesting shortest option names only for Options
+-------------------------------------------------
 
-:class:`~click_repl.completer.ClickCompleter` suggests all the option names separately by default.
-In order to suggest only the shortest flag for each option, set ``shortest_opts_only`` as ``True`` to the
-completer's keyword arguments.
+:class:`~click_repl.completer.ClickCompleter` suggests all the option names separately by default. In order to suggest only
+the shortest flag for each option, set ``shortest_option_names_only`` as ``True`` to the completer's keyword arguments.
 
-The flag :attr:`~click_repl.completer.ClickCompleter.shortest_opts_only` determines whether only the shortest name of an
+The flag :attr:`~click_repl.completer.ClickCompleter.shortest_option_names_only` determines whether only the shortest name of an
 option parameter should be used for auto-completion or not. It's ``False`` by default.
 
-By this, The options that have more than 1 option name will insert only the shortest opts when the suggestion is accepted,
-but their suggestions have all of their names separated by ``/``.
+By this, The options that have more than 1 option name will insert only the shortest opts when the suggestion is accepted, but
+their suggestions have all of their names separated by ``/``.
 
 .. code-block:: python
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         repl(ctx, completer_kwargs={
-            'shortest_opt_names_only': True
+            'shortest_option_names_only': True
         })
 
     @main.command()
@@ -205,7 +204,9 @@ but their suggestions have all of their names separated by ``/``.
     def connect_to_db(username, port):
         ...
 
-<insert image>
+.. image:: ../../assets/shortest_options_only.gif
+   :alt: shortest_options_only
+
 
 Suggesting hidden Commands and Parameters
 -----------------------------------------
@@ -224,7 +225,7 @@ the whole name of the hidden command, it's parmeters are then suggested.
 
 .. code-block:: python
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         repl(ctx, completer_kwargs={
@@ -234,17 +235,19 @@ the whole name of the hidden command, it's parmeters are then suggested.
 
     @main.command()
     @click.option('-u', '--username')
-    @click.option('-p', '--port')
+    @click.option('-p', '--port', hidden=True)
     def connect_to_db(username, port):
         ...
 
     @main.command(hidden=True)
     @click.option('-u', '--username')
-    @click.option('-p', '--port', hidden=True)
+    @click.option('-p', '--port')
     def connect_to_admin_db(username, port):
         ...
 
-<insert image>
+.. image:: ../../assets/show_hidden_command_and_params.gif
+   :alt: show_hidden_command_and_params
+
 
 Suggesting only unused Parameters
 ---------------------------------
@@ -260,7 +263,7 @@ displayed for suggestion or not.
 
 .. code-block:: python
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         repl(ctx, completer_kwargs={
@@ -273,4 +276,5 @@ displayed for suggestion or not.
     def connect_to_db(username, port):
         ...
 
-<insert image>
+.. image:: ../../assets/show_only_unused_option_names.gif
+   :alt: show_only_unused_option_names

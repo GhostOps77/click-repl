@@ -139,7 +139,7 @@ click-repl uses ``>`` as it's prompt by default. But you can assign custom promp
        import click
        from click_repl import repl
 
-       @click.group()
+       @click.group(invoke_without_command=True)
        @click.pass_context
        def main(ctx):
            repl(ctx, prompt_kwargs={
@@ -249,7 +249,7 @@ After creating one, you can use it by passing it into ``cls`` parameter of :func
         # Implement your own REPL customization.
         ...
 
-    @click.group()
+    @click.group(invoke_without_command=True)
     @click.pass_context
     def main(ctx):
         repl(ctx, cls=MyRepl)
