@@ -153,9 +153,11 @@ class ClickCompleter(Completer):
             REPL prompt.
 
         param
-            _description_
+            A :class:`~click.Parameter` object which is referred to generate
+            auto-completions.
         state
-            _description_
+            A :class`~click_repl.parser.ReplParsingState` object that contains information
+            about the parsing state of the parameters of the current parameter.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
