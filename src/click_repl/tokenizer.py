@@ -21,6 +21,23 @@ TokenClassForClickObjectTypes = Literal[
 def append_classname_to_all_tokens(
     tokens_list: ListOfTokens, classes: Iterable[str] = []
 ) -> ListOfTokens:
+    """
+    Appends the given list of token `classes` to all the classes string in every
+    token in `tokens_list`
+
+    Parameters
+    ----------
+    tokens_list
+        List of tokens to which each of their token's classes needs to be updated.
+
+    classes
+        List of class names to append to the pre-existing classes.
+
+    Returns
+    -------
+    ListOfTokens
+        Updated `tokens_list` with `classes` appended to each token's classes string.
+    """
 
     if not classes:
         return tokens_list
@@ -34,18 +51,44 @@ def append_classname_to_all_tokens(
 
 
 def option_flag_tokens_joiner(
-    items: Iterable[str], item_token: str, sep_token: str, sep: str = " "
+    contents: Iterable[str],
+    content_token_class: str,
+    sep_token_class: str,
+    sep: str = " ",
 ) -> ListOfTokens:
-    if not items:
+    """
+    Joins the given `contentss` of strings into a token string with the given
+    `content_token_class`, `sep` string and it's token's class `sep_token_class`.
+
+    Parameters
+    ----------
+    contents
+        List of strings that should be as tokens
+
+    content_token_class
+        Token class name(s) for strings in `contents`
+
+    sep_token_class
+        Token class name(s) for `sep`
+
+    sep
+        String that separates `contents` when displayed together
+
+    Returns
+    -------
+    ListOfTokens
+        Given `contents` separated by `sep`, as tokens list with given classes string.
+    """
+    if not contents:
         return []
 
-    sep_elem = (sep_token, sep)
-    iterator = iter(items)
-    res: ListOfTokens = [(item_token, next(iterator))]
+    sep_elem = (sep_token_class, sep)
+    iterator = iter(contents)
+    res: ListOfTokens = [(content_token_class, next(iterator))]
 
     for item in iterator:
         res.append(sep_elem)
-        res.append((item_token, item))
+        res.append((content_token_class, item))
 
     return res
 
@@ -53,6 +96,19 @@ def option_flag_tokens_joiner(
 def get_token_class_for_click_obj_type(
     obj: click.Command | click.Parameter,
 ) -> TokenClassForClickObjectTypes:
+    """
+    Retrieve the token class name suitable for the provided object `obj`
+    from a class within the click module.
+
+    Parameters
+    ----------
+    obj
+        The object for which the token class name is to be determined
+
+    Returns
+    -------
+        The token class name corresponding to the provided object
+    """
     if isinstance(obj, click.Parameter):
         if isinstance(obj, click.Argument):
             return "argument"

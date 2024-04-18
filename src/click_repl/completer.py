@@ -142,9 +142,33 @@ class ClickCompleter(Completer):
     ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on the output from the command's
-        `shell_complete` or `autocompletion` function of the current parameter.
-        """
+        :meth:`~click.Command.shell_complete` or `autocompletion` function of the
+        current parameter.
 
+        Parameters
+        ----------
+        ctx
+            A :class:`~click.Context` object that contains information about the
+            current command and its parameters based on the input in the
+            REPL prompt.
+
+        param
+            _description_
+        state
+            _description_
+
+        incomplete
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
+
+        param_type, optional
+            _description_, by default None
+
+        Yields
+        ------
+            _description_
+        """
         # click < v8 has a different name for their shell_complete
         # function, and its called "autocompletion". So, for backwards
         # compatibility, we're calling them based on the click's version.
@@ -187,25 +211,26 @@ class ClickCompleter(Completer):
     ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on data from the given
-        `click.Choice` parameter type of a parameter.
+        :class:`~click.Choice` parameter type of a parameter.
 
-        This method is used for backwards compatibility with click v7
-        as `click.Choice` class didn't have a `shell_complete` method
-        until click v8.
+        This method is used for backwards compatibility with click v7 as
+        :class:`~click.Choice` class didn't have a :meth:`~click.Choice.shell_complete`
+        method until click v8.
 
         Parameters
         ----------
         param
-            A `click.Parameter` object which is referred to generate
+            A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
 
         param_type
-            The click paramtype object of a parameter, to which the choice
+            The :class:`~click.types.ParamType` object of a parameter, to which the choice
             auto-completions should be generated.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
@@ -244,16 +269,17 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         param
-            A `click.Parameter` object which is referred to generate
+            A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
 
         param_type
-            The click paramtype object of a parameter, to which the path
+            The :class:`~click.types.ParamType` object of a parameter, to which the path
             auto-completions should be generated.
 
         incomplete
-            An unfinished object that holds the path string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
@@ -311,16 +337,17 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         param
-            A `click.Parameter` object which is referred to generate
+            A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
-        prompt_toolkit.completion.Completion.
+        prompt_toolkit.completion.Completion
             The :class:`prompt_toolkit.completion.Completion`
             objects thats sent for auto-completion
             of the incomplete prompt.
@@ -363,20 +390,21 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         param
-            A `click.Parameter` object which is referred to generate
+            A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
 
         param_type
-            The click patamtype object object of a parameter, to which
+            The :class:`~click.ParamType` object object of a parameter, to which
             appropriate auto-completions should've to be generated.
 
         state
-            An ReplParsingState object that contains information about
+            A :class`~click_repl.parser.ReplParsingState` object that contains information about
             the parsing state of the parameters of the current command.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
@@ -430,22 +458,23 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         ctx
-            A click context object that contains information about the
+            A :class:`~click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
         param
-            A `click.Parameter` object which is referred to generate
+            A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
 
         state
-            A `ReplParsingState` object that contains information about the
-            parsing state of the parameters of the current command
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
             based on the text in the prompt.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
@@ -516,29 +545,29 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         ctx
-            A click context object that contains information about the
+            A :class:`~click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
         command
-            A click command object, which is referred to generate auto-completions
+            A :class:`~click.Command` object, which is referred to generate auto-completions
             based on its parameters.
 
         state
-            A `ReplParsingState` object that contains information about the
-            parsing state of the parameters of the current command
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
             based on the text in the prompt.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion of the
-            incomplete prompt, based on the given parameter.
+            The :class:`prompt_toolkit.completion.Completion` objects thats sent for
+            auto-completion of the incomplete prompt, based on the given parameter.
         """
 
         _incomplete = incomplete.parsed_str
@@ -564,12 +593,12 @@ class ClickCompleter(Completer):
             if hide:
                 continue
 
-            is_shortest_opt_names_only = (
+            is_shortest_option_names_only = (
                 self.shortest_option_names_only and not _incomplete
             )
 
             if (
-                is_shortest_opt_names_only
+                is_shortest_option_names_only
                 and option.is_bool_flag
                 and option.secondary_opts
             ):
@@ -589,7 +618,7 @@ class ClickCompleter(Completer):
 
             flag_token = "parameter.option.name"
 
-            if is_shortest_opt_names_only:
+            if is_shortest_option_names_only:
                 option_flags, sep = join_options(flags_that_start_with_incomplete)
 
                 def display_text_func(flag_token: str) -> ListOfTokens:
@@ -605,7 +634,7 @@ class ClickCompleter(Completer):
                 ]
 
             for option_flag in flags_that_start_with_incomplete:
-                if not is_shortest_opt_names_only:
+                if not is_shortest_option_names_only:
 
                     def display_text_func(flag_token: str) -> ListOfTokens:
                         return [(flag_token, option_flag)]
@@ -644,28 +673,28 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         ctx
-            A click context object that contains information about the
+            A :class:`~click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
         command
-            A click command object, which is referred to generate auto-completions
+            A :class:`~click.Command` object, which is referred to generate auto-completions
             based on its parameters.
 
         state
-            A `ReplParsingState` object that contains information about the
-            parsing state of the parameters of the current command
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
             based on the text in the prompt.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent
+            The :class:`prompt_toolkit.completion.Completion` objects thats sent
             for auto-completion of the incomplete prompt.
         """
 
@@ -852,25 +881,25 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         ctx
-            A click context object that contains information about the
+            A :class:`~click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
         state
-            A `ReplParsingState` object that contains information about the
-            parsing state of the parameters of the current command
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
             based on the text in the prompt.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt.
+            The :class:`prompt_toolkit.completion.Completion` objects thats sent for
+            auto-completion of the incomplete prompt.
         """
 
         if self.check_for_command_arguments_request(ctx, state, incomplete):
@@ -914,8 +943,9 @@ class ClickCompleter(Completer):
             The prefix string thats present in the start of the prompt.
 
         incomplete
-            An object that holds the unfinished string in the REPL prompt,
-            and its parsed state, that requires further input or completion.
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
 
         Yields
         ------
