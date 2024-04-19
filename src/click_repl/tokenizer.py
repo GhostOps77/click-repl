@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable, Literal
+from typing import Iterable
 
 import click
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+from typing_extensions import Literal
 
 from .globals_ import ISATTY
 
@@ -153,9 +154,13 @@ class TokenizedFormattedText(FormattedText):
                 class_names = token_tuple[0]
 
                 if class_names and not class_names.startswith("class:"):
-                    class_names = "class:" + ",".join(
+                    class_names_with_parent_token_class_iter = (
                         f"{parent_token_class}.{class_name}"
                         for class_name in class_names.split(",")
+                    )
+
+                    class_names = "class:" + ",".join(
+                        class_names_with_parent_token_class_iter
                     )
 
                 tokens_list[index] = (class_names, *token_tuple[1:])

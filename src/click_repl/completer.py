@@ -142,7 +142,7 @@ class ClickCompleter(Completer):
     ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on the output from the command's
-        :meth:`~click.Command.shell_complete` or `autocompletion` function of the
+        :meth:`~click.Command.shell_complete` or ``autocompletion`` function of the
         current parameter.
 
         Parameters
@@ -155,6 +155,7 @@ class ClickCompleter(Completer):
         param
             A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
+
         state
             A :class`~click_repl.parser.ReplParsingState` object that contains information
             about the parsing state of the parameters of the current parameter.
@@ -164,25 +165,24 @@ class ClickCompleter(Completer):
             string in the REPL prompt, and its parsed state, that requires
             further input or completion.
 
-        param_type, optional
-            _description_, by default None
+        param_type
+            The :class:`~click.types.ParamType` object of a parameter, to which the
+            auto-completions should be generated from their
+            :meth:`~click.ParamType.shell_complete` methods.
 
         Yields
         ------
-            _description_
+        prompt_toolkit.completion.Completion
+            The :class:`~prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion of the incomplete prompt,
+            based on the given parameter and/or it's type.
         """
         # click < v8 has a different name for their shell_complete
         # function, and its called "autocompletion". So, for backwards
         # compatibility, we're calling them based on the click's version.
 
         if HAS_CLICK_GE_8:
-            if param_type is None:
-                autocompletions = param.shell_complete(ctx, incomplete.parsed_str)
-
-            else:
-                autocompletions = param_type.shell_complete(
-                    ctx, param, incomplete.parsed_str
-                )
+            autocompletions = param.shell_complete(ctx, incomplete.parsed_str)
 
         else:
             autocompletions = param.autocompletion(  # type: ignore[attr-defined]
@@ -237,9 +237,9 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt, based on the given parameter type.
+            The :class:`~prompt_toolkit.completion.Completion`
+            objects thats sent for auto-completion of the incomplete prompt,
+            based on the given parameter type.
         """
 
         case_insensitive = not param_type.case_sensitive
@@ -265,7 +265,7 @@ class ClickCompleter(Completer):
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
-        Generates auto-completions for `click.Path` and `click.File` type parameters
+        Generates auto-completions for :class:`~click.Path` and :class:`~click.File` type parameters
         based on the given incomplete path string.
 
         Parameters
@@ -286,9 +286,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt.
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent
+            for auto-completion of click path types.
         """
 
         _incomplete: str = incomplete.expand_envvars()
@@ -333,7 +332,7 @@ class ClickCompleter(Completer):
         self, param: Parameter, incomplete: Incomplete
     ) -> Generator[Completion, None, None]:
         """
-        Generates auto-completions for boolean type parameter
+        Generates auto-completions for :obj:`~click.BOOL` type parameter
         based on the given incomplete string.
 
         Parameters
@@ -350,9 +349,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt.
+            The :class:`~prompt_toolkit.completion.Completion` objects thats sent
+            for auto-completion of boolean types.
         """
 
         _incomplete = incomplete.expand_envvars()
@@ -386,11 +384,16 @@ class ClickCompleter(Completer):
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
-        Generates auto-completions based on the given `param_type` object
-        of the given parameter `param`.
+        Generates auto-completions based on the given ``param_type`` object
+        of the given parameter ``param``.
 
         Parameters
         ----------
+        ctx
+            A :class:`~click.Context` object that contains information about the
+            current command and its parameters based on the input in the
+            REPL prompt.
+
         param
             A :class:`~click.Parameter` object which is referred to generate
             auto-completions.
@@ -400,8 +403,8 @@ class ClickCompleter(Completer):
             appropriate auto-completions should've to be generated.
 
         state
-            A :class`~click_repl.parser.ReplParsingState` object that contains information about
-            the parsing state of the parameters of the current command.
+            A :class`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
@@ -411,13 +414,12 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt.
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent
+            for auto-completion of the current parameter's paramtype.
         """
 
         if isinstance(param_type, click.Tuple):
-            values = state.current_ctx.params[param.name]  # type: ignore[index]
+            values: list[str | None] = state.current_ctx.params[param.name]
             index_of_none = values.index(None)
 
             if index_of_none == -1:
@@ -481,9 +483,9 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects that's sent for auto-completion of the
-            incomplete prompt, based on the given parameter.
+            The :class:`~prompt_toolkit.completion.Completion`
+            objects that's sent for auto-completion of the incomplete prompt,
+            based on the given parameter.
         """
 
         param_type = param.type
@@ -509,6 +511,40 @@ class ClickCompleter(Completer):
         state: ReplParsingState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
+        """
+        Generates auto-completions for boolean option flags.
+
+        It generates coloured option flags, only if there are
+        any exclusive flags to pass in the False'y value of the ``option``.
+
+        Parameters
+        ----------
+        ctx
+            A :class:`~click.Context` object that contains information about the
+            current command and its parameters based on the input in the
+            REPL prompt
+
+        option
+            A :class:`~click.Option` object which is referred to generate
+            auto-completions for it's flags
+
+        state
+            A :class:`~click_repl.parser.ReplParsingState` object that contains
+            information about the parsing state of the parameters of the current command
+            based on the text in the prompt
+
+        incomplete
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion
+
+        Yields
+        ------
+        prompt_toolkit.completion.Completion
+            The :class:`~prompt_toolkit.completion.Completion`
+            objects that's sent for auto-completion of the incomplete prompt,
+            based on the given boolean flag option.
+        """
         # Display coloured option flags, only if there are
         # any exclusive flags to pass in the False'y value
 
@@ -568,8 +604,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion` objects thats sent for
-            auto-completion of the incomplete prompt, based on the given parameter.
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent for
+            auto-completion, based on the given flag-type option.
         """
 
         _incomplete = incomplete.parsed_str
@@ -680,8 +716,8 @@ class ClickCompleter(Completer):
             REPL prompt.
 
         command
-            A :class:`~click.Command` object, which is referred to generate auto-completions
-            based on its parameters.
+            A :class:`~click.Command` object, which is referred to generate
+            auto-completions based on its parameters.
 
         state
             A :class:`~click_repl.parser.ReplParsingState` object that contains
@@ -696,8 +732,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion` objects thats sent
-            for auto-completion of the incomplete prompt.
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent
+            for auto-completion of the current command's arguments
         """
 
         current_param = state.current_param
@@ -751,7 +787,7 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         ctx
-            A :class:`click.Context` object that contains information about the
+            A :class:`~click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
@@ -805,7 +841,7 @@ class ClickCompleter(Completer):
         Parameters
         ----------
         ctx
-            A :class:`click.Context` object that contains information about the
+            A :class:`~click.Context` object that contains information about the
             current command and its parameters based on the input in the
             REPL prompt.
 
@@ -821,9 +857,9 @@ class ClickCompleter(Completer):
 
         Returns
         -------
-        Group | None
-            A click multicommand object, if available, which is supposed to be used for
-            generating auto-completion for suggesting its subcommands.
+        MultiCommand | None
+            A :class:`~click.MultiCommand` object, if available, which is supposed
+            to be used for generating auto-completion for suggesting its subcommands.
         """
         if state.current_param:
             return None
@@ -850,25 +886,46 @@ class ClickCompleter(Completer):
         ctx: Context,
         group: MultiCommand,
         incomplete: str,
-        show_hidden_commands: bool = False,
-    ) -> Generator[tuple[str, Command], None, None]:
+    ) -> Generator[Command, None, None]:
         """
         Get all the subcommands from the given ``multicommand`` whose name
         starts with the given ``incomplete`` prefix string.
-        """
 
+        Parameters
+        ----------
+        ctx
+            A :class:`~click.Context` object that contains information about the
+            current command and its parameters based on the input in the
+            REPL prompt.
+
+        group
+            A :class:`~click.MultiCommand` object, which is used for generating
+            auto-completion for suggesting its subcommands.
+
+        incomplete
+            An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
+            string in the REPL prompt, and its parsed state, that requires
+            further input or completion.
+
+        Yields
+        ------
+        click.Command
+            :class:`~click.Command` type sub-command objects of the ``group`` object
+        """
         for command_name in group.list_commands(ctx):
             if not command_name.startswith(incomplete):
                 continue
 
             subcommand = group.get_command(ctx, command_name)
 
-            if subcommand is None or (subcommand.hidden and not show_hidden_commands):
+            if subcommand is None or (
+                subcommand.hidden and not self.show_hidden_commands
+            ):
                 # We skip if there's no command found or it's a hidden command
                 # and show_hidden_commands is False.
                 continue
 
-            yield command_name, subcommand
+            yield subcommand
 
     def get_completions_for_subcommands(
         self,
@@ -900,8 +957,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion` objects thats sent for
-            auto-completion of the incomplete prompt.
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent for
+            auto-completion to suggest sub-commands.
         """
 
         if self.check_for_command_arguments_request(ctx, state, incomplete):
@@ -918,16 +975,16 @@ class ClickCompleter(Completer):
 
         _incomplete = incomplete.parsed_str
 
-        for name, command in self._get_visible_subcommands(
-            ctx, multicommand, _incomplete, self.show_hidden_commands
-        ):
+        for command in self._get_visible_subcommands(ctx, multicommand, _incomplete):
+            command_name = command.name
             cmd_token_type = get_token_class_for_click_obj_type(command)
 
             yield ReplCompletion(
-                name,
+                command_name,
                 incomplete,
                 display=TokenizedFormattedText(
-                    [(f"class:{cmd_token_type}.name", name)], self.parent_token_class_name
+                    [(f"class:{cmd_token_type}.name", command_name)],
+                    self.parent_token_class_name,
                 ),
                 display_meta=command.get_short_help_str(),
             )
@@ -952,9 +1009,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects thats sent for auto-completion
-            of the incomplete prompt.
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent
+            for auto-completion to suggest internal commands.
         """
 
         incomplete = incomplete.strip()[len(prefix) :].lstrip().lower()
@@ -985,6 +1041,27 @@ class ClickCompleter(Completer):
     def handle_internal_commands_request(
         self, document_text: str
     ) -> Generator[Completion, None, bool]:
+        """
+        Handles internal commands request from the repl, by not only suggesting
+        auto-completions for the incomplete internal command request, but also
+        clears the bottom bar.
+
+        Parameters
+        ----------
+        document_text
+            The text that's currently in the repl prompt
+
+        Returns
+        -------
+        bool
+            if there's an internal command request from the repl
+
+        Yields
+        ------
+        prompt_toolkit.completion.Completion
+            The :class:`~prompt_toolkit.completion.Completion` objects that's sent
+            for auto-completion to suggest internal commands.
+        """
         flag, ics_prefix = self.internal_commands_system.get_prefix(document_text)
 
         internal_commands_requested = flag == "internal"
@@ -1004,7 +1081,7 @@ class ClickCompleter(Completer):
         self, document: Document, complete_event: CompleteEvent | None = None
     ) -> Generator[Completion, None, None]:
         """
-        Provides `prompt_toolkit.completion.Completion`
+        Provides :class:`~prompt_toolkit.completion.Completion`
         objects from the obtained current input string in the REPL prompt.
 
         Parameters
@@ -1020,8 +1097,8 @@ class ClickCompleter(Completer):
         Yields
         ------
         prompt_toolkit.completion.Completion
-            The :class:`prompt_toolkit.completion.Completion`
-            objects for command line autocompletion.
+            The :class:`~prompt_toolkit.completion.Completion`
+            objects for command line auto-completion.
         """
 
         internal_commands_requested = yield from self.handle_internal_commands_request(
@@ -1065,9 +1142,8 @@ class ReplCompletion(Completion):
         The string that should fill into the prompt during auto-completion.
 
     incomplete
-        The string thats not completed in the prompt.
-        It's used to get the :attr:`.start_position` for the Completion to
-        swap text with, in the prompt.
+        The string thats not completed in the prompt. It's used to get the
+        :attr:`.start_position` for the Completion to swap text with, in the prompt.
 
     *args
         Additional arguments should be passed as keyword arguments to the
