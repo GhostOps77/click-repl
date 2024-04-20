@@ -14,7 +14,14 @@ from .exceptions import ArgumentPositionError
 
 
 def print_error(text: str) -> None:
-    """Prints the given text to stderr, in red colour."""
+    """
+    Prints the given text to stderr, in red colour.
+
+    Parameters
+    ----------
+    text
+        The text to be printed.
+    """
     click.secho(text, color=True, err=True, fg="red")
 
 
@@ -25,13 +32,13 @@ def _is_help_option(param: click.Option) -> bool:
     Parameters
     ----------
     param
-        A click option object.
+        A :class:`~click.Option` object to check.
 
     Returns
     -------
     bool
-        If ``True``, The given :class:`~click.Option` object is a help option.
-        else, ``False``.
+        ``True`` ifthe given :class:`~click.Option` object is a help option,
+        otherwise ``False``.
     """
     has_help_message_as_help_text = bool(
         get_close_matches(param.help or "", ["Show this message and exit."], cutoff=0.5)
@@ -50,7 +57,7 @@ def is_param_value_incomplete(
     ctx: Context, param: Parameter, check_if_tuple_has_none: bool = True
 ) -> bool:
     """
-    Checks whether the given name of a parameter doesn't recieve it's values completely.
+    Checks whether the given parameter has recieved it's values completely.
 
     Parameters
     ----------
@@ -58,17 +65,17 @@ def is_param_value_incomplete(
         :class:`~click.Context` object corresponding to the parameter.
 
     param
-        :class:`~click.Parameter` object to check it's value after parsing it.
+        :class:`~click.Parameter` object to check it's value after parsing.
 
     check_if_tuple_has_none
-        Flag that checks whether the given parameter stores multiple
-        values in a tuple, and the tuple has `None` in it.
+        Flag that indicates whether the given parameter stores multiple
+        values in a tuple, and the tuple has ``None`` in it.
 
     Returns
     -------
     bool
-        Whether the given parameter has recieved all of
-        it's necessary values from the prompt or not.
+        ``True`` if the given parameter has received all of its necessary values from the prompt,
+        otherwise ``False``.
     """
     if param.name is None:
         return False
@@ -96,8 +103,8 @@ def is_param_value_incomplete(
 
 def iterate_command_params(command: Command) -> Generator[Parameter, None, None]:
     """
-    This function is to iterate over parameters of a command in an order such that
-    the parameters with `nargs=-1` will be yielded at the very end.
+    Iterate over parameters of a command in an order such that
+    the parameters with ``nargs=-1`` will be yielded at the very end.
 
     Parameters
     ----------
@@ -112,7 +119,7 @@ def iterate_command_params(command: Command) -> Generator[Parameter, None, None]
     Raises
     ------
     ArgumentPositionError
-        If the :class:`~click.Argument` object with `nargs=-1` is not
+        If the :class:`~click.Argument` object with ``nargs=-1`` is not
         defined at the very end among other parameters.
     """
 

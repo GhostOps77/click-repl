@@ -23,8 +23,8 @@ def append_classname_to_all_tokens(
     tokens_list: ListOfTokens, classes: Iterable[str] = []
 ) -> ListOfTokens:
     """
-    Appends the given list of token `classes` to all the classes string in every
-    token in `tokens_list`
+    Appends the given list of token ``classes`` to all the classes string in every
+    token in ``tokens_list``
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def append_classname_to_all_tokens(
     Returns
     -------
     ListOfTokens
-        Updated `tokens_list` with `classes` appended to each token's classes string.
+        Updated ``tokens_list`` with ``classes`` appended to each token's classes string.
     """
 
     if not classes:
@@ -58,27 +58,27 @@ def option_flag_tokens_joiner(
     sep: str = " ",
 ) -> ListOfTokens:
     """
-    Joins the given `contentss` of strings into a token string with the given
-    `content_token_class`, `sep` string and it's token's class `sep_token_class`.
+    Joins the given ``contents`` of strings into a token string with the given
+    ``content_token_class``, ``sep`` string and it's token's class ``sep_token_class``.
 
     Parameters
     ----------
     contents
-        List of strings that should be as tokens
+        List of strings that should be tokens.
 
     content_token_class
-        Token class name(s) for strings in `contents`
+        Token class name(s) for strings in ``contents``.
 
     sep_token_class
-        Token class name(s) for `sep`
+        Token class name(s) for ``sep``.
 
     sep
-        String that separates `contents` when displayed together
+        String that separates ``contents`` when displayed together.
 
     Returns
     -------
     ListOfTokens
-        Given `contents` separated by `sep`, as tokens list with given classes string.
+        Given ``contents`` separated by ``sep``, as tokens list with given classes string.
     """
     if not contents:
         return []
@@ -98,17 +98,18 @@ def get_token_class_for_click_obj_type(
     obj: click.Command | click.Parameter,
 ) -> TokenClassForClickObjectTypes:
     """
-    Retrieve the token class name suitable for the provided object `obj`
+    Retrieve the token class name suitable for the provided object ``obj``
     from a class within the click module.
 
     Parameters
     ----------
     obj
-        The object for which the token class name is to be determined
+        The object for which the token class name is to be determined.
 
     Returns
     -------
-        The token class name corresponding to the provided object
+    TokenClassForClickObjectTypes
+        The token class name corresponding to the provided object.
     """
     if isinstance(obj, click.Parameter):
         if isinstance(obj, click.Argument):
@@ -184,18 +185,18 @@ class TokenizedFormattedText(FormattedText):
     def content_length(self) -> int:
         """
         Returns the length of the :class:`~prompt_toolkit.formatted_text.FormattedText`
-        based on the length of the display text in each token.
+        based on the length of text content in each token.
 
         Returns
         -------
         int
-            Length of the content altogether in the tokens list.
+            Total length of text content in the tokens list.
         """
         return sum(len(token[1]) for token in self)
 
     def slice_by_textual_content(self, start: int, stop: int) -> TokenizedFormattedText:
         """
-        Slices the tokens based on the display text in them.
+        Slices the tokens based on the text content in them.
 
         Parameters
         ----------
@@ -306,7 +307,7 @@ class Marquee:
 
     def get_window_size(self) -> int:
         """
-        Returns the appropriate window size to display it's content as marquee.
+        Returns the window size to display the :attr:`.text` as marquee.
 
         Returns
         -------
@@ -347,7 +348,7 @@ class Marquee:
             + ISATTY
         )
 
-        # Reset the waiting counter when the pointer hits
+        # Reset the waiting counter when the pointer hit's
         # either of the ends of the text.
 
         pointer_at_right_end = self.pointer_position == pointer_max_pos_in_right
@@ -368,26 +369,26 @@ class Marquee:
 
     def get_full_formatted_text(self) -> TokenizedFormattedText:
         """
-        Returns the whole text along with the :attr:`.prefix`, without being sliced.
+        Returns the whole :attr:`.text` along with the :attr:`.prefix`, without slicing them.
 
         Returns
         -------
         TokenizedFormattedText
-            Contains the entire content of both :attr:`.prefix` and the :attr:`.text`
+            The entire content of both :attr:`.prefix` and the :attr:`.text`
         """
         return TokenizedFormattedText(self.prefix + self.text, "bottom-bar")
 
     def get_current_text_chunk(self) -> TokenizedFormattedText:
         """
-        Returns the updated text chunk, along with the :attr:`.prefix`, that currently
-        should be displayed in the bottom bar.
+        Returns the updated :attr:`.text` chunk, along with the :attr:`.prefix`,
+        that currently should be displayed in the bottom bar.
 
         Returns
         -------
         TokenizedFormattedText
             The entire :attr:`.text` with the :attr:`.prefix` if the terminal window
             length is sufficient. Otherwise, returns a sliced portion of the
-            :attr:`.text` that fits the current window size.
+            :attr:`.text` that fit's the current window size.
         """
 
         window_size = self.get_window_size()

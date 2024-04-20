@@ -14,7 +14,7 @@ class InternalCommandException(Exception):
     Base Class for all Exceptions raised by the
     :class:`~click_repl._internal_commands.InternalCommandSystem`.
 
-    This class is used to replace errors raised inside the
+    This class replaces errors raised inside the
     :class:`~click_repl._internal_commands.InternalCommandSystem`
     class in order to display their error messages separately in the REPL.
     """
@@ -55,10 +55,10 @@ class WrongType(InternalCommandException):
     Parameters
     ----------
     var
-        The variable that has wrong/unexpected type.
+        The variable that has wrong or unexpected type.
 
     var_name
-        The name of the variable passed through the `var` parameter.
+        The name of the variable passed through the ``var`` parameter.
 
     expected_type
         A string that describes the expected type.
@@ -73,9 +73,9 @@ class WrongType(InternalCommandException):
 
 class SamePrefix(InternalCommandException):
     """
-    Exception raised when :class:`~click_repl._internal_commands.InternalCommandSystem`
-    assigns both :attr:`~click_repl._internal_commands.InternalCommandSystem.internal_command_prefix`
-    and :attr:`~click_repl._internal_commands.InternalCommandSystem.system_command_prefix` as the same
+    Exception raised when both :attr:`~click_repl._internal_commands.InternalCommandSystem.internal_command_prefix`
+    and :attr:`~click_repl._internal_commands.InternalCommandSystem.system_command_prefix` in
+    :class:`~click_repl._internal_commands.InternalCommandSystem` are assigned as the same
     prefix string.
 
     Parameters

@@ -49,6 +49,10 @@ class ClickValidator(Validator):
     group_ctx
         The current :class:`~click.Context` object.
 
+    internal_commands_system
+        :class:`~click_repl.internal_commands.InternalCommandSystem object that
+        information about the internal commands and their prefixes.
+
     display_all_errors
         Determines whether to raise generic python exceptions, and not to
         display them in the :class:`~prompt_toolkit.validation.Validator` bar,
@@ -70,12 +74,14 @@ class ClickValidator(Validator):
         """The :class:`~click.Context` object of the main group."""
 
         self.internal_commands_system = internal_commands_system
-        """The :class:`~click_repl.internal_commands.InternalCommandSystem` object
+        """
+        The :class:`~click_repl.internal_commands.InternalCommandSystem` object
         of the current repl session.
         """
 
         self.display_all_errors = display_all_errors
-        """Determines whether to raise generic python exceptions, and not to display
+        """
+        Determines whether to raise generic python exceptions, and not to display
         them in the :class:`~prompt_toolkit.validation.Validator` bar.
         """
 
@@ -84,7 +90,7 @@ class ClickValidator(Validator):
         Validates the input from the prompt by raising a
         :exc:`~prompt_toolkit.validation.ValidationError` if it is invalid.
 
-        Any raised errors are displayed in the
+        Any errors raised while parsing text in prompt are displayed in the
         :class:`~prompt_toolkit.validation.Validator` bar.
 
         Parameters
@@ -95,11 +101,11 @@ class ClickValidator(Validator):
         Raises
         ------
         prompt_toolkit.validation.ValidationError
-            If there's any error occurred during argument parsing, and it needs
+            If there's any error occurred during input validation, and it needs
             to be displayed in the validation bar.
 
         Exception
-            If the error just needs to be raised normally.
+            If there's error just needs to be raised normally.
         """
 
         if self.internal_commands_system.get_prefix(document.text_before_cursor)[1]:
@@ -125,7 +131,7 @@ class ClickValidator(Validator):
             raise ValidationError(0, ue.format_message())
 
         except ClickException as ce:
-            # Click formats its error messages to provide more detail. Therefore,
+            # Click formats it's error messages to provide more detail. Therefore,
             # we can use it to display error messages along with the specific error
             # type.
             raise ValidationError(0, f"{type(ce).__name__}: {ce.format_message()}")

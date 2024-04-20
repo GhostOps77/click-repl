@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import os
 import sys
+from typing import TYPE_CHECKING, NoReturn
 
 # from threading import local
-from typing import TYPE_CHECKING, NoReturn
+
 
 if sys.version_info < (3, 8):
     from importlib_metadata import version
@@ -24,28 +25,21 @@ CLICK_VERSION: tuple[int, int, int] = tuple(  # type:ignore[assignment]
     int(i) for i in version("click").split(".")
 )
 
-HAS_CLICK_GE_8 = CLICK_VERSION[0] >= 8
-"""
-Is click version >= 8
+IS_CLICK_GE_8 = CLICK_VERSION[0] >= 8
+# The shell complete method is implemented for almost every classes in click.
 
-The shell complete method is implemented for almost every classes in click.
-"""
-
-HAS_CLICK_GE_8_2 = CLICK_VERSION >= (8, 2)
-"""
-Is click version >= 8.2
-
-click deprecated many things in this version.
-"""
+IS_CLICK_GE_8_2 = CLICK_VERSION >= (8, 2)
+# click deprecated many things in this version.
 
 IS_WINDOWS = os.name == "nt"
 
 ISATTY = sys.stdin.isatty()
-"""If it is ``False``, then we're not gonna run any code
-   to generate auto-completions. Most of the code will be inactive"""
+"""Flag indicating whether the program is running in a TTY (terminal) environment.
+   If `False`, auto-completion code will be inactive.
+"""
 
 CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
-"""click-repl Environmental flag. Enable it only for debugging."""
+"""Environmental flag for click-repl. Enable it only for debugging purposes."""
 
 DEFAULT_COMPLETION_STYLE_CONFIG = {
     # For Boolean type.
@@ -171,20 +165,22 @@ _ctx_stack: list[ReplContext] = []
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     """
-    Returns the current click-repl context, providing a way to access
-    the context from anywhere in the code  This is a more implicit
-    alternative to the :func:`~click.decorators.pass_context` decorator.
+    Retrieves the current click-repl context.
+
+    This function provides a way to access the context from anywhere
+    in the code. This function serves as a more implicit alternative to the
+    :func:`~click.decorators.pass_context` decorator.
 
     Parameters
     ----------
     silent
-        If set to ``True``, the return value is ``None`` if no context
+        If set to ``True``, the function returns ``None`` if no context
         is available. The default behavior is to raise a :exc:`~RuntimeError`.
 
     Returns
     -------
     :class:`~click_repl.core.ReplContext` | None
-        ``ReplContext`` object, if available.
+        ``ReplContext`` object if available, or ``None`` is silent.
 
     Raises
     ------
@@ -203,18 +199,18 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
 
 def _push_context(ctx: ReplContext) -> None:
     """
-    Pushes a new repl context to the current stack.
+    Pushes a new REPL context onto the current stack.
 
     Parameters
     ----------
     ctx
-        :class:`~click_repl.core.ReplContext` object that should be
-        added to the repl context stack.
+        The :class:`~click_repl.core.ReplContext` object that should be
+        added to the REPL context stack.
     """
     # _locals.ctx_stack.append(ctx)
     _ctx_stack.append(ctx)
 
 
 def _pop_context() -> None:
-    """Removes the top level repl context from the stack."""
+    """Removes the top-level REPL context from the stack."""
     _ctx_stack.pop()

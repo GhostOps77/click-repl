@@ -7,25 +7,16 @@ from __future__ import annotations
 import os
 import re
 from functools import lru_cache
-from gettext import gettext as _
-from typing import Any, Dict, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, Optional, Tuple, cast
 
 import click
-from click import Argument as CoreArgument
 from click import Command, Context, Group, Parameter
-from click.exceptions import BadOptionUsage, NoSuchOption
 from typing_extensions import TypeAlias
 
-from . import click_utils, utils
-from ._compat import (
-    OptionParser,
-    ParsingState,
-    _Argument,
-    _Option,
-    normalize_opt,
-    split_arg_string,
-)
-from .globals_ import HAS_CLICK_GE_8
+from ._compat import split_arg_string
+from .click_utils.shell_completion import _resolve_context
+from .click_utils.utils import get_info_dict
+from .utils import is_param_value_incomplete, iterate_command_params
 
 InfoDict: TypeAlias = Dict[str, Any]
 # Dictionary that has info about the click objects.
@@ -36,7 +27,6 @@ _REPL_PARSING_STATE_KEY: TypeAlias = Tuple[
 # Tuple that's used for comparing 2 ReplParsingState objects.
 
 
-_flag_needs_value = object()
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 
 # Just gonna assume that people use only '-' and '--' as prefix for option flags
@@ -196,11 +186,11 @@ class ReplParsingState:
             self.current_param,
             self.current_ctx,
         ):
-            keys.append(None if i is None else click_utils.get_info_dict(i))
+            keys.append(None if i is None else get_info_dict(i))
 
         return (  # type: ignore[return-value]
             *keys,
-            tuple(click_utils.get_info_dict(param) for param in self.remaining_params),
+            tuple(get_info_dict(param) for param in self.remaining_params),
         )
 
     def __eq__(self, other: object) -> bool:
@@ -261,7 +251,7 @@ class ReplParsingState:
         ]
 
         all_arguments_got_values = all(
-            not utils.is_param_value_incomplete(self.current_ctx, param)
+            not is_param_value_incomplete(self.current_ctx, param)
             for param in cmd_arguments_list
         )
 
@@ -269,7 +259,7 @@ class ReplParsingState:
 
         if isinstance(current_ctx_command, click.Group) and all_arguments_got_values:
             # Promote the current command as current group, only if it
-            # has got values to all of its click.Argument type args.
+            # has got values to all of it's click.Argument type args.
             current_group = current_ctx_command
 
         elif not current_group.chain or (
@@ -292,7 +282,7 @@ class ReplParsingState:
         self.remaining_params = [
             param
             for param in current_command.params
-            if utils.is_param_value_incomplete(self.current_ctx, param)
+            if is_param_value_incomplete(self.current_ctx, param)
         ]
 
         return self.parse_param_opt(current_command) or self.parse_param_arg(
@@ -342,11 +332,11 @@ class ReplParsingState:
         click.Argument | None
             The current :class:`~click.Argument` if requested in the prompt.
         """
-        for param in utils.iterate_command_params(current_command):
+        for param in iterate_command_params(current_command):
             if not isinstance(param, click.Argument):
                 continue
 
-            elif utils.is_param_value_incomplete(self.current_ctx, param):
+            elif is_param_value_incomplete(self.current_ctx, param):
                 return param
 
         return None
@@ -450,157 +440,7 @@ def _resolve_state(
         incomplete data that requires suggestions.
     """
     args, incomplete = _resolve_incomplete(document_text)
-    parsed_ctx = click_utils._resolve_context(ctx, args, proxy=True)
+    parsed_ctx = _resolve_context(ctx, args, proxy=True)
     state = _resolve_repl_parsing_state(ctx, parsed_ctx, args)
 
     return parsed_ctx, state, incomplete
-
-
-class ArgumentParamParser(_Argument):
-    def process(
-        self,
-        value: str | Sequence[str | None] | None,
-        state: ParsingState,
-    ) -> None:
-        if self.nargs > 1 and value is not None:
-            holes = value.count(None)
-            if holes == len(value):
-                value = None  # responsible for adding None value if arg is empty
-
-        state.opts[self.dest] = value  # type: ignore[index]
-        state.order.append(self.obj)
-
-
-class ReplOptionParser(OptionParser):
-    def __init__(self, ctx: Context) -> None:
-        super().__init__(ctx)
-
-        for opt in ctx.command.params:
-            opt.add_to_parser(self, ctx)
-
-    def add_argument(self, obj: CoreArgument, dest: str | None, nargs: int = 1) -> None:
-        self._args.append(ArgumentParamParser(obj=obj, dest=dest, nargs=nargs))
-
-    def _process_args_for_options(self, state: ParsingState) -> None:
-        while state.rargs:
-            arg = state.rargs.pop(0)
-            arglen = len(arg)
-
-            # Double dashes always handled explicitly regardless of what
-            # prefixes are valid.
-
-            if arg == "--":
-                # Dynamic attribute in click.Context object that helps to
-                # denote to the completer class to stop generating
-                # completions for option flags.
-                self.ctx._double_dash_found = True  # type: ignore[union-attr]
-                return
-
-            elif arg[:1] in self._opt_prefixes and arglen > 1:
-                self._process_opts(arg, state)
-
-            elif self.allow_interspersed_args:
-                state.largs.append(arg)
-
-            else:
-                state.rargs.insert(0, arg)
-                return
-
-    def _match_long_opt(
-        self, opt: str, explicit_value: str | None, state: ParsingState
-    ) -> None:
-        if opt not in self._long_opt:
-            from difflib import get_close_matches
-
-            possibilities = get_close_matches(opt, self._long_opt)
-            raise NoSuchOption(opt, possibilities=possibilities, ctx=self.ctx)
-
-        option = self._long_opt[opt]
-        if option.takes_value:
-            if explicit_value is not None:
-                state.rargs.insert(0, explicit_value)
-
-            value = self._get_value_from_state(opt, option, state)
-
-        elif explicit_value is not None:
-            raise BadOptionUsage(opt, _(f"Option {opt!r} does not take a value."))
-
-        else:
-            value = None
-
-        option.process(value, state)
-
-    def _match_short_opt(self, arg: str, state: ParsingState) -> None:
-        stop = False
-        i = 1
-        prefix = arg[0]
-        unknown_options = []
-
-        for ch in arg[1:]:
-            opt = normalize_opt(f"{prefix}{ch}", self.ctx)
-            option = self._short_opt.get(opt)
-            i += 1
-
-            if not option:
-                if self.ignore_unknown_options:
-                    unknown_options.append(ch)
-                    continue
-
-                raise NoSuchOption(opt, ctx=self.ctx)
-
-            if option.takes_value:
-                # Any characters left in arg?  Pretend they're the
-                # next arg, and stop consuming characters of arg.
-                if i < len(arg):
-                    state.rargs.insert(0, arg[i:])
-                    stop = True
-
-                value = self._get_value_from_state(opt, option, state)
-
-            else:
-                value = None
-
-            option.process(value, state)
-
-            if stop:
-                break
-
-        if self.ignore_unknown_options and unknown_options:
-            state.largs.append(f"{prefix}{''.join(unknown_options)}")
-
-    def _get_value_from_state(
-        self, option_name: str, option: _Option, state: ParsingState
-    ) -> Any:
-        nargs = option.nargs
-        rargs_len = len(state.rargs)
-
-        if rargs_len < nargs:
-            if HAS_CLICK_GE_8 and option.obj._flag_needs_value:
-                # Option allows omitting the value.
-                value = _flag_needs_value
-            else:
-                # Fills up missing values with None.
-                if nargs == 1:
-                    value = None
-                else:
-                    value = tuple(state.rargs + [None] * (nargs - rargs_len))
-                state.rargs = []
-
-        elif nargs == 1:
-            next_rarg = state.rargs[0]
-
-            if (
-                HAS_CLICK_GE_8
-                and option.obj._flag_needs_value
-                and isinstance(next_rarg, str)
-                and next_rarg[:1] in self._opt_prefixes
-                and len(next_rarg) > 1
-            ):
-                value = _flag_needs_value
-            else:
-                value = state.rargs.pop(0)
-        else:
-            value = tuple(state.rargs[:nargs])
-            del state.rargs[:nargs]
-
-        return value

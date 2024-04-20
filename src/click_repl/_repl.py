@@ -19,7 +19,7 @@ from prompt_toolkit.validation import Validator
 
 from ._compat import MultiCommand, split_arg_string
 from .bottom_bar import BottomBar
-from .click_utils import _generate_next_click_ctx
+from .click_utils.shell_completion import _generate_next_click_ctx
 from .completer import ClickCompleter
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
@@ -31,17 +31,6 @@ from .validator import ClickValidator
 __all__ = ["Repl", "repl", "ReplCli"]
 
 
-@contextmanager
-def handle_lifetime(self_obj: ReplCli) -> Generator[None, None, None]:
-    if self_obj.startup is not None:
-        self_obj.startup()
-
-    yield
-
-    if self_obj.cleanup is not None:
-        self_obj.cleanup()
-
-
 class Repl:
     """
     Responsible for executing and maintaining the REPL.
@@ -49,11 +38,10 @@ class Repl:
     Parameters
     ----------
     ctx
-        The :class:`~click.Context` object of the root/parent/CLI group.
+        The root/parent/CLI group :class:`~click.Context` object.
 
     prompt_kwargs
-        Keyword arguments to be passed to the :class:`~prompt_toolkit.PromptSession`
-        class.
+        Keyword arguments passed to the :class:`~prompt_toolkit.PromptSession` class.
 
     completer_cls
         :class:`~prompt_toolkit.completion.Completer` type class to generate
@@ -66,10 +54,10 @@ class Repl:
         :class:`~click_repl.validator.ClickValidator` class is used by default.
 
     completer_kwargs
-        Keyword arguments that's sent to the ``completer_cls`` class constructor.
+        Keyword arguments passed to the constructor of ``completer_cls`` class.
 
     validator_kwargs
-        Keyword arguments that's sent to the ``validator_cls`` class constructor.
+        Keyword arguments passed to the constructor of ``validator_cls`` class.
 
     internal_command_prefix
         Prefix that triggers internal commands within the REPL.
@@ -113,7 +101,7 @@ class Repl:
         """Handles and executes internal commands that are invoked in repl."""
 
         self.bottom_bar: AnyFormattedText | BottomBar = None
-        """:class:`~click_repl.bototm_bar.BottomBar` obeject to change the command
+        """:class:`~click_repl.bototm_bar.BottomBar` object to change the command
         description that's displayed in the bottom bar accordingly based on the
         current parsing state.
         """
@@ -166,7 +154,8 @@ class Repl:
         self._get_command: Callable[[], str] = _get_command
 
     def get_command(self) -> str:
-        """Retrieves input for the repl.
+        """
+        Retrieves input for the repl.
 
         Returns
         -------
@@ -190,13 +179,13 @@ class Repl:
             A :class:`~prompt_toolkit.completion.Completer` type class.
 
         completer_kwargs
-            Contains keyword arguments tha's passed to the
+            Keyword arguments passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
 
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that to be passed to the
+            Keyword arguments that's should be passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
         """
 
@@ -226,13 +215,13 @@ class Repl:
             A :class:`~prompt_toolkit.validation.Validator` type class.
 
         validator_kwargs
-            Contains keyword arguments that has to be passed to the
+            Keyword arguments passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
 
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that's passed to the
+            Keyword arguments that's should be passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
         """
 
@@ -271,23 +260,23 @@ class Repl:
             A :class:`~prompt_toolkit.completion.Completer` type class.
 
         completer_kwargs
-            Contains keyword arguments that's passed to the
+            Keyword arguments passed to the
             :class:`~prompt_toolkit.completion.Completer` class.
 
         validator_cls
             A :class:`~prompt_toolkit.validation.Validator` type class.
 
         validator_kwargs
-            Contains keyword arguments that's passed to the
+            Keyword arguments passed to the
             :class:`~prompt_toolkit.validation.Validator` class.
 
         style_config_dict
-            Style configuration for the repl.
+            Style configuration for the REPL.
 
         Returns
         -------
         dict[str,Any]
-            Contains keyword arguments that has to be passed to the
+            Keyword arguments that should be passed to the
             :class:`~prompt_toolkit.PromptSession` class.
         """
 
@@ -310,17 +299,19 @@ class Repl:
         if self.bottom_bar:
             default_prompt_kwargs.update(bottom_toolbar=self.bottom_bar)
 
-        default_prompt_kwargs.update(
-            completer=completer_cls(
+        prompt_kwargs.setdefault(
+            "completer",
+            completer_cls(
                 **self._get_default_completer_kwargs(completer_cls, completer_kwargs)
-            )
+            ),
         )
 
         if validator_cls is not None:
-            default_prompt_kwargs.update(
-                validator=validator_cls(
+            prompt_kwargs.setdefault(
+                "validator",
+                validator_cls(
                     **self._get_default_validator_kwargs(validator_cls, validator_kwargs)
-                )
+                ),
             )
 
         style_dict = DEFAULT_PROMPTSESSION_STYLE_CONFIG.copy()
@@ -346,12 +337,12 @@ class Repl:
 
     def execute_command(self, command: str) -> None:
         """
-        Executes commands from the given command string received from the REPL.
+        Executes commands received from the REPL.
 
         Parameters
         ----------
         command
-            The command string that needs to be parsed and executed.
+            The command string to be parsed and executed.
         """
 
         if not command:
@@ -370,7 +361,7 @@ class Repl:
         Parameters
         ----------
         command
-            The command string that needs to be parsed and executed.
+            The command string to be parsed and executed.
         """
 
         if isinstance(command, str):
@@ -388,7 +379,7 @@ class Repl:
             while True:
                 try:
                     if ISATTY and isinstance(self.bottom_bar, BottomBar):
-                        # Resetting the toolbar to clear its text content,
+                        # Resetting the toolbar to clear it's text content,
                         # ensuring that it doesn't display command info from
                         # the previously executed command.
                         self.bottom_bar.reset_state()
@@ -459,13 +450,13 @@ class ReplCli(click.Group):
         The callback function that gets called before invoking the REPL.
 
     cleanup
-        The callback function that gets invoked after exiting out of the REPL.
+        The callback function that gets invoked after exiting the REPL.
 
     repl_kwargs
         The keyword arguments that needs to be sent to the :func:`.repl` function.
 
     **attrs
-        Extra keyword arguments that need to be passed to the :class:`click.Group` class.
+        Extra keyword arguments to be passed to the :class:`click.Group` class.
     """
 
     def __init__(
@@ -491,11 +482,21 @@ class ReplCli(click.Group):
 
         self.repl_kwargs = repl_kwargs
 
+    @contextmanager
+    def _handle_lifetime(self) -> Generator[None, None, None]:
+        if self.startup is not None:
+            self.startup()
+
+        yield
+
+        if self.cleanup is not None:
+            self.cleanup()
+
     def invoke(self, ctx: Context) -> Any:
         if ctx.invoked_subcommand or ctx.protected_args:
             return super().invoke(ctx)
 
-        with handle_lifetime(self):
+        with self._handle_lifetime():
             return_val = super().invoke(ctx)
             repl(ctx, **self.repl_kwargs)
             return return_val
@@ -508,9 +509,9 @@ def repl(
     **attrs: Any,
 ) -> None:
     """
-    Start an Interactive Shell. All subcommands are available in it.
+    Starts an Interactive Shell where all subcommands are available.
 
-    If stdin is not a TTY, No prompt will be printed, but only subcommands
+    If stdin is not a TTY, no prompt will be printed, but only subcommands
     can be read from stdin.
 
     Parameters

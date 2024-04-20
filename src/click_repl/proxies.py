@@ -8,11 +8,20 @@ import typing as t
 from typing import Any
 
 import click
-from click import Argument, Command, Context, Group, Option, Parameter
+from click import (
+    Argument,
+    Command,
+    CommandCollection,
+    Context,
+    Group,
+    Option,
+    Parameter,
+)
 from typing_extensions import Self
 
-from .globals_ import HAS_CLICK_GE_8
-from .parser import ReplOptionParser
+from ._compat import MultiCommand
+from .click_utils.parser import ReplOptionParser
+from .globals_ import IS_CLICK_GE_8
 
 T = t.TypeVar("T")
 
@@ -26,7 +35,15 @@ def _create_proxy_command(obj: Group) -> ProxyGroup:  # type:ignore[misc]
     ...
 
 
-def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
+@t.overload
+def _create_proxy_command(  # type:ignore[misc]
+    obj: CommandCollection,
+) -> ProxyCommandCollection: ...
+
+
+def _create_proxy_command(
+    obj: Command | Group | CommandCollection,
+) -> ProxyCommand | ProxyGroup | ProxyCommandCollection:
     """
     Wraps the given :class:`~click.Command` object within a proxy object.
 
@@ -40,8 +57,12 @@ def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
     ProxyCommand
         Proxy wrapper for the :class:`~click.Command` objects.
     """
+    if isinstance(obj, CommandCollection):
+        return ProxyCommandCollection(obj)
+
     if isinstance(obj, Group):
         return ProxyGroup(obj)
+
     return ProxyCommand(obj)
 
 
@@ -84,7 +105,7 @@ def _create_proxy_param(obj: Parameter) -> ProxyParameter:
 
 class Proxy:
     """
-    This class is used as a base class for creating proxy objects that customize
+    Base class for creating proxy objects that customize
     attribute access behavior.
 
     Parameters
@@ -177,15 +198,15 @@ class Proxy:
 
 class ProxyCommand(Proxy, Command):
     """
-    A proxy class for :class:`~click.Command` objects to modify their
-    options parser, by overriding its :meth:`~click.Command.make_parser`
-    method to use the custom parser implementation provided by
-    :class:`~click_repl.parser.ReplOptionParser`.
+    Proxy class for :class:`~click.Command` objects that modifies their options parser.
+
+    This class overrides the :meth:`~click.Command.make_parser` method to use the custom
+    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
 
     Parameters
     ----------
     obj
-        The click command object that has to be proxied.
+        The :class:`~click.Command` object that needs to be proxied.
     """
 
     def __init__(self, obj: Command) -> None:
@@ -212,21 +233,22 @@ class ProxyCommand(Proxy, Command):
         return ReplOptionParser(ctx)
 
 
-class ProxyGroup(ProxyCommand, Group):
+class ProxyMultiCommand(ProxyCommand, MultiCommand):
     """
-    A proxy class for :class:`~click.Group` objects that changes its parser
-    to :class:`~click_repl.parser.ReplOptionParser` in the
-    :meth:`~click.Group.make_parser` method.
+    Proxy class for :class:`~click.MultiCommand` objects that modifies their options parser.
+
+    This class overrides the :meth:`~click.MultiCommand.make_parser` method to use the custom
+    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
 
     Parameters
     ----------
     obj
-        The click Group object that has to be proxied.
+        The :class:`~click.MultiCommand` object that needs to be proxied.
     """
 
-    def __init__(self, obj: Group) -> None:
+    def __init__(self, obj: MultiCommand) -> None:
         """
-        Initialize the `ProxyGroup` class.
+        Initialize the `ProxyMultiCommand` class.
         """
         super().__init__(obj)
         self.proxy_setattr(
@@ -239,10 +261,50 @@ class ProxyGroup(ProxyCommand, Group):
         self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
 
 
+class ProxyGroup(ProxyMultiCommand, Group):
+    """
+    Proxy class for :class:`~click.Group` objects that modifies their options parser.
+
+    This class overrides the :meth:`~click.Group.make_parser` method to use the custom
+    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
+
+    Parameters
+    ----------
+    obj
+        The :class:`~click.Group` object that needs to be proxied.
+    """
+
+    def __init__(self, obj: Group) -> None:
+        """
+        Initialize the `ProxyGroup` class.
+        """
+        super().__init__(obj)
+
+
+class ProxyCommandCollection(ProxyMultiCommand, CommandCollection):
+    """
+    Proxy class for :class:`~click.CommandCollection` objects that modifies their options parser.
+
+    This class overrides the :meth:`~click.CommandCollection.make_parser` method to use the custom
+    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
+
+    Parameters
+    ----------
+    obj
+        The :class:`~click.CommandCollection` object that needs to be proxied.
+    """
+
+    def __init__(self, obj: CommandCollection) -> None:
+        """
+        Initialize the `ProxyCommandCollection` class.
+        """
+        super().__init__(obj)  # type:ignore[arg-type]
+
+
 class ProxyParameter(Proxy, Parameter):
     """
     A generic proxy class for :class:`~click.Parameter` objects that
-    modifies its behavior for missing values.
+    modifies it's behavior for missing values.
 
     This class overrides the :meth:`~click.Parameter.process_value` method to
     return missing values as they are, even if they are incomplete or not provided.
@@ -250,7 +312,7 @@ class ProxyParameter(Proxy, Parameter):
     Parameters
     ----------
     obj
-        The click parameter object that has to be proxied.
+        The :class:`click.Parameter` object that needs to be proxied.
     """
 
     def __init__(self, obj: Parameter) -> None:
@@ -260,7 +322,7 @@ class ProxyParameter(Proxy, Parameter):
         super().__init__(obj)
 
     def full_process_value(self, ctx: Context, value: Any) -> Any:
-        # click v7 has 'full_process_value' instead of 'process_value'.
+        # click v7 has 'full_process_value' while click v8 has 'process_value'.
         # Therefore, for backwards compatibility with click v7,
         # 'process_value' method is called within this method.
         return self.process_value(ctx, value)
@@ -271,7 +333,7 @@ class ProxyParameter(Proxy, Parameter):
 
         value = opts.get(self.name, None)  # type:ignore[arg-type]
 
-        if HAS_CLICK_GE_8:
+        if IS_CLICK_GE_8:
             from click.core import ParameterSource
 
             return value, ParameterSource.COMMANDLINE
@@ -290,13 +352,13 @@ class ProxyParameter(Proxy, Parameter):
 
 class ProxyArgument(ProxyParameter, Argument):
     """
-    A proxy class for :class:`~click.Argument` objects, allowing modification
+    Proxy class for :class:`~click.Argument` objects, allowing modification
     of their behavior during the processing of values based on their type.
 
     Parameters
     ----------
     obj
-        The click argument object that has to be proxied.
+        The :class:`~click.Argument` object that needs to be proxied.
     """
 
     def __init__(self, obj: Argument) -> None:
@@ -308,13 +370,13 @@ class ProxyArgument(ProxyParameter, Argument):
 
 class ProxyOption(ProxyParameter, Option):
     """
-    A proxy class for :class:`~click.Option` objects, allowing modification
+    Proxy class for :class:`~click.Option` objects, allowing modification
     of their behavior during the processing of values based on their type.
 
     Parameters
     ----------
     obj
-        The click option object that has to be proxied.
+        The :class:`click.Option` object that needs to be proxied.
     """
 
     def __init__(self, obj: Option) -> None:

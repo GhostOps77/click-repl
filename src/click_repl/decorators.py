@@ -28,8 +28,8 @@ def pass_context(
     func: Callable[Concatenate[ReplContext | None, P], R],
 ) -> Callable[P, R]:
     """
-    Marks a callback as wanting to receive the current REPL context
-    object as its first argument.
+    Decorator that marks a callback function to receive the current
+    REPL context object as it's first argument.
 
     Parameters
     ----------
@@ -39,8 +39,8 @@ def pass_context(
     Returns
     -------
     Callable[P,R]
-        The decorated callback function that receives the current repl
-        context object as its first argument.
+        The decorated callback function that receives the current REPL
+        context object as it's first argument.
     """
 
     @wraps(func)
@@ -57,31 +57,32 @@ def register_repl(
     remove_command_before_repl: bool = False,
 ) -> Callable[[MultiCommand], MultiCommand] | MultiCommand:
     """
-    A decorator that registers :func:`~click_repl._repl.repl()` as sub-command
+    Decorator that registers :func:`~click_repl._repl.repl` as a sub-command
     named ``name`` within the ``group``.
 
     Parameters
     ----------
     group
-        The click group (current CLI) object to which the repl command will be registered.
+        The parent :class:`~click.Group` object to which the REPL command
+        will be registered.
 
     name
-        The name of the repl command in the given Group.
+        The name of the repl command in the given ``group``.
 
     remove_command_before_repl
-        Flag that determines whether to remove the repl command from the group,
+        Determines whether to remove the REPL command from the group,
         before it's execution or not.
 
     Returns
     -------
     Callable[[Group],Group] | Group
-        The same ``group`` or a callback that returns the same group, but
-        the group has a repl command registered to it.
+        The same ``group`` or a callback that returns the same group with
+        the REPL command registered to it.
 
     Raises
     ------
     TypeError
-        If the given group is not an instance of click Group.
+        If the given ``group`` is not an instance of :class:`~click.Group`.
     """
 
     def decorator(_group: MultiCommand) -> MultiCommand:

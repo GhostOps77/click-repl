@@ -14,7 +14,7 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import TypedDict
 
 from ._compat import RANGE_TYPES_TUPLE, MultiCommand
-from .globals_ import HAS_CLICK_GE_8, ISATTY
+from .globals_ import IS_CLICK_GE_8, ISATTY
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
 from .utils import is_param_value_incomplete, iterate_command_params
 
@@ -49,7 +49,7 @@ def _describe_click_range_param_type(param_type: IntRange | FloatRange) -> str:
         :class:`~click.types.ParamType` object.
     """
 
-    if HAS_CLICK_GE_8:
+    if IS_CLICK_GE_8:
         res = param_type._describe_range()
 
     elif param_type.min is None:

@@ -6,10 +6,10 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 
 from click_repl.completer import ClickCompleter
-from click_repl.globals_ import HAS_CLICK_GE_8
+from click_repl.globals_ import IS_CLICK_GE_8
 from tests import DummyInternalCommandSystem
 
-if HAS_CLICK_GE_8:
+if IS_CLICK_GE_8:
     from click.shell_completion import CompletionItem
 
 
@@ -28,7 +28,7 @@ c = ClickCompleter(click.Context(root_command), DummyInternalCommandSystem())
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 def test_shell_complete_arg_v8_class_type():
@@ -52,7 +52,7 @@ def test_shell_complete_arg_v8_class_type():
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 def test_shell_complete_arg_v8_func_completionitem_return_type():
@@ -71,7 +71,7 @@ def test_shell_complete_arg_v8_func_completionitem_return_type():
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 def test_shell_complete_arg_v8_func_completion_return_type():
@@ -103,7 +103,7 @@ def return_type_tuple_shell_complete(ctx, param, incomplete):
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="click-v8 shell complete function is not available, so skipped",
 )
 @pytest.mark.parametrize(
@@ -132,7 +132,7 @@ def case_insensitive_choices(choice):
 
 
 @pytest.mark.skipif(
-    not HAS_CLICK_GE_8,
+    not IS_CLICK_GE_8,
     reason="""Test skipped as click v8 is not available
 case_sensitive attribute is introduced in click.Choice in click v8""",
 )

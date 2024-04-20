@@ -64,10 +64,10 @@ class ReplContext:
         :class:`~prompt_toolkit.PromptSession` object.
 
     prompt_kwargs
-        The extra keyword arguments for :class:`~prompt_toolkit.PromptSession` class.
+        Extra keyword arguments for :class:`~prompt_toolkit.PromptSession` class.
 
     parent
-        Parent :class:`~click_repl.core.ReplContext` object of the parent repl session.
+        Parent :class:`~click_repl.core.ReplContext` object of the parent REPL session.
     """
 
     __slots__ = (
@@ -143,7 +143,7 @@ class ReplContext:
         Returns
         -------
         ReplContextInfoDict
-            A dictionary that has the instance variables and its values.
+            A dictionary that has the instance variables and it's values.
         """
 
         res: ReplContextInfoDict = {

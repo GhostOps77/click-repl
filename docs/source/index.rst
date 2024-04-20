@@ -21,7 +21,7 @@ Welcome to click-repl's Documentation
    :hidden:
    :caption: Others
 
-    changelog.rst
+    :ref:`changelog`
     :ref:`search`
     :ref:`genindex`
     :ref:`modindex`
