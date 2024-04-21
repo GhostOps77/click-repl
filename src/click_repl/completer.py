@@ -6,20 +6,19 @@ from __future__ import annotations
 
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
-from click import Command, Context, Parameter
-from click.types import ParamType
+from click import Group
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import AnyFormattedText
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final
 
-from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
+from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE
 from .bottom_bar import BottomBar
-from .click_utils.parser import get_option_flag_sep, join_options
+from .click_custom.parser import get_option_flags_sep, order_option_names
 from .globals_ import (
     CLICK_REPL_DEV_ENV,
     IS_CLICK_GE_8,
@@ -28,13 +27,18 @@ from .globals_ import (
     get_current_repl_ctx,
 )
 from .internal_commands import InternalCommandSystem
-from .parser import Incomplete, ReplParsingState, _resolve_state
+from .parser import Incomplete, ReplInputState, _resolve_state
 from .tokenizer import (
     TokenizedFormattedText,
     get_token_class_for_click_obj_type,
     option_flag_tokens_joiner,
 )
 from .utils import _is_help_option, is_param_value_incomplete
+
+if TYPE_CHECKING or ISATTY:
+    from click import Command, Context, Parameter
+    from click.types import ParamType
+
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
 
@@ -145,7 +149,7 @@ class ClickCompleter(Completer):
         self,
         ctx: Context,
         param: Parameter,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
         param_type: ParamType | None = None,
     ) -> Generator[Completion, None, None]:
@@ -163,8 +167,8 @@ class ClickCompleter(Completer):
             A :class:`~click.Parameter` object which auto-completions are generated.
 
         state
-            A :class`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the current parameter.
+            A :class`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the current parameter.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the
@@ -376,7 +380,7 @@ class ClickCompleter(Completer):
         ctx: Context,
         param: Parameter,
         param_type: ParamType,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
@@ -396,8 +400,8 @@ class ClickCompleter(Completer):
             auto-completions should've to be generated.
 
         state
-            A :class`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the incomplete
@@ -445,7 +449,7 @@ class ClickCompleter(Completer):
         self,
         ctx: Context,
         param: Parameter,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
@@ -460,8 +464,8 @@ class ClickCompleter(Completer):
             A :class:`~click.Parameter` object which auto-completions are generated.
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the incomplete
@@ -494,7 +498,7 @@ class ClickCompleter(Completer):
         self,
         ctx: Context,
         option: click.Option,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
@@ -513,8 +517,8 @@ class ClickCompleter(Completer):
             auto-completions for it's flags
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
@@ -541,7 +545,7 @@ class ClickCompleter(Completer):
                 flags_list,
                 item_token,
                 f"parameter.option.name.separator,{item_token}",
-                get_option_flag_sep(flags_list),
+                get_option_flags_sep(flags_list),
             )
 
             yield ReplCompletion(
@@ -555,7 +559,7 @@ class ClickCompleter(Completer):
         self,
         ctx: Context,
         command: Command,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
@@ -571,8 +575,8 @@ class ClickCompleter(Completer):
             based on it's parameters.
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the incomplete
@@ -634,7 +638,8 @@ class ClickCompleter(Completer):
             flag_token = "parameter.option.name"
 
             if is_shortest_option_names_only:
-                option_flags, sep = join_options(flags_that_start_with_incomplete)
+                option_flags = order_option_names(flags_that_start_with_incomplete)
+                sep = get_option_flags_sep(option_flags)
 
                 def display_text_func(flag_token: str) -> ListOfTokens:
                     if not flag_token.startswith("parameter.option.name"):
@@ -678,7 +683,7 @@ class ClickCompleter(Completer):
         self,
         ctx: Context,
         command: Command,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
@@ -695,8 +700,8 @@ class ClickCompleter(Completer):
             auto-completions based on it's parameters.
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the incomplete
@@ -751,7 +756,7 @@ class ClickCompleter(Completer):
             )
 
     def check_for_command_arguments_request(
-        self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
+        self, ctx: Context, state: ReplInputState, incomplete: Incomplete
     ) -> bool:
         """
         Determines whether the user has requested auto-completions for the
@@ -763,8 +768,8 @@ class ClickCompleter(Completer):
             The current :class:`~click.Context` object.
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the unfinished
@@ -802,8 +807,8 @@ class ClickCompleter(Completer):
         )
 
     def get_multicommand_for_generating_subcommand_completions(
-        self, ctx: Context, state: ReplParsingState, incomplete: Incomplete
-    ) -> MultiCommand | None:
+        self, ctx: Context, state: ReplInputState, incomplete: Incomplete
+    ) -> Group | None:
         """
         Returns the appropriate :class:`~click.Group` object that should be used
         to generate auto-completions for subcommands of a group.
@@ -814,8 +819,8 @@ class ClickCompleter(Completer):
             The current :class:`~click.Context` object.
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the incomplete
@@ -823,8 +828,8 @@ class ClickCompleter(Completer):
 
         Returns
         -------
-        MultiCommand | None
-            A :class:`~click.MultiCommand` object, if available, which is supposed
+        Group | None
+            A :class:`~click.Group` object, if available, which is supposed
             to be used for generating auto-completion for suggesting it's subcommands.
         """
         if state.current_param:
@@ -839,7 +844,7 @@ class ClickCompleter(Completer):
         if any_argument_param_incomplete:
             return None
 
-        if isinstance(ctx.command, MultiCommand):
+        if isinstance(ctx.command, Group):
             return ctx.command
 
         if state.current_group.chain:
@@ -850,7 +855,7 @@ class ClickCompleter(Completer):
     def get_visible_subcommands(
         self,
         ctx: Context,
-        group: MultiCommand,
+        group: Group,
         incomplete: str,
     ) -> Generator[Command, None, None]:
         """
@@ -863,7 +868,7 @@ class ClickCompleter(Completer):
             The current :class:`~click.Context` object.
 
         group
-            A :class:`~click.MultiCommand` object, which is used for generating
+            A :class:`~click.Group` object, which is used for generating
             auto-completion for suggesting it's subcommands.
 
         incomplete
@@ -876,7 +881,7 @@ class ClickCompleter(Completer):
             :class:`~click.Command` type sub-command objects of the ``group`` object
         """
         for command_name in group.list_commands(ctx):
-            if not command_name.startswith(incomplete):
+            if not (command_name and command_name.startswith(incomplete)):
                 continue
 
             subcommand = group.get_command(ctx, command_name)
@@ -893,7 +898,7 @@ class ClickCompleter(Completer):
     def get_completions_for_subcommands(
         self,
         ctx: Context,
-        state: ReplParsingState,
+        state: ReplInputState,
         incomplete: Incomplete,
     ) -> Generator[Completion, None, None]:
         """
@@ -906,8 +911,8 @@ class ClickCompleter(Completer):
             The current :class:`~click.Context` object.
 
         state
-            A :class:`~click_repl.parser.ReplParsingState` object that contains
-            information about the parsing state of the parameters of the current command.
+            A :class:`~click_repl.parser.ReplInputState` object that contains
+            information about the input state of the parameters of the current command.
 
         incomplete
             An :class:`~click_repl.parser.Incomplete` object that holds the incomplete

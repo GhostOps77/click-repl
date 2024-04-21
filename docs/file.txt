@@ -1,1 +1,0 @@
-auto api what='function' name='click_repl.repl_exit'

@@ -8,19 +8,10 @@ import typing as t
 from typing import Any
 
 import click
-from click import (
-    Argument,
-    Command,
-    CommandCollection,
-    Context,
-    Group,
-    Option,
-    Parameter,
-)
+from click import Argument, Command, Context, Group, Option, Parameter
 from typing_extensions import Self
 
-from ._compat import MultiCommand
-from .click_utils.parser import ReplOptionParser
+from .click_custom.parser import ReplOptionParser
 from .globals_ import IS_CLICK_GE_8
 
 T = t.TypeVar("T")
@@ -35,15 +26,7 @@ def _create_proxy_command(obj: Group) -> ProxyGroup:  # type:ignore[misc]
     ...
 
 
-@t.overload
-def _create_proxy_command(  # type:ignore[misc]
-    obj: CommandCollection,
-) -> ProxyCommandCollection: ...
-
-
-def _create_proxy_command(
-    obj: Command | Group | CommandCollection,
-) -> ProxyCommand | ProxyGroup | ProxyCommandCollection:
+def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
     """
     Wraps the given :class:`~click.Command` object within a proxy object.
 
@@ -57,9 +40,6 @@ def _create_proxy_command(
     ProxyCommand
         Proxy wrapper for the :class:`~click.Command` objects.
     """
-    if isinstance(obj, CommandCollection):
-        return ProxyCommandCollection(obj)
-
     if isinstance(obj, Group):
         return ProxyGroup(obj)
 
@@ -201,7 +181,7 @@ class ProxyCommand(Proxy, Command):
     Proxy class for :class:`~click.Command` objects that modifies their options parser.
 
     This class overrides the :meth:`~click.Command.make_parser` method to use the custom
-    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
+    parser implementation provided by :class:`~click_repl.click_custom.parser.ReplOptionParser`.
 
     Parameters
     ----------
@@ -233,40 +213,12 @@ class ProxyCommand(Proxy, Command):
         return ReplOptionParser(ctx)
 
 
-class ProxyMultiCommand(ProxyCommand, MultiCommand):
-    """
-    Proxy class for :class:`~click.MultiCommand` objects that modifies their options parser.
-
-    This class overrides the :meth:`~click.MultiCommand.make_parser` method to use the custom
-    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
-
-    Parameters
-    ----------
-    obj
-        The :class:`~click.MultiCommand` object that needs to be proxied.
-    """
-
-    def __init__(self, obj: MultiCommand) -> None:
-        """
-        Initialize the `ProxyMultiCommand` class.
-        """
-        super().__init__(obj)
-        self.proxy_setattr(
-            "_no_args_is_help_bkp", self.no_args_is_help  # type:ignore[has-type]
-        )
-        self.no_args_is_help = False
-
-    def revoke_changes(self) -> None:
-        super().revoke_changes()
-        self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
-
-
-class ProxyGroup(ProxyMultiCommand, Group):
+class ProxyGroup(ProxyCommand, Group):
     """
     Proxy class for :class:`~click.Group` objects that modifies their options parser.
 
     This class overrides the :meth:`~click.Group.make_parser` method to use the custom
-    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
+    parser implementation provided by :class:`~click_repl.click_custom.parser.ReplOptionParser`.
 
     Parameters
     ----------
@@ -279,26 +231,14 @@ class ProxyGroup(ProxyMultiCommand, Group):
         Initialize the `ProxyGroup` class.
         """
         super().__init__(obj)
+        self.proxy_setattr(
+            "_no_args_is_help_bkp", self.no_args_is_help  # type:ignore[has-type]
+        )
+        self.no_args_is_help = False
 
-
-class ProxyCommandCollection(ProxyMultiCommand, CommandCollection):
-    """
-    Proxy class for :class:`~click.CommandCollection` objects that modifies their options parser.
-
-    This class overrides the :meth:`~click.CommandCollection.make_parser` method to use the custom
-    parser implementation provided by :class:`~click_repl.parser.ReplOptionParser`.
-
-    Parameters
-    ----------
-    obj
-        The :class:`~click.CommandCollection` object that needs to be proxied.
-    """
-
-    def __init__(self, obj: CommandCollection) -> None:
-        """
-        Initialize the `ProxyCommandCollection` class.
-        """
-        super().__init__(obj)  # type:ignore[arg-type]
+    def revoke_changes(self) -> None:
+        super().revoke_changes()
+        self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
 
 
 class ProxyParameter(Proxy, Parameter):

@@ -20,16 +20,39 @@ from ..globals_ import IS_CLICK_GE_8
 _flag_needs_value = object()
 
 
-def get_option_flag_sep(option_names: list[str]) -> str:
+def get_option_flags_sep(option_names: list[str]) -> str:
+    """
+    Returns the character to separate the given list of option names.
+
+    Parameters
+    ----------
+    option_names
+        List of option names
+
+    Returns
+    -------
+    str
+        Character that separates the option names
+    """
     any_prefix_is_slash = any(split_opt(opt)[0] == "/" for opt in option_names)
     return ";" if any_prefix_is_slash else "/"
 
 
-def join_options(options: list[str]) -> tuple[list[str], str]:
+def order_option_names(option_names: Sequence[str]) -> list[str]:
     """
-    Reference: :meth:`~click.formatting.join_options`
+    Orders all the option names based on the length of their prefixes.
+
+    Parameters
+    ----------
+    option_names
+        List of option names
+
+    Returns
+    -------
+    list[str]
+        List of option names, ordered based on their prefix length
     """
-    return sorted(options, key=len), get_option_flag_sep(options)
+    return sorted(option_names, key=lambda opt: len(split_opt(opt)[0]))
 
 
 class ArgumentParamParser(_Argument):
@@ -48,6 +71,22 @@ class ArgumentParamParser(_Argument):
 
 
 class ReplOptionParser(OptionParser):
+    """
+    Subclass of :class:`~click.parser.OptionParser`, modified to
+    fill in ``None`` values for empty values for parameters with
+    ``nargs != 1``.
+
+    Parameters
+    ----------
+    ctx
+        The current click context object, constructed from the text currently
+        in the prompt
+
+    Reference
+    ---------
+    :class:`~click.parser.OptionParser`
+    """
+
     def __init__(self, ctx: Context) -> None:
         super().__init__(ctx)
 

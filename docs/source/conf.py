@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-import re
+import importlib
+import inspect
+import types
 import typing as t
 
 import click_repl
@@ -28,7 +30,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "autoapi.extension",
+    # "autoapi.extension",
     # "sphinxnotes.strike",
     # "myst_parser",
     # "sphinx_autodoc_typehints",
@@ -162,19 +164,22 @@ napoleon_attr_annotations = True
 #     app.add_lexer("myst", MystLexer)
 
 
-def autoapi_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
-    # print(f'auto api {what=} {name=}', file=open('file.txt', 'w'))
+# def autoapi_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
+#     # print(f'auto api {what=} {name=}', file=open('file.txt', 'w'))
 
-    last_elem = name.rsplit(".")[-1]
+#     last_elem = name.rsplit(".")[-1]
 
-    if last_elem in ("_ctx_stack",):
-        return True
+#     if last_elem in ("_ctx_stack",):
+#         return True
 
-    if last_elem in ("__init__",):
-        return False
+#     if last_elem in ("__init__",):
+#         return False
 
-    exclude = re.match(r"\._.[^.]*__$", name) and what != "module"
-    return skip or exclude
+#     if '.click_utils' in name:
+#         return False
+
+#     exclude = re.match(r"\._.[^.]*__$", name) and what != "module"
+#     return skip or exclude
 
 
 # def autodoc_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, options):
@@ -188,8 +193,9 @@ def autoapi_skip_member(app: Sphinx, what, name: str, obj: t.Any, skip: bool, op
 
 
 def setup(app: Sphinx):
-    app.connect("autoapi-skip-member", autoapi_skip_member)
+    # app.connect("autoapi-skip-member", autoapi_skip_member)
     # app.connect("autodoc-skip-member", autodoc_skip_member)
+    pass
 
 
 def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
@@ -199,10 +205,6 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:
 
     if not info["module"]:
         return None
-
-    import importlib
-    import inspect
-    import types
 
     mod = importlib.import_module(info["module"])
 

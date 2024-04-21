@@ -1,6 +1,3 @@
-Intoduction
-===========
-
 ``click-repl`` is an extension for the `click <https://click.palletsprojects.com/en/>`_ module, designed to integrate a REPL
 (Read-Eval-Print-Loop) within your click application, by using `python-prompt-toolkit <https://github.com/prompt-toolkit/python-prompt-toolkit>`_
 as it's backend. This module allows for seamless interaction with your CLI commands with auto-completion features in your shell environment,
@@ -16,6 +13,7 @@ Installation is done via pip:
 .. code-block:: shell
 
     pip install click-repl
+
 
 Usage
 =====

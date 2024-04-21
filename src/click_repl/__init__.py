@@ -5,20 +5,20 @@ inside your click app in just some simple steps.
 
 from __future__ import annotations
 
-from ._repl import Repl, ReplCli, repl
-from .core import ReplContext
-from .decorators import pass_context, register_repl
+from ._repl import Repl, ReplCli, register_repl, repl
+from .core import ReplContext, pass_context
 from .internal_commands import repl_exit
 
 __all__ = [
-    "repl_exit",
-    "Repl",
-    "repl",
-    "ReplCli",
-    "ReplContext",
     "pass_context",
     "register_repl",
+    "Repl",
+    "ReplCli",
+    "ReplContext",
+    "repl",
+    "repl_exit",
 ]
+
 
 version_info = (0, 2, 1, 10)
 __version__ = "0.2.1dev10"

@@ -74,8 +74,8 @@ def is_param_value_incomplete(
     Returns
     -------
     bool
-        ``True`` if the given parameter has received all of its necessary values from the prompt,
-        otherwise ``False``.
+        ``True`` if the given parameter has received all of its necessary values
+        from the prompt, otherwise ``False``.
     """
     if param.name is None:
         return False
@@ -109,12 +109,13 @@ def iterate_command_params(command: Command) -> Generator[Parameter, None, None]
     Parameters
     ----------
     command
-        The :class:`~click.Command` object to iterate over it's parameters.
+        The command object to iterate over it's parameters.
 
     Yields
     ------
     click.Parameter
-        The parameters of the given command.
+        The parameters of the given command, yielding the ``nargs=-1``
+        parameter at last.
 
     Raises
     ------
@@ -132,8 +133,7 @@ def iterate_command_params(command: Command) -> Generator[Parameter, None, None]
             nargs_minus_one_param = (param, idx)  # type: ignore[assignment]
 
         elif nargs_minus_one_param is not None and is_param_argument:
-            minus_one_param, minus_one_param_idx = nargs_minus_one_param
-            raise ArgumentPositionError(command, minus_one_param, minus_one_param_idx)
+            raise ArgumentPositionError(command, *nargs_minus_one_param)
 
         else:
             yield param

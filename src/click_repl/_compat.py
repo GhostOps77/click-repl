@@ -36,17 +36,15 @@ PATH_TYPES_TUPLE = (click.Path, click.File)
 AUTO_COMPLETION_FUNC_ATTR = (
     "_custom_shell_complete" if IS_CLICK_GE_8 else "autocompletion"
 )
-"""Attribute name of the custom auto-completion function for
-   :class:`~click.Parameter`.
+"""Attribute name of the custom auto-completion function for :class:`~click.Parameter`.
 
-    In click v7, it is "autocompletion",
-    while in click v8 and later, it is "_custom_shell_complete"
+   In click v7, it is "autocompletion",
+   while in click v8 and later, it's :attr:`~click.Parameter._custom_shell_complete`
 """
 
 # Several things are deprecated in click v8.2
 # Therefore, we're importing them based on their new name.
 if IS_CLICK_GE_8_2:
-    from click.core import Group as MultiCommand  # type:ignore
     from click.parser import _Argument  # type:ignore
     from click.parser import _Option  # type:ignore
     from click.parser import _normalize_opt as normalize_opt  # type:ignore
@@ -56,7 +54,6 @@ if IS_CLICK_GE_8_2:
     from click.shell_completion import split_arg_string  # type:ignore
 
 else:
-    from click.core import MultiCommand  # type:ignore
     from click.parser import Argument as _Argument  # type:ignore
     from click.parser import Option as _Option  # type:ignore
     from click.parser import (
@@ -79,7 +76,6 @@ __all__ = [
     "PATH_TYPES",
     "PATH_TYPES_TUPLE",
     "AUTO_COMPLETION_FUNC_ATTR",
-    "MultiCommand",
     "OptionParser",
     "ParsingState",
     "_Argument",

@@ -444,10 +444,10 @@ class InternalCommandSystem:
         Returns
         -------
         tuple[str,str | None]
-            A tuple containing two elements:
+            A tuple containing:
             - The type of the prefix.
             - The prefix found at the beginning of the command string.
-              ``None`` if it's not known.
+            ``None`` if it's not known.
         """
 
         for flag, prefix in self.prefix_table.items():

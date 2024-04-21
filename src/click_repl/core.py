@@ -1,22 +1,28 @@
 """
-Core functionality of the module.
+Core functionalities for managing context of the click_repl app.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Generator
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, TypeVar
 
 from click import Context
 from prompt_toolkit import PromptSession
-from typing_extensions import Final, TypeAlias, TypedDict
+from typing_extensions import Concatenate, Final, ParamSpec, TypeAlias, TypedDict
 
 from .bottom_bar import BottomBar
-from .globals_ import ISATTY, _pop_context, _push_context
+from .globals_ import ISATTY, _pop_context, _push_context, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
-from .parser import ReplParsingState
+from .parser import ReplInputState
 
 if TYPE_CHECKING:
     from prompt_toolkit.formatted_text import AnyFormattedText
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 __all__ = ["ReplContext"]
@@ -32,7 +38,7 @@ class ReplContextInfoDict(TypedDict):
     internal_command_system: InternalCommandSystem
     parent: ReplContext | None
     _history: list[str]
-    current_state: ReplParsingState | None
+    current_state: ReplInputState | None
     bottombar: AnyFormattedText | BottomBar
 
 
@@ -108,7 +114,7 @@ class ReplContext:
         self.group_ctx: Final[Context] = group_ctx
         self.prompt_kwargs = prompt_kwargs
         self.parent: Final[ReplContext | None] = parent
-        self.current_state: ReplParsingState | None = None
+        self.current_state: ReplInputState | None = None
 
     def __enter__(self) -> ReplContext:
         _push_context(self)
@@ -169,15 +175,15 @@ class ReplContext:
         if ISATTY and self.session is not None:
             self.session = PromptSession(**self.prompt_kwargs)
 
-    def update_state(self, state: ReplParsingState) -> None:
+    def update_state(self, state: ReplInputState) -> None:
         """
-        Updates the current parsing state of the repl.
+        Updates the current input state of the repl.
 
         Parameters
         ----------
         state
-            :class:`~click_repl.parser.ReplParsingState` object that keeps track
-            of the current parsing state.
+            :class:`~click_repl.parser.ReplInputState` object that keeps track
+            of the current input state.
         """
         self.current_state = state
 
@@ -197,3 +203,29 @@ class ReplContext:
 
         else:
             yield from reversed(self._history)
+
+
+def pass_context(
+    func: Callable[Concatenate[ReplContext | None, P], R],
+) -> Callable[P, R]:
+    """
+    Decorator that marks a callback function to receive the current
+    REPL context object as it's first argument.
+
+    Parameters
+    ----------
+    func
+        The callback function to pass context as it's first parameter.
+
+    Returns
+    -------
+    Callable[P,R]
+        The decorated callback function that receives the current REPL
+        context object as it's first argument.
+    """
+
+    @wraps(func)
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> R:
+        return func(get_current_repl_ctx(), *args, **kwargs)
+
+    return decorator

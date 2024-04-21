@@ -1,3 +1,7 @@
+"""
+Utilities to create and manage tokens.
+"""
+
 from __future__ import annotations
 
 import os

@@ -9,9 +9,6 @@ import os
 import sys
 from typing import TYPE_CHECKING, NoReturn
 
-# from threading import local
-
-
 if sys.version_info < (3, 8):
     from importlib_metadata import version
 else:
@@ -34,19 +31,28 @@ IS_CLICK_GE_8_2 = CLICK_VERSION >= (8, 2)
 IS_WINDOWS = os.name == "nt"
 
 ISATTY = sys.stdin.isatty()
-"""Flag indicating whether the program is running in a TTY (terminal) environment.
-   If `False`, auto-completion code will be inactive.
+"""
+Flag indicating whether the program is running in a TTY (terminal) environment.
+If `False`, auto-completion code will be inactive.
 """
 
 CLICK_REPL_DEV_ENV = os.getenv("CLICK_REPL_DEV_ENV", None) is not None
-"""Environmental flag for click-repl. Enable it only for debugging purposes."""
+"""
+Environmental flag for click-repl. Enable it only for debugging purposes.
+
+:meta hide-value:
+"""
 
 DEFAULT_COMPLETION_STYLE_CONFIG = {
     # For Boolean type.
     "autocompletion-menu.parameter.type.bool.totrue": "fg:#44e80e",
     "autocompletion-menu.parameter.type.bool.tofalse": "fg:red",
 }
-"""Default token style configuration for :class:`~click_repl.completer.ClickCompleter`"""
+"""
+Default token style configuration for :class:`~click_repl.completer.ClickCompleter`
+
+:meta hide-value:
+"""
 
 
 DEFAULT_COMPLETION_STYLE_CONFIG.update(
@@ -79,9 +85,6 @@ DEFAULT_COMPLETION_STYLE_CONFIG.update(
 )
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
-    # MultiCommand
-    "bottom-bar.multicommand.name": "bold",
-    "bottom-bar.multicommand.type": "bold",
     # Group
     "bottom-bar.group.name": "bold",
     "bottom-bar.group.type": "bold",
@@ -97,13 +100,15 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     "bottom-bar.parameter.type.usage.inuse": "bold underline",
     "bottom-bar.parameter.type.usage.used": "strike",
 }
-"""Default token style configuration for :class:`~click_repl.bottom_bar.BottomBar`"""
+"""
+Default token style configuration for :class:`~click_repl.bottom_bar.BottomBar`
+
+:meta hide-value:
+"""
 
 DEFAULT_BOTTOMBAR_STYLE_CONFIG.update(
     dict.fromkeys(
         [
-            # MultiCommand
-            "bottom-bar.multicommand.metavar",
             # Group
             "bottom-bar.group.metavar",
             # Command
@@ -151,16 +156,18 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG.update(
 DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
     "bottom-toolbar": "fg:lightblue bg:default noreverse"
 }
-"""Default token style configuration for :class:`~prompt_toolkit.PromptSession`"""
+"""
+Default token style configuration for :class:`~prompt_toolkit.PromptSession`
+
+:meta hide-value:
+"""
 
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_BOTTOMBAR_STYLE_CONFIG)
 DEFAULT_PROMPTSESSION_STYLE_CONFIG.update(DEFAULT_COMPLETION_STYLE_CONFIG)
 
 
 # To store the ReplContext objects generated throughout the Runtime.
-# _locals = local()
 _ctx_stack: list[ReplContext] = []
-# _locals.ctx_stack = _ctx_stack
 
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
@@ -169,7 +176,7 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
 
     This function provides a way to access the context from anywhere
     in the code. This function serves as a more implicit alternative to the
-    :func:`~click.decorators.pass_context` decorator.
+    :func:`~click.core.pass_context` decorator.
 
     Parameters
     ----------
@@ -180,7 +187,7 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     Returns
     -------
     :class:`~click_repl.core.ReplContext` | None
-        ``ReplContext`` object if available, or ``None`` is silent.
+        REPL context object if available, or ``None`` if ``silent`` is ``True``.
 
     Raises
     ------

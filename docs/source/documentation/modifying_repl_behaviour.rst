@@ -25,7 +25,7 @@ as a command to your group. But, you can also initialize a repl session inside a
 <insert image>
 
 In order to remove this repl command before invoking the repl, set the ``remove_command_before_repl`` parameter to ``False``
-in :func:`~click_repl.decorators.register_repl`.
+in :func:`~click_repl._repl.register_repl`.
 
 .. code-block:: python
 
@@ -75,7 +75,7 @@ It invokes repl, only when no extra arguments were passed to the group.
     Hi Sam!
     >
 
-But :class:`~click_repl._repl.ReplCli` provides a little more features than just using either :func:`~click_repl.decorators.register_repl`
+But :class:`~click_repl._repl.ReplCli` provides a little more features than just using either :func:`~click_repl._repl.register_repl`
 or :func:`~click_repl._repl.repl`.
 
 :attr:`~click_repl._repl.ReplCli.startup` and :attr:`~click_repl._repl.ReplCli.cleanup` callbacks
@@ -264,7 +264,7 @@ This object keeps track of the current repl's state, while it's parsing argument
 You can also obtain many objects that's responsible for the functionality of the repl, from this context object,
 in order to have extreme flexibility over customizing your repl session during runtime.
 
-You can access it using :func:`~click_repl.decorators.pass_context` decorator, which is similar to :func:`~click.pass_context`.
+You can access it using :func:`~click_repl.core.pass_context` decorator, which is similar to :func:`~click.pass_context`.
 So, please don't accidentally switch them.
 
 .. note::

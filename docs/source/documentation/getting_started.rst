@@ -146,7 +146,8 @@ click-repl can be integrated with your click application in various ways. Each o
 Advanced Usage
 --------------
 
-For more flexibility over how your REPL works, you can use the :class:`~click_repl._repl.repl` function, the :class:`~click_repl._repl.ReplCli` class (as shown above), instead of :func:`~click_repl.register_repl`. For example, in your app:
+For more flexibility over how your REPL works, you can use the :class:`~click_repl._repl.repl` function, the
+:class:`~click_repl._repl.ReplCli` class (as shown above), instead of :func:`~click_repl.register_repl`. For example, in your app:
 
 .. code-block:: python
 

@@ -6,9 +6,8 @@ from functools import lru_cache
 from glob import glob
 from typing import Any, Iterable
 
-from click import Command, Context
+from click import Command, Context, Group
 
-from .._compat import MultiCommand
 from ..proxies import _create_proxy_command
 
 
@@ -33,7 +32,7 @@ def _expand_args(args: Iterable[str]) -> list[str]:
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    group: MultiCommand,
+    group: Group,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
@@ -71,12 +70,16 @@ def _generate_next_click_ctx(
 @lru_cache(maxsize=3)
 def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
     """
-    Reference: :func:`~click.shell_completion._resolve_context`
+
+
+    Reference
+    ---------
+    :func:`~click.shell_completion._resolve_context`
     """
     while args:
         command = ctx.command
 
-        if isinstance(command, MultiCommand):
+        if isinstance(command, Group):
             if not command.chain:
                 ctx, cmd = _generate_next_click_ctx(command, ctx, args, proxy=proxy)
 

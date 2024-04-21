@@ -1,4 +1,4 @@
-""""
+"""
 Core utilities for input validation and displaying error messages
 raised during auto-completion.
 """
@@ -47,15 +47,14 @@ class ClickValidator(Validator):
     Parameters
     ----------
     group_ctx
-        The current :class:`~click.Context` object.
+        The current click context object.
 
     internal_commands_system
-        :class:`~click_repl.internal_commands.InternalCommandSystem object that
-        information about the internal commands and their prefixes.
+        Holds information about the internal commands and their prefixes.
 
     display_all_errors
         Determines whether to raise generic python exceptions, and not to
-        display them in the :class:`~prompt_toolkit.validation.Validator` bar,
+        display them in the validator bar,
         resulting in the full error traceback being redirected to a log file
         in the REPL mode.
     """
@@ -71,18 +70,17 @@ class ClickValidator(Validator):
         """
 
         self.group_ctx: Final[Context] = group_ctx
-        """The :class:`~click.Context` object of the main group."""
+        """The click context object of the main group."""
 
         self.internal_commands_system = internal_commands_system
         """
-        The :class:`~click_repl.internal_commands.InternalCommandSystem` object
-        of the current repl session.
+        The InternalCommandSystem object of the current repl session.
         """
 
         self.display_all_errors = display_all_errors
         """
         Determines whether to raise generic python exceptions, and not to display
-        them in the :class:`~prompt_toolkit.validation.Validator` bar.
+        them in the validator bar.
         """
 
     def validate(self, document: Document) -> None:
@@ -91,7 +89,7 @@ class ClickValidator(Validator):
         :exc:`~prompt_toolkit.validation.ValidationError` if it is invalid.
 
         Any errors raised while parsing text in prompt are displayed in the
-        :class:`~prompt_toolkit.validation.Validator` bar.
+        validator bar.
 
         Parameters
         ----------
@@ -102,7 +100,7 @@ class ClickValidator(Validator):
         ------
         prompt_toolkit.validation.ValidationError
             If there's any error occurred during input validation, and it needs
-            to be displayed in the validation bar.
+            to be displayed in the validator bar.
 
         Exception
             If there's error just needs to be raised normally.

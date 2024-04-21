@@ -7,28 +7,40 @@ from __future__ import annotations
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Sequence
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Generator, Sequence
 
 import click
-from click import Context
-from prompt_toolkit.completion import Completer
-from prompt_toolkit.formatted_text import AnyFormattedText
+from click import Group
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.styles import Style, merge_styles
-from prompt_toolkit.validation import Validator
 
-from ._compat import MultiCommand, split_arg_string
+from ._compat import split_arg_string
 from .bottom_bar import BottomBar
-from .click_utils.shell_completion import _generate_next_click_ctx
-from .completer import ClickCompleter
+from .click_custom.shell_completion import _generate_next_click_ctx
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
-from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG, ISATTY, get_current_repl_ctx
+from .globals_ import ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
 from .utils import print_error
-from .validator import ClickValidator
+
+if TYPE_CHECKING:
+    from click import Context
+    from prompt_toolkit.completion import Completer
+    from prompt_toolkit.formatted_text import AnyFormattedText
+    from prompt_toolkit.validation import Validator
+
+
+if ISATTY:
+    from .completer import ClickCompleter
+    from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG
+    from .validator import ClickValidator
+
 
 __all__ = ["Repl", "repl", "ReplCli"]
+
+
+_MISSING = object()
 
 
 class Repl:
@@ -75,8 +87,8 @@ class Repl:
         self,
         ctx: Context,
         prompt_kwargs: dict[str, Any] = {},
-        completer_cls: type[Completer] = ClickCompleter,
-        validator_cls: type[Validator] | None = ClickValidator,
+        completer_cls: type[Completer] = _MISSING,  # type:ignore[assignment]
+        validator_cls: type[Validator] | None = _MISSING,  # type:ignore[assignment]
         completer_kwargs: dict[str, Any] = {},
         validator_kwargs: dict[str, Any] = {},
         internal_command_prefix: str | None = ":",
@@ -87,7 +99,7 @@ class Repl:
         """
 
         # Check if there's a parent command, if it's there, then use it.
-        if ctx.parent is not None and not isinstance(ctx.command, MultiCommand):
+        if ctx.parent is not None and not isinstance(ctx.command, Group):
             ctx = ctx.parent
 
         ctx.protected_args = []
@@ -103,7 +115,7 @@ class Repl:
         self.bottom_bar: AnyFormattedText | BottomBar = None
         """:class:`~click_repl.bototm_bar.BottomBar` object to change the command
         description that's displayed in the bottom bar accordingly based on the
-        current parsing state.
+        user's current input state.
         """
 
         if ISATTY:
@@ -122,7 +134,7 @@ class Repl:
 
             self.bottom_bar = bottom_bar
 
-        prompt_kwargs = self._get_default_prompt_kwargs(
+        prompt_kwargs = self.get_default_prompt_kwargs(
             completer_cls,
             completer_kwargs,
             validator_cls,
@@ -165,7 +177,7 @@ class Repl:
         # "split_arg_string" is called here to strip out shell comments.
         return " ".join(split_arg_string(self._get_command()))
 
-    def _get_default_completer_kwargs(
+    def get_default_completer_kwargs(
         self, completer_cls: type[Completer] | None, completer_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """
@@ -189,7 +201,7 @@ class Repl:
             :class:`~prompt_toolkit.completion.Completer` class.
         """
 
-        if not ISATTY or completer_cls is None:
+        if not ISATTY:
             return {}
 
         default_completer_kwargs = {
@@ -201,7 +213,7 @@ class Repl:
         default_completer_kwargs.update(completer_kwargs)
         return default_completer_kwargs
 
-    def _get_default_validator_kwargs(
+    def get_default_validator_kwargs(
         self, validator_cls: type[Validator] | None, validator_kwargs: dict[str, Any]
     ) -> dict[str, Any]:
         """
@@ -212,17 +224,15 @@ class Repl:
         Parameters
         ----------
         validator_cls
-            A :class:`~prompt_toolkit.validation.Validator` type class.
+            A validator class.
 
         validator_kwargs
-            Keyword arguments passed to the
-            :class:`~prompt_toolkit.validation.Validator` class.
+            Keyword arguments passed to the ``validator_cls`` class.
 
         Returns
         -------
         dict[str,Any]
-            Keyword arguments that's should be passed to the
-            :class:`~prompt_toolkit.validation.Validator` class.
+            Keyword arguments that's should be passed to the ``validator_cls`` class.
         """
 
         if not ISATTY or validator_cls is None:
@@ -230,6 +240,9 @@ class Repl:
             # to generate any keyword arguments for rendering. In this case,
             # an empty dictionary is returned.
             return {}
+
+        if validator_cls == _MISSING:
+            validator_cls = ClickValidator
 
         if validator_cls is not None:
             default_validator_kwargs = {
@@ -240,7 +253,7 @@ class Repl:
             default_validator_kwargs.update(validator_kwargs)
             return default_validator_kwargs
 
-    def _get_default_prompt_kwargs(
+    def get_default_prompt_kwargs(
         self,
         completer_cls: type[Completer],
         completer_kwargs: dict[str, Any],
@@ -267,8 +280,7 @@ class Repl:
             A :class:`~prompt_toolkit.validation.Validator` type class.
 
         validator_kwargs
-            Keyword arguments passed to the
-            :class:`~prompt_toolkit.validation.Validator` class.
+            Keyword arguments passed to the ``validator_cls`` class.
 
         style_config_dict
             Style configuration for the REPL.
@@ -286,6 +298,9 @@ class Repl:
         if completer_cls is None:
             raise ValueError("'completer_cls' cannot be None.")
 
+        elif completer_cls == _MISSING:
+            completer_cls = ClickCompleter
+
         default_prompt_kwargs = {
             "history": InMemoryHistory(),
             "message": "> ",
@@ -302,15 +317,18 @@ class Repl:
         prompt_kwargs.setdefault(
             "completer",
             completer_cls(
-                **self._get_default_completer_kwargs(completer_cls, completer_kwargs)
+                **self.get_default_completer_kwargs(completer_cls, completer_kwargs)
             ),
         )
+
+        if validator_cls == _MISSING:
+            validator_cls = ClickValidator
 
         if validator_cls is not None:
             prompt_kwargs.setdefault(
                 "validator",
                 validator_cls(
-                    **self._get_default_validator_kwargs(validator_cls, validator_kwargs)
+                    **self.get_default_validator_kwargs(validator_cls, validator_kwargs)
                 ),
             )
 
@@ -547,3 +565,70 @@ def repl(
     """
 
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()
+
+
+def register_repl(
+    group: Group | None = None,
+    *,
+    name: str = "repl",
+    remove_command_before_repl: bool = False,
+) -> Callable[[Group], Group] | Group:
+    """
+    Decorator that registers :func:`~click_repl._repl.repl` as a sub-command
+    named ``name`` within the ``group``.
+
+    Parameters
+    ----------
+    group
+        The parent :class:`~click.Group` object to which the REPL command
+        will be registered.
+
+    name
+        The name of the repl command in the given ``group``.
+
+    remove_command_before_repl
+        Determines whether to remove the REPL command from the group,
+        before it's execution or not.
+
+    Returns
+    -------
+    Callable[[Group],Group] | Group
+        The same ``group`` or a callback that returns the same group with
+        the REPL command registered to it.
+
+    Raises
+    ------
+    TypeError
+        If the given ``group`` is not an instance of :class:`~click.Group`.
+    """
+
+    def decorator(_group: Group) -> Group:
+        nonlocal group
+
+        if group is not None:
+            _group = group
+
+        if not isinstance(_group, Group):
+            raise TypeError(
+                "Expected 'group' to be a type of click.Group, "
+                f"but got {type(_group).__name__}"
+            )
+
+        if name in _group.commands:
+            raise ValueError(f"Command {name!r} already exists in Group {_group.name!r}")
+
+        @wraps(repl)
+        def _repl(ctx: click.Context, *args: Any, **kwargs: Any) -> None:
+            if remove_command_before_repl:
+                _group.commands.pop(name)
+
+            repl(ctx, *args, **kwargs)
+            _group.command(name=name)(click.pass_context(_repl))
+
+        _group.command(name=name)(click.pass_context(_repl))
+
+        return _group
+
+    if group is None:
+        return decorator
+    return decorator(group)

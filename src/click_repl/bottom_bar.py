@@ -7,19 +7,22 @@ from __future__ import annotations
 import typing as t
 
 import click
-from click import Parameter
-from click.types import FloatRange, IntRange, ParamType
-from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
-from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+from click import Group
+from click.types import ParamType
 from typing_extensions import TypedDict
 
-from ._compat import RANGE_TYPES_TUPLE, MultiCommand
-from .globals_ import IS_CLICK_GE_8, ISATTY
+from ._compat import RANGE_TYPES_TUPLE
+from .click_custom.utils import _describe_click_range_param_type
+from .globals_ import ISATTY
 from .tokenizer import Marquee, TokenizedFormattedText, append_classname_to_all_tokens
 from .utils import is_param_value_incomplete, iterate_command_params
 
 if t.TYPE_CHECKING:
-    from .parser import ReplParsingState
+    from click import Parameter
+    from prompt_toolkit.formatted_text import OneStyleAndTextTuple as Token
+    from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
+
+    from .parser import ReplInputState
 
 
 __all__ = ["BottomBar"]
@@ -31,38 +34,6 @@ class ParamInfo(TypedDict):
     name: Token
     type_info: ListOfTokens
     nargs_info: ListOfTokens
-
-
-def _describe_click_range_param_type(param_type: IntRange | FloatRange) -> str:
-    """
-    Returns the metavar of the range-type :class:`~click.types.ParamType` type objects.
-
-    Parameter
-    ---------
-    param_type
-        :class:`~click.types.ParamType` object, whose metavar should be generated.
-
-    Returns
-    -------
-    str
-        Metavar that describes about the given range-like
-        :class:`~click.types.ParamType` object.
-    """
-
-    if IS_CLICK_GE_8:
-        res = param_type._describe_range()
-
-    elif param_type.min is None:
-        res = f"x<={param_type.max}"
-
-    elif param_type.max is None:
-        res = f"x>={param_type.min}"
-
-    else:
-        res = f"{param_type.min}<=x<={param_type.max}"
-
-    clamp = " clamped" if param_type.clamp else ""
-    return res + clamp  # type:ignore[no-any-return]
 
 
 class BottomBar:
@@ -83,8 +54,8 @@ class BottomBar:
         Initialize the `BottomBar` class.
         """
 
-        self.state: ReplParsingState | None = None
-        """Current Repl parsing state object."""
+        self.state: ReplInputState | None = None
+        """Current ."""
 
         self._recent_formatted_text: ListOfTokens | Marquee = []
         """Stores recently generated text for bottom bar as cache."""
@@ -120,18 +91,18 @@ class BottomBar:
         return self._recent_formatted_text
 
     def reset_state(self) -> None:
-        """Reset the current parsing state object and content in bottom bar."""
+        """Reset the current input state object and content in bottom bar."""
         self.state = None
         self.clear()
 
-    def update_state(self, state: ReplParsingState) -> None:
+    def update_state(self, state: ReplInputState) -> None:
         """
-        Updates the current Repl parsing state object in :class:`.BottomBar`.
+        Updates the current input state object in :class:`.BottomBar`.
 
         Parameters
         ----------
         state
-            Current parsing state of the prompt.
+            Current input state of the prompt.
         """
         if not ISATTY or state is None or state == self.state:
             return
@@ -551,14 +522,14 @@ class BottomBar:
     def make_formatted_text(self) -> Marquee:
         """
         Constructs tokens list to describe the current
-        :class:`~click_repl.parser.ReplParsingState` of input in prompt.
+        :class:`~click_repl.parser.ReplInputState` of input in prompt.
 
         Returns
         -------
         click_repl.tokenizer.Marquee
             :class:`~click_repl.tokenizer.Marquee` object that needs to be display
             the updated info about the current
-            :class:`~click_repl.parser.ReplParsingState`.
+            :class:`~click_repl.parser.ReplInputState`.
         """
         state = self.state
 
@@ -574,7 +545,7 @@ class BottomBar:
 
             return self.get_group_metavar_template()
 
-        if isinstance(current_command, MultiCommand):
+        if isinstance(current_command, Group):
             command_type = "multicommand"
             command_type_name = type(current_command).__name__
 
