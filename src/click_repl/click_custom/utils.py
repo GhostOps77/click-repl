@@ -18,6 +18,21 @@ def get_info_dict(
     obj: Context | Command | Parameter | click.ParamType,
 ) -> InfoDict:
     """
+    Returns a dictionary with minimal information about the ``obj``
+    click object to uniquely identify it.
+
+    Parameter
+    ---------
+    obj
+        Any click object.
+
+    Returns
+    -------
+    InfoDict
+        Dictionary of minimal information about the ``obj``.
+
+    References
+    ----------
     :meth:`~click.Context.get_info_dict`
     :meth:`~click.Command.get_info_dict`
     :meth:`~click.Group.get_info_dict`

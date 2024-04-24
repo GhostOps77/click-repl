@@ -9,7 +9,7 @@ v0.3.0
 | **Release-by**: `Asif Saif Uddin <https://github.com/auvipy>`_
 
 - Drop Python 2 support, removed :mod:`~six`. :issue:`78`
-- Uses :class:`~prompt_toolkit.PromptSession` class from prompt_toolkit instead of :func:`~prompt_toolkit.prompt` function (:issue:`63`).
+- Uses :class:`~prompt_toolkit.shortcuts.PromptSession` class from prompt_toolkit instead of :func:`~prompt_toolkit.prompt` function (:issue:`63`).
 - Added filter for hidden commands and options (:issue:`86`).
 - Added click's autocompletion support (:issue:`88`).
 - Added tab-completion for :class:`~click.Path` and :obj:`~click.BOOL` type arguments (:issue:`95`).

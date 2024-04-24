@@ -178,15 +178,17 @@ class Proxy:
 
 class ProxyCommand(Proxy, Command):
     """
-    Proxy class for :class:`~click.Command` objects that modifies their options parser.
+    Proxy class for :class:`~click.Command` objects that modifies
+    their options parser.
 
-    This class overrides the :meth:`~click.Command.make_parser` method to use the custom
-    parser implementation provided by :class:`~click_repl.click_custom.parser.ReplOptionParser`.
+    This class overrides the :meth:`~click.Command.make_parser` method
+    to use the custom parser implementation provided by
+    :class:`~click_repl.click_custom.parser.ReplOptionParser`.
 
     Parameters
     ----------
     obj
-        The :class:`~click.Command` object that needs to be proxied.
+        The click command object that needs to be proxied.
     """
 
     def __init__(self, obj: Command) -> None:
@@ -215,20 +217,22 @@ class ProxyCommand(Proxy, Command):
 
 class ProxyGroup(ProxyCommand, Group):
     """
-    Proxy class for :class:`~click.Group` objects that modifies their options parser.
+    Proxy class for :class:`~click.Group` objects that modifies
+    their options parser.
 
-    This class overrides the :meth:`~click.Group.make_parser` method to use the custom
-    parser implementation provided by :class:`~click_repl.click_custom.parser.ReplOptionParser`.
+    This class overrides the :meth:`~click.Group.make_parser` method
+    to use the custom parser implementation provided by
+    :class:`~click_repl.click_custom.parser.ReplOptionParser`.
 
     Parameters
     ----------
     obj
-        The :class:`~click.Group` object that needs to be proxied.
+        The click group object that needs to be proxied.
     """
 
     def __init__(self, obj: Group) -> None:
         """
-        Initialize the `ProxyGroup` class.
+        Initializes the `ProxyGroup` class.
         """
         super().__init__(obj)
         self.proxy_setattr(
@@ -243,8 +247,8 @@ class ProxyGroup(ProxyCommand, Group):
 
 class ProxyParameter(Proxy, Parameter):
     """
-    A generic proxy class for :class:`~click.Parameter` objects that
-    modifies it's behavior for missing values.
+    Generic proxy class for :class:`~click.Parameter` objects that
+    modifies it's behavior for processing and consuming values.
 
     This class overrides the :meth:`~click.Parameter.process_value` method to
     return missing values as they are, even if they are incomplete or not provided.
@@ -292,8 +296,11 @@ class ProxyParameter(Proxy, Parameter):
 
 class ProxyArgument(ProxyParameter, Argument):
     """
-    Proxy class for :class:`~click.Argument` objects, allowing modification
-    of their behavior during the processing of values based on their type.
+    Proxy class for :class:`~click.Argument` objects, enabling modification
+    of their behavior during the processing and consuming values.
+
+    This class overrides the :meth:`~click.Parameter.process_value` method to
+    return missing values as they are, even if they are incomplete or not provided.
 
     Parameters
     ----------
@@ -310,8 +317,12 @@ class ProxyArgument(ProxyParameter, Argument):
 
 class ProxyOption(ProxyParameter, Option):
     """
-    Proxy class for :class:`~click.Option` objects, allowing modification
-    of their behavior during the processing of values based on their type.
+    Proxy class for :class:`~click.Option` object, enabling modification
+    of their behavior during the processing and consuming values and also
+    prevent prompting for value in the REPL.
+
+    This class overrides the :meth:`~click.Parameter.process_value` method to
+    return missing values as they are, even if they are incomplete or not provided.
 
     Parameters
     ----------

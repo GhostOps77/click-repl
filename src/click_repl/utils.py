@@ -32,13 +32,12 @@ def _is_help_option(param: click.Option) -> bool:
     Parameters
     ----------
     param
-        A :class:`~click.Option` object to check.
+        A click option object.
 
     Returns
     -------
     bool
-        ``True`` ifthe given :class:`~click.Option` object is a help option,
-        otherwise ``False``.
+        ``True`` if the given ``param`` is a help option, otherwise ``False``.
     """
     has_help_message_as_help_text = bool(
         get_close_matches(param.help or "", ["Show this message and exit."], cutoff=0.5)
@@ -62,10 +61,10 @@ def is_param_value_incomplete(
     Parameters
     ----------
     ctx
-        :class:`~click.Context` object corresponding to the parameter.
+        A click context object corresponding to the parameter.
 
     param
-        :class:`~click.Parameter` object to check it's value after parsing.
+        A click parameter object to check it's value after parsing.
 
     check_if_tuple_has_none
         Flag that indicates whether the given parameter stores multiple
@@ -96,25 +95,22 @@ def is_param_value_incomplete(
         and None in value
     )
 
-    # return value in (None, ()) or (
-    #     check_if_tuple_has_none and isinstance(value, tuple) and None in value
-    # )
-
 
 def iterate_command_params(command: Command) -> Generator[Parameter, None, None]:
     """
     Iterate over parameters of a command in an order such that
-    the parameters with ``nargs=-1`` will be yielded at the very end.
+    the :class:`~click.Argument` with :attr:`~click.Argument.nargs` = -1
+    will be yielded at the very end.
 
     Parameters
     ----------
     command
-        The command object to iterate over it's parameters.
+        A click command object to iterate over it's parameters.
 
     Yields
     ------
     click.Parameter
-        The parameters of the given command, yielding the ``nargs=-1``
+        The parameters of the given ``command``, yielding the ``nargs=-1``
         parameter at last.
 
     Raises

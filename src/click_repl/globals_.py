@@ -157,7 +157,7 @@ DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
     "bottom-toolbar": "fg:lightblue bg:default noreverse"
 }
 """
-Default token style configuration for :class:`~prompt_toolkit.PromptSession`
+Default token style configuration for :class:`~prompt_toolkit.shortcuts.PromptSession`
 
 :meta hide-value:
 """

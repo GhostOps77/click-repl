@@ -44,7 +44,7 @@ class ReplContextInfoDict(TypedDict):
 
 class ReplContext:
     """
-    Context object for the REPL.
+    Context object for the REPL sessions.
 
     This class tracks the depth of nested REPLs, ensuring seamless navigation
     between different levels. It facilitates nested REPL scenarios, allowing
@@ -58,22 +58,20 @@ class ReplContext:
     Parameters
     ----------
     group_ctx
-        The :class:`~click.Context` object that belong to the CLI/parent Group.
+        The click context object that belong to the CLI/parent Group.
 
     internal_command_system
-        The :class:`~click_repl._internal_commands.InternalCommandSystem` object that
-        holds information about the internal commands and their prefixes.
+        Holds information about the internal commands and their prefixes.
 
     bottom_bar
-        The :class:`~click_repl.bottom_bar.BottomBar` object that controls the text
-        that should be displayed in the bottom toolbar of the
-        :class:`~prompt_toolkit.PromptSession` object.
+        Controls the text that should be displayed in the bottom toolbar of the
+        :class:`~prompt_toolkit.shortcuts.PromptSession` object.
 
     prompt_kwargs
-        Extra keyword arguments for :class:`~prompt_toolkit.PromptSession` class.
+        Extra keyword arguments for :class:`~prompt_toolkit.shortcuts.PromptSession` class.
 
     parent
-        Parent :class:`~click_repl.core.ReplContext` object of the parent REPL session.
+        REPL Context object of the parent REPL session, if exists. Otherwise, ``None``.
     """
 
     __slots__ = (
@@ -96,7 +94,7 @@ class ReplContext:
         parent: ReplContext | None = None,
     ) -> None:
         """
-        Initialize the `ReplContext` class.
+        Initializes the `ReplContext` class.
         """
         session: _PromptSession | None
 
@@ -126,12 +124,13 @@ class ReplContext:
     @property
     def prompt(self) -> AnyFormattedText:
         """
-        The message displayed for every prompt input in the REPL.
+        The prompt text of the REPL.
 
         Returns
         -------
-        :obj:`~prompt_toolkit.formatted_text.AnyFormattedText`
-            Returns prompt object if :func:`~sys.stdin.isatty` is ``True``, else ``None``
+        prompt_toolkit.formatted_text.AnyFormattedText
+            The prompt object if :func:`~sys.stdin.isatty` is ``True``,
+            else ``None``.
         """
         if ISATTY and self.session is not None:
             return self.session.message
@@ -144,12 +143,12 @@ class ReplContext:
 
     def to_info_dict(self) -> ReplContextInfoDict:
         """
-        Provides the most minimal info about the current REPL.
+        Provides a dictionary with minimal info about the current REPL.
 
         Returns
         -------
         ReplContextInfoDict
-            A dictionary that has the instance variables and it's values.
+            A dictionary that has the instance variables and their values.
         """
 
         res: ReplContextInfoDict = {
@@ -168,7 +167,7 @@ class ReplContext:
     def session_reset(self) -> None:
         """
         Resets values of :class:`~prompt_toolkit.session.PromptSession` to
-        the provided ``prompt_kwargs``, discarding any changes done to the
+        the provided :attr:`~.prompt_kwargs`, discarding any changes done to the
         :class:`~prompt_toolkit.session.PromptSession` object.
         """
 
@@ -177,13 +176,12 @@ class ReplContext:
 
     def update_state(self, state: ReplInputState) -> None:
         """
-        Updates the current input state of the repl.
+        Updates the current input state of the REPL.
 
         Parameters
         ----------
         state
-            :class:`~click_repl.parser.ReplInputState` object that keeps track
-            of the current input state.
+            A ReplInputState object that keeps track of the current input state.
         """
         self.current_state = state
 

@@ -38,7 +38,7 @@ class ParamInfo(TypedDict):
 
 class BottomBar:
     """
-    Toolbar class to manage the text in the bottom toolbar.
+    Toolbar class to manage the text in the bottom bar.
 
     Parameters
     ----------
@@ -51,11 +51,11 @@ class BottomBar:
         show_hidden_params: bool = False,
     ) -> None:
         """
-        Initialize the `BottomBar` class.
+        Initializes the `BottomBar` class.
         """
 
         self.state: ReplInputState | None = None
-        """Current ."""
+        """Current REPL input state object."""
 
         self._recent_formatted_text: ListOfTokens | Marquee = []
         """Stores recently generated text for bottom bar as cache."""
@@ -97,7 +97,7 @@ class BottomBar:
 
     def update_state(self, state: ReplInputState) -> None:
         """
-        Updates the current input state object in :class:`.BottomBar`.
+        Updates the current input state object in :class:`~.BottomBar`.
 
         Parameters
         ----------
@@ -117,9 +117,9 @@ class BottomBar:
 
         Returns
         -------
-        :class:`.Marquee`
-            Pre-defined set of metavar tokens for both :attr:`.Marquee.prefix`
-            and :attr:`.Marquee.text` attributes.
+        Marquee
+            Pre-defined set of metavar tokens for both :attr:`~.Marquee.prefix`
+            and :attr:`~.Marquee.text` attributes.
         """
 
         state = self.state
@@ -384,7 +384,7 @@ class BottomBar:
     ) -> ListOfTokens:
         """
         Constructs tokens list to describe the given :class:`~click.Parameter`'s
-        nargs information.
+        :attr:`~click.Parameter.nargs` information.
 
         Parameters
         ----------

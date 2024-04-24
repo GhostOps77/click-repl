@@ -27,8 +27,8 @@ def append_classname_to_all_tokens(
     tokens_list: ListOfTokens, classes: Iterable[str] = []
 ) -> ListOfTokens:
     """
-    Appends the given list of token ``classes`` to all the classes string in every
-    token in ``tokens_list``
+    Appends the given list of token ``classes`` to all the classes strings
+    in every token in ``tokens_list``.
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ def option_flag_tokens_joiner(
 ) -> ListOfTokens:
     """
     Joins the given ``contents`` of strings into a token string with the given
-    ``content_token_class``, ``sep`` string and it's token's class ``sep_token_class``.
+    ``content_token_class``, ``sep`` string, and its token's class ``sep_token_class``.
 
     Parameters
     ----------
@@ -82,7 +82,8 @@ def option_flag_tokens_joiner(
     Returns
     -------
     ListOfTokens
-        Given ``contents`` separated by ``sep``, as tokens list with given classes string.
+        Given ``contents`` separated by ``sep``, as a list of tokens with
+        given classes string.
     """
     if not contents:
         return []
@@ -102,7 +103,7 @@ def get_token_class_for_click_obj_type(
     obj: click.Command | click.Parameter,
 ) -> TokenClassForClickObjectTypes:
     """
-    Retrieve the token class name suitable for the provided object ``obj``
+    Retrieves the token class name suitable for the provided object ``obj``
     from a class within the click module.
 
     Parameters
@@ -188,8 +189,7 @@ class TokenizedFormattedText(FormattedText):
 
     def content_length(self) -> int:
         """
-        Returns the length of the :class:`~prompt_toolkit.formatted_text.FormattedText`
-        based on the length of text content in each token.
+        Returns the length based on the length of text content in each token.
 
         Returns
         -------
@@ -213,7 +213,7 @@ class TokenizedFormattedText(FormattedText):
         Returns
         -------
         TokenizedFormattedText
-            Returns a new slice that contains the text content within that slice range.
+            A new slice that contains the text content within that slice range.
         """
         if start >= stop:
             return []  # type:ignore[return-value]
@@ -240,7 +240,7 @@ class TokenizedFormattedText(FormattedText):
 
 class Marquee:
     """
-    Displays the given text in the form of Marquee in terminal.
+    Displays the given text in the form of a marquee in terminal.
 
     Parameters
     ----------
@@ -248,7 +248,7 @@ class Marquee:
         The text tokens that will be displayed in the marquee style.
 
     prefix
-        This text will be displayed as a prefix before :attr:`.text`, and
+        This text will be displayed as a prefix before :attr:`~.text`, and
         it will not be moved in the terminal display as a marquee.
     """
 
@@ -270,7 +270,7 @@ class Marquee:
         prefix: ListOfTokens = [],
     ) -> None:
         """
-        Initialize the `Marquee` class.
+        Initializes the `Marquee` class.
         """
 
         if not isinstance(text, TokenizedFormattedText):
@@ -283,46 +283,56 @@ class Marquee:
             prefix = TokenizedFormattedText(prefix)
 
         self.prefix: TokenizedFormattedText = prefix
-        """This text will be displayed as a prefix before :attr:`.text`."""
+        """The prefix text for :attr:`~.text`."""
 
         self.pointer_position: int = 0
-        """Keeps track of the next starting position to slice the :attr:`.text` from."""
+        """Keeps track of the next starting position to slice the :attr:`~.text` from."""
 
         self.is_pointer_direction_left: bool = True
-        """To keep track on the current direction on pointer's movement."""
+        """Keeps track on the current direction on pointer's movement."""
 
         self.hit_boundary: bool = True
-        """Flag that tells if the pointer has hit either the left or right-most end."""
+        """
+        Flag that indicates whether the pointer has hit either the
+        left or right-most end.
+        """
 
         self.max_wait_in_iterations: int = 5
-        """Maximum number of iterations the pointer can stay
-            idle once it has hit either of the ends."""
+        """
+        Maximum number of iterations the pointer can stay
+        idle once it has hit either of the ends.
+        """
 
         self.no_of_iterations_waited_for: int = self.max_wait_in_iterations
-        """The pointer stays at the very end once it has touched the boundary, for next
-            :attr:`.no_of_iterations_waited_for` iterations."""
+        """
+        The pointer stays at the very end once it has touched the boundary, for next
+        :attr:`~.no_of_iterations_waited_for` iterations.
+        """
 
         self._is_text_length_le_window_size: bool = False
-        # Flag that tells whether the window size that displays the
-        # text's content is greater than the length of the text.
+        """
+        Flag that indicates whether the window size that displays the
+        text's content is greater than the length of the text.
+        """
 
         self._recent_text: TokenizedFormattedText = []  # type:ignore[assignment]
-        # Used to cache recently generated string.
+        """Used to cache recently generated string."""
 
     def get_window_size(self) -> int:
         """
-        Returns the window size to display the :attr:`.text` as marquee.
+        Returns the window size to display the :attr:`~.text` as a marquee.
 
         Returns
         -------
         int
-            New window size to display a chunk of :attr:`.text`
+            New window size to display a chunk of :attr:`~.text`.
         """
         return os.get_terminal_size().columns - self.prefix.content_length()
 
     def adjust_pointer_position(self) -> None:
         """
-        Updates the :attr:`.pointer_position` for the next iteration for updating the text.
+        Updates the :attr:`~.pointer_position` for the next iteration, for updating the text
+        from the next offset location.
         """
         # Last position of the pointer that would ever reach in the
         # given string object, in right side of it.
@@ -373,26 +383,27 @@ class Marquee:
 
     def get_full_formatted_text(self) -> TokenizedFormattedText:
         """
-        Returns the whole :attr:`.text` along with the :attr:`.prefix`, without slicing them.
+        Returns the complete content of :attr:`~.text` along with the :attr:`~.prefix`,
+        without slicing them.
 
         Returns
         -------
         TokenizedFormattedText
-            The entire content of both :attr:`.prefix` and the :attr:`.text`
+            The entire content of both :attr:`~.prefix` and the :attr:`~.text`.
         """
         return TokenizedFormattedText(self.prefix + self.text, "bottom-bar")
 
     def get_current_text_chunk(self) -> TokenizedFormattedText:
         """
-        Returns the updated :attr:`.text` chunk, along with the :attr:`.prefix`,
-        that currently should be displayed in the bottom bar.
+        Returns the updated :attr:`~.text` chunk, along with the :attr:`~.prefix`,
+        that should currently be displayed in the bottom bar.
 
         Returns
         -------
         TokenizedFormattedText
-            The entire :attr:`.text` with the :attr:`.prefix` if the terminal window
-            length is sufficient. Otherwise, returns a sliced portion of the
-            :attr:`.text` that fit's the current window size.
+            The entire :attr:`~.text` with the :attr:`~.prefix` if the terminal
+            window length is sufficient. Otherwise, returns a sliced portion of
+            the :attr:`~.text` that fit's the current window size.
         """
 
         window_size = self.get_window_size()

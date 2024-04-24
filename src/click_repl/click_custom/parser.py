@@ -45,17 +45,38 @@ def order_option_names(option_names: Sequence[str]) -> list[str]:
     Parameters
     ----------
     option_names
-        List of option names
+        List of option names.
 
     Returns
     -------
     list[str]
-        List of option names, ordered based on their prefix length
+        List of option names, ordered based on their prefix length.
     """
     return sorted(option_names, key=lambda opt: len(split_opt(opt)[0]))
 
 
 class ArgumentParamParser(_Argument):
+    """
+    Subclass of :class:`~click.parser.Argument`, but modified to fill
+    ``None`` for empty values for an :class:`~click.Argument`
+    with :attr:`~click.Argument.nargs` != 1.
+
+    Parameters
+    ----------
+    obj
+        The click argument object.
+
+    dest
+        The :attr:`~click.Argument.name` of the ``obj``.
+
+    nargs
+        The :attr:`~click.Argument.nargs` of the ``obj``.
+
+    References
+    ----------
+    :class:`~click.parser.Argument`
+    """
+
     def process(
         self,
         value: str | Sequence[str | None] | None,
@@ -73,21 +94,29 @@ class ArgumentParamParser(_Argument):
 class ReplOptionParser(OptionParser):
     """
     Subclass of :class:`~click.parser.OptionParser`, modified to
-    fill in ``None`` values for empty values for parameters with
-    ``nargs != 1``.
+    fill in ``None`` values for empty values for :class:`~click.Argument`
+    with :attr:`~click.Argument.nargs` != 1.
 
     Parameters
     ----------
     ctx
-        The current click context object, constructed from the text currently
-        in the prompt
+        The current click context object, constructed from the text
+        currently in the prompt.
 
-    Reference
-    ---------
+    References
+    ----------
     :class:`~click.parser.OptionParser`
     """
 
     def __init__(self, ctx: Context) -> None:
+        """
+        Initializes the `ReplOptionParser` class.
+
+        Parameters
+        ----------
+        ctx
+            A click context object to parse arguments corresponding to it.
+        """
         super().__init__(ctx)
 
         for opt in ctx.command.params:

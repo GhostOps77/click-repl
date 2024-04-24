@@ -204,7 +204,8 @@ their suggestions have all of their names separated by ``/``.
     def connect_to_db(username, port):
         ...
 
-.. image:: ../../assets/shortest_options_only.gif
+.. image:: ../../../assets/shortest_options_only.gif
+   :align: center
    :alt: shortest_options_only
 
 
@@ -245,7 +246,8 @@ the whole name of the hidden command, it's parmeters are then suggested.
     def connect_to_admin_db(username, port):
         ...
 
-.. image:: ../../assets/show_hidden_command_and_params.gif
+.. image:: ../../../assets/show_hidden_command_and_params.gif
+   :align: center
    :alt: show_hidden_command_and_params
 
 
@@ -276,5 +278,6 @@ displayed for suggestion or not.
     def connect_to_db(username, port):
         ...
 
-.. image:: ../../assets/show_only_unused_option_names.gif
+.. image:: ../../../assets/show_only_unused_option_names.gif
+   :align: center
    :alt: show_only_unused_option_names

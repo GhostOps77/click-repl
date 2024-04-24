@@ -74,10 +74,19 @@ Exceptions
 
 
 Custom Click Utilities
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 .. automodule:: click_repl.click_custom
+
+
+Parsers
+~~~~~~~
+
+.. automodule:: click_repl.click_custom.parser
     :members:
+
+
+Shell
 
 
 Others

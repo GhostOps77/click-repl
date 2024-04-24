@@ -107,19 +107,21 @@ class InternalCommandSystem:
         Prefix to trigger internal commands.
 
     system_command_prefix
-        Prefix to execute bash/other command-line scripts.
+        Prefix to execute command-line scripts.
 
     Raises
     ------
     click_repl.exceptions.SamePrefix
-        If both :attr:`.internal_command_prefix` and
-        :attr:`.system_command_prefix` are same.
+        If both :attr:`~.internal_command_prefix` and
+        :attr:`~.system_command_prefix` are same.
 
     Note
     ----
     The prefixes determine how the commands are recognized and distinguished
-    within the REPL. And both the :attr:`.internal_command_prefix` and
-    :attr:`.system_command_prefix` should not be same.
+    within the REPL.
+
+    Both the :attr:`~.internal_command_prefix` and
+    :attr:`~.system_command_prefix` should not be the same.
     """
 
     def __init__(
@@ -157,7 +159,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        :class:`str` | None
+        str | None
             The prefix for internal commands, if available.
 
         Raises
@@ -186,7 +188,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        :class:`str` | None
+        str | None
             The prefix for system commands, if available.
 
         Raises
@@ -223,7 +225,7 @@ class InternalCommandSystem:
         Raises
         ------
         click_repl.exceptions.WrongType
-            If the prefix is not of type :class:`str` or `None`.
+            If the prefix is not of type :class:`str` or ``None``.
 
         ValueError
             If the prefix is an empty string.
@@ -241,7 +243,7 @@ class InternalCommandSystem:
     def dispatch_system_commands(self, command: str) -> None:
         """
         Execute system commands entered in the REPL. System commands
-        start with the :attr:`.system_command_prefix` string in the REPL.
+        start with the :attr:`~.system_command_prefix` string in the REPL.
 
         Parameters
         ----------
@@ -257,14 +259,13 @@ class InternalCommandSystem:
     def handle_internal_commands(self, command: str) -> None:
         """
         Run REPL-internal commands that start with the
-        :attr:`.internal_command_prefix` string in the REPL.
+        :attr:`~.internal_command_prefix` string in the REPL.
 
         Parameters
         ----------
         command
             Contains the internal command that needs to be to be executed.
         """
-
         target = self.get_command(command, default=None)
         if target is None:
             print_error(f"{command!r}, command not found")
@@ -280,9 +281,9 @@ class InternalCommandSystem:
         description: str | None = None,
     ) -> Callable[[Callable[[], None]], Callable[[], None]] | Callable[[], None]:
         """
-        Decorator used to register a new internal command from a given function.
+        Decorator used to register a new internal command from the given function.
 
-        internal commands are case-insensitive, and this decorator allows
+        Internal commands are case-insensitive, and this decorator allows
         for easy registration of command names and aliases.
 
         Parameters
@@ -291,7 +292,7 @@ class InternalCommandSystem:
             The callback function for the internal command.
 
         names
-            Contains command names and aliases.
+            Names and aliases for the internal command.
 
         description
             Help text for the internal command.
@@ -344,7 +345,7 @@ class InternalCommandSystem:
     def _group_commands_by_callback_and_desc(self) -> InfoTable:
         """
         Groups all the aliases of all the internal commands together from
-        :attr:`._internal_commands`.
+        :attr:`~._internal_commands`.
 
         Returns
         -------
@@ -385,8 +386,8 @@ class InternalCommandSystem:
         Returns
         -------
         Callable[[],None] | Any
-            The callback function of the internal command if found. If not
-            found, it returns the value specified in the ``default`` parameter.
+            The callback function of the internal command, if found. Otherwise,
+            it returns the value specified in the ``default`` parameter.
         """
 
         target_info = self._internal_commands.get(name, None)
@@ -468,7 +469,7 @@ class InternalCommandSystem:
         Raises
         ------
         PrefixNotFound
-            If there's no internal prefix used in the given command.
+            If there is no internal prefix used in the given command.
         """
 
         flag, prefix = self.get_prefix(string.strip())

@@ -12,6 +12,19 @@ from ..proxies import _create_proxy_command
 
 
 def _expand_args(args: Iterable[str]) -> list[str]:
+    """
+    Expands Environmental variables in the text in given ``args``.
+
+    Parameter
+    ---------
+    args
+        List of strings received and parsed from the prompt.
+
+    Returns
+    -------
+    list[str]
+        List of strings with expanded environmental variables.
+    """
     out = []
 
     for arg in args:
@@ -32,18 +45,45 @@ def _expand_args(args: Iterable[str]) -> list[str]:
 
 @lru_cache(maxsize=3)
 def _generate_next_click_ctx(
-    group: Group,
     parent_ctx: Context,
     args: tuple[str, ...],
     proxy: bool = False,
     **ctx_kwargs: dict[str, Any],
 ) -> tuple[Context, Command | None]:
+    """
+    Generates the next :class:`~click.Context` object with the given set of
+    ``args`` and ``parent_ctx``.
+
+    Parameters
+    ----------
+    parent_ctx
+        The click context object of the parent group.
+
+    args
+        List of arguments for the parent group from the REPL prompt.
+
+    proxy
+        Determines whether to use :class:`~click_repl.proxies.ProxyCommand`
+        class to parse the ``args``.
+
+    **ctx_kwargs
+        Extra keyword arguments for :meth:`~click.Command.make_context` method.
+
+    Returns
+    -------
+    tuple[Context,Command | None]
+        A tuple containing:
+            - Next click context object, parsed from the ``args``
+            - Command of this next context object if exists, else ``None``
+    """
 
     if not args:
         return parent_ctx, None
 
-    # Since the resolve_command method only accepts string arguments in a
-    # list format, we explicitly convert args into a list.
+    group: Group = parent_ctx.command  # type:ignore[assignment]
+
+    # Since the resolve_command method only accepts string arguments
+    # in a list format, we explicitly convert args into a list.
     _args = _expand_args(args)
 
     name, cmd, _args = group.resolve_command(parent_ctx, _args)
@@ -70,7 +110,26 @@ def _generate_next_click_ctx(
 @lru_cache(maxsize=3)
 def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
     """
+    Parses the ``args`` into latest click context. Customized to use
+    :class:`~click_repl.proxies.ProxyCommand` class to parse the ``args``.
 
+    Parameters
+    ----------
+    ctx
+        The click context object of the parent group.
+
+    args
+        List of arguments for the parent group from the REPL prompt.
+
+    proxy
+        Determines whether to use :class:`~click_repl.proxies.ProxyCommand`
+        class to parse the ``args``.
+
+    Returns
+    -------
+    click.Context
+        Context object for the latest command the user has requested in
+        the prompt, along with it's parameters parsed along with it.
 
     Reference
     ---------
@@ -81,7 +140,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
 
         if isinstance(command, Group):
             if not command.chain:
-                ctx, cmd = _generate_next_click_ctx(command, ctx, args, proxy=proxy)
+                ctx, cmd = _generate_next_click_ctx(ctx, args, proxy=proxy)
 
                 if cmd is None:
                     return ctx
@@ -89,7 +148,6 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
             else:
                 while args:
                     sub_ctx, cmd = _generate_next_click_ctx(
-                        command,
                         ctx,
                         args,
                         proxy=proxy,

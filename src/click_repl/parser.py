@@ -40,9 +40,9 @@ class Incomplete:
     """
     Stores the last incomplete text token in the current prompt input, that requires
     suggestions. It stores the incomplete last text token in it's raw form in
-    :attr:`.raw_str` attribute, and in it's parsed form in
-    :attr:`.parsed_str` attribute. The parsed form has no unpaired quotes
-    surrounding it if the raw form had any.
+    :attr:`~.raw_str` attribute, and in it's parsed form in
+    :attr:`~.parsed_str` attribute. The parsed form has no unpaired quotes
+    surrounding it if the draw form had any.
 
     Parameters
     ----------
@@ -56,7 +56,7 @@ class Incomplete:
     __slots__ = ("raw_str", "parsed_str")
 
     def __init__(self, raw_str: str, parsed_str: str) -> None:
-        """Initialize the `Incomplete` class."""
+        """Initializes the `Incomplete` class."""
 
         self.raw_str = raw_str.strip()
         """Raw form of the incomplete text."""
@@ -78,32 +78,23 @@ class Incomplete:
 
     def expand_envvars(self) -> str:
         """
-        Expands Environmental variables in :attr:`.parsed_str` and returns
+        Expands Environmental variables in :attr:`~.parsed_str` and returns
         it as a new string.
 
         Returns
         -------
-            String with all the Environmental in :attr:`.parsed_str`
+        str
+            String with all the Environmental in :attr:`~.parsed_str`
             variables expanded.
         """
-        self.parsed_str = os.path.expandvars(os.path.expanduser(self.parsed_str)).strip()
-        return self.parsed_str
-
-    def reverse_prefix_envvars(self, value: str) -> str:
-        expanded_incomplete = self.expand_envvars()
-
-        if value.startswith(expanded_incomplete):
-            value = self.parsed_str + value[len(expanded_incomplete) :]
-
-        return value
+        return os.path.expandvars(os.path.expanduser(self.parsed_str)).strip()
 
 
 class ReplInputState:
     """
     Describes about the current input state of the text in the current prompt.
-    It includes the details about the current click :class:`~click.Group`,
-    :class:`~click.Command` and :class:`~click.Parameter` the user is requesting
-    autocompletions for.
+    It includes the details about the current click group, command and parameter
+    the user is requesting autocompletions for.
 
     Parameters
     ----------
@@ -111,8 +102,7 @@ class ReplInputState:
         The click context object of the main group.
 
     current_ctx
-        The most recently created click context object, after
-        parsing :attr:`.args`.
+        The most recently created click context object, after parsing :attr:`~.args`.
 
     args
         List of text that's entered in the prompt.
@@ -136,16 +126,16 @@ class ReplInputState:
         args: tuple[str, ...],
     ) -> None:
         """
-        Initialize the `ReplInputState` class.
+        Initializes the `ReplInputState` class.
         """
 
         self.cli_ctx = cli_ctx
-        """The :class:`~click.Context` object of the main group."""
+        """The click context object of the main group."""
 
         self.current_ctx = current_ctx
         """
-        The most recently created :class:`~click.Context` object,
-        after parsing :attr:`.args`
+        The most recently created click context object,
+        after parsing :attr:`~.args`
         """
 
         self.args = args
@@ -155,9 +145,18 @@ class ReplInputState:
         """List of unused parameters of the current command."""
 
         self.double_dash_found = getattr(current_ctx, "_double_dash_found", False)
-        """Flag that determines whether there's a `'--'` in :attr:`.args`."""
+        """Flag that determines whether there's a ``'--'`` in :attr:`~.args`."""
 
-        self.current_group, self.current_command, self.current_param = self.parse()
+        current_group, current_command, current_param = self.parse()
+
+        self.current_group = current_group
+        """The current click group the user is in."""
+
+        self.current_command = current_command
+        """The current click command the user is in."""
+
+        self.current_param = current_param
+        """The current click parameter the user is on."""
 
     def __str__(self) -> str:
         res = [str(self.current_group.name)]
@@ -200,16 +199,13 @@ class ReplInputState:
 
     def parse(self) -> tuple[Group, Command | None, Parameter | None]:
         """
-        Parse the :attr`~.current_ctx` and returns the current :classs`~click.Group`,
-        :class`~click.Command` and :class`~click.Parameter` that's been requested
-        in the prompt.
+        Parse the :attr`~.current_ctx` and returns the current click group, command
+        and paramter that's been requested in the prompt.
 
         Returns
         -------
         tuple[Group,Command | None,Parameter | None]
-            The current :class:`~click.Group`, current :class:`~click.Command` if
-            requested, and current :class:`~click.Parameter` if requested in
-            the prompt.
+            The current click group, command and parameter, if requested, in the prompt.
         """
         current_group, current_command = self.get_current_group_and_command()
         current_param = None
@@ -221,14 +217,13 @@ class ReplInputState:
 
     def get_current_group_and_command(self) -> tuple[Group, Command | None]:
         """
-        Parse the :attr:`~.current_ctx` and returns the current :class:`~click.Group`
-        and :class:`~click.Command` that's been requested in the prompt.
+        Parse the :attr:`~.current_ctx` and returns the current click group
+        and command that's been requested in the prompt.
 
         Returns
         -------
         tuple[Group,Command | None]
-            The current :class:`~click.Group`, and current
-            :class:`~click.Command` if requested in the prompt.
+            The current click group and command, if requested, in the prompt.
         """
         current_ctx_command = self.current_ctx.command
 
@@ -271,13 +266,18 @@ class ReplInputState:
 
     def get_current_param(self, current_command: Command) -> Parameter | None:
         """
-        Parse the :attr:`~.current_ctx` and returns the current :class:`~click.Parameter`
+        Parse the :attr:`~.current_ctx` and returns the current click parameter
         from the given :attr:`~.current_command` that's been requested in the prompt.
+
+        Parameters
+        ----------
+        current_command
+            The current click command.
 
         Returns
         -------
         Parameter | None
-            The current :class:`~click.Parameter` if requested in the prompt.
+            The current click parameter, if requested, in the prompt.
         """
         self.remaining_params = [
             param
@@ -291,13 +291,18 @@ class ReplInputState:
 
     def get_current_opt(self, current_command: Command) -> click.Option | None:
         """
-        Parse the :attr:`~.current_ctx` and returns the current :class:`~click.Option`
+        Parse the :attr:`~.current_ctx` and returns the current click option
         from the given :attr:`~.current_command` that's been requested in the prompt.
+
+        Parameters
+        ----------
+        current_command
+            The current click command.
 
         Returns
         -------
         click.Option | None
-            The current :class:`~click.Option` if requested in the prompt.
+            The current click option, if requested, in the prompt.
         """
         if "--" in self.args:
             # click parses all input strings after "--" as values for click.Argument
@@ -324,13 +329,18 @@ class ReplInputState:
 
     def get_current_arg(self, current_command: Command) -> click.Argument | None:
         """
-        Parse the :attr:`~.current_ctx` and returns the current :class:`~click.Argument`
+        Parse the :attr:`~.current_ctx` and returns the current click argument
         from the given :attr:`~.current_command` that's been requested in the prompt.
+
+        Parameters
+        ----------
+        current_command
+            The current click command.
 
         Returns
         -------
         click.Argument | None
-            The current :class:`~click.Argument` if requested in the prompt.
+            The current click argument, if requested, in the prompt.
         """
         for param in iterate_command_params(current_command):
             if not isinstance(param, click.Argument):
@@ -345,21 +355,20 @@ class ReplInputState:
 @lru_cache(maxsize=3)
 def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
     """
-    Resolves the last incomplete string token from the prompt, to use it to
+    Resolves the last incomplete string token from the prompt to
     generate suggestions based on that.
 
     Parameters
     ----------
     document_text
-        The full text that's currently in the prompt.
+        The text currently in the prompt.
 
     Returns
     -------
     tuple[tuple[str,...],Incomplete]
-        A tuple that contains:
-
-        - A list of text, which is splitted from the full text in prompt.
-        - An :class:`~click.parser.Incomplete` object that has the recent incomplete text token.
+        A tuple that containing:
+            - A list of text, which is lexically split from the text in prompt.
+            - An Incomplete object that has the recent incomplete text token.
     """
     args = split_arg_string(document_text)
     cursor_within_command = not document_text[-1:].isspace()
@@ -411,8 +420,7 @@ def _resolve_repl_input_state(
 ) -> ReplInputState:
     """
     Initializes :class:`~click_repl.parser.ReplInputState` class if it's arguments
-    are not in cache. Otherwise, returns the previously initialized
-    :class:`~click_repl.parser.ReplInputState` object.
+    are not cached. Otherwise, returns the cached ReplInputState object.
 
     Parameters
     ----------
@@ -452,10 +460,9 @@ def _resolve_state(
     -------
     tuple[Context,ReplInputState,Incomplete]
         A tuple that contains:
-
-        - click context object constructed from parsing the given input from prompt
-        - Current REPL input state object
-        - Object that holds the incomplete text token that requires suggestions
+            - click context object constructed from parsing the given input from prompt.
+            - Current REPL input state object.
+            - Object that holds the incomplete text token that requires suggestions.
     """
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args, proxy=True)

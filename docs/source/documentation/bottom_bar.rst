@@ -7,7 +7,7 @@ Bottom Bar
 .. role:: strike
     :class: strike
 
-click-repl displays a bottom bar, made by using :class:`~prompt_toolkit.PromptSession`'s
+click-repl displays a bottom bar, made by using :class:`~prompt_toolkit.shortcuts.PromptSession`'s
 :attr:`~prompt_toolkit.PromptSession.bottom_toolbar` feature.
 
 It's used to display the current command, current parameter that requires value. It also shows which parameters of type
@@ -25,7 +25,7 @@ For parameters, these are the formatting style implemented into bottom bar.
 
 * Parameters that have received all of it's necessary values from the prompt are represented as strikethrough text.
 
-It also keeps track of number of arguments that a parameter with `nargs>1` has received.
+It also keeps track of the values that an :class:`~click.Argument` with :attr:`~click.Argument.nargs` > 1 has received.
 
 .. code-block:: python
 
@@ -45,7 +45,8 @@ It also keeps track of number of arguments that a parameter with `nargs>1` has r
         print(f'{student_name = }')
         print(f'{marks = }')
 
-.. image:: ../../assets/bottom_bar_example.gif
+.. image:: ../../../assets/bottom_bar_example.gif
+   :align: center
 
 BottomBar
 ---------
@@ -94,4 +95,4 @@ You can use your own bottom bar class by passing it through ``bottom_toolbar`` k
    The value in ``bottom_toolbar`` should be in a type of
    :obj:`~prompt_toolkit.formatted_text.AnyFormattedText` | :class:`~click_repl.bottom_bar.BottomBar`. The click-repl's
    :class:`~click_repl.bottom_bar.BottomBar` object supplies updated text via it's ``__call__`` method.
-   :class:`~prompt_toolkit.PromptSession` will use the bottom bar object's ``__call__`` method to get the text that has to be displayed.
+   :class:`~prompt_toolkit.shortcuts.PromptSession` will use the bottom bar object's ``__call__`` method to get the text that has to be displayed.

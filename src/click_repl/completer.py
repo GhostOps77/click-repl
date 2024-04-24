@@ -78,10 +78,6 @@ class ClickCompleter(Completer):
     show_hidden_params
         Determines whether the hidden parameters should be shown
         in autocompletion or not.
-
-    expand_envvars
-        Determines whether to return completion with Environmental variables
-        as expanded or not.
     """
 
     def __init__(
@@ -93,10 +89,9 @@ class ClickCompleter(Completer):
         show_only_unused_options: bool = False,
         show_hidden_commands: bool = False,
         show_hidden_params: bool = False,
-        expand_envvars: bool = False,
     ) -> None:
         """
-        Initialize the `ClickCompleter` class.
+        Initializes the `ClickCompleter` class.
         """
         self.group_ctx: Final[Context] = group_ctx
         """The :class:`~click.Context` object of the main group."""
@@ -129,12 +124,6 @@ class ClickCompleter(Completer):
         """
         Determines whether the hidden parameters should be shown
         in autocompletion or not.
-        """
-
-        self.expand_envvars = expand_envvars
-        """
-        Determines whether to return completion with Environmental variables
-        as expanded or not.
         """
 
         self.internal_commands_system = internal_commands_system
@@ -318,8 +307,8 @@ class ClickCompleter(Completer):
             # if path.is_dir():
             #     path_str += os.path.sep
 
-            if not self.expand_envvars:
-                path_str = incomplete.reverse_prefix_envvars(path_str)
+            # if not self.expand_envvars:
+            #     path_str = incomplete.reverse_prefix_envvars(path_str)
 
             yield ReplCompletion(
                 path_str,
@@ -362,8 +351,8 @@ class ClickCompleter(Completer):
 
         for value, aliases in boolean_mapping.items():
             if any(alias.startswith(_incomplete) for alias in aliases):
-                if not self.expand_envvars:
-                    value = incomplete.reverse_prefix_envvars(value)
+                # if not self.expand_envvars:
+                #     value = incomplete.reverse_prefix_envvars(value)
 
                 yield ReplCompletion(
                     value,
@@ -1110,7 +1099,7 @@ class ReplCompletion(Completion):
 
     incomplete
         The string thats not completed in the prompt. It's used to get the
-        :attr:`.start_position` for the Completion to swap text with, in the prompt.
+        :attr:`~.start_position` for the Completion to swap text with, in the prompt.
 
     *args
         Additional arguments should be passed as keyword arguments to the

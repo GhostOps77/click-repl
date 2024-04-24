@@ -38,5 +38,6 @@ group, to your click app. Invoke it from command line to start the repl.
   cli()
 
 
-.. image:: ../assets/demo.gif
+.. image:: ../../assets/demo.gif
+   :align: center
    :alt: Demo

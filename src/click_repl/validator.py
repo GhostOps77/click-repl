@@ -13,8 +13,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
-from .bottom_bar import BottomBar
-from .globals_ import CLICK_REPL_DEV_ENV, ISATTY, get_current_repl_ctx
+from .globals_ import CLICK_REPL_DEV_ENV
 from .internal_commands import InternalCommandSystem
 from .parser import _resolve_state
 
@@ -53,10 +52,9 @@ class ClickValidator(Validator):
         Holds information about the internal commands and their prefixes.
 
     display_all_errors
-        Determines whether to raise generic python exceptions, and not to
-        display them in the validator bar,
-        resulting in the full error traceback being redirected to a log file
-        in the REPL mode.
+        Determines whether to raise generic python exceptions, and not
+        display them in the validator bar, resulting in the full error
+        traceback being redirected to a log file in the REPL mode.
     """
 
     def __init__(
@@ -74,19 +72,18 @@ class ClickValidator(Validator):
 
         self.internal_commands_system = internal_commands_system
         """
-        The InternalCommandSystem object of the current repl session.
+        The InternalCommandSystem object of the current REPL session.
         """
 
         self.display_all_errors = display_all_errors
         """
-        Determines whether to raise generic python exceptions, and not to display
+        Determines whether to raise generic python exceptions, and not display
         them in the validator bar.
         """
 
     def validate(self, document: Document) -> None:
         """
-        Validates the input from the prompt by raising a
-        :exc:`~prompt_toolkit.validation.ValidationError` if it is invalid.
+        Validates the input from the prompt.
 
         Any errors raised while parsing text in prompt are displayed in the
         validator bar.
@@ -99,46 +96,40 @@ class ClickValidator(Validator):
         Raises
         ------
         prompt_toolkit.validation.ValidationError
-            If there's any error occurred during input validation, and it needs
+            If there's any error occurred during input validation, and needs
             to be displayed in the validator bar.
 
         Exception
-            If there's error just needs to be raised normally.
+            If there's error that needs to be raised normally.
         """
 
         if self.internal_commands_system.get_prefix(document.text_before_cursor)[1]:
-            # If the input text in the prompt starts with a prefix indicating an internal
-            # or system command, it is considered as such. In this case, there is no need
-            # to validate the input, so we can simply return and ignore it.
+            # If the input text in the prompt starts with a internal or system command
+            # prefix, there is no need to validate the input.
+            # So we can simply return and ignore it.
             return
 
         try:
-            _, state, _ = _resolve_state(self.group_ctx, document.text_before_cursor)
-
-            if ISATTY:
-                bottombar = get_current_repl_ctx().bottombar  # type:ignore[union-attr]
-
-                if isinstance(bottombar, BottomBar):
-                    bottombar.update_state(state)
+            _resolve_state(self.group_ctx, document.text_before_cursor)
 
         except UsageError as ue:
             # UsageError's error messages are simple and are raised when there
             # is an improper use of arguments and options. In this case, we can
-            # simply display the error message without mentioning the specific
-            # error class.
+            # simply display the formatted error message without mentioning the
+            # specific error class.
             raise ValidationError(0, ue.format_message())
 
         except ClickException as ce:
-            # Click formats it's error messages to provide more detail. Therefore,
-            # we can use it to display error messages along with the specific error
-            # type.
+            # Click formats it's error messages to provide more detail. We can use it
+            # to display error messages along with the specific error type.
             raise ValidationError(0, f"{type(ce).__name__}: {ce.format_message()}")
 
         except Exception as e:
             if self.display_all_errors:
                 # All other errors raised during input validation are
-                # displayed in the Validator bar.
+                # displayed in the validator bar.
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
-            # The error messages are logged into a click-repl-err.log file.
+            # The generic exception's error messages are logged into a
+            # click-repl-err.log file.
             logger.exception("%s: %s", type(e).__name__, e)

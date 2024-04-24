@@ -189,8 +189,8 @@ click-repl uses ``>`` as it's prompt by default. But you can assign custom promp
 prompt_kwargs
 -------------
 
-click-repl uses an instance :class:`~prompt_toolkit.PromptSession` as it's prompt interface. You can supply custom arguments to
-the :class:`~prompt_toolkit.PromptSession` instance via :func:`~click_repl._repl.repl` or :class:`~click_repl._repl.ReplCli`'s
+click-repl uses an instance :class:`~prompt_toolkit.shortcuts.PromptSession` as it's prompt interface. You can supply custom arguments to
+the :class:`~prompt_toolkit.shortcuts.PromptSession` instance via :func:`~click_repl._repl.repl` or :class:`~click_repl._repl.ReplCli`'s
 ``prompt_kwargs`` keyword argument.
 
 .. code-block:: python
@@ -210,9 +210,9 @@ the :class:`~prompt_toolkit.PromptSession` instance via :func:`~click_repl._repl
 
 Now, this click-repl app stores history of previously executed commands in the above mentioned file.
 
-This keyword arguments dictionary will be updated with the default keyword arguments of :class:`~prompt_toolkit.PromptSession`,
+This keyword arguments dictionary will be updated with the default keyword arguments of :class:`~prompt_toolkit.shortcuts.PromptSession`,
 that will be supplied to it while initializing the repl. The default arguments and their values for
-:class:`~prompt_toolkit.PromptSession` are -
+:class:`~prompt_toolkit.shortcuts.PromptSession` are -
 
     #. ``history`` - :class:`~prompt_toolkit.history.InMemoryHistory` object for storing previous command history per repl session.
     #. ``message`` - ``"> "``
@@ -223,7 +223,7 @@ that will be supplied to it while initializing the repl. The default arguments a
     #. ``refresh_interval`` - 0.15
 
 These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_prompt_kwargs` method. Refer to
-:class:`~prompt_toolkit.PromptSession` docs for details about these parameters.
+:class:`~prompt_toolkit.shortcuts.PromptSession` docs for details about these parameters.
 
 Repl
 ----
@@ -292,7 +292,7 @@ So, please don't accidentally switch them.
 PromptSession object
 ~~~~~~~~~~~~~~~~~~~~
 
-click-repl uses :class:`~prompt_toolkit.PromptSession` object, which is resopnsible for the repl functionality in this module.
+click-repl uses :class:`~prompt_toolkit.shortcuts.PromptSession` object, which is resopnsible for the repl functionality in this module.
 This object can be accessed via :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext`
 object. You can use this to extend the functionality of the repl. Refer to :mod:`~prompt_toolkit`'s
 `PromptSession <https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#the-promptsession-object>` docs.
