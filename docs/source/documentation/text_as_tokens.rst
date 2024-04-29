@@ -1,70 +1,73 @@
 Text as Tokens
 ==============
 
-click-repl tokenizes the text that should be displayed in suggestions, and in bottom bar, to colorize them based on their
-semantic significance and indication of their purpose.
+click-repl employs tokenization to represent text for suggestions and the bottom bar,
+enabling semantic coloring based on their significance and purpose.
 
-This module uses :class:`~click_repl.tokenizer.TokenizedFormattedText` to display text as tokens.
+This module uses the :class:`~click_repl.tokenizer.TokenizedFormattedText` class to achieve this.
 
 TokenizedFormattedText
 ----------------------
 
-:class:`~click_repl.tokenizer.TokenizedFormattedText` class inherits it's functionality from
-:class:`~prompt_toolkit.formatted_text.FormattedText`. It also has some of it's own methods that makes it easy to work with
-it. This class defines a text along with a token class assigned alongside with it as a **token**. So that you can uniquely
-identify this token from other group of text. This tokenization of text is used widely in this module to give syntactic colour
-to some of the text. By this, the user can also customize their prompt's colour scheme.
+The :class:`~click_repl.tokenizer.TokenizedFormattedText` class inherits its functionality from
+:class:`~prompt_toolkit.formatted_text.FormattedText`.  It extends it with additional methods to
+facilitate easier manipulation. This class defines text along with an assigned token class assigned
+as a **token** to uniquely identify from other text groups. This text tokenization is widely
+used in this module to give semantic colouring to certain text portions.
+Consequently, users can customize their prompt's color scheme accordingly.
 
 Refer to `Formatted text <https://python-prompt-toolkit.readthedocs.io/en/master/pages/printing_text.html#formatted-text>`_ docs from
-:mod:`~prompt_toolkit` to know more about giving unique colour scheme to your text.
+the `python-prompt-toolkit <https://python-prompt-toolkit.readthedocs.io/en/master/>`_ module to learn more about
+creating unique colour schemes for your text.
 
 :class:`~click_repl.tokenizer.TokenizedFormattedText` objects are used to tokenize the text that goes in
-:attr:`~prompt_toolkit.formatted_text.FormattedText.display` and :attr:`~prompt_toolkit.formatted_text.FormattedText.display_meta`
-parameters of the :class:`~click_repl.completer.ReplCompletion` class, and also for text that's sent to
-:class:`~click_repl.tokenizer.Marquee`.
+:attr:`~prompt_toolkit.completion.Completion.display` and :attr:`~prompt_toolkit.completion.Completion.display_meta`
+parameters of the :class:`~click_repl.completer.ReplCompletion` class, and also for text sent to
+the :class:`~click_repl.tokenizer.Marquee` class.
 
 .. _marquee_class:
 
 Marquee
 -------
 
-:class:`~click_repl.tokenizer.Marquee` is responsible for generating text in bottom bar in order to appear in the style of
+:class:`~click_repl.tokenizer.Marquee` is responsible for generating text in the bottom bar to appear in the style of
 `<marquee> <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/marquee>`_ html element.
 
 It's constructor has 2 parameters -
 
-* :attr:`~click_repl.tokenizer.Marquee.prefix` - The text that stays at the left most end of the bottom bar, and stays static.
+* :attr:`~click_repl.tokenizer.Marquee.prefix` - The text that remains at the left-most end of the bottom bar, and remains static.
 
-* :attr:`~click_repl.tokenizer.Marquee.text` - This text gets displayed in marquee style as mentioned, if the terminal width is
-  not enough to display the whole text. Or else, the whole text will be displayed as static.
+* :attr:`~click_repl.tokenizer.Marquee.text` - This text gets displayed in marquee style if the terminal width is
+  insufficient to display the entire text. Otherwise, the entire text is displayed statically.
 
 .. note::
 
-    Both of these parameters recieve only :class:`~click_repl.tokenizer.TokenizedFormattedText` type objects. And it's expected
-    to be, because :class:`~click_repl.tokenizer.TokenizedFormattedText` has special methods to slice the text that's given inside
+    Both of these parameters expect to recieve only objects of type :class:`~click_repl.tokenizer.TokenizedFormattedText`,
+    because it uses :class:`~click_repl.tokenizer.TokenizedFormattedText`'s special methods to slice the text provided within
     the list of tokens.
 
-    Refer to `TokenizedFormattedText API docs <click_repl.tokenizer.TokenizedFormattedText>` to know more about those methods.
+    Refer to `TokenizedFormattedText API docs <click_repl.tokenizer.TokenizedFormattedText>` to learn more about those methods.
 
 Token Class Hierarchy
 ---------------------
 
-A constant set of token classes are used to label text that's generated from some aspects of this module, and they are
+A constant set of token classes is used to label text generated from various aspects of this module, and they are
 classified in a hierarchy.
 
-* Token class names that labels text that are used for displaying suggestions, comes under the ``autocompletion-menu`` root class,
-  by default. Every token class that's used inside :class:`~click_repl.completer.ClickCompleter` comes under this root class.
-  The root class can be changed in :attr:`~click_repl.completer.ClickCompleter.parent_token_class_name` attribute of
+* Token class names labelling text that are used for displaying suggestions fall under the ``autocompletion-menu`` root class
+  by default. Every token class used within :class:`~click_repl.completer.ClickCompleter` falls under this root class.
+  The root class can be changed in the :attr:`~click_repl.completer.ClickCompleter.parent_token_class_name` attribute of
   :class:`~click_repl.completer.ClickCompleter`.
 
-* Similary, Token class names that labels text that are generated in bottom bar, comes under the ``bottom-bar`` root class, by default.
-  The root class can be changed in :attr:`~click_repl.bottombar.BottomBar.parent_token_class_name` attribute of
-  :class:`~click_repl.bottombar.BottomBar`.
+* Similary, Token class names labeling text that are generated in bottom bar, falls under the ``bottom-bar`` root class by default.
+  The root class can be changed in the :attr:`~click_repl.bottom_bar.BottomBar.parent_token_class_name` attribute of
+  :class:`~click_repl.bottom_bar.BottomBar`.
 
-click-repl has some default styles for text with some tokens. You can override these values in
-:meth:`~click_repl._repl.Repl._get_default_prompt_kwargs` method's ``style_config_dict`` parameter.
-Each token class is used along with their parent classes. For example, The token ``autocompletion-menu.parameter.option.name``
-represents the style format in -
+click-repl has default styles for text with certain tokens. These values can be overridden in the
+``style_config_dict`` parameter of the :meth:`~click_repl._repl.Repl.get_default_prompt_kwargs` method.
+
+Each token class is used along with its parent classes. For example, The token ``autocompletion-menu.parameter.option.name``
+represents the below style format hierarchy:
 
 .. code-block::
 
@@ -78,106 +81,110 @@ Token Class Hierarchy Tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Refer to `(style, text) tuples <https://python-prompt-toolkit.readthedocs.io/en/master/pages/printing_text.html#style-text-tuples>`_ to
-know more about the styles that you can use for a text.
+learn more about the styles that you can use for text.
 
-For text in suggestions, each of these token classes represent -
+For text in suggestions, each of these token classes represent:
 
 | autocompletion-menu - Parent/root class name for token classes that are used in autocompletion
-| │
-| ├── parameter - :class:`~click.Parameter` based objects
-| │   │
-| │   └── type - :class:`~click.ParamType` based objects
-| │       │
-| │       ├── bool - :obj:`~click.BOOL`
-| │       │   ├── totrue - option name that has action as ``store_true`` (Default style: ``fg:#44e80e``)
-| │       │   └── tofalse - (Default style: ``fg:red``)
-| │       │
-| │       ├── path - filesystem path (used in :class:`~click.Path` and :class:`~click.File` param types)
-| │       │   ├── directory - filesystem path of a directory
-| │       │   └── file - filesystem path of a file
-| │       │
-| │       ├── range - number range based param types
-| │       │   ├── integer - :class:`~click.IntRange`
-| │       │   └── float - :class:`~click.FloatRange`
-| │       │
-| │       ├── argument - :class:`~click.Argument`
-| │       │   └── name - argument name
-| │       │
-| │       └── option - :class:`~click.Option`
-| │           └── name - option name
-| │               └── separator - character that's used to separate joined option names
-| │
-| ├── command - :class:`~click.Command` based objects
-| │   └── name - command name
-| │
-| ├── group - :class:`~click.Group` based objects
-| │   └── name - group name
-| │
-| ├── internalcommand - `Internal Commands <Internal Commands>`_
-| │   └── name - name of the internal command
-| │
-| ├── symbol - non-alphabetic characters
-| │   └── bracket - Brackets and Parentheses
-| │
-| └── space - space character
+| ┃
+| ┣ parameter - :class:`~click.Parameter` based objects
+| ┃   ┃
+| ┃   ┗ type - :class:`~click.ParamType` based objects
+| ┃       ┃
+| ┃       ┣ bool - :obj:`~click.BOOL`
+| ┃       ┃   ┣ totrue - Option name that has action as ``store_true`` (Default style: ``fg:#44e80e``)
+| ┃       ┃   ┗ tofalse - Option name that has action as ``store_false`` (Default style: ``fg:red``)
+| ┃       ┃
+| ┃       ┣ path - Filesystem path (used in :class:`~click.Path` and :class:`~click.File` param types)
+| ┃       ┃   ┣ directory - Filesystem path of a directory
+| ┃       ┃   ┗ file - Filesystem path of a file
+| ┃       ┃
+| ┃       ┣ range - Number Range based param types
+| ┃       ┃   ┣ integer - :class:`~click.IntRange` object
+| ┃       ┃   ┗ float - :class:`~click.FloatRange` object
+| ┃       ┃
+| ┃       ┣ argument - :class:`~click.Argument` object
+| ┃       ┃   ┗ name - Argument name
+| ┃       ┃
+| ┃       ┗ option - :class:`~click.Option` object
+| ┃           ┗ name - Option name
+| ┃               ┗ separator - Character that's used to separate joined option names
+| ┃
+| ┣ command - :class:`~click.Command` based objects
+| ┃   ┗ name - Command name
+| ┃
+| ┣ group - :class:`~click.Group` based objects
+| ┃   ┗ name - Group name
+| ┃
+| ┣ internalcommand - `Internal Commands <Internal Commands>`_
+| ┃   ┗ name - Name of the internal command
+| ┃
+| ┣ symbol - Non-alphanumeric characters
+| ┃   ┗ bracket - Brackets and Parentheses
+| ┃
+| ┗ space - Space character
 
 For text in bottom bar, each of these token classes represent -
 
 | bottom-bar - Parent/root class name for token classes that are used in bottom bar
-| │
-| ├── group - :class:`~click.Group` based objects
-| │   ├── name - group name (Default style: ``bold``)
-| │   ├── type - group object's class name (Default style: ``bold``)
-| │   └── metavar - Metavar template text of the group
-| │
-| ├── command - :class:`~click.Command` based objects
-| │   ├── name - command name (Default style: ``bold``)
-| │   ├── type - (Default style: ``bold``)
-| │   └── metavar - Metavar template text of commands
-| │
-| ├── paramter - :class:`~click.Parameter` based objects
-| │   │
-| │   ├── name - name of the parameter
-| │   ├── nargs - nargs of the paramter
-| │   │   └── counter - `counting option <https://click.palletsprojects.com/en/8.1.x/options/#counting>`_ (Default style: ``fg:green``)
-| │   │
-| │   ├── usage - usage state of the parameter
-| │   │   ├── inuse - parameter is now currently receiving values. (Default style: ``bold underline``)
-| │   │   ├── used - parameter has got it's values. (Default style: ``strike``)
-| │   │   └── unused - parameter haven't received it's values
-| │   │
-| │   ├── type - :class:`~click.ParamType` based objects
-| │   │   │
-| │   │   ├── usage - usage state of the param type
-| │   │   │   ├── inuse - parameter is now currently receiving values. (Default style: ``bold underline``)
-| │   │   │   ├── used - parameter has got it's values. (Default style: ``strike``)
-| │   │   │   └── unused - parameter haven't received it's values
-| │   │   │
-| │   │   ├── string - :obj:`~click.STRING`
-| │   │   ├── integer - :obj:`~click.INT`
-| │   │   ├── float - :obj:`~click.FLOAT`
-| │   │   ├── range - number range based param types
-| │   │   │   ├── integer - :class:`~click.IntRange`
-| │   │   │   ├── float - :class:`~click.FloatRange`
-| │   │   │   └── descriptor - description text about the number range based param type
-| │   │   │
-| │   │   ├── bool - :obj:`~click.BOOL`
-| │   │   ├── choice - :class:`~click.Choice`
-| │   │   ├── composite - :class:`~click.types.CompositeParamType`
-| │   │   ├── datetime - :class:`~click.DateTime`
-| │   │   ├── file - :class:`~click.File`
-| │   │   ├── path - :class:`~click.Path`
-| │   │   ├── unprocessed - :class:`~click.UNPROCESSED`
-| │   │   └── uuid - :class:`~click.UUID`
-| │   │
-| │   ├── argument - :class:`~click.Argument`
-| │   │   └── name - argument name
-| │   │
-| │   └── option - :class:`~click.Option`
-| │       └── name - option name
-| │
-| ├── symbol - non-alphabetic characters
-| │   └── bracket - Brackets and Parentheses
-| │
-| ├── space - space character
-| └── ellipsis - Ellipsis (``...``) text that's used to represent ``None`` values
+| ┃
+| ┣ group - :class:`~click.Group` based objects
+| ┃   ┣ name - Group name (Default style: ``bold``)
+| ┃   ┣ type - Group object's class name (Default style: ``bold``)
+| ┃   ┗ metavar - Metavar template text of the group
+| ┃
+| ┣ command - :class:`~click.Command` based objects
+| ┃   ┣ name - Command name (Default style: ``bold``)
+| ┃   ┣ type - (Default style: ``bold``)
+| ┃   ┗ metavar - Metavar template text of commands
+| ┃
+| ┣ paramter - :class:`~click.Parameter` based objects
+| ┃   ┃
+| ┃   ┣ name - Name of the parameter
+| ┃   ┣ nargs - nargs of the paramter
+| ┃   ┃   ┗ counter - `counting option <https://click.palletsprojects.com/en/8.1.x/options/#counting>`_ (Default style: ``fg:green``)
+| ┃   ┃
+| ┃   ┣ usage - Usage state of the parameter
+| ┃   ┃   ┣ inuse - Parameter is now currently receiving values. (Default style: ``bold underline``)
+| ┃   ┃   ┣ used - Parameter has got its values. (Default style: ``strike``)
+| ┃   ┃   ┗ unused - Parameter haven't received its values
+| ┃   ┃
+| ┃   ┣ type - :class:`~click.ParamType` based objects
+| ┃   ┃   ┃
+| ┃   ┃   ┣ usage - Usage state of the param type
+| ┃   ┃   ┃   ┣ inuse - Parameter is now currently receiving values. (Default style: ``bold underline``)
+| ┃   ┃   ┃   ┣ used - Parameter has got its values. (Default style: ``strike``)
+| ┃   ┃   ┃   ┗ unused - Parameter haven't received its values
+| ┃   ┃   ┃
+| ┃   ┃   ┣ string - :obj:`~click.STRING` object
+| ┃   ┃   ┣ integer - :obj:`~click.INT` object
+| ┃   ┃   ┣ float - :obj:`~click.FLOAT` object
+| ┃   ┃   ┣ range - Number Range based param types
+| ┃   ┃   ┃   ┣ integer - :class:`~click.IntRange` object
+| ┃   ┃   ┃   ┣ float - :class:`~click.FloatRange` object
+| ┃   ┃   ┃   ┗ descriptor - Description text about the number range based param type
+| ┃   ┃   ┃
+| ┃   ┃   ┣ bool - :obj:`~click.BOOL` object
+| ┃   ┃   ┣ choice - :class:`~click.Choice` object
+| ┃   ┃   ┣ composite - :class:`~click.types.CompositeParamType` object
+| ┃   ┃   ┣ datetime - :class:`~click.DateTime` object
+| ┃   ┃   ┣ file - :class:`~click.File` object
+| ┃   ┃   ┣ path - :class:`~click.Path` object
+| ┃   ┃   ┣ unprocessed - :class:`~click.UNPROCESSED` object
+| ┃   ┃   ┗ uuid - :class:`~click.UUID` object
+| ┃   ┃
+| ┃   ┣ argument - :class:`~click.Argument` object
+| ┃   ┃   ┗ name - Argument name
+| ┃   ┃
+| ┃   ┗ option - :class:`~click.Option` object
+| ┃       ┗ name - Option name
+| ┃
+| ┣ symbol - Non-alphanumeric characters
+| ┃   ┗ bracket - Brackets and Parentheses
+| ┃
+| ┣ error - Errors that are raised while generating auto-completions
+| ┃   ┣ exception-class-name - Class name of the Exception raised.
+| ┃   ┗ message - Message in the Exception class.
+| ┃
+| ┣ space - Space character
+| ┗ ellipsis - Ellipsis (``...``) text that's used to represent :obj:`None` values

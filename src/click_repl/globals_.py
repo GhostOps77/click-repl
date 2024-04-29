@@ -99,6 +99,10 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG = {
     # ParamType tokens especially for Tuple type.
     "bottom-bar.parameter.type.usage.inuse": "bold underline",
     "bottom-bar.parameter.type.usage.used": "strike",
+    # For displaying Exceptions
+    "bottom-bar.error": "fg:red",
+    "bottom-bar.error.exception-class-name": "bold",
+    "bottom-bar.error.message": "",
 }
 """
 Default token style configuration for :class:`~click_repl.bottom_bar.BottomBar`
@@ -154,7 +158,8 @@ DEFAULT_BOTTOMBAR_STYLE_CONFIG.update(
 )
 
 DEFAULT_PROMPTSESSION_STYLE_CONFIG = {
-    "bottom-toolbar": "fg:lightblue bg:default noreverse"
+    "bottom-toolbar": "fg:lightblue bg:default noreverse",
+    "validation-toolbar": "bg:default #ff0000 noreverse",
 }
 """
 Default token style configuration for :class:`~prompt_toolkit.shortcuts.PromptSession`
@@ -181,18 +186,18 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
     Parameters
     ----------
     silent
-        If set to ``True``, the function returns ``None`` if no context
+        If set to :obj:`True`, the function returns :obj:`None` if no context
         is available. The default behavior is to raise a :exc:`~RuntimeError`.
 
     Returns
     -------
     :class:`~click_repl.core.ReplContext` | None
-        REPL context object if available, or ``None`` if ``silent`` is ``True``.
+        REPL context object if available, or :obj:`None` if ``silent`` is :obj:`True`.
 
     Raises
     ------
     RuntimeError
-        If there's no context object in the stack and ``silent`` is ``False``.
+        If there's no context object in the stack and ``silent`` is :obj:`False`.
     """
 
     try:

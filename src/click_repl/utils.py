@@ -37,8 +37,12 @@ def _is_help_option(param: click.Option) -> bool:
     Returns
     -------
     bool
-        ``True`` if the given ``param`` is a help option, otherwise ``False``.
+        :obj:`True` if the given ``param`` is a help option, otherwise :obj:`False`.
     """
+
+    if not isinstance(param, click.Option):
+        return False  # type:ignore[unreachable]
+
     has_help_message_as_help_text = bool(
         get_close_matches(param.help or "", ["Show this message and exit."], cutoff=0.5)
     )
@@ -56,7 +60,7 @@ def is_param_value_incomplete(
     ctx: Context, param: Parameter, check_if_tuple_has_none: bool = True
 ) -> bool:
     """
-    Checks whether the given parameter has recieved it's values completely.
+    Checks whether the given parameter has recieved its values completely.
 
     Parameters
     ----------
@@ -64,17 +68,17 @@ def is_param_value_incomplete(
         A click context object corresponding to the parameter.
 
     param
-        A click parameter object to check it's value after parsing.
+        A click parameter object to check its value after parsing.
 
     check_if_tuple_has_none
-        Flag that indicates whether the given parameter stores multiple
-        values in a tuple, and the tuple has ``None`` in it.
+        Indicates whether the given parameter stores multiple
+        values in a tuple, and the tuple has :obj:`None` in it.
 
     Returns
     -------
     bool
-        ``True`` if the given parameter has received all of its necessary values
-        from the prompt, otherwise ``False``.
+        :obj:`True` if the given parameter has received all of its necessary values
+        from the prompt, otherwise :obj:`False`.
     """
     if param.name is None:
         return False
@@ -105,7 +109,7 @@ def iterate_command_params(command: Command) -> Generator[Parameter, None, None]
     Parameters
     ----------
     command
-        A click command object to iterate over it's parameters.
+        A click command object to iterate over its parameters.
 
     Yields
     ------

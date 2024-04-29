@@ -1,14 +1,15 @@
-``click-repl`` is an extension for the `click <https://click.palletsprojects.com/en/>`_ module, designed to integrate a REPL
-(Read-Eval-Print-Loop) within your click application, by using `python-prompt-toolkit <https://github.com/prompt-toolkit/python-prompt-toolkit>`_
-as it's backend. This module allows for seamless interaction with your CLI commands with auto-completion features in your shell environment,
-while offering a platform to execute shell commands, without the necessity to tweak your ``.bashrc`` or ``.ps1`` configuration files.
+click-repl is an extension for the `click <https://click.palletsprojects.com/en/>`_ module, designed to integrate a REPL
+(Read-Eval-Print-Loop) within your click application. It achieves this by utilizing
+`python-prompt-toolkit <https://python-prompt-toolkit.readthedocs.io/en/master/>`_ as its backend. This module enables seamless
+interaction with your CLI commands, providing auto-completion features in your shell environment, and offering a platform to execute
+shell commands without the need to tweak your ``.bashrc`` or ``.ps1`` configuration files.
 
 All customizations can be conveniently handled using pure Python code.
 
 Installation
 ============
 
-Installation is done via pip:
+You can install click-repl via pip:
 
 .. code-block:: shell
 
@@ -18,24 +19,26 @@ Installation is done via pip:
 Usage
 =====
 
-Use :func:`~click_repl._repl.register_repl` function to add the :func:`~click_repl._repl.repl` command to your click app's main
-group, to your click app. Invoke it from command line to start the repl.
+To add the :func:`~click_repl._repl.repl` command to your click app's main group,
+use :func:`~click_repl._repl.register_repl` decorator. Invoke it from command line to start the REPL.
 
 .. code-block:: python
 
-  import click
-  from click_repl import register_repl
+   # filename.py
 
-  @click.group()
-  def cli():
-      pass
+   import click
+   from click_repl import register_repl
 
-  @cli.command()
-  def hello():
-      click.echo("Hello world!")
+   @register_repl
+   @click.group()
+   def cli():
+       pass
 
-  register_repl(cli)
-  cli()
+   @cli.command()
+   def hello():
+       click.echo("Hello world!")
+
+   cli()
 
 
 .. image:: ../../assets/demo.gif

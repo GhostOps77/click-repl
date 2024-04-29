@@ -13,7 +13,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
-from .globals_ import CLICK_REPL_DEV_ENV
+from .globals_ import CLICK_REPL_DEV_ENV, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
 from .parser import _resolve_state
 
@@ -33,10 +33,11 @@ logger.setLevel(logger_level)
 log_format = "%(levelname)s %(name)s [line %(lineno)d] %(message)s"
 formatter = logging.Formatter(log_format)
 
-log_file = ".click-repl-err.log"
-file_handler = logging.FileHandler(log_file)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+if CLICK_REPL_DEV_ENV:
+    log_file = f".click-repl-{__name__}.log"
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
 
 class ClickValidator(Validator):
@@ -54,7 +55,7 @@ class ClickValidator(Validator):
     display_all_errors
         Determines whether to raise generic python exceptions, and not
         display them in the validator bar, resulting in the full error
-        traceback being redirected to a log file in the REPL mode.
+        traceback being redirected to a log file.
     """
 
     def __init__(
@@ -110,7 +111,9 @@ class ClickValidator(Validator):
             return
 
         try:
-            _resolve_state(self.group_ctx, document.text_before_cursor)
+            _, state, _ = _resolve_state(self.group_ctx, document.text_before_cursor)
+
+            get_current_repl_ctx().update_state(state)  # type: ignore[union-attr]
 
         except UsageError as ue:
             # UsageError's error messages are simple and are raised when there
@@ -120,7 +123,7 @@ class ClickValidator(Validator):
             raise ValidationError(0, ue.format_message())
 
         except ClickException as ce:
-            # Click formats it's error messages to provide more detail. We can use it
+            # Click formats its error messages to provide more detail. We can use it
             # to display error messages along with the specific error type.
             raise ValidationError(0, f"{type(ce).__name__}: {ce.format_message()}")
 
@@ -131,5 +134,6 @@ class ClickValidator(Validator):
                 raise ValidationError(0, f"{type(e).__name__}: {e}") from e
 
             # The generic exception's error messages are logged into a
-            # click-repl-err.log file.
-            logger.exception("%s: %s", type(e).__name__, e)
+            # click-repl-err.log file in the development environment.
+            if CLICK_REPL_DEV_ENV:
+                logger.exception("%s: %s", type(e).__name__, e)

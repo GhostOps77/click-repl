@@ -51,8 +51,8 @@ Tokenization
     :members:
 
 
-Parser
-------
+Parsing
+-------
 
 .. automodule:: click_repl.parser
     :members:
@@ -86,7 +86,18 @@ Parsers
     :members:
 
 
-Shell
+Shell Completion
+~~~~~~~~~~~~~~~~
+
+.. automodule:: click_repl.click_custom.shell_completion
+    :members:
+
+
+Utils
+~~~~~
+
+.. automodule:: click_repl.click_custom.utils
+    :members:
 
 
 Others

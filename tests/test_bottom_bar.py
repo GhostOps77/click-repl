@@ -179,4 +179,4 @@ def test_no_subcommand_group_metavar():
     marquee = bottombar.make_formatted_text()
 
     text = marquee.prefix.get_text() + marquee.text.get_text()
-    assert text == "Group no-subcommand-group: "
+    assert text == "Group no-subcommand-group"

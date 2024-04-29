@@ -1,30 +1,43 @@
 Internal Commands Utility
 =========================
 
-click-repl allows usage of certain prefixes to use the system shell commands.
-It also has other pre-defined, helpful Internal commands registered in it.
-These commands are not :class:`~click.Command` types.
+click-repl allows usage of certain prefixes to execute system shell commands via REPL.
+It also provides other pre-defined, helpful internal commands registered within it.
+These commands are not of type :class:`~click.Command`.
 
 .. _Internal Commands:
 
 Internal Commands
 -----------------
 
-The internal commands can be invoked with a prefix associated to refer to their name (Default: ``:``).
-Run ``:help`` in a repl to know about it's usage.
+The internal commands can be invoked with a prefix associated with their name (Default: ``:``).
+Run ``:help`` in the REPL to know about its usage.
 
-<insert image>
+.. code-block::
+
+  > :help
+  REPL help:
+
+    External/System Commands:
+      Prefix External/System commands with "!".
+
+    Internal Commands:
+      Prefix Internal commands with ":".
+      :clear, :cls      Clears screen.
+      :?, :h, :help     Displays general help information.
+      :exit, :q, :quit  Exits the REPL.
+
 
 InternalCommandSystem
 ~~~~~~~~~~~~~~~~~~~~~
 
 All the internal commands are defined and accessed from :class:`~click_repl.internal_commands.InternalCommandSystem` object.
-You can get this object from :attr:`~click_repl.core.ReplContext.internal_command_system` attribute of the current repl
-session's :class:`~click_repl.ReplContext` object.
+You can get this object from the :attr:`~click_repl.core.ReplContext.internal_command_system` attribute of the current REPL
+session's :class:`~click_repl.core.ReplContext` object.
 
 .. code-block:: python
 
-    from click_repl._globals import get_current_repl_ctx
+    from click_repl.globals_ import get_current_repl_ctx
 
     ics_obj = get_current_repl_ctx().internal_command_system # <class 'InternalCommandSystem'>
 
@@ -34,20 +47,20 @@ Add/Remove Internal Commands
 
 This object can also be used to define and add your own internal command. It's done by using the
 :meth:`~click_repl.internal_commands.InternalCommandSystem.register_command` decorator.
-It takes in a function, names/aliases and description for it. The function's name and docstring is the command's only name
-and description by default.
+It takes a function, names/aliases and description for it. The provided function's name and docstring
+is the command's only name and description by default.
 
-To remove an internal command, pass in any one of the aliases of the command into
-:meth:`~click_repl.internal_commands.InternalCommandSystem.remove_command` to remove the command, along with all of it's
+To remove an internal command, pass any one of the aliases of the command into
+:meth:`~click_repl.internal_commands.InternalCommandSystem.remove_command` to remove the command, along with all of its
 other aliases.
 
 .. note::
 
-    * You can register and delete internal commands from anywhere, as long as you can access the current repl session's :class:`~click_repl.ReplContext` object.
+    * You can register and delete internal commands from anywhere, as long as you can access the current REPL session's :class:`~click_repl.core.ReplContext` object.
 
-    * The callback function for your custom internal command must be in the type of ``Callable[[], None]``. That is, It shouldn't take in any arguments, and should return nothing.
+    * The callback function for your custom internal command must be of type ``Callable[[], None]``. That is, it shouldn't take in any arguments, and return nothing.
 
-    * :meth:`~click_repl.internal_commands.InternalCommandSystem.remove_command` removes all the aliases of the given alias of a command, by default. In order to remove only the mentioned alias, pass ``remove_all_aliases=False`` to the method.
+    * :meth:`~click_repl.internal_commands.InternalCommandSystem.remove_command` removes all the aliases of the given alias of a command, by default. To remove only the mentioned alias, set ``remove_all_aliases`` to :obj:`False` to the method.
 
 For this example, we register the ``hi`` function as an internal command, and delete it later on.
 
@@ -78,6 +91,9 @@ For this example, we register the ``hi`` function as an internal command, and de
         # ics_obj.remove_command("hi") # Removes all the aliases that belong to command 'hi'
 
 
+    main()
+
+
 .. code-block:: shell
 
     > add-internal-command
@@ -93,7 +109,7 @@ Default Internal Commands
 
 There are 3 internal commands registered by default. They are:
 
-#. `clear <click.clear>`_ - Clears terminal screen. Uses click's :func:`~click.clear` function as command callback.
+#. `clear <click.clear>`_ - Clears the terminal screen.
 
    **Aliases:** ``clear``, ``cls``
 
@@ -121,13 +137,13 @@ There are 3 internal commands registered by default. They are:
 
    .. note::
 
-        You need to raise :exc:`~click_repl.exceptions.ExitReplException` anywhere from your code to exit out of the repl.
+        You need to raise :exc:`~click_repl.exceptions.ExitReplException` anywhere from your code to exit out of the REPL.
 
 System Commands
 ---------------
 
-click-repl also allows shell escape to run underlying system's shell commands by using it's specified prefix in
-repl (Default: ``!``).
+click-repl also allows shell escape to run underlying system's shell commands by using its specified prefix in
+the REPL (Default: ``!``).
 
 .. code-block:: shell
 
@@ -135,10 +151,10 @@ repl (Default: ``!``).
     hi
 
 
-Assigning custom prefixes
+Assigning Custom Prefixes
 -------------------------
 
-You can use custom prefixes for the internal command utility, by passing in those prefixes explicitly into
+You can use custom prefixes for the internal command utility by passing in those prefixes explicitly into
 :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
@@ -152,10 +168,12 @@ You can use custom prefixes for the internal command utility, by passing in thos
     def main(ctx, interactive):
         if interactive:
             repl(
-                internal_command_prefix='-',  # Disables access to internal commands.
-                system_command_prefix='$'  # Disables shell escape from the REPL.
+                internal_command_prefix='-',
+                system_command_prefix='$'
             )
 
+
+    main()
 
 .. code-block:: shell
 
@@ -177,13 +195,13 @@ You can use custom prefixes for the internal command utility, by passing in thos
 Enabling/Disabling Internal and System Commands
 -----------------------------------------------
 
-Assigning ``None`` as prefix disables the appropriate internal command utility. But you need to assign it explicitly for both
-internal command and system command prefixes, to remove them both. Assigning ``None`` to system command disables
+Assigning :obj:`None` as prefix disables the appropriate internal command utility. But you need to assign it explicitly for both
+internal command and system command prefixes to remove them both. Assigning :obj:`None` to the system command disables
 shell escape utilty.
 
 .. note::
 
-    Make sure you have a way to exit out of the repl in order to not get stuck in it, after doing either -
+    Make sure you have a way to exit out of the REPL to avoid getting stuck in it after doing either -
 
     * Disabling internal commands, or
 
@@ -203,6 +221,10 @@ shell escape utilty.
             internal_command_prefix=None,  # Disables access to internal commands.
             system_command_prefix=None  # Disables shell escape from the REPL.
         )
+
+
+    main()
+
 
 .. code-block:: shell
 

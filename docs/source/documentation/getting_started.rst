@@ -12,7 +12,7 @@ Installation is done via pip:
 
     pip install -U click-repl
 
-For installing it from source:
+To install it from source:
 
 .. code-block:: shell
 
@@ -23,11 +23,11 @@ For installing it from source:
 Usage
 -----
 
-click-repl can be integrated with your click application in various ways. Each of them have their own benefits.
+click-repl can be integrated with your click application in various ways. Each of them has their own benefits.
 
-#. Use :func:`~click_repl.register_repl` function to add :func:`~click_repl._repl.repl` command to your click app
+#. Use the :func:`~click_repl._repl.register_repl` function to add the :func:`~click_repl._repl.repl` command to your click app.
 
-   This is the old way to add a repl to the app. It just adds a click command to your group, that invokes the repl.
+   This is the traditional way to add a REPL to a click app. It just adds a click command to your group, that invokes the REPL.
 
    .. code-block:: python
 
@@ -45,7 +45,7 @@ click-repl can be integrated with your click application in various ways. Each o
        register_repl(cli, name='myrepl')
        cli()
 
-   But now, you can use :func:`~click_repl.register_repl` as a decorator.
+   But now, you can use :func:`~click_repl._repl.register_repl` as a decorator.
 
    .. code-block:: python
 
@@ -77,7 +77,7 @@ click-repl can be integrated with your click application in various ways. Each o
        $
 
 
-#. Use the :class:`~click_repl._repl.ReplCli` class in the ``cls`` parameter of the :func:`~click.group` decorator
+#. Use the :class:`~click_repl._repl.ReplCli` class in the ``cls`` parameter of the :func:`~click.group` decorator.
 
    .. code-block:: python
 
@@ -147,7 +147,7 @@ Advanced Usage
 --------------
 
 For more flexibility over how your REPL works, you can use the :class:`~click_repl._repl.repl` function, the
-:class:`~click_repl._repl.ReplCli` class (as shown above), instead of :func:`~click_repl.register_repl`. For example, in your app:
+:class:`~click_repl._repl.ReplCli` class (as shown above), instead of :func:`~click_repl._repl.register_repl`. For example, in your app:
 
 .. code-block:: python
 
@@ -161,16 +161,16 @@ For more flexibility over how your REPL works, you can use the :class:`~click_re
 
   @cli.command()
   @click.pass_context
-  def myrepl():
+  def myrepl(ctx):
       repl(ctx, prompt_kwargs={
           'history': FileHistory('/etc/myrepl/myrepl-history'),
       })
 
   cli()
 
-And then your custom ``myrepl`` command will be available on your CLI, which will start a REPL which has its history stored in
+Now, your custom ``myrepl`` command will be available on your CLI, which will start a REPL which has its history stored in
 ``/etc/myrepl/myrepl-history`` and persist between sessions.
 
 Any arguments that can be passed to the `python-prompt-toolkit <https://github.com/prompt-toolkit/python-prompt-toolkit>`_'s
-:class:`~prompt-toolkit.PromptSession` class can be passed in the ``prompt_kwargs`` argument and will be used when
+:class:`~prompt_toolkit.shortcuts.PromptSession` class can be passed in the ``prompt_kwargs`` argument and will be used when
 instantiating your prompt.

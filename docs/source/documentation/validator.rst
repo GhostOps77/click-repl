@@ -1,21 +1,21 @@
 Validator
 =========
 
-click-repl uses :class:`~prompt_toolkit.valdiator.Validator` as a base class to Implement it's validator
+click-repl uses :class:`~prompt_toolkit.validation.Validator` as its base class to implement its validator
 (:class:`~click_repl.validator.ClickValidator`), to validate the user input.
 It uses :class:`~click_repl.validator.ClickValidator` by default.
 
-This utility displays the errors that are raised while generating autocompletion, in the form of text in bottom bar
-with red background. It can be also used to verify input text from the prompt while typing.
-The prompt will not accept the input if the validator reports that it's in an invalid format.
+This utility displays the errors that are raised while generating auto-completions, in the form of text in bottom bar
+with a red background. It can also verify input text from the prompt while typing.
+The prompt will not accept input if the validator reports that it's in an invalid format.
 
-This is mostly useful for dislaying :exc:`~click.exceptions.UsageError` exception's formatted message from it's
-:meth:`~click.exceptions.UsageError.format_message` method.
+This is particularly useful for dislaying formatted messages from :exc:`~click.exceptions.UsageError` exceptions using its
+:meth:`click.exceptions.UsageError.format_message` method.
 
 .. note::
 
-    Validator can only catch and display exceptions that are raised while parsing the prompt. It cannot catch the
-    errors that are raised while generating suggestions.
+    The validator can only catch and display exceptions that are raised while parsing the prompt. It cannot catch
+    errors raised while generating suggestions.
 
 .. code-block:: python
 
@@ -32,101 +32,116 @@ This is mostly useful for dislaying :exc:`~click.exceptions.UsageError` exceptio
     def get_number(num):
         print(num)
 
+
     main()
 
-<insert image>
+.. image:: ../../../assets/validator_example.gif
+   :align: center
+   :alt: validator_example
+
 
 Custom Validator
 ----------------
 
-You can make your own valdiator class. And in order to use it, pass it into the :func:`~click_repl._repl.repl`
-function's ``validator_cls`` parameter. Passing in the class alone will supply it's constructor with
-necessary values to it's parameters.
+You can create your own valdiator class. To use it, pass it into the :func:`~click_repl._repl.repl`
+function's ``validator_cls`` parameter. Simply passing the class will supply its constructor with
+necessary values for its parameters.
 
 .. note::
 
-	Make sure to use :class:`click_repl.validator.ClickValidator` as base class in order to make your custom validtor work with repl.
+	Ensure to use :class:`~click_repl.validator.ClickValidator` as the base class to make your custom validtor work with REPL.
 
 .. code-block:: python
 
-	import click
+    import click
 
-	from click_repl import repl
-	from click_repl.validator import ClickValidator
+    from click_repl import repl
+    from click_repl.validator import ClickValidator
 
 
-	class MyValidator(ClickValidator):
-		def validate(self, document):
-			# Implement your logic on validating input text in prompt.
-			...
-
-	@click.group(invoke_without_command=True)
-	@click.pass_context
-	def main():
-		repl(ctx, validator_cls=MyValidator)  # Now, it'll use custom validator.
-
-You can also disable it in the same way, by passing in ``None`` to the ``validator_cls`` parameter.
-
-.. code-block:: python
-
-	@click.group(invoke_without_command=True)
-	@click.pass_context
-	def main():
-		repl(ctx, validator_cls=None)  # No validation is done during typing in prompt.
-
-This disables the usage of validator. Therefore, no validation of input is done while typing in prompt.
-
-validator_kwargs
-----------------
-
-If you want to pass in extra keyword arguments to the validator, you can pass it through ``validator_kwargs`` parameter
-of :func:`~click_repl._repl.repl` function.
-
-.. code-block:: python
-
-	@click.group(invoke_without_command=True)
-	@click.pass_context
-	def main():
-		repl(ctx, validator_cls=MyValidator, validator_kwargs={
-            # Your extra keyword arguments goes here.
-            'display_all_errors': False
+    class MyValidator(ClickValidator):
+        def validate(self, document):
+            # Implement your logic for validating input text in the prompt.
             ...
-        })
 
-This keyword arguments dictionary will be updated with the default keyword arguments of validator, that will be supplied
-to the validator while initializing the repl. The default arguments for :class:`~click-repl.validator.ClickValidator` are -
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def main(ctx):
+        repl(ctx, validator_cls=MyValidator)  # Now, it'll use the custom validator.
 
-#. ``ctx`` - :class:`~click.Context` of the invoked group.
-#. ``internal_command_system`` - :class:`~click_repl.internal_commands.InternalCommandSystem` object of the current repl session.
 
-These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_validator_kwargs` method.
+    main()
 
-Display all errors
-------------------
-
-By default, :class:`~click_repl.validator.ClickValidator` displays all the exceptions, that are raised while typing in prompt,
-in validator bar, including generic python exceptions.
-
-In order to change this default behaviour, set :attr:`~click_repl.validator.ClickValidator.display_all_errors` parameter to
-``False`` in the validator kwargs. The flag :attr:`~click_repl.validator.ClickValidator.display_all_errors` determines
-whether to raise generic Python Exceptions, and not to display them in the validator bar, resulting in the full error traceback being
-redirected to a log file in the REPL mode.
-
-By default it's ``True``, which means, All errors raised while typing in prompt are
-displayed in the validator bar. If not, Error tracebacks are displayed during the REPL, interrupting the prompt.
-The error traceback and messages are also logged into ``.click-repl-err.log`` file.
-
-.. note::
-
-    The :class:`~click_repl.validator.ClickValidator` displays all the exceptions from click module
-    (:exc:`~click.exceptions.ClickException` based exceptions) in validator bar, by default. This flag has no effect on it.
-    It only applies to exceptions that are not a sub-class of :exc:`~click.exceptions.ClickException`.
+You can also disable validation by passing in :obj:`None` to the ``validator_cls`` parameter.
 
 .. code-block:: python
 
     @click.group(invoke_without_command=True)
     @click.pass_context
-    def main():
+    def main(ctx):
+        repl(ctx, validator_cls=None)  # No validation is done during typing in prompt.
+
+
+    main()
+
+This disables the usage of the validator, meaning no validation of input is done while typing in the prompt.
+
+validator_kwargs
+----------------
+
+If you want to pass extra keyword arguments to the validator, you can do so through the ``validator_kwargs`` parameter
+of :func:`~click_repl._repl.repl` function.
+
+.. code-block:: python
+
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def main(ctx):
+        repl(ctx, validator_kwargs={
+            # Your extra keyword arguments go here.
+            'display_all_errors': False
+        })
+
+
+    main()
+
+This dictionary of keyword arguments will be updated with the default keyword arguments of validator, which will be supplied
+to the validator upon initializing the REPL. The default arguments for :class:`~click-repl.validator.ClickValidator` are:
+
+#. :attr:`~click_repl.validator.ClickValidator.group_ctx` - :class:`~click.Context` of the invoked group.
+#. :attr:`~click_repl.validator.ClickValidator.internal_commands_system` - :class:`~click_repl.internal_commands.InternalCommandSystem` object of the current REPL session.
+
+These default values are supplied from the :meth:`~click_repl._repl.Repl.get_default_validator_kwargs` method.
+
+Display all Errors
+------------------
+
+By default, :class:`~click_repl.validator.ClickValidator` displays all the exceptions, that are raised while parsing the
+text in the prompt while typing, in validator bar, including generic python exceptions.
+
+To modify this default behaviour, set the :attr:`~click_repl.validator.ClickValidator.display_all_errors` parameter to
+:obj:`False` in the validator kwargs. This flag determines whether to raise generic Python Exceptions
+and not to display them in the validator bar, resulting in the full error traceback being
+redirected to a log file.
+
+By default it's :obj:`True`, which means all errors raised while typing in prompt are
+displayed in the validator bar. If set to :obj:`False`, error tracebacks are displayed during the REPL,
+interrupting the prompt. The error traceback and messages are also logged into the ``.click-repl-validator.log`` file.
+
+.. note::
+
+    The :class:`~click_repl.validator.ClickValidator` displays all the exceptions from the click module
+    (:exc:`~click.exceptions.ClickException` based exceptions) in the validator bar, by default. This flag has no effect on it.
+    It only applies to exceptions that are not a subclass of :exc:`~click.exceptions.ClickException`.
+
+.. code-block:: python
+
+    import click
+    from click_repl import repl
+
+    @click.group(invoke_without_command=True)
+    @click.pass_context
+    def main(ctx):
         repl(ctx, validator_kwargs={
             'display_all_errors': False
         })
@@ -137,5 +152,8 @@ The error traceback and messages are also logged into ``.click-repl-err.log`` fi
     @main.command()
     @click.argument('num', type=int)
     @click.option('--error', shell_complete=mock_error_during_shell_complete)
-    def get_number(num):
+    def get_number(num, error):
         print(num)
+
+
+    main()

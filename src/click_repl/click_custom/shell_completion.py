@@ -8,7 +8,7 @@ from typing import Any, Iterable
 
 from click import Command, Context, Group
 
-from ..proxies import _create_proxy_command
+from ..proxies import create_proxy_command
 
 
 def _expand_args(args: Iterable[str]) -> list[str]:
@@ -74,7 +74,7 @@ def _generate_next_click_ctx(
     tuple[Context,Command | None]
         A tuple containing:
             - Next click context object, parsed from the ``args``
-            - Command of this next context object if exists, else ``None``
+            - Command of this next context object if exists, else :obj:`None`.
     """
 
     if not args:
@@ -82,14 +82,12 @@ def _generate_next_click_ctx(
 
     group: Group = parent_ctx.command  # type:ignore[assignment]
 
-    # Since the resolve_command method only accepts string arguments
-    # in a list format, we explicitly convert args into a list.
-    _args = _expand_args(args)
-
-    name, cmd, _args = group.resolve_command(parent_ctx, _args)
+    name, cmd, args = group.resolve_command(parent_ctx, args)  # type:ignore
 
     if cmd is None:
         return parent_ctx, None
+
+    _args = list(args)
 
     if proxy:
         # When using click.parser.OptionParser.parse_args, incomplete
@@ -98,7 +96,7 @@ def _generate_next_click_ctx(
         # case, we want to handle these incomplete arguments. To
         # achieve this, we use a proxy command object to modify
         # the command parsing behavior in click.
-        with _create_proxy_command(cmd) as _command:
+        with create_proxy_command(cmd) as _command:
             ctx = _command.make_context(name, _args, parent=parent_ctx, **ctx_kwargs)
 
     else:
@@ -108,7 +106,7 @@ def _generate_next_click_ctx(
 
 
 @lru_cache(maxsize=3)
-def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -> Context:
+def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = True) -> Context:
     """
     Parses the ``args`` into latest click context. Customized to use
     :class:`~click_repl.proxies.ProxyCommand` class to parse the ``args``.
@@ -129,7 +127,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = False) -
     -------
     click.Context
         Context object for the latest command the user has requested in
-        the prompt, along with it's parameters parsed along with it.
+        the prompt, along with its parameters parsed along with it.
 
     Reference
     ---------

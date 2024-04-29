@@ -4,49 +4,58 @@ Modify REPL behaviour
 Remove ``repl`` command after invoking the REPL
 -----------------------------------------------
 
-The :func:`~click_repl.s.register_repl` decorator assigns the :func:`~click_repl._repl.repl` function
-as a command to your group. But, you can also initialize a repl session inside a repl session, as this same
-``repl`` command is available in the repl session.
+The :func:`~click_repl._repl.register_repl` decorator assigns the :func:`~click_repl._repl.repl` function
+as a command to your group. However, it's possible to initialize a REPL session within an another REPL session,
+because the ``repl`` command is still available within the REPL session itself.
 
 .. code-block:: python
 
     import click
     from click_repl import register_repl
 
-    @click.group()
     @register_repl
+    @click.group()
     def main():
         pass
 
     @main.command()
-    def command1():
+    def my_command():
         pass
 
-<insert image>
 
-In order to remove this repl command before invoking the repl, set the ``remove_command_before_repl`` parameter to ``False``
-in :func:`~click_repl._repl.register_repl`.
+    main()
+
+.. image:: ../../../assets/nesting_repl_issue.gif
+   :align: center
+   :alt: nesting_repl_issue
+
+As shown, invoking the :func:`~click_repl._repl.repl` command within its own REPL leads to a nested REPL.
+Exiting the entire REPL requires exiting each layer of the REPL individually.
+
+To prevent this behavior and remove the :func:`~click_repl._repl.repl` command before invoking the REPL, set the ``remove_command_before_repl`` parameter to :obj:`True`
+in :func:`~click_repl._repl.register_repl`. By default, this parameter is set to False, meaning it doesn't remove the ``repl`` command.
 
 .. code-block:: python
 
     import click
     from click_repl import register_repl
 
-    @click.group()
     @register_repl(remove_command_before_repl=True)
+    @click.group()
     def main():
         pass
 
     @main.command()
-    def command1():
+    def my_command():
         pass
 
-<insert image>
+
+    main()
 
 ReplCli
 -------
 
-:class:`~click_repl._repl.ReplCli` class inherits from :class:`~click.Group`, which can also be used to invoke repl.
+The :class:`~click_repl._repl.ReplCli` class inherits from :class:`~click.Group`, and can also invoke REPL.
 
 .. code-block:: python
 
@@ -64,7 +73,10 @@ ReplCli
     def greet(name):
         print(f'Hi {name}!')
 
-It invokes repl, only when no extra arguments were passed to the group.
+
+    main()
+
+It invokes REPL only when no extra arguments were passed to the group.
 
 .. code-block:: shell
 
@@ -75,23 +87,20 @@ It invokes repl, only when no extra arguments were passed to the group.
     Hi Sam!
     >
 
-But :class:`~click_repl._repl.ReplCli` provides a little more features than just using either :func:`~click_repl._repl.register_repl`
-or :func:`~click_repl._repl.repl`.
+However, :class:`~click_repl._repl.ReplCli` offers more features than using either
+:func:`~click_repl._repl.register_repl` or :func:`~click_repl._repl.repl`.
 
-:attr:`~click_repl._repl.ReplCli.startup` and :attr:`~click_repl._repl.ReplCli.cleanup` callbacks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Startup and Cleanup Callbacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:class:`~click_repl._repl.ReplCli` allows you to run code before invoking the repl, and after exiting out of the repl.
-
-The code that should be ran before invoking the repl can be supplied as a callback to :attr:`~click_repl._repl.ReplCli.startup`
-parameter of :class:`~click_repl._repl.ReplCli`.
-
-Similarly, the code that should be executed after exiting out of the repl can also be supplied as a callback to ``cleanup`` parameter
-of :class:`~click_repl._repl.ReplCli`.
+:class:`~click_repl._repl.ReplCli` allows you to run code before invoking the REPL, and after exiting it.
+You can provide the code to be executed before invoking the REPL as a callback to the
+:attr:`~click_repl._repl.ReplCli.startup` parameter of :class:`~click_repl._repl.ReplCli`,
+and similarly for cleanup using the :attr:`~click_repl._repl.ReplCli.cleanup` parameter.
 
 .. note::
 
-    The ``startup`` and ``cleanup`` callbacks should be in type of ``Callable[[], None]``.
+    The :attr:`~click_repl._repl.ReplCli.startup` and :attr:`~click_repl._repl.ReplCli.cleanup` callbacks should be of type ``Callable[[], None]``.
 
 .. code-block:: python
 
@@ -113,6 +122,9 @@ of :class:`~click_repl._repl.ReplCli`.
     def greet(name):
         print(f'Hi {name}!')
 
+
+    main()
+
 .. code-block:: shell
 
     $ python app.py greet Sam
@@ -125,12 +137,12 @@ of :class:`~click_repl._repl.ReplCli`.
     Exiting REPL...
     $
 
-Custom prompt
+Custom Prompt
 -------------
 
-click-repl uses ``>`` as it's prompt by default. But you can assign custom prompt instead of the default prompt by -
+By default, click-repl uses ``>`` as its prompt. You can customize the prompt by:
 
-#. Assigning your prompt to ``message`` key in :func:`~click_repl._repl.repl`'s ``prompt_kwargs`` dictionary.
+#. Assigning your prompt to the ``message`` key in :func:`~click_repl._repl.repl`'s ``prompt_kwargs`` dictionary.
 
    .. code-block:: python
 
@@ -146,12 +158,15 @@ click-repl uses ``>`` as it's prompt by default. But you can assign custom promp
                'message': '>>> '
            })
 
+
+       main()
+
    .. code-block:: shell
 
        $ python app.py
        >>>
 
-#. Pass it in via :attr:`~click_repl._repl.ReplCli.prompt` parameter in :attr:`~click_repl._repl.ReplCli`.
+#. Pass it via the :attr:`~click_repl._repl.ReplCli.prompt` parameter in :attr:`~click_repl._repl.ReplCli`.
 
    .. code-block:: python
 
@@ -162,8 +177,10 @@ click-repl uses ``>`` as it's prompt by default. But you can assign custom promp
        def main():
            pass
 
-#. You can also access the prompt that's used in the repl from :attr:`~click_repl.core.ReplContext.prompt` property. You
-   can modify the prompt in this property to change the prompt during runtime.
+
+       main()
+
+#. Accessing and modifying the prompt during runtime using the :attr:`~click_repl.core.ReplContext.prompt` property.
 
    .. code-block:: python
 
@@ -186,12 +203,14 @@ click-repl uses ``>`` as it's prompt by default. But you can assign custom promp
            repl_ctx.prompt = f"user@{resolved_path}$ "
 
 
+       main()
+
 prompt_kwargs
 -------------
 
-click-repl uses an instance :class:`~prompt_toolkit.shortcuts.PromptSession` as it's prompt interface. You can supply custom arguments to
-the :class:`~prompt_toolkit.shortcuts.PromptSession` instance via :func:`~click_repl._repl.repl` or :class:`~click_repl._repl.ReplCli`'s
-``prompt_kwargs`` keyword argument.
+click-repl uses an instance of :class:`~prompt_toolkit.shortcuts.PromptSession` as its prompt interface. You can provide custom arguments to
+this :class:`~prompt_toolkit.shortcuts.PromptSession` instance via the ``prompt_kwargs`` parameter of :func:`~click_repl._repl.repl` function
+or :class:`~click_repl._repl.ReplCli` class.
 
 .. code-block:: python
 
@@ -202,43 +221,47 @@ the :class:`~prompt_toolkit.shortcuts.PromptSession` instance via :func:`~click_
     @click.group(
         cls=ReplCli,
         prompt_kwargs={
-            'history': FileHistory('/etc/myrepl/myrepl-history'),
+            "history": FileHistory("/etc/myrepl/myrepl-history"),
         }
     )
     def main():
         pass
 
-Now, this click-repl app stores history of previously executed commands in the above mentioned file.
 
-This keyword arguments dictionary will be updated with the default keyword arguments of :class:`~prompt_toolkit.shortcuts.PromptSession`,
-that will be supplied to it while initializing the repl. The default arguments and their values for
-:class:`~prompt_toolkit.shortcuts.PromptSession` are -
+    main()
 
-    #. ``history`` - :class:`~prompt_toolkit.history.InMemoryHistory` object for storing previous command history per repl session.
-    #. ``message`` - ``"> "``
-    #. ``complete_in_thread`` - ``True``
-    #. ``complete_while_typing`` - ``True``
-    #. ``validate_while_typing`` - ``True``
-    #. ``mouse_support`` - ``True``
-    #. ``refresh_interval`` - 0.15
+With this configuration, the click-repl application stores a history of previously executed commands in the specified file.
 
-These default values are supplied from :meth:`~click_repl._repl.Repl._get_default_prompt_kwargs` method. Refer to
-:class:`~prompt_toolkit.shortcuts.PromptSession` docs for details about these parameters.
+This dictionary of keyword arguments will be updated with the default keyword arguments of :class:`~prompt_toolkit.shortcuts.PromptSession`
+when initializing the REPL. The default arguments and their values for
+:class:`~prompt_toolkit.shortcuts.PromptSession` are:
+
+#. ``history`` - :class:`~prompt_toolkit.history.InMemoryHistory` (Object for storing previous command history per REPL session.)
+#. ``message`` - ``"> "``
+#. ``complete_in_thread`` - :obj:`True`
+#. ``complete_while_typing`` - :obj:`True`
+#. ``validate_while_typing`` - :obj:`True`
+#. ``mouse_support`` - :obj:`True`
+#. ``refresh_interval`` - 0.15
+
+These default values are supplied from :meth:`~click_repl._repl.Repl.get_default_prompt_kwargs` method.
+For further details about these parameters, refer to :class:`~prompt_toolkit.shortcuts.PromptSession` docs.
 
 Repl
 ----
 
-:class:`~click_repl._repl.Repl` class is the curcial part of this module which configures and performs the repl action via it's
-:meth:`~click_repl._repl.Repl.loop` method.
+The :class:`~click_repl._repl.Repl` class is the central component of this module, responsible for configuring and
+executing the REPL action through its :meth:`~click_repl._repl.Repl.loop` method.
 
 Custom Repl
 ~~~~~~~~~~~
 
-If you really want to customize every aspects of the repl configuration and execution, you can create your own Repl class
-that has the same blueprint/template of :class:`~click_repl._repl.Repl`. It's better if you inherit and use it
-from :class:`~click_repl._repl.Repl`.
+If you require extensive customization of the REPL configuration and execution, you can create your own ``Repl`` class
+based on the blueprint/template of the :class:`~click_repl._repl.Repl`. It's recommended to inherit and use it
+from the :class:`~click_repl._repl.Repl` class.
 
-After creating one, you can use it by passing it into ``cls`` parameter of :func:`~click_repl._repl.repl` function.
+Once you've created your custom ``Repl`` class, you can use it by passing it into ``cls``
+parameter of :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
 
@@ -255,21 +278,23 @@ After creating one, you can use it by passing it into ``cls`` parameter of :func
         repl(ctx, cls=MyRepl)
 
 
+    main()
+
 ReplContext
 -----------
 
-Unlike :class:`~click.Context`, :class:`~click_repl.core.ReplContext` class is instantiated for every new repl session.
-This object keeps track of the current repl's state, while it's parsing arguments from the prompt while typing.
+Unlike :class:`~click.Context`, the :class:`~click_repl.core.ReplContext` class is instantiated for every new REPL session.
+This object tracks the current REPL's state, while parsing arguments from the prompt while typing.
 
-You can also obtain many objects that's responsible for the functionality of the repl, from this context object,
-in order to have extreme flexibility over customizing your repl session during runtime.
+From this context object, you can obtain many objects responsible for the REPL's functionality,
+allowing extreme flexibility in customizing your REPL session during runtime.
 
-You can access it using :func:`~click_repl.core.pass_context` decorator, which is similar to :func:`~click.pass_context`.
-So, please don't accidentally switch them.
+You can access it using the click_repl's :func:`~click_repl.core.pass_context` decorator, which is similar to click's
+:func:`~click.pass_context`. Ensure not to accidentally switch them.
 
 .. note::
 
-    A :class:`~click_repl.core.ReplContext` is instantiated only when repl is invoked. Therefore, you won't be able to use it inside the group.
+    A :class:`~click_repl.core.ReplContext` is instantiated only when the REPL is invoked. Therefore, you won't be able to use it inside the group.
 
 .. code-block:: python
 
@@ -292,7 +317,8 @@ So, please don't accidentally switch them.
 PromptSession object
 ~~~~~~~~~~~~~~~~~~~~
 
-click-repl uses :class:`~prompt_toolkit.shortcuts.PromptSession` object, which is resopnsible for the repl functionality in this module.
-This object can be accessed via :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext`
-object. You can use this to extend the functionality of the repl. Refer to :mod:`~prompt_toolkit`'s
-`PromptSession <https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#the-promptsession-object>` docs.
+click-repl utilzes the :class:`~prompt_toolkit.shortcuts.PromptSession` object, resopnsible for the REPL's functionality.
+This object can be accessed via the :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext`
+object. You can leverage this to extend the functionality of the REPL. Refer to
+`python-prompt-toolkit <https://python-prompt-toolkit.readthedocs.io/en/master/>`_'s
+`PromptSession <https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#the-promptsession-object>`_ docs.

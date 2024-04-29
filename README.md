@@ -10,9 +10,11 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/click-repl)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-``click-repl`` is an extension for the `click <https://click.palletsprojects.com/en/>`_ module, designed to integrate a REPL (Read-Eval-Print-Loop) within your click application, by using `python-prompt-toolkit <https://github.com/prompt-toolkit/python-prompt-toolkit>`_ as it's backend. This module allows for seamless interaction with your CLI commands with auto-completion
-features in your shell environment, while offering a platform to execute shell commands, without the necessity to tweak your
-``.bashrc`` or ``.ps1`` configuration files.
+click-repl is an extension for the `click <https://click.palletsprojects.com/en/>`_ module,
+designed to integrate a REPL (Read-Eval-Print-Loop) within your click application. It achieves this by utilizing
+`python-prompt-toolkit <https://github.com/prompt-toolkit/python-prompt-toolkit>`_ as its backend. This module enables
+seamless interaction with your CLI commands, providing auto-completion features in your shell environment, and offering a platform to
+execute shell commands without the need to tweak your ``.bashrc`` or ``.ps1`` configuration files.
 
 All customizations can be conveniently handled using pure Python code.
 
@@ -26,8 +28,8 @@ pip install click-repl
 
 #### Usage
 
-Use ``register_repl()`` decorator on your click app's main group, to add the ``repl`` command to your click app. Invoke it from
-command line to start the repl.
+To add the ``repl`` command to your click app, use ``register_repl()`` decorator
+on your click app's main group. Invoke it from command line to start the REPL.
 
 ```py
 import click

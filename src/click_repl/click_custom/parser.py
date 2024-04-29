@@ -45,7 +45,7 @@ def order_option_names(option_names: Sequence[str]) -> list[str]:
     Parameters
     ----------
     option_names
-        List of option names.
+        List of option names of a click option.
 
     Returns
     -------
@@ -58,7 +58,7 @@ def order_option_names(option_names: Sequence[str]) -> list[str]:
 class ArgumentParamParser(_Argument):
     """
     Subclass of :class:`~click.parser.Argument`, but modified to fill
-    ``None`` for empty values for an :class:`~click.Argument`
+    :obj:`None` for empty values for an :class:`~click.Argument`
     with :attr:`~click.Argument.nargs` != 1.
 
     Parameters
@@ -94,7 +94,7 @@ class ArgumentParamParser(_Argument):
 class ReplOptionParser(OptionParser):
     """
     Subclass of :class:`~click.parser.OptionParser`, modified to
-    fill in ``None`` values for empty values for :class:`~click.Argument`
+    fill in :obj:`None` values for empty values for :class:`~click.Argument`
     with :attr:`~click.Argument.nargs` != 1.
 
     Parameters
@@ -118,6 +118,8 @@ class ReplOptionParser(OptionParser):
             A click context object to parse arguments corresponding to it.
         """
         super().__init__(ctx)
+
+        self.ctx.resilient_parsing = False
 
         for opt in ctx.command.params:
             opt.add_to_parser(self, ctx)

@@ -29,7 +29,7 @@ c = ClickCompleter(click.Context(main), InternalCommandSystem())
 
 
 @pytest.mark.parametrize(
-    "test_input, shortest_opts_only, expected",
+    "test_input, shortest_options_only, expected",
     [
         ("store-true-flag ", False, {"-s", "--shout"}),
         ("store-true-flag -", False, {"-s", "--shout"}),
@@ -41,14 +41,14 @@ c = ClickCompleter(click.Context(main), InternalCommandSystem())
         ("store-true-flag --shout ", True, set()),
     ],
 )
-def test_store_true_flags(test_input, shortest_opts_only, expected):
-    c.shortest_option_names_only = shortest_opts_only
+def test_store_true_flags(test_input, shortest_options_only, expected):
+    c.shortest_option_names_only = shortest_options_only
     completions = c.get_completions(Document(test_input))
     assert {i.text for i in completions} == expected
 
 
 @pytest.mark.parametrize(
-    "test_input, shortest_opts_only, expected",
+    "test_input, shortest_options_only, expected",
     [
         ("bool-flag ", False, {"-I", "-O", "--on", "--off"}),
         ("bool-flag --", False, {"--on", "--off"}),
@@ -58,7 +58,7 @@ def test_store_true_flags(test_input, shortest_opts_only, expected):
         ("bool-flag --on ", True, set()),
     ],
 )
-def test_boolean_flags(test_input, shortest_opts_only, expected):
-    c.shortest_option_names_only = shortest_opts_only
+def test_boolean_flags(test_input, shortest_options_only, expected):
+    c.shortest_option_names_only = shortest_options_only
     completions = c.get_completions(Document(test_input))
     assert {i.text for i in completions} == expected

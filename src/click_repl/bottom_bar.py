@@ -38,7 +38,7 @@ class ParamInfo(TypedDict):
 
 class BottomBar:
     """
-    Toolbar class to manage the text in the bottom bar.
+    Manage the text displayed in the bottom bar.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ class BottomBar:
         """Stores recently generated text for bottom bar as cache."""
 
         self.show_hidden_params = show_hidden_params
-        """Flag that determines whether to display hidden params at bottom bar"""
+        """Determines whether to display hidden params at bottom bar"""
 
         self.parent_token_class_name: str = "bottom-bar"
         """
@@ -72,18 +72,18 @@ class BottomBar:
         return self.get_formatted_text()
 
     def clear(self) -> None:
-        """Clears the bottom bar's content."""
+        """Clears the text content of the bottom bar."""
         self._recent_formatted_text = []
 
     def get_formatted_text(self) -> ListOfTokens:
         """
-        Gives the next chunk of text that's sliced from :attr:`~.Marquee.text` object
-        that needs to be displayed in bottom bar.
+        Retrieves the next chunk of text to be displayed in the bottom bar,
+        sliced from the :attr:`~.Marquee.text` object.
 
         Returns
         -------
         ListOfTokens
-            Next chunk of text that should be displayed in bottom bar.
+            The next chunk of text to be displayed in bottom bar.
         """
         if isinstance(self._recent_formatted_text, Marquee):
             return self._recent_formatted_text.get_current_text_chunk()
@@ -91,13 +91,15 @@ class BottomBar:
         return self._recent_formatted_text
 
     def reset_state(self) -> None:
-        """Reset the current input state object and content in bottom bar."""
+        """
+        Resets the current input state object and clears the content in the bottom bar.
+        """
         self.state = None
         self.clear()
 
     def update_state(self, state: ReplInputState) -> None:
         """
-        Updates the current input state object in :class:`~.BottomBar`.
+        Updates the current input state object in the :class:`~.BottomBar`.
 
         Parameters
         ----------
@@ -118,8 +120,8 @@ class BottomBar:
         Returns
         -------
         Marquee
-            Pre-defined set of metavar tokens for both :attr:`~.Marquee.prefix`
-            and :attr:`~.Marquee.text` attributes.
+            A pre-defined set of metavar tokens for both the
+            :attr:`~.Marquee.prefix` and :attr:`~.Marquee.text` attributes.
         """
 
         state = self.state
@@ -135,13 +137,16 @@ class BottomBar:
             ("multicommand.type", "Group"),
             ("space", " "),
             ("multicommand.name", current_group_name),
-            ("symbol", ":"),
-            ("space", " "),
         ]
 
         if not current_group.list_commands(state.current_ctx):
             # Empty string if there are no subcommands.
             return Marquee([], prefix)
+
+        prefix += [
+            ("symbol", ":"),
+            ("space", " "),
+        ]
 
         content: ListOfTokens = []
 
@@ -190,12 +195,12 @@ class BottomBar:
         Parameters
         ----------
         param
-            The parameter for which to determine it's usage state.
+            The click parameter for which to determine its usage state.
 
         Returns
         -------
         str
-            The string describing the given ``param``'s usage state.
+            A string describing the given ``param``'s usage state.
         """
         state = self.state
         assert state is not None, "state cannot be None"
@@ -222,12 +227,13 @@ class BottomBar:
 
     def get_param_name_token(self, param: Parameter) -> Token:
         """
-        Returns the token name accordingly to the given ``param``'s type.
+        Returns the token representing the name of the given ``param``,
+        based on its type.
 
         Parameters
         ----------
         param
-            The parameter for which to determine it's usage state.
+            The click parameter for which to determine its name token.
 
         Returns
         -------
@@ -255,23 +261,19 @@ class BottomBar:
 
     def get_param_tuple_type_info_tokens(self, param: Parameter) -> ListOfTokens:
         """
-        Constructs tokens list to describe the given :class:`~click.Parameter`'s
+        Constructs tokens list to describe the given ``param``'s
         :class:`~click.Tuple` type.
 
         Parameters
         ----------
         param
-            The :class:`~click.Parameter` object for which it's types in
-            :class:`~click.Tuple` must be described.
-
-        param_type
-            The :class:`~click.types.ParamType` object of the given ``param``, on which it's
-            usage state must be checked.
+            The click parameter for which its types in :class:`~click.Tuple`
+            needs to be described.
 
         Returns
         -------
         ListOfTokens
-            Tokens that describes the given ``param``'s type.
+            Tokens that describe the given ``param``'s type.
         """
         assert self.state is not None, "state cannot be None"
 
@@ -317,20 +319,22 @@ class BottomBar:
         self, param: Parameter, param_type: ParamType
     ) -> ListOfTokens:
         """
-        Constructs tokens list to describe the given :class:`~click.Parameter`'s type.
+        Constructs tokens list to describe the ``param_type`` of the given ``param``.
 
         Parameters
         ----------
         param
-            The :class:`~click.Parameter` object for which it's type must be described.
+            The parameter for which its type must be described.
 
         param_type
-            The :class:`~click.types.ParamType` object of the given ``param``.
+            The ParamType of the given ``param``. This can be an individual
+            ParamType object from the list in :class:`~click.types.Tuple`.
 
         Returns
         -------
         ListOfTokens
-            Tokens that describes the given ``param``'s type.
+            Tokens that describe the type of the given ``param``,
+            based on the specified ``param_type``.
         """
         assert self.state is not None, "state cannot be None"
 
@@ -383,24 +387,22 @@ class BottomBar:
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
         """
-        Constructs tokens list to describe the given :class:`~click.Parameter`'s
-        :attr:`~click.Parameter.nargs` information.
+        Constructs tokens list to describe the :attr:`~click.Parameter.nargs`
+        information of the given ``param``.
 
         Parameters
         ----------
         param
-            The :class:`~click.Parameter` object for which it's nargs information
-            must be described.
+            The parameter for which its nargs information must be described.
 
         param_info
-            The :obj:`.PrefixTable` type dictionary that has tokens lists that describe
-            about the given parameter.
+            A dictionary that has tokens lists that describe about the given parameter.
 
         Returns
         -------
         ListOfTokens
-            Tokens that describes the given ``param``'s nargs information
-            with proper metavar.
+            Tokens that describe the nargs information of the given ``param``
+            with proper metavar content.
         """
         type_info = param_info["type_info"]
 
@@ -445,23 +447,22 @@ class BottomBar:
         self, param: Parameter, param_info: ParamInfo
     ) -> ListOfTokens:
         """
-        Constructs the final tokens list to describe the given
-        :class:`~click.Parameter` with the help of ``param_info`` dictionary.
+        Constructs the final tokens list to describe the given ``param``,
+        incorporating information from the provided ``param_info`` dictionary.
 
         Parameters
         ----------
         param
-            The :class:`~click.Parameter` object which needs to be described.
+            The parameter to be described.
 
         param_info
-            The :obj:`.PrefixTable` type dictionary that has tokens lists that describe
-            about the given parameter.
+            A dictionary that has tokens lists that describe about the given parameter.
 
         Returns
         -------
         ListOfTokens
-            Tokens that describes the given ``param`` with appropriate metavar templates
-            and formatting.
+            Tokens that describe the given ``param``, including
+            appropriate metavar templates and formatting.
         """
         param_name = param_info["name"]
         nargs_info = param_info["nargs_info"]
@@ -481,24 +482,22 @@ class BottomBar:
 
     def get_param_info_tokens(self, param: Parameter) -> ListOfTokens:
         """
-        Constructs the final tokens list to describe the given
-        :class:`~click.Parameter`. This method constructs the ``param_info``
-        dictionary and passes it along with other methods to feed in the
-        description about the ``param`` parameter.
+        Constructs the final tokens list to describe the given ``param``.
+        This method constructs the ``param_info`` dictionary internally and passes it
+        along to other methods to feed in the description about the ``param``.
 
         Parameters
         ----------
         param
-            The :class:`~click.Parameter` object which needs to be described.
+            The parameter to be described.
 
         param_info
-            The :obj:`.PrefixTable` type dictionary that has tokens lists that describe
-            about the given parameter.
+            A dictionary that has tokens lists that describe about the given parameter.
 
         Returns
         -------
         ListOfTokens
-            Tokens that describes the given ``param`` with appropriate metavar templates
+            Tokens that describe the given ``param`` with appropriate metavar templates
             and formatting.
         """
 
@@ -521,15 +520,14 @@ class BottomBar:
 
     def make_formatted_text(self) -> Marquee:
         """
-        Constructs tokens list to describe the current
-        :class:`~click_repl.parser.ReplInputState` of input in prompt.
+        Constructs a Marquee object containing tokens to describe
+        the current REPL input state of the prompt.
 
         Returns
         -------
         click_repl.tokenizer.Marquee
-            :class:`~click_repl.tokenizer.Marquee` object that needs to be display
-            the updated info about the current
-            :class:`~click_repl.parser.ReplInputState`.
+            Marquee object that needs to be displayed to show the updated information
+            about the current REPL input state.
         """
         state = self.state
 
@@ -588,4 +586,31 @@ class BottomBar:
         return Marquee(
             TokenizedFormattedText(formatted_params_info, self.parent_token_class_name),
             prefix=TokenizedFormattedText(prefix, self.parent_token_class_name),
+        )
+
+    def display_exception(self, exc: Exception) -> None:
+        """
+        Displays the provided exception, which was raised during auto-completion
+        generation, in the bottom bar. The exception appears as text with a
+        red background, replacing the display of the metavar description for the
+        current group or the current command's arguments.
+
+        Parameter
+        ---------
+        exc
+            The exception that should be displayed in the bottom bar.
+        """
+
+        self.reset_state()
+
+        self._recent_formatted_text = Marquee(
+            TokenizedFormattedText(
+                [
+                    ("error.exception-class-name", type(exc).__name__),
+                    ("symbol,error", ":"),
+                    ("space,error", " "),
+                    ("error.message", str(exc)),
+                ],
+                self.parent_token_class_name,
+            )
         )

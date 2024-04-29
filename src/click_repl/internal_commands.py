@@ -32,7 +32,7 @@ InternalCommandDict: TypeAlias = Dict[str, Tuple[Callable[[], None], str]]
 
 InfoTable: TypeAlias = Dict[Tuple[Callable[[], None], str], List[str]]
 # Dictionary that holds all the aliases of a command together in a key: value pair,
-# with it's callback and description.
+# with its callback and description.
 
 
 @dataclass
@@ -225,7 +225,7 @@ class InternalCommandSystem:
         Raises
         ------
         click_repl.exceptions.WrongType
-            If the prefix is not of type :class:`str` or ``None``.
+            If the prefix is not of type :class:`str` or :obj:`None`.
 
         ValueError
             If the prefix is an empty string.
@@ -448,7 +448,7 @@ class InternalCommandSystem:
             A tuple containing:
             - The type of the prefix.
             - The prefix found at the beginning of the command string.
-            ``None`` if it's not known.
+            :obj:`None` if its not known.
         """
 
         for flag, prefix in self.prefix_table.items():

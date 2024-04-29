@@ -135,7 +135,7 @@ def get_token_class_for_click_obj_type(
 class TokenizedFormattedText(FormattedText):
     """
     Sub-class of :class:`~prompt_toolkit.formatted_text.FormattedText`,
-    but has custom slicing method, based on it's display text.
+    but has custom slicing method, based on its display text.
 
     Parameters
     ----------
@@ -245,11 +245,13 @@ class Marquee:
     Parameters
     ----------
     text
-        The text tokens that will be displayed in the marquee style.
+        The text tokens that will be displayed in the marquee style, if
+        the terminal width is insufficient to display the entire text.
+        Otherwise, the entire text is displayed statically.
 
     prefix
         This text will be displayed as a prefix before :attr:`~.text`, and
-        it will not be moved in the terminal display as a marquee.
+        stays at the left most end of the bottom bar and remains static.
     """
 
     __slots__ = (
@@ -277,13 +279,19 @@ class Marquee:
             text = TokenizedFormattedText(text)
 
         self.text: TokenizedFormattedText = text
-        """The text tokens that'll be displayed in the marquee style."""
+        """
+        Text that will be displayed in the marquee style, if
+        the terminal width is insufficient to display the entire text.
+        Otherwise, the entire text is displayed statically.
+        """
 
         if not isinstance(prefix, TokenizedFormattedText):
             prefix = TokenizedFormattedText(prefix)
 
         self.prefix: TokenizedFormattedText = prefix
-        """The prefix text for :attr:`~.text`."""
+        """
+        Prefix that appear before :attr:`~.text`, and stays at the
+        left-most end of the bottom bar and remains static.        """
 
         self.pointer_position: int = 0
         """Keeps track of the next starting position to slice the :attr:`~.text` from."""
@@ -293,7 +301,7 @@ class Marquee:
 
         self.hit_boundary: bool = True
         """
-        Flag that indicates whether the pointer has hit either the
+        Indicates whether the pointer has hit either the
         left or right-most end.
         """
 
@@ -311,7 +319,7 @@ class Marquee:
 
         self._is_text_length_le_window_size: bool = False
         """
-        Flag that indicates whether the window size that displays the
+        Indicates whether the window size that displays the
         text's content is greater than the length of the text.
         """
 
@@ -362,7 +370,7 @@ class Marquee:
             + ISATTY
         )
 
-        # Reset the waiting counter when the pointer hit's
+        # Reset the waiting counter when the pointer hits
         # either of the ends of the text.
 
         pointer_at_right_end = self.pointer_position == pointer_max_pos_in_right
@@ -403,7 +411,7 @@ class Marquee:
         TokenizedFormattedText
             The entire :attr:`~.text` with the :attr:`~.prefix` if the terminal
             window length is sufficient. Otherwise, returns a sliced portion of
-            the :attr:`~.text` that fit's the current window size.
+            the :attr:`~.text` that fits the current window size.
         """
 
         window_size = self.get_window_size()

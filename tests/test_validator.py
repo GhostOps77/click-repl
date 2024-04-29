@@ -73,10 +73,3 @@ def test_display_all_errors_false_no_change_on_click_exc(test_input, expected_er
 
     with pytest.raises(ValidationError, match=expected_err):
         validator_dont_show_all_errors.validate(Document(test_input))
-
-
-def test_dont_show_all_errors_hides_other_exc():
-    validator_dont_show_all_errors.validate(Document("command --opt2 "))
-
-    with open(".click-repl-err.log") as log_file:
-        assert log_file.readlines()[-1].strip() == "Exception: sample standard error"

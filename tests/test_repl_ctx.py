@@ -48,5 +48,5 @@ def test_repl_ctx_info_dict():
         "parent": repl_ctx.parent,
         "_history": repl_ctx._history,
         "current_state": repl_ctx.current_state,
-        "bottombar": repl_ctx.bottombar,
+        "bottombar": repl_ctx.bottom_bar,
     }

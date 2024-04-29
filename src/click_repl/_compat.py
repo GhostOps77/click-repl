@@ -39,7 +39,7 @@ AUTO_COMPLETION_FUNC_ATTR = (
 """Attribute name of the custom auto-completion function for :class:`~click.Parameter`.
 
    In click v7, it is "autocompletion",
-   while in click v8 and later, it's :attr:`~click.Parameter._custom_shell_complete`
+   while in click v8 and later, its :attr:`~click.Parameter._custom_shell_complete`
 """
 
 # Several things are deprecated in click v8.2

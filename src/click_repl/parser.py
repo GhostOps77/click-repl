@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import re
 from functools import lru_cache
-from typing import Any, Dict, Optional, Tuple, cast
+from typing import Any, Dict, cast
 
 import click
 from click import Command, Context, Group, Parameter
@@ -15,17 +15,10 @@ from typing_extensions import TypeAlias
 
 from ._compat import split_arg_string
 from .click_custom.shell_completion import _resolve_context
-from .click_custom.utils import get_info_dict
 from .utils import is_param_value_incomplete, iterate_command_params
 
 InfoDict: TypeAlias = Dict[str, Any]
 # Dictionary that has info about the click objects.
-
-_REPL_PARSING_STATE_KEY: TypeAlias = Tuple[
-    Optional[InfoDict], Optional[InfoDict], Optional[InfoDict], Tuple[InfoDict, ...]
-]
-# Tuple that's used for comparing 2 ReplInputState objects.
-
 
 _quotes_to_empty_str_dict = str.maketrans(dict.fromkeys("'\"", ""))
 
@@ -39,8 +32,8 @@ _EQUALS_SIGN_AFTER_OPT_FLAG = re.compile(
 class Incomplete:
     """
     Stores the last incomplete text token in the current prompt input, that requires
-    suggestions. It stores the incomplete last text token in it's raw form in
-    :attr:`~.raw_str` attribute, and in it's parsed form in
+    suggestions. It stores the incomplete last text token in its raw form in
+    :attr:`~.raw_str` attribute, and in its parsed form in
     :attr:`~.parsed_str` attribute. The parsed form has no unpaired quotes
     surrounding it if the draw form had any.
 
@@ -145,7 +138,7 @@ class ReplInputState:
         """List of unused parameters of the current command."""
 
         self.double_dash_found = getattr(current_ctx, "_double_dash_found", False)
-        """Flag that determines whether there's a ``'--'`` in :attr:`~.args`."""
+        """Determines whether there's a ``'--'`` in :attr:`~.args`."""
 
         current_group, current_command, current_param = self.parse()
 
@@ -175,27 +168,6 @@ class ReplInputState:
 
     def __repr__(self) -> str:
         return f'"{str(self)}"'
-
-    def __key(self) -> _REPL_PARSING_STATE_KEY:
-        keys: list[InfoDict | None] = []
-
-        for i in (
-            self.current_group,
-            self.current_command,
-            self.current_param,
-            self.current_ctx,
-        ):
-            keys.append(None if i is None else get_info_dict(i))
-
-        return (  # type: ignore[return-value]
-            *keys,
-            tuple(get_info_dict(param) for param in self.remaining_params),
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ReplInputState):
-            return NotImplemented  # type:ignore[no-any-return]
-        return self.__key() == other.__key()
 
     def parse(self) -> tuple[Group, Command | None, Parameter | None]:
         """
@@ -254,7 +226,7 @@ class ReplInputState:
 
         if isinstance(current_ctx_command, click.Group) and all_arguments_got_values:
             # Promote the current command as current group, only if it
-            # has got values to all of it's click.Argument type args.
+            # has got values to all of its click.Argument type args.
             current_group = current_ctx_command
 
         elif not current_group.chain or (
@@ -356,7 +328,7 @@ class ReplInputState:
 def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete]:
     """
     Resolves the last incomplete string token from the prompt to
-    generate suggestions based on that.
+    generate suggestions based on it.
 
     Parameters
     ----------
@@ -367,10 +339,14 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     -------
     tuple[tuple[str,...],Incomplete]
         A tuple that containing:
-            - A list of text, which is lexically split from the text in prompt.
+            - A list of text, lexically split from the text in prompt.
             - An Incomplete object that has the recent incomplete text token.
     """
+
+    # Expand environmental variables in the input text.
     args = split_arg_string(document_text)
+
+    # Assess and retrieve the last incomplete text in the prompt.
     cursor_within_command = not document_text[-1:].isspace()
 
     if args and cursor_within_command:
@@ -378,6 +354,9 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     else:
         incomplete = ""
 
+    # Check if the 'incomplete' resembles an option name, and has an '=' after that
+    # option name. If yes, split it and append the option name to args, and use the
+    # incomplete text's explicit value as the new incomplete text.
     equal_sign_match = _EQUALS_SIGN_AFTER_OPT_FLAG.match(incomplete)
 
     if equal_sign_match:
@@ -386,14 +365,22 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
 
     _args = tuple(args)
 
+    # If the user hasn't requested anything with an incomplete text,
+    # No need to resolve the incomplete text anymore further.
     if not incomplete:
         return _args, Incomplete("", "")
+
+    # Retrieve the last incomplete token from the raw text from the prompt to
+    # reference it to calculate its length and insert the suggestions
+    # from the prompt at the right place. This step is done especially to
+    # handle incomplete texts that has unclosed quotes.
 
     raw_incomplete_with_quotes = ""
     secondary_check = False
 
     args_splitted_by_space = document_text.split(" ")
 
+    # Handles the equals sign with option name as its prefix condition.
     if equal_sign_match:
         args_splitted_by_space.pop()
         args_splitted_by_space.extend([args[-1], incomplete])
@@ -419,7 +406,7 @@ def _resolve_repl_input_state(
     args: tuple[str, ...],
 ) -> ReplInputState:
     """
-    Initializes :class:`~click_repl.parser.ReplInputState` class if it's arguments
+    Initializes :class:`~click_repl.parser.ReplInputState` class if its arguments
     are not cached. Otherwise, returns the cached ReplInputState object.
 
     Parameters
@@ -465,7 +452,7 @@ def _resolve_state(
             - Object that holds the incomplete text token that requires suggestions.
     """
     args, incomplete = _resolve_incomplete(document_text)
-    parsed_ctx = _resolve_context(ctx, args, proxy=True)
+    parsed_ctx = _resolve_context(ctx, args)
     state = _resolve_repl_input_state(ctx, parsed_ctx, args)
 
     return parsed_ctx, state, incomplete

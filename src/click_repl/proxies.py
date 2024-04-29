@@ -5,7 +5,8 @@ Proxy objects to modify the parsing method of click objects.
 from __future__ import annotations
 
 import typing as t
-from typing import Any
+from contextlib import contextmanager
+from typing import Any, Generator
 
 import click
 from click import Argument, Command, Context, Group, Option, Parameter
@@ -17,16 +18,27 @@ from .globals_ import IS_CLICK_GE_8
 T = t.TypeVar("T")
 
 
-@t.overload
-def _create_proxy_command(obj: Command) -> ProxyCommand: ...
+@contextmanager
+def proxify_command_in_context(ctx: Context) -> Generator[click.Context, None, None]:
+    ctx_command = ctx.command
+    ctx_command = create_proxy_command(ctx_command)
+
+    yield ctx
+
+    ctx_command.revoke_changes()
+    ctx_command = ctx_command.get_obj()
 
 
 @t.overload
-def _create_proxy_command(obj: Group) -> ProxyGroup:  # type:ignore[misc]
+def create_proxy_command(obj: Command) -> ProxyCommand: ...
+
+
+@t.overload
+def create_proxy_command(obj: Group) -> ProxyGroup:  # type:ignore[misc]
     ...
 
 
-def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
+def create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
     """
     Wraps the given :class:`~click.Command` object within a proxy object.
 
@@ -37,9 +49,12 @@ def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
 
     Returns
     -------
-    ProxyCommand
+    ProxyCommand | ProxyGroup
         Proxy wrapper for the :class:`~click.Command` objects.
     """
+    if isinstance(obj, ProxyCommand):
+        return obj
+
     if isinstance(obj, Group):
         return ProxyGroup(obj)
 
@@ -47,20 +62,20 @@ def _create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
 
 
 @t.overload
-def _create_proxy_param(obj: Parameter) -> Parameter: ...
+def create_proxy_param(obj: Parameter) -> Parameter: ...
 
 
 @t.overload
-def _create_proxy_param(obj: Option) -> ProxyOption:  # type:ignore[misc]
+def create_proxy_param(obj: Option) -> ProxyOption:  # type:ignore[misc]
     ...
 
 
 @t.overload
-def _create_proxy_param(obj: Argument) -> ProxyArgument:  # type:ignore[misc]
+def create_proxy_param(obj: Argument) -> ProxyArgument:  # type:ignore[misc]
     ...
 
 
-def _create_proxy_param(obj: Parameter) -> ProxyParameter:
+def create_proxy_param(obj: Parameter) -> ProxyParameter:
     """
     Wraps the given :class:`~click.Parameter` object within a proxy object.
 
@@ -74,6 +89,9 @@ def _create_proxy_param(obj: Parameter) -> ProxyParameter:
     ProxyParameter
         Proxy wrapper for the :class:`~click.Parameter` objects.
     """
+    if isinstance(obj, ProxyParameter):
+        return obj
+
     if isinstance(obj, Option):
         return ProxyOption(obj)
 
@@ -197,7 +215,7 @@ class ProxyCommand(Proxy, Command):
         """
         # Changing the Parameter types to their proxies.
         super().__init__(obj)
-        self.params = [_create_proxy_param(param) for param in obj.params]
+        self.params = [create_proxy_param(param) for param in obj.params]
 
     def __enter__(self) -> Self:
         return self
@@ -248,7 +266,7 @@ class ProxyGroup(ProxyCommand, Group):
 class ProxyParameter(Proxy, Parameter):
     """
     Generic proxy class for :class:`~click.Parameter` objects that
-    modifies it's behavior for processing and consuming values.
+    modifies its behavior for processing and consuming values.
 
     This class overrides the :meth:`~click.Parameter.process_value` method to
     return missing values as they are, even if they are incomplete or not provided.

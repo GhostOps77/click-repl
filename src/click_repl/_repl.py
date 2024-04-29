@@ -14,7 +14,7 @@ import click
 from click import Group
 
 from ._compat import split_arg_string
-from .click_custom.shell_completion import _generate_next_click_ctx
+from .click_custom.shell_completion import _expand_args, _generate_next_click_ctx
 from .core import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
 from .globals_ import ISATTY, get_current_repl_ctx
@@ -38,7 +38,7 @@ if ISATTY:
     from .validator import ClickValidator
 
 
-__all__ = ["Repl", "repl", "ReplCli"]
+__all__ = ["Repl", "repl", "ReplCli", "register_repl"]
 
 
 _MISSING = object()
@@ -82,7 +82,7 @@ class Repl:
     ----
     You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
     :class:`~prompt_toolkit.validation.Validator` objects via ``prompt_kwargs``.
-    But if it's still done, then the REPL uses the completer and validator from it.
+    But if its still done, then the REPL uses the completer and validator from it.
     """
 
     def __init__(
@@ -100,14 +100,14 @@ class Repl:
         Initializes the `Repl` class.
         """
 
-        # Check if there's a parent command, if it's there, then use it.
+        # Check if there's a parent command, if its there, then use it.
         if ctx.parent is not None and not isinstance(ctx.command, Group):
             ctx = ctx.parent
 
         ctx.protected_args = []
 
         self.group_ctx: Context = ctx
-        """click context of the parent/CLI group the to retrieve it's subcommands."""
+        """click context of the parent/CLI group the to retrieve its subcommands."""
 
         self.internal_commands_system: InternalCommandSystem = InternalCommandSystem(
             internal_command_prefix, system_command_prefix
@@ -116,12 +116,18 @@ class Repl:
 
         self.bottom_bar: AnyFormattedText | BottomBar = None
         """
-        BottomBar object to change the command description that's displayed in the
-        bottom bar accordingly based on the user's current input state.
+        Text or callable returning text, that should be displayed in the
+        bottom toolbar of the :class:`~prompt_toolkit.shortcuts.PromptSession` object.
+
+        Alternatively, it can be a :class:`~.bottom_bar.BottomBar` object
+        to dynamically adjust the command description displayed in the
+        bottom bar based on the user's current input state.
         """
 
         if ISATTY:
-            bottom_bar = prompt_kwargs.get("bottom_toolbar", BottomBar())
+            bottom_bar: AnyFormattedText | BottomBar = prompt_kwargs.get(
+                "bottom_toolbar", BottomBar()
+            )
 
             if isinstance(bottom_bar, BottomBar):
                 bottom_bar.show_hidden_params = completer_kwargs.get(
@@ -386,6 +392,7 @@ class Repl:
         if isinstance(command, str):
             command = split_arg_string(command)
 
+        command = _expand_args(command)
         ctx, _ = _generate_next_click_ctx(self.group_ctx, tuple(command))
         ctx.command.invoke(ctx)
 
@@ -396,7 +403,7 @@ class Repl:
             while True:
                 try:
                     if ISATTY and isinstance(self.bottom_bar, BottomBar):
-                        # Resetting the toolbar to clear it's text content,
+                        # Resetting the toolbar to clear its text content,
                         # ensuring that it doesn't display command info from
                         # the previously executed command.
                         self.bottom_bar.reset_state()
@@ -451,7 +458,7 @@ class Repl:
 
 class ReplCli(click.Group):
     """
-    Custom :class:`~click.Group` subclass for invoking the REPL.
+    Custom :class:`~click.Group` subclass for initialing the REPL.
 
     This class extends the functionality of the :class:`~click.Group`
     class and is designed to be used as a wrapper to automatically
@@ -461,7 +468,7 @@ class ReplCli(click.Group):
     Parameters
     ----------
     prompt
-        The message that should be displayed for every prompt input.
+        The prompt text for the REPL.
 
     startup
         The callback function that gets called before invoking the REPL.
@@ -492,12 +499,20 @@ class ReplCli(click.Group):
         super().__init__(**attrs)
 
         self.prompt = prompt
+        """The prompt text for the REPL."""
+
         self.startup = startup
+        """The callback function that gets called before invoking the REPL."""
+
         self.cleanup = cleanup
+        """The callback function that gets invoked after exiting the REPL."""
 
         repl_kwargs.setdefault("prompt_kwargs", {}).update({"message": prompt})
 
         self.repl_kwargs = repl_kwargs
+        """
+        The keyword arguments that needs to be sent to the :func:`~.repl` function.
+        """
 
     @contextmanager
     def _handle_lifetime(self) -> Generator[None, None, None]:
@@ -542,7 +557,7 @@ def repl(
         such as prompt message, history, completion, etc.
 
     cls
-        Repl class to use for the click_repl app. if ``None``, the
+        Repl class to use for the click_repl app. if :obj:`None`, the
         :class:`~.Repl` class is used by default. This allows customization
         of the REPL behavior by providing a custom Repl subclass.
 
@@ -557,10 +572,10 @@ def repl(
     ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
     ``validator_cls`` arguments respectively.
 
-    Provide a text, a function, or a :class:`~click_repl.bottombar.BottomBar` object
+    Provide a text, a function, or a :class:`~click_repl.bottom_bar.BottomBar` object
     to determine the content that will be displayed in the bottom toolbar via the
     ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
-    toolbar, pass ``None`` as the value for this key.
+    toolbar, pass :obj:`None` as the value for this key.
     """
 
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()
@@ -587,7 +602,7 @@ def register_repl(
 
     remove_command_before_repl
         Determines whether to remove the REPL command from the group,
-        before it's execution or not.
+        before its execution or not.
 
     Returns
     -------
