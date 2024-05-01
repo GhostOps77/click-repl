@@ -148,6 +148,7 @@ class ReplContext:
         """
 
         self.current_state: ReplInputState | None = None
+        """Current input state of the commands and their parameters in the REPL."""
 
     def __enter__(self) -> ReplContext:
         _push_context(self)
