@@ -109,12 +109,12 @@ bottombar = BottomBar()
             "floatrange-arg tuple-opt(<text> <int> <filename> <path>) nargs-opt",
         ),
         (
-            "cmd --tuple-opt hi 123 tests/sample_dir/sample_file ",
+            "cmd --tuple-opt hi 123 tests/test_repl.py ",
             "Command cmd: str-arg ... func-arg choice-arg bool-arg intrange-arg "
             "floatrange-arg tuple-opt(<text> <int> <filename> <path>) nargs-opt",
         ),
         (
-            "cmd --tuple-opt hi 123 tests/sample_dir/sample_file /some/path/ ",
+            "cmd --tuple-opt hi 123 tests/test_repl.py /some/path/ ",
             "Command cmd: str-arg (0/2) ... func-arg choice-arg bool-arg intrange-arg "
             "floatrange-arg tuple-opt nargs-opt",
         ),
