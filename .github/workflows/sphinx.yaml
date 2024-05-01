@@ -5,10 +5,22 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
+
     steps:
     - uses: actions/checkout@v4
+
+    - name: Setup Python Environment
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.12'
+
+    - name: Install package
+      run: |
+        python3 -m pip install -U pip
+        pip install -e .
 
     - name: Build HTML
       uses: ammaraskar/sphinx-action@master
