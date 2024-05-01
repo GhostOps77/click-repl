@@ -7,8 +7,6 @@ permissions:
 
 jobs:
   docs:
-    needs: Test
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
