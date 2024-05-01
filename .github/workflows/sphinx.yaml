@@ -20,20 +20,13 @@ jobs:
     - name: Install docs dependencies
       run: |
         python3 -m pip install -U pip
+        pip install -r requirements/requirements-docs.txt
         pip install -e .
 
     - name: Build Sphinx docs
-      # uses: ammaraskar/sphinx-action@master
       run: |
-        pip install -r requirements/requirements-docs.txt
         cd docs/
         make html
-
-    # - name: Upload artifacts
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: html-docs
-    #     path: docs/_build/html/
 
     - name: Deploy docs to Github Pages
       uses: peaceiris/actions-gh-pages@v3
@@ -41,4 +34,3 @@ jobs:
         publish_branch: gh-pages
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/_build/html/
-        force_orphan: true
