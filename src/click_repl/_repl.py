@@ -34,11 +34,11 @@ if ISATTY:
 
     from .bottom_bar import BottomBar
     from .completer import ClickCompleter
-    from .globals_ import DEFAULT_PROMPTSESSION_STYLE_CONFIG
+    from .styles import DEFAULT_PROMPTSESSION_STYLE_CONFIG
     from .validator import ClickValidator
 
 
-__all__ = ["Repl", "repl", "ReplCli", "register_repl"]
+__all__ = ["Repl", "repl", "ReplGroup", "register_repl"]
 
 
 _MISSING = object()
@@ -456,7 +456,7 @@ class Repl:
                     traceback.print_exc()
 
 
-class ReplCli(click.Group):
+class ReplGroup(click.Group):
     """
     Custom :class:`~click.Group` subclass for initialing the REPL.
 
@@ -492,7 +492,7 @@ class ReplCli(click.Group):
         **attrs: Any,
     ) -> None:
         """
-        Initializes the `ReplCli` class.
+        Initializes the `ReplGroup` class.
         """
 
         attrs["invoke_without_command"] = True

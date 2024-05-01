@@ -21,25 +21,26 @@ For parameters, these are the formatting style implemented into bottom bar.
 It also keeps track of the values that an :class:`~click.core.Argument` with ``nargs`` > 1 has received.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import repl
-
-
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx)
-
-    @main.command()
-    @click.option('--student-name')
-    @click.argument('marks', nargs=5, type=float)
-    def get_marks(student_name, marks):
-        print(f'{student_name = }')
-        print(f'{marks = }')
+   import click
+   from click_repl import repl
 
 
-    main()
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx)
+
+   @main.command()
+   @click.option('--student-name')
+   @click.argument('marks', nargs=5, type=float)
+   def get_marks(student_name, marks):
+       print(f'{student_name = }')
+       print(f'{marks = }')
+
+
+   main()
 
 .. image:: ../../../assets/bottom_bar_example.gif
    :align: center
@@ -74,29 +75,30 @@ You can use your own bottom bar class by passing it through ``bottom_toolbar`` k
 ``prompt_kwargs`` dictionary. You can send it as an object.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import repl
-    from click_repl.bottom_bar import BottomBar
+   import click
+   from click_repl import repl
+   from click_repl.bottom_bar import BottomBar
 
-    class MyBottomBar(BottomBar):
-        # Implement your custom token generation methods.
-        ...
+   class MyBottomBar(BottomBar):
+       # Implement your custom token generation methods.
+       ...
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, prompt_kwargs={
-            "bottom_toolbar": MyBottomBar()
-        })
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, prompt_kwargs={
+           "bottom_toolbar": MyBottomBar()
+       })
 
 
-    main()
+   main()
 
 .. note::
 
-   The value in ``bottom_toolbar`` should be in a type of
-   ":obj:`~prompt_toolkit.formatted_text.AnyFormattedText` | :class:`~click_repl.bottom_bar.BottomBar`".
-   The click-repl's :class:`~click_repl.bottom_bar.BottomBar` object supplies updated text via its ``__call__`` method.
-   :class:`~prompt_toolkit.shortcuts.PromptSession` will use the bottom bar object's ``__call__`` method
-   to get the text that has to be displayed.
+   * The value in ``bottom_toolbar`` should be in a type of
+     ":obj:`~prompt_toolkit.formatted_text.AnyFormattedText` | :class:`~click_repl.bottom_bar.BottomBar`".
+     The click-repl's :class:`~click_repl.bottom_bar.BottomBar` object supplies updated text via its ``__call__`` method.
+     :class:`~prompt_toolkit.shortcuts.PromptSession` will use the bottom bar object's ``__call__`` method
+     to get the text that has to be displayed.

@@ -21,7 +21,8 @@ def store_true_flag(shout):
 
 @main.command()
 @click.option("-I/-O", "--on/--off")
-def bool_flag(on):
+@click.argument("arg")
+def bool_flag(on, arg):
     pass
 
 

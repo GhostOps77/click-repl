@@ -36,6 +36,7 @@ You can get this object from the :attr:`~click_repl.core.ReplContext.internal_co
 session's :class:`~click_repl.core.ReplContext` object.
 
 .. code-block:: python
+   :linenos:
 
     from click_repl.globals_ import get_current_repl_ctx
 
@@ -65,6 +66,7 @@ other aliases.
 For this example, we register the ``hi`` function as an internal command, and delete it later on.
 
 .. code-block:: python
+   :linenos:
 
     import click
     import click_repl
@@ -158,6 +160,7 @@ You can use custom prefixes for the internal command utility by passing in those
 :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
+   :linenos:
 
     import click
     from click_repl import repl
@@ -201,34 +204,35 @@ shell escape utilty.
 
 .. note::
 
-    Make sure you have a way to exit out of the REPL to avoid getting stuck in it after doing either -
+   Make sure you have a way to exit out of the REPL to avoid getting stuck in it after doing either -
 
-    * Disabling internal commands, or
+   * Disabling internal commands, or
 
-    * Deleting the `exit <click_repl.internal_commands.repl_exit>`_ internal command.
+   * Deleting the `exit <click_repl.internal_commands.repl_exit>`_ internal command.
 
-    If you've forgotten to so, then, well... good luck on getting out of the REPL. (*Just close the terminal*).
+   If you've forgotten to so, then, well... good luck on getting out of the REPL. (*Just close the terminal*).
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import repl
+   import click
+   from click_repl import repl
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(
-            internal_command_prefix=None,  # Disables access to internal commands.
-            system_command_prefix=None  # Disables shell escape from the REPL.
-        )
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(
+           internal_command_prefix=None,  # Disables access to internal commands.
+           system_command_prefix=None  # Disables shell escape from the REPL.
+       )
 
 
-    main()
+   main()
 
 
 .. code-block:: shell
 
-    > !echo
-    main: No such command '!echo'
-    > :help
-    main: No such command ':help'
+   > !echo
+   main: No such command '!echo'
+   > :help
+   main: No such command ':help'

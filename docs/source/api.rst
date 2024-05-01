@@ -107,10 +107,13 @@ Global Values
 ~~~~~~~~~~~~~
 
 .. automodule:: click_repl.globals_
-    :members: CLICK_REPL_DEV_ENV, DEFAULT_COMPLETION_STYLE_CONFIG,
-        DEFAULT_BOTTOMBAR_STYLE_CONFIG, DEFAULT_PROMPTSESSION_STYLE_CONFIG,
-        get_current_repl_ctx
+    :members: CLICK_REPL_DEV_ENV, get_current_repl_ctx
 
+Style Config
+~~~~~~~~~~~~
+
+.. automodule:: click_repl.styles
+    :members:
 
 Proxies
 ~~~~~~~

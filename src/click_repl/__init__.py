@@ -5,7 +5,7 @@ inside your click app in just some simple steps.
 
 from __future__ import annotations
 
-from ._repl import Repl, ReplCli, register_repl, repl
+from ._repl import Repl, ReplGroup, register_repl, repl
 from .core import ReplContext, pass_context
 from .internal_commands import repl_exit
 
@@ -13,7 +13,7 @@ __all__ = [
     "pass_context",
     "register_repl",
     "Repl",
-    "ReplCli",
+    "ReplGroup",
     "ReplContext",
     "repl",
     "repl_exit",

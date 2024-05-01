@@ -57,17 +57,17 @@ class Incomplete:
         self.parsed_str = parsed_str
         """Parsed form of the raw incomplete text."""
 
-    def __str__(self) -> str:
-        return self.parsed_str
+    # def __str__(self) -> str:
+    #     return self.parsed_str
 
-    def __repr__(self) -> str:
-        return repr(self.parsed_str)
+    # def __repr__(self) -> str:
+    #     return repr(self.parsed_str)
 
-    def __bool__(self) -> bool:
-        return bool(self.raw_str)
+    # def __bool__(self) -> bool:
+    #     return bool(self.raw_str)
 
-    def __len__(self) -> int:
-        return len(self.parsed_str)
+    # def __len__(self) -> int:
+    #     return len(self.parsed_str)
 
     def expand_envvars(self) -> str:
         """
@@ -151,23 +151,23 @@ class ReplInputState:
         self.current_param = current_param
         """The current click parameter the user is on."""
 
-    def __str__(self) -> str:
-        res = [str(self.current_group.name)]
+    # def __str__(self) -> str:
+    #     res = [str(self.current_group.name)]
 
-        cmd = getattr(self.current_command, "name", None)
-        if cmd is not None:
-            res.append(cmd)
+    #     cmd = getattr(self.current_command, "name", None)
+    #     if cmd is not None:
+    #         res.append(cmd)
 
-        param = getattr(self.current_param, "name", None)
-        if param is not None:
-            if len(res) == 1:
-                res.append("None")
-            res.append(param)
+    #     param = getattr(self.current_param, "name", None)
+    #     if param is not None:
+    #         if len(res) == 1:
+    #             res.append("None")
+    #         res.append(param)
 
-        return " > ".join(res)
+    #     return " > ".join(res)
 
-    def __repr__(self) -> str:
-        return f'"{str(self)}"'
+    # def __repr__(self) -> str:
+    #     return f'"{str(self)}"'
 
     def parse(self) -> tuple[Group, Command | None, Parameter | None]:
         """

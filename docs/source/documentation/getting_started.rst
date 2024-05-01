@@ -30,39 +30,41 @@ click-repl can be integrated with your click application in various ways. Each o
    This is the traditional way to add a REPL to a click app. It just adds a click command to your group, that invokes the REPL.
 
    .. code-block:: python
+      :linenos:
 
-       import click
-       from click_repl import register_repl
+      import click
+      from click_repl import register_repl
 
-       @click.group()
-       def cli():
-           pass
+      @click.group()
+      def cli():
+          pass
 
-       @cli.command()
-       def hello():
-           click.echo("Hello world!")
+      @cli.command()
+      def hello():
+          click.echo("Hello world!")
 
-       register_repl(cli, name='myrepl')
-       cli()
+      register_repl(cli, name='myrepl')
+      cli()
 
    But now, you can use :func:`~click_repl._repl.register_repl` as a decorator.
 
    .. code-block:: python
+      :linenos:
 
-       import click
-       from click_repl import register_repl
+      import click
+      from click_repl import register_repl
 
-       @register_repl(name='myrepl')
-       @click.group()
-       def cli():
-           pass
+      @register_repl(name='myrepl')
+      @click.group()
+      def cli():
+          pass
 
-       @cli.command()
+      @cli.command()
 
-       def hello():
-           click.echo("Hello world!")
+      def hello():
+          click.echo("Hello world!")
 
-       cli()
+      cli()
 
 
    .. code-block:: shell
@@ -77,28 +79,29 @@ click-repl can be integrated with your click application in various ways. Each o
        $
 
 
-#. Use the :class:`~click_repl._repl.ReplCli` class in the ``cls`` parameter of the :func:`~click.group` decorator.
+#. Use the :class:`~click_repl._repl.ReplGroup` class in the ``cls`` parameter of the :func:`~click.group` decorator.
 
    .. code-block:: python
+      :linenos:
 
-       import click
-       from click_repl import ReplCli
+      import click
+      from click_repl import ReplGroup
 
-       @click.group(
-           cls=ReplCli,
-           prompt='> ',
-           startup=lambda: print("Entering REPL..."),
-           cleanup=lambda: print("Exiting REPL...")
-       )
-       def cli():
-           pass
+      @click.group(
+          cls=ReplGroup,
+          prompt='> ',
+          startup=lambda: print("Entering REPL..."),
+          cleanup=lambda: print("Exiting REPL...")
+      )
+      def cli():
+          pass
 
-       @cli.command()
-       def hello():
-           click.echo("Hello world!")
+      @cli.command()
+      def hello():
+          click.echo("Hello world!")
 
-       register_repl(cli)
-       cli()
+      register_repl(cli)
+      cli()
 
 
    .. code-block:: shell
@@ -115,22 +118,23 @@ click-repl can be integrated with your click application in various ways. Each o
 #. Invoke the :class:`~click_repl._repl.repl` function manually wherever as you want:
 
    .. code-block:: python
+      :linenos:
 
-       import click
-       from click_repl import repl
+      import click
+      from click_repl import repl
 
-       @click.group(invoke_without_command=True)
-       @click.option('-i', '--interactive', is_flag=True)
-       @click.pass_context
-       def cli(ctx, interactive):
-           if interactive:
-               repl(ctx)
+      @click.group(invoke_without_command=True)
+      @click.option('-i', '--interactive', is_flag=True)
+      @click.pass_context
+      def cli(ctx, interactive):
+          if interactive:
+              repl(ctx)
 
-       @cli.command()
-       def hello():
-           click.echo("Hello world!")
+      @cli.command()
+      def hello():
+          click.echo("Hello world!")
 
-       cli()
+      cli()
 
 
    .. code-block:: shell
@@ -147,26 +151,27 @@ Advanced Usage
 --------------
 
 For more flexibility over how your REPL works, you can use the :class:`~click_repl._repl.repl` function, the
-:class:`~click_repl._repl.ReplCli` class (as shown above), instead of :func:`~click_repl._repl.register_repl`. For example, in your app:
+:class:`~click_repl._repl.ReplGroup` class (as shown above), instead of :func:`~click_repl._repl.register_repl`. For example, in your app:
 
 .. code-block:: python
+   :linenos:
 
-  import click
-  from click_repl import repl
-  from prompt_toolkit.history import FileHistory
+   import click
+   from click_repl import repl
+   from prompt_toolkit.history import FileHistory
 
-  @click.group()
-  def cli():
-      pass
+   @click.group()
+   def cli():
+       pass
 
-  @cli.command()
-  @click.pass_context
-  def myrepl(ctx):
-      repl(ctx, prompt_kwargs={
-          'history': FileHistory('/etc/myrepl/myrepl-history'),
-      })
+   @cli.command()
+   @click.pass_context
+   def myrepl(ctx):
+       repl(ctx, prompt_kwargs={
+           'history': FileHistory('/etc/myrepl/myrepl-history'),
+       })
 
-  cli()
+   cli()
 
 Now, your custom ``myrepl`` command will be available on your CLI, which will start a REPL which has its history stored in
 ``/etc/myrepl/myrepl-history`` and persist between sessions.

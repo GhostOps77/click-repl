@@ -54,7 +54,7 @@ def test_boolean_option(test_input, expected):
 
 
 @root_command.command()
-@click.option("--handler", "-h", type=click.Choice(("foo", "bar")), help="Demo option")
+@click.option("--handler", "-h", type=click.Choice(("foo", "bar")))
 def option_cmd(handler):
     pass
 
@@ -64,12 +64,18 @@ def option_cmd(handler):
     [
         ("option-cmd ", {"--handler", "-h"}),
         ("option-cmd -h", {"-h"}),
+        ("option-cmd -h ", {"foo", "bar"}),
         ("option-cmd --h", {"--handler"}),
     ],
 )
 def test_option_completion(test_input, expected):
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
+
+
+def test_extra_chars_in_short_opt_names():
+    completions = c.get_completions(Document("option-cmd -hello "))
+    assert {x.text for x in completions} == set()
 
 
 @root_command.command()
@@ -126,3 +132,27 @@ def multiple_option(u):
 def test_only_unused_with_multiple_option(test_input, expected):
     completions = list(c2.get_completions(Document(test_input)))
     assert {x.text for x in completions} == expected
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("multiple-option ", {"--non-multiple", "--multiple"}),
+        ("multiple-option -- ", set()),
+    ],
+)
+def test_double_dash_arg(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {i.text for i in completions} == expected
+
+
+@pytest.mark.parametrize(
+    "test_input",
+    [
+        "option-cmd -h=",
+        "option-cmd --handler=",
+    ],
+)
+def test_equal_sign_for_opt_and_explicit_value(test_input):
+    completions = c.get_completions(Document(test_input))
+    assert {i.text for i in completions} == {"foo", "bar"}

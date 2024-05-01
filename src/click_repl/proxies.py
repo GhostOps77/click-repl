@@ -5,8 +5,7 @@ Proxy objects to modify the parsing method of click objects.
 from __future__ import annotations
 
 import typing as t
-from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any
 
 import click
 from click import Argument, Command, Context, Group, Option, Parameter
@@ -16,17 +15,6 @@ from .click_custom.parser import ReplOptionParser
 from .globals_ import IS_CLICK_GE_8
 
 T = t.TypeVar("T")
-
-
-@contextmanager
-def proxify_command_in_context(ctx: Context) -> Generator[click.Context, None, None]:
-    ctx_command = ctx.command
-    ctx_command = create_proxy_command(ctx_command)
-
-    yield ctx
-
-    ctx_command.revoke_changes()
-    ctx_command = ctx_command.get_obj()
 
 
 @t.overload

@@ -42,64 +42,67 @@ It prioritizes and yields the suggestions from these functions, other than gener
 You can use :class:`~click_repl.completer.ReplCompletion` in your custom ``shell_complete`` function.
 
 .. code-block:: python
+   :linenos:
 
-    import os
-    from difflib import get_close_matches
+   import os
+   from difflib import get_close_matches
 
-    import click
-    from click_repl import repl
-    from click_repl.completer import ReplCompletion
+   import click
+   from click_repl import repl
+   from click_repl.completer import ReplCompletion
 
-    games_list = os.listdir("my/games/directory")
+   games_list = os.listdir("my/games/directory")
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx)
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx)
 
-    def shell_complete_games_list(ctx, param, incomplete):
-        return [
-            ReplCompletion(i, incomplete)
-            for i in get_close_matches(incomplete, games_list, cutoff=0.5)
-        ]
+   def shell_complete_games_list(ctx, param, incomplete):
+       return [
+           ReplCompletion(i, incomplete)
+           for i in get_close_matches(incomplete, games_list, cutoff=0.5)
+       ]
 
-    @main.command()
-    @click.argument("name", shell_complete=shell_complete_games_list)
-    def get_game(name):
-        ...
+   @main.command()
+   @click.argument("name", shell_complete=shell_complete_games_list)
+   def get_game(name):
+       ...
 
 
-    main()
+   main()
 
 However, it will still work if you just return suggestions as plain string.
 
 .. code-block:: python
+   :linenos:
 
-    def shell_complete_games_list(ctx, param, incomplete):
-        return get_close_matches(incomplete, games_list, cutoff=0.5)
+   def shell_complete_games_list(ctx, param, incomplete):
+       return get_close_matches(incomplete, games_list, cutoff=0.5)
 
-    @main.command()
-    @click.argument("name", shell_complete=shell_complete_games_list)
-    def get_game(name):
-        ...
+   @main.command()
+   @click.argument("name", shell_complete=shell_complete_games_list)
+   def get_game(name):
+       ...
 
 Or as :class:`~click.shell_completion.CompletionItem`
 
 .. code-block:: python
+   :linenos:
 
-    from click.shell_completion import CompletionItem
+   from click.shell_completion import CompletionItem
 
-    def shell_complete_games_list(ctx, param, incomplete):
-        # Displays game titles as in 'title' format as help text, but inserts text as in raw form.
-        return [
-            CompletionItem(i, help=i.title())
-            for i in games_list if i.startswith(incomplete)
-        ]
+   def shell_complete_games_list(ctx, param, incomplete):
+       # Displays game titles as in 'title' format as help text, but inserts text as in raw form.
+       return [
+           CompletionItem(i, help=i.title())
+           for i in games_list if i.startswith(incomplete)
+       ]
 
-    @main.command()
-    @click.argument("name", shell_complete=shell_complete_games_list)
-    def get_game(name):
-        ...
+   @main.command()
+   @click.argument("name", shell_complete=shell_complete_games_list)
+   def get_game(name):
+       ...
 
 
 All these examples work in the similar manner.
@@ -121,26 +124,27 @@ Any errors encountered while trying to generate auto-completions are show_hidden
 using the :meth:`~click_repl.bottom_bar.BottomBar.display_exception` method.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import register_repl
+   import click
+   from click_repl import register_repl
 
-    @register_repl(remove_command_before_repl=True)
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        pass
+   @register_repl(remove_command_before_repl=True)
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       pass
 
-    def mock_error_during_shell_complete(ctx, param, incomplete):
-        raise ValueError("mocking error during shell complete")
+   def mock_error_during_shell_complete(ctx, param, incomplete):
+       raise ValueError("mocking error during shell complete")
 
-    @main.command()
-    @click.option('--value', shell_complete=mock_error_during_shell_complete)
-    def my_command(value):
-        print(f'{value = }')
+   @main.command()
+   @click.option('--value', shell_complete=mock_error_during_shell_complete)
+   def my_command(value):
+       print(f'{value = }')
 
 
-    main()
+   main()
 
 .. image:: ../../../assets/errors_during_autocompletion.gif
    :align: center
@@ -155,38 +159,39 @@ You can make your own completer class. To use it, pass it into the :func:`~click
 
 .. note::
 
-    Make sure to use :class:`click_repl.completer.ClickCompleter` as the base class in order to make your custom completer
-    work with the REPL.
+   Make sure to use :class:`click_repl.completer.ClickCompleter` as the base class in order to make your custom completer
+   work with the REPL.
 
-    :class:`~click_repl.completer.ClickCompleter` has an abstract method for almost every unique aspect and component
-    in the click module. Therefore, it's easy to customize its autocompletion behaviour for every single component.
+   :class:`~click_repl.completer.ClickCompleter` has an abstract method for almost every unique aspect and component
+   in the click module. Therefore, it's easy to customize its autocompletion behaviour for every single component.
 
 .. code-block:: python
+   :linenos:
 
-    import click
+   import click
 
-    from click_repl import repl
-    from click_repl.completer import ClickCompleter
-
-
-    class MyCompleter(ClickCompleter):
-        def get_completions(self, document):
-            # Implement your logic on generating suggestions for incomplete text in the prompt.
-            ...
-
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, completer_cls=MyCompleter)  # Now, it'll use custom completer.
+   from click_repl import repl
+   from click_repl.completer import ClickCompleter
 
 
-    main()
+   class MyCompleter(ClickCompleter):
+       def get_completions(self, document):
+           # Implement your logic on generating suggestions for incomplete text in the prompt.
+           ...
+
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, completer_cls=MyCompleter)  # Now, it'll use custom completer.
+
+
+   main()
 
 Refer to `ClickCompleter's API Docs <click_repl.completer.ClickCompleter>`_ to learn about component-specific methods.
 
 .. note::
 
-    You cannot disable completer in the same way as for the validator. The completer is the crucial component of the click-repl module.
+   You cannot disable completer in the same way as for the validator. The completer is the crucial component of the click-repl module.
 
 completer_kwargs
 ----------------
@@ -195,15 +200,16 @@ If you want to pass extra keyword arguments to the completer, you can pass it th
 of :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
+   :linenos:
 
 	@click.group(invoke_without_command=True)
 	@click.pass_context
 	def main(ctx):
 		repl(ctx, completer_kwargs={
-            # Your extra keyword arguments go here.
-            'shortest_option_names_only': True,
-            'show_hidden_commands': True
-        })
+           # Your extra keyword arguments go here.
+           'shortest_option_names_only': True,
+           'show_hidden_commands': True
+       })
 
 This dictionary of keyword arguments will be updated with the default keyword arguments of the completer, which will be supplied to
 the completer while initializing the REPL. The default arguments for :class:`~click_repl.completer.ClickCompleter` are:
@@ -227,19 +233,20 @@ With this setting, options that have more than one option name will insert only 
 their suggestions will include all of their names separated by ``/``.
 
 .. code-block:: python
+   :linenos:
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, completer_kwargs={
-            'shortest_option_names_only': True
-        })
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, completer_kwargs={
+           'shortest_option_names_only': True
+       })
 
-    @main.command()
-    @click.option('-u', '--username')
-    @click.option('-p', '--port')
-    def connect_to_db(username, port):
-        ...
+   @main.command()
+   @click.option('-u', '--username')
+   @click.option('-p', '--port')
+   def connect_to_db(username, port):
+       ...
 
 .. image:: ../../../assets/shortest_options_only.gif
    :align: center
@@ -262,26 +269,27 @@ However, even if :attr:`~click_repl.completer.ClickCompleter.show_hidden_command
 the whole name of a hidden command, its parmeters will be suggested.
 
 .. code-block:: python
+   :linenos:
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, completer_kwargs={
-            'show_hidden_commands': True,
-            'show_hidden_params': True
-        })
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, completer_kwargs={
+           'show_hidden_commands': True,
+           'show_hidden_params': True
+       })
 
-    @main.command()
-    @click.option('-u', '--username')
-    @click.option('-p', '--port', hidden=True)
-    def connect_to_db(username, port):
-        ...
+   @main.command()
+   @click.option('-u', '--username')
+   @click.option('-p', '--port', hidden=True)
+   def connect_to_db(username, port):
+       ...
 
-    @main.command(hidden=True)
-    @click.option('-u', '--username')
-    @click.option('-p', '--port')
-    def connect_to_admin_db(username, port):
-        ...
+   @main.command(hidden=True)
+   @click.option('-u', '--username')
+   @click.option('-p', '--port')
+   def connect_to_admin_db(username, port):
+       ...
 
 .. image:: ../../../assets/show_hidden_command_and_params.gif
    :align: center
@@ -302,18 +310,18 @@ should be displayed for suggestion or not.
 
 .. code-block:: python
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, completer_kwargs={
-            'show_only_unused_options': True
-        })
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+      repl(ctx, completer_kwargs={
+          'show_only_unused_options': True
+      })
 
-    @main.command()
-    @click.option('-u', '--username')
-    @click.option('-p', '--port')
-    def connect_to_db(username, port):
-        ...
+   @main.command()
+   @click.option('-u', '--username')
+   @click.option('-p', '--port')
+   def connect_to_db(username, port):
+      ...
 
 .. image:: ../../../assets/show_only_unused_option_names.gif
    :align: center

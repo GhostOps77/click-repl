@@ -11,8 +11,9 @@ from click import Context
 from prompt_toolkit import PromptSession
 from typing_extensions import Concatenate, Final, ParamSpec, TypeAlias, TypedDict
 
+from ._ctx_stack import _pop_context, _push_context
 from .bottom_bar import BottomBar
-from .globals_ import ISATTY, _pop_context, _push_context, get_current_repl_ctx
+from .globals_ import ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
 from .parser import ReplInputState
 

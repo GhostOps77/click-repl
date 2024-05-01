@@ -85,7 +85,7 @@ class ArgumentParamParser(_Argument):
         if self.nargs > 1 and value is not None:
             holes = value.count(None)
             if holes == len(value):
-                value = None  # responsible for adding None value if arg is empty
+                value = None  # Adds None value if arg is empty
 
         state.opts[self.dest] = value  # type: ignore[index]
         state.order.append(self.obj)
@@ -185,6 +185,11 @@ class ReplOptionParser(OptionParser):
         for ch in arg[1:]:
             opt = normalize_opt(f"{prefix}{ch}", self.ctx)
             option = self._short_opt.get(opt)
+
+            print(f"{option = } {opt = }")
+            if option:
+                print(f"{option.takes_value = }")
+
             i += 1
 
             if not option:
@@ -195,8 +200,6 @@ class ReplOptionParser(OptionParser):
                 raise NoSuchOption(opt, ctx=self.ctx)
 
             if option.takes_value:
-                # Any characters left in arg?  Pretend they're the
-                # next arg, and stop consuming characters of arg.
                 if i < len(arg):
                     state.rargs.insert(0, arg[i:])
                     stop = True

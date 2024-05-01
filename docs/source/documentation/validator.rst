@@ -18,22 +18,23 @@ This is particularly useful for dislaying formatted messages from :exc:`~click.e
     errors raised while generating suggestions.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import repl
+   import click
+   from click_repl import repl
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx)
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx)
 
-    @main.command()
-    @click.argument('num', type=int)
-    def get_number(num):
-        print(num)
+   @main.command()
+   @click.argument('num', type=int)
+   def get_number(num):
+       print(num)
 
 
-    main()
+   main()
 
 .. image:: ../../../assets/validator_example.gif
    :align: center
@@ -52,37 +53,39 @@ necessary values for its parameters.
 	Ensure to use :class:`~click_repl.validator.ClickValidator` as the base class to make your custom validtor work with REPL.
 
 .. code-block:: python
+   :linenos:
 
-    import click
+   import click
 
-    from click_repl import repl
-    from click_repl.validator import ClickValidator
-
-
-    class MyValidator(ClickValidator):
-        def validate(self, document):
-            # Implement your logic for validating input text in the prompt.
-            ...
-
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, validator_cls=MyValidator)  # Now, it'll use the custom validator.
+   from click_repl import repl
+   from click_repl.validator import ClickValidator
 
 
-    main()
+   class MyValidator(ClickValidator):
+       def validate(self, document):
+           # Implement your logic for validating input text in the prompt.
+           ...
+
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, validator_cls=MyValidator)  # Now, it'll use the custom validator.
+
+
+   main()
 
 You can also disable validation by passing in :obj:`None` to the ``validator_cls`` parameter.
 
 .. code-block:: python
+   :linenos:
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, validator_cls=None)  # No validation is done during typing in prompt.
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, validator_cls=None)  # No validation is done during typing in prompt.
 
 
-    main()
+   main()
 
 This disables the usage of the validator, meaning no validation of input is done while typing in the prompt.
 
@@ -93,17 +96,18 @@ If you want to pass extra keyword arguments to the validator, you can do so thro
 of :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
+   :linenos:
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, validator_kwargs={
-            # Your extra keyword arguments go here.
-            'display_all_errors': False
-        })
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, validator_kwargs={
+           # Your extra keyword arguments go here.
+           'display_all_errors': False
+       })
 
 
-    main()
+   main()
 
 This dictionary of keyword arguments will be updated with the default keyword arguments of validator, which will be supplied
 to the validator upon initializing the REPL. The default arguments for :class:`~click-repl.validator.ClickValidator` are:
@@ -134,26 +138,28 @@ interrupting the prompt. The error traceback and messages are also logged into t
     (:exc:`~click.exceptions.ClickException` based exceptions) in the validator bar, by default. This flag has no effect on it.
     It only applies to exceptions that are not a subclass of :exc:`~click.exceptions.ClickException`.
 
+
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import repl
+   import click
+   from click_repl import repl
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, validator_kwargs={
-            'display_all_errors': False
-        })
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, validator_kwargs={
+           'display_all_errors': False
+       })
 
-    def mock_error_during_shell_complete(ctx, param, incomplete):
-        raise ValueError("mocking error during shell complete")
+   def mock_error_during_shell_complete(ctx, param, incomplete):
+       raise ValueError("mocking error during shell complete")
 
-    @main.command()
-    @click.argument('num', type=int)
-    @click.option('--error', shell_complete=mock_error_during_shell_complete)
-    def get_number(num, error):
-        print(num)
+   @main.command()
+   @click.argument('num', type=int)
+   @click.option('--error', shell_complete=mock_error_during_shell_complete)
+   def get_number(num, error):
+       print(num)
 
 
-    main()
+   main()

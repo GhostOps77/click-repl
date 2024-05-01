@@ -9,21 +9,22 @@ as a command to your group. However, it's possible to initialize a REPL session 
 because the ``repl`` command is still available within the REPL session itself.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import register_repl
+   import click
+   from click_repl import register_repl
 
-    @register_repl
-    @click.group()
-    def main():
-        pass
+   @register_repl
+   @click.group()
+   def main():
+       pass
 
-    @main.command()
-    def my_command():
-        pass
+   @main.command()
+   def my_command():
+       pass
 
 
-    main()
+   main()
 
 .. image:: ../../../assets/nesting_repl_issue.gif
    :align: center
@@ -36,105 +37,108 @@ To prevent this behavior and remove the :func:`~click_repl._repl.repl` command b
 in :func:`~click_repl._repl.register_repl`. By default, this parameter is set to False, meaning it doesn't remove the ``repl`` command.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import register_repl
+   import click
+   from click_repl import register_repl
 
-    @register_repl(remove_command_before_repl=True)
-    @click.group()
-    def main():
-        pass
+   @register_repl(remove_command_before_repl=True)
+   @click.group()
+   def main():
+       pass
 
-    @main.command()
-    def my_command():
-        pass
+   @main.command()
+   def my_command():
+       pass
 
 
-    main()
+   main()
 
-ReplCli
--------
+ReplGroup
+---------
 
-The :class:`~click_repl._repl.ReplCli` class inherits from :class:`~click.Group`, and can also invoke REPL.
+The :class:`~click_repl._repl.ReplGroup` class inherits from :class:`~click.Group`, and can also invoke REPL.
 
 .. code-block:: python
+   :linenos:
 
-    # file: app.py
+   # file: app.py
 
-    import click
-    from click_repl import ReplCli
+   import click
+   from click_repl import ReplGroup
 
-    @click.group(cls=ReplCli)
-    def main():
-        pass
+   @click.group(cls=ReplGroup)
+   def main():
+       pass
 
-    @main.command()
-    @click.argument('name')
-    def greet(name):
-        print(f'Hi {name}!')
+   @main.command()
+   @click.argument('name')
+   def greet(name):
+       print(f'Hi {name}!')
 
 
-    main()
+   main()
 
 It invokes REPL only when no extra arguments were passed to the group.
 
 .. code-block:: shell
 
-    $ python app.py greet Sam
-    Hi Sam!
-    $ python app.py
-    > greet Sam
-    Hi Sam!
-    >
+   $ python app.py greet Sam
+   Hi Sam!
+   $ python app.py
+   > greet Sam
+   Hi Sam!
+   >
 
-However, :class:`~click_repl._repl.ReplCli` offers more features than using either
+However, :class:`~click_repl._repl.ReplGroup` offers more features than using either
 :func:`~click_repl._repl.register_repl` or :func:`~click_repl._repl.repl`.
 
 Startup and Cleanup Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:class:`~click_repl._repl.ReplCli` allows you to run code before invoking the REPL, and after exiting it.
+:class:`~click_repl._repl.ReplGroup` allows you to run code before invoking the REPL, and after exiting it.
 You can provide the code to be executed before invoking the REPL as a callback to the
-:attr:`~click_repl._repl.ReplCli.startup` parameter of :class:`~click_repl._repl.ReplCli`,
-and similarly for cleanup using the :attr:`~click_repl._repl.ReplCli.cleanup` parameter.
+:attr:`~click_repl._repl.ReplGroup.startup` parameter of :class:`~click_repl._repl.ReplGroup`,
+and similarly for cleanup using the :attr:`~click_repl._repl.ReplGroup.cleanup` parameter.
 
 .. note::
 
-    The :attr:`~click_repl._repl.ReplCli.startup` and :attr:`~click_repl._repl.ReplCli.cleanup` callbacks should be of type ``Callable[[], None]``.
+   The :attr:`~click_repl._repl.ReplGroup.startup` and :attr:`~click_repl._repl.ReplGroup.cleanup` callbacks should be of type ``Callable[[], None]``.
 
 .. code-block:: python
+   :linenos:
 
-    # file: app.py
+   # file: app.py
 
-    import click
-    from click_repl import ReplCli
+   import click
+   from click_repl import ReplGroup
 
-    @click.group(
-        cls=ReplCli,
-        startup=lambda: print('Entering REPL...'),
-        cleanup=lambda: print('Exiting REPL...')
-    )
-    def main():
-        pass
+   @click.group(
+       cls=ReplGroup,
+       startup=lambda: print('Entering REPL...'),
+       cleanup=lambda: print('Exiting REPL...')
+   )
+   def main():
+       pass
 
-    @main.command()
-    @click.argument('name')
-    def greet(name):
-        print(f'Hi {name}!')
+   @main.command()
+   @click.argument('name')
+   def greet(name):
+       print(f'Hi {name}!')
 
 
-    main()
+   main()
 
 .. code-block:: shell
 
-    $ python app.py greet Sam
-    Hi Sam!
-    $ python app.py
-    Entering REPL...
-    > greet Sam
-    Hi Sam!
-    > :exit
-    Exiting REPL...
+   $ python app.py greet Sam
+   Hi Sam!
+   $ python app.py
+   Entering REPL...
+   > greet Sam
+   Hi Sam!
+   > :exit
+   Exiting REPL...
     $
 
 Custom Prompt
@@ -145,90 +149,94 @@ By default, click-repl uses ``>`` as its prompt. You can customize the prompt by
 #. Assigning your prompt to the ``message`` key in :func:`~click_repl._repl.repl`'s ``prompt_kwargs`` dictionary.
 
    .. code-block:: python
+      :linenos:
 
-       # file: app.py
+      # file: app.py
 
-       import click
-       from click_repl import repl
+      import click
+      from click_repl import repl
 
-       @click.group(invoke_without_command=True)
-       @click.pass_context
-       def main(ctx):
-           repl(ctx, prompt_kwargs={
-               'message': '>>> '
-           })
+      @click.group(invoke_without_command=True)
+      @click.pass_context
+      def main(ctx):
+          repl(ctx, prompt_kwargs={
+              'message': '>>> '
+          })
 
 
-       main()
+      main()
 
    .. code-block:: shell
 
-       $ python app.py
-       >>>
+      $ python app.py
+      >>>
 
-#. Pass it via the :attr:`~click_repl._repl.ReplCli.prompt` parameter in :attr:`~click_repl._repl.ReplCli`.
+#. Pass it via the :attr:`~click_repl._repl.ReplGroup.prompt` parameter in :attr:`~click_repl._repl.ReplGroup`.
 
    .. code-block:: python
+      :linenos:
 
-       import click
-       from click_repl import ReplCli
+      import click
+      from click_repl import ReplGroup
 
-       @click.group(cls=ReplCli, prompt='>>> ')
-       def main():
-           pass
+      @click.group(cls=ReplGroup, prompt='>>> ')
+      def main():
+          pass
 
 
-       main()
+      main()
 
 #. Accessing and modifying the prompt during runtime using the :attr:`~click_repl.core.ReplContext.prompt` property.
 
    .. code-block:: python
+      :linenos:
 
-       import os
+      import os
 
-       import click
-       import click_repl
-       from pathlib import Path
+      import click
+      import click_repl
+      from pathlib import Path
 
-       @click.group(cls=click_repl.ReplCli, prompt='user@/$ ')
-       def main():
-           pass
+      @click.group(cls=click_repl.ReplGroup, prompt='user@/$ ')
+      def main():
+          pass
 
-       @main.command('cd')
-       @click.argument('path', type=click.Path(file_okay=False))
-       @click_repl.pass_context
-       def change_directory(repl_ctx, path):
-           resolved_path = Path(repl_ctx.prompt.split('@')[1].removesuffix('$ ') + path).resolve()
-           os.chdir(resolved_path)
-           repl_ctx.prompt = f"user@{resolved_path}$ "
+      @main.command('cd')
+      @click.argument('path', type=click.Path(file_okay=False))
+      @click_repl.pass_context
+      def change_directory(repl_ctx, path):
+          resolved_path = Path(repl_ctx.prompt.split('@')[1].removesuffix('$ ') + path).resolve()
+          os.chdir(resolved_path)
+          repl_ctx.prompt = f"user@{resolved_path}$ "
 
 
-       main()
+      main()
 
 prompt_kwargs
 -------------
 
 click-repl uses an instance of :class:`~prompt_toolkit.shortcuts.PromptSession` as its prompt interface. You can provide custom arguments to
 this :class:`~prompt_toolkit.shortcuts.PromptSession` instance via the ``prompt_kwargs`` parameter of :func:`~click_repl._repl.repl` function
-or :class:`~click_repl._repl.ReplCli` class.
+or :class:`~click_repl._repl.ReplGroup` class.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import ReplCli
-    from prompt_toolkit.history import FileHistory
+   import click
+   from click_repl import ReplGroup
+   from prompt_toolkit.history import FileHistory
 
-    @click.group(
-        cls=ReplCli,
-        prompt_kwargs={
-            "history": FileHistory("/etc/myrepl/myrepl-history"),
-        }
-    )
-    def main():
-        pass
+   @click.group(
+       cls=ReplGroup,
+       prompt_kwargs={
+           "history": FileHistory("/etc/myrepl/myrepl-history"),
+       }
+   )
+   def main():
+       pass
 
 
-    main()
+   main()
 
 With this configuration, the click-repl application stores a history of previously executed commands in the specified file.
 
@@ -264,21 +272,22 @@ Once you've created your custom ``Repl`` class, you can use it by passing it int
 parameter of :func:`~click_repl._repl.repl` function.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    from click_repl import Repl, repl
+   import click
+   from click_repl import Repl, repl
 
-    class MyRepl(Repl):
-        # Implement your own REPL customization.
-        ...
+   class MyRepl(Repl):
+       # Implement your own REPL customization.
+       ...
 
-    @click.group(invoke_without_command=True)
-    @click.pass_context
-    def main(ctx):
-        repl(ctx, cls=MyRepl)
+   @click.group(invoke_without_command=True)
+   @click.pass_context
+   def main(ctx):
+       repl(ctx, cls=MyRepl)
 
 
-    main()
+   main()
 
 ReplContext
 -----------
@@ -294,25 +303,26 @@ You can access it using the click_repl's :func:`~click_repl.core.pass_context` d
 
 .. note::
 
-    A :class:`~click_repl.core.ReplContext` is instantiated only when the REPL is invoked. Therefore, you won't be able to use it inside the group.
+   A :class:`~click_repl.core.ReplContext` is instantiated only when the REPL is invoked. Therefore, you won't be able to use it inside the group.
 
 .. code-block:: python
+   :linenos:
 
-    import click
-    import click_repl
+   import click
+   import click_repl
 
-    @click_repl.register_repl
-    @click.group()
-    @click.pass_context
-    def main(ctx):
-        pass
+   @click_repl.register_repl
+   @click.group()
+   @click.pass_context
+   def main(ctx):
+       pass
 
-    @main.command()
-    @click.pass_context
-    @click_repl.pass_context
-    def command(ctx, repl_ctx):
-        # You can do whatever you want with the current repl session's context object.
-        ...
+   @main.command()
+   @click.pass_context
+   @click_repl.pass_context
+   def command(ctx, repl_ctx):
+       # You can do whatever you want with the current repl session's context object.
+       ...
 
 PromptSession object
 ~~~~~~~~~~~~~~~~~~~~

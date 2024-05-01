@@ -23,23 +23,40 @@ def hello():
 
 @cli.command()
 @click_repl.pass_context
-def reply(repl_ctx):
-    assert repl_ctx.prompt_message is None
-    assert list(repl_ctx.history()) == ["reply", "hello"]
+def history_test(repl_ctx):
+    print(list(repl_ctx.history()))
 
 
 def test_repl_ctx_history(capsys):
-    with mock_stdin("hello\nreply\n"):
+    with mock_stdin("hello\nhistory-test\n"):
         with pytest.raises(SystemExit):
             cli(args=[], prog_name="test_repl_ctx_history")
 
-    assert capsys.readouterr().out.replace("\r\n", "\n") == "Hello!\n"
+    assert (
+        capsys.readouterr().out.replace("\r\n", "\n")
+        == "Hello!\n['history-test', 'hello']\n"
+    )
+
+
+@cli.command()
+@click_repl.pass_context
+def prompt_test(repl_ctx):
+    print(repl_ctx.prompt)
+
+
+def test_repl_ctx_prompt(capsys):
+    with mock_stdin("prompt-test\n"):
+        with pytest.raises(SystemExit):
+            cli(args=[], prog_name="test_repl_ctx_history")
+
+    assert capsys.readouterr().out.replace("\r\n", "\n") == "None\n"
 
 
 def test_repl_ctx_info_dict():
     repl_ctx = ReplContext(
         click.Context(click.Command(test_repl_ctx_info_dict)), InternalCommandSystem()
     )
+
     assert repl_ctx.to_info_dict() == {
         "group_ctx": repl_ctx.group_ctx,
         "prompt_kwargs": repl_ctx.prompt_kwargs,

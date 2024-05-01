@@ -217,7 +217,7 @@ def test_internal_commands(capfd):
 
 
 @click.group(
-    cls=click_repl.ReplCli, startup=lambda: print("hi"), cleanup=lambda: print("bye")
+    cls=click_repl.ReplGroup, startup=lambda: print("hi"), cleanup=lambda: print("bye")
 )
 def replcli_group():
     print("replcli cls group")

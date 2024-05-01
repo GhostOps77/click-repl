@@ -23,6 +23,7 @@ To add the :func:`~click_repl._repl.repl` command to your click app's main group
 use :func:`~click_repl._repl.register_repl` decorator. Invoke it from command line to start the REPL.
 
 .. code-block:: python
+   :linenos:
 
    # filename.py
 

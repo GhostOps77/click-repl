@@ -690,11 +690,10 @@ class ClickCompleter(Completer):
             and any(_incomplete_prefix.startswith(i) for i in ctx_opt_prefixes)
         )
 
-        prompt_requires_option_flags_suggestions = (
+        prompt_requires_option_flags_suggestions = not state.double_dash_found and (
             not current_param
             or current_argument_havent_received_values
             or interspersed_args_available
-            and not state.double_dash_found
         )
 
         if prompt_requires_option_flags_suggestions:
@@ -707,10 +706,6 @@ class ClickCompleter(Completer):
         )
 
         if current_param and allow_current_hidden_param:
-            # If the current param is not None and its not a hidden param,
-            # or if the current param is a hidden param and
-            # self.show_completions_for_hidden_param is true,
-            # generate auto-completion for it.
             yield from self.get_completion_from_param(
                 ctx, current_param, state, incomplete
             )
@@ -846,8 +841,6 @@ class ClickCompleter(Completer):
             if subcommand is None or (
                 subcommand.hidden and not self.show_hidden_commands
             ):
-                # We skip if there's no command found or its a hidden command
-                # and show_hidden_commands is False.
                 continue
 
             yield subcommand
@@ -1030,7 +1023,6 @@ class ClickCompleter(Completer):
             )
 
             if parsed_ctx.command.hidden and not self.show_hidden_commands:
-                # We skip the hidden command if self.show_hidden_commands is False.
                 return
 
             try:
@@ -1096,16 +1088,12 @@ class ReplCompletion(Completion):
         no_surrounding_quotes = not (text.startswith('"') or text.endswith('"'))
 
         if " " in text and no_surrounding_quotes:
-            # Surrounding text by quotes, as it has space in it.
+            # Surrounding text by quotes, if it has spaces in it.
             text = text.replace('"', '\\"')
             text = f'"{text}"'
 
         if isinstance(incomplete, Incomplete):
             incomplete = incomplete.raw_str
-
-        # diff = len(incomplete) - len(text)
-        # if diff > 0:
-        #     text += " " * diff + "\b" * diff
 
         kwargs.setdefault("start_position", -len(incomplete))
 
