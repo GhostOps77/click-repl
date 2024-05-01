@@ -185,11 +185,6 @@ class ReplOptionParser(OptionParser):
         for ch in arg[1:]:
             opt = normalize_opt(f"{prefix}{ch}", self.ctx)
             option = self._short_opt.get(opt)
-
-            print(f"{option = } {opt = }")
-            if option:
-                print(f"{option.takes_value = }")
-
             i += 1
 
             if not option:
