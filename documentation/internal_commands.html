@@ -1,0 +1,511 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Auto Completion" href="auto_completion.html" /><link rel="prev" title="Getting Started" href="getting_started.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>Internal Commands Utility - click-repl Documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=649a27d8" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f0f0f0;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">click-repl Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  
+  <span class="sidebar-brand-text">click-repl Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Project Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/click-repl/">PyPI Releases</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/click-contrib/click-repl/issues">Issue Tracker</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/click-contrib/click-repl">Source Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Documentation</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Documentation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Internal Commands Utility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auto_completion.html">Auto Completion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bottom_bar.html">Bottom Bar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modifying_repl_behaviour.html">Modify REPL behaviour</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_as_tokens.html">Text as Tokens</a></li>
+<li class="toctree-l2"><a class="reference internal" href="validator.html">Validator</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Others</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="internal-commands-utility">
+<h1>Internal Commands Utility<a class="headerlink" href="#internal-commands-utility" title="Link to this heading">#</a></h1>
+<p>click-repl allows usage of certain prefixes to execute system shell commands via REPL.
+It also provides other pre-defined, helpful internal commands registered within it.
+These commands are not of type <a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Command" title="(in Click v8.1.x)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Command</span></code></a>.</p>
+<section id="internal-commands">
+<span id="id1"></span><h2>Internal Commands<a class="headerlink" href="#internal-commands" title="Link to this heading">#</a></h2>
+<p>The internal commands can be invoked with a prefix associated with their name (Default: <code class="docutils literal notranslate"><span class="pre">:</span></code>).
+Run <code class="docutils literal notranslate"><span class="pre">:help</span></code> in the REPL to know about its usage.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&gt; :help
+REPL help:
+
+  External/System Commands:
+    Prefix External/System commands with &quot;!&quot;.
+
+  Internal Commands:
+    Prefix Internal commands with &quot;:&quot;.
+    :clear, :cls      Clears screen.
+    :?, :h, :help     Displays general help information.
+    :exit, :q, :quit  Exits the REPL.
+</pre></div>
+</div>
+<section id="internalcommandsystem">
+<h3>InternalCommandSystem<a class="headerlink" href="#internalcommandsystem" title="Link to this heading">#</a></h3>
+<p>All the internal commands are defined and accessed from <a class="reference internal" href="../api.html#click_repl.internal_commands.InternalCommandSystem" title="click_repl.internal_commands.InternalCommandSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">InternalCommandSystem</span></code></a> object.
+You can get this object from the <a class="reference internal" href="../api.html#click_repl.core.ReplContext.internal_command_system" title="click_repl.core.ReplContext.internal_command_system"><code class="xref py py-attr docutils literal notranslate"><span class="pre">internal_command_system</span></code></a> attribute of the current REPL
+session’s <a class="reference internal" href="../api.html#click_repl.core.ReplContext" title="click_repl.core.ReplContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReplContext</span></code></a> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span> <span class="kn">from</span> <span class="nn">click_repl.globals_</span> <span class="kn">import</span> <span class="n">get_current_repl_ctx</span>
+<span class="linenos">2</span>
+<span class="linenos">3</span> <span class="n">ics_obj</span> <span class="o">=</span> <span class="n">get_current_repl_ctx</span><span class="p">()</span><span class="o">.</span><span class="n">internal_command_system</span> <span class="c1"># &lt;class &#39;InternalCommandSystem&#39;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="add-remove-internal-commands">
+<h3>Add/Remove Internal Commands<a class="headerlink" href="#add-remove-internal-commands" title="Link to this heading">#</a></h3>
+<p>This object can also be used to define and add your own internal command. It’s done by using the
+<a class="reference internal" href="../api.html#click_repl.internal_commands.InternalCommandSystem.register_command" title="click_repl.internal_commands.InternalCommandSystem.register_command"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register_command()</span></code></a> decorator.
+It takes a function, names/aliases and description for it. The provided function’s name and docstring
+is the command’s only name and description by default.</p>
+<p>To remove an internal command, pass any one of the aliases of the command into
+<a class="reference internal" href="../api.html#click_repl.internal_commands.InternalCommandSystem.remove_command" title="click_repl.internal_commands.InternalCommandSystem.remove_command"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_command()</span></code></a> to remove the command, along with all of its
+other aliases.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>You can register and delete internal commands from anywhere, as long as you can access the current REPL session’s <a class="reference internal" href="../api.html#click_repl.core.ReplContext" title="click_repl.core.ReplContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReplContext</span></code></a> object.</p></li>
+<li><p>The callback function for your custom internal command must be of type <code class="docutils literal notranslate"><span class="pre">Callable[[],</span> <span class="pre">None]</span></code>. That is, it shouldn’t take in any arguments, and return nothing.</p></li>
+<li><p><a class="reference internal" href="../api.html#click_repl.internal_commands.InternalCommandSystem.remove_command" title="click_repl.internal_commands.InternalCommandSystem.remove_command"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_command()</span></code></a> removes all the aliases of the given alias of a command, by default. To remove only the mentioned alias, set <code class="docutils literal notranslate"><span class="pre">remove_all_aliases</span></code> to <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code></a> to the method.</p></li>
+</ul>
+</div>
+<p>For this example, we register the <code class="docutils literal notranslate"><span class="pre">hi</span></code> function as an internal command, and delete it later on.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">click</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">click_repl</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos"> 5</span> <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="linenos"> 6</span> <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+<span class="linenos"> 7</span>     <span class="n">click_repl</span><span class="o">.</span><span class="n">repl</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span> <span class="nd">@main</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="linenos">10</span> <span class="nd">@click_repl</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="linenos">11</span> <span class="k">def</span> <span class="nf">add_internal_command</span><span class="p">(</span><span class="n">repl_ctx</span><span class="p">:</span> <span class="n">click_repl</span><span class="o">.</span><span class="n">ReplContext</span><span class="p">):</span>
+<span class="linenos">12</span>     <span class="n">ics_obj</span> <span class="o">=</span> <span class="n">repl_ctx</span><span class="o">.</span><span class="n">internal_command_system</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span> <span class="nd">@ics_obj</span><span class="o">.</span><span class="n">register_command</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hi&quot;</span><span class="p">,</span> <span class="s2">&quot;greet&quot;</span><span class="p">,</span> <span class="s2">&quot;hola&quot;</span><span class="p">])</span>
+<span class="linenos">15</span> <span class="k">def</span> <span class="nf">hi</span><span class="p">():</span>
+<span class="linenos">16</span>     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hi!&quot;</span><span class="p">)</span>
+<span class="linenos">17</span>
+<span class="linenos">18</span> <span class="nd">@main</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="linenos">19</span> <span class="nd">@click_repl</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="linenos">20</span> <span class="k">def</span> <span class="nf">del_internal_command</span><span class="p">(</span><span class="n">repl_ctx</span><span class="p">:</span> <span class="n">click_repl</span><span class="o">.</span><span class="n">ReplContext</span><span class="p">):</span>
+<span class="linenos">21</span>     <span class="n">ics_obj</span> <span class="o">=</span> <span class="n">repl_ctx</span><span class="o">.</span><span class="n">internal_command_system</span>
+<span class="linenos">22</span>     <span class="n">ics_obj</span><span class="o">.</span><span class="n">remove_command</span><span class="p">(</span><span class="s2">&quot;hi&quot;</span><span class="p">,</span> <span class="n">remove_all_aliases</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># Removes only alias &#39;hi&#39;</span>
+<span class="linenos">23</span>     <span class="c1"># ics_obj.remove_command(&quot;hi&quot;) # Removes all the aliases that belong to command &#39;hi&#39;</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span>
+<span class="linenos">26</span> <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>add-internal-command
+&gt;<span class="w"> </span>:hi
+Hi!
+&gt;<span class="w"> </span>del-internal-command
+&gt;<span class="w"> </span>:hi
+Hi!
+<span class="s1">&#39;hi&#39;</span>,<span class="w"> </span><span class="nb">command</span><span class="w"> </span>not<span class="w"> </span>found
+</pre></div>
+</div>
+</section>
+<section id="default-internal-commands">
+<h3>Default Internal Commands<a class="headerlink" href="#default-internal-commands" title="Link to this heading">#</a></h3>
+<p>There are 3 internal commands registered by default. They are:</p>
+<ol class="arabic">
+<li><p><a class="reference external" href="click.clear">clear</a> - Clears the terminal screen.</p>
+<p><strong>Aliases:</strong> <code class="docutils literal notranslate"><span class="pre">clear</span></code>, <code class="docutils literal notranslate"><span class="pre">cls</span></code></p>
+</li>
+<li><p><a class="reference external" href="click_repl.internal_commands.help_internal">help</a> - Displays general help information about the internal commands.</p>
+<p><strong>Aliases:</strong> <code class="docutils literal notranslate"><span class="pre">?</span></code>, <code class="docutils literal notranslate"><span class="pre">h</span></code>, <code class="docutils literal notranslate"><span class="pre">help</span></code></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>:help
+REPL<span class="w"> </span>help:
+
+External/System<span class="w"> </span>Commands:
+<span class="w">  </span>Prefix<span class="w"> </span>External/System<span class="w"> </span>commands<span class="w"> </span>with<span class="w"> </span><span class="s2">&quot;!&quot;</span>.
+
+Internal<span class="w"> </span>Commands:
+<span class="w">  </span>Prefix<span class="w"> </span>Internal<span class="w"> </span>commands<span class="w"> </span>with<span class="w"> </span><span class="s2">&quot;:&quot;</span>.
+<span class="w">  </span>:clear,<span class="w"> </span>:cls<span class="w">      </span>Clears<span class="w"> </span>screen.
+<span class="w">  </span>:?,<span class="w"> </span>:h,<span class="w"> </span>:help<span class="w">     </span>Displays<span class="w"> </span>general<span class="w"> </span><span class="nb">help</span><span class="w"> </span>information.
+<span class="w">  </span>:exit,<span class="w"> </span>:q,<span class="w"> </span>:quit<span class="w">  </span>Exits<span class="w"> </span>the<span class="w"> </span>REPL.
+</pre></div>
+</div>
+</li>
+<li><p><a class="reference external" href="click_repl.internal_commands.repl_exit">exit</a> - Exits the REPL.</p>
+<p><strong>Aliases:</strong> <code class="docutils literal notranslate"><span class="pre">exit</span></code>, <code class="docutils literal notranslate"><span class="pre">q</span></code>, <code class="docutils literal notranslate"><span class="pre">quit</span></code></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You need to raise <a class="reference internal" href="../api.html#click_repl.exceptions.ExitReplException" title="click_repl.exceptions.ExitReplException"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ExitReplException</span></code></a> anywhere from your code to exit out of the REPL.</p>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="system-commands">
+<h2>System Commands<a class="headerlink" href="#system-commands" title="Link to this heading">#</a></h2>
+<p>click-repl also allows shell escape to run underlying system’s shell commands by using its specified prefix in
+the REPL (Default: <code class="docutils literal notranslate"><span class="pre">!</span></code>).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>!echo<span class="w"> </span>hi
+hi
+</pre></div>
+</div>
+</section>
+<section id="assigning-custom-prefixes">
+<h2>Assigning Custom Prefixes<a class="headerlink" href="#assigning-custom-prefixes" title="Link to this heading">#</a></h2>
+<p>You can use custom prefixes for the internal command utility by passing in those prefixes explicitly into
+<a class="reference internal" href="../api.html#click_repl._repl.repl" title="click_repl._repl.repl"><code class="xref py py-func docutils literal notranslate"><span class="pre">repl()</span></code></a> function.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">click</span>
+<span class="linenos"> 2</span> <span class="kn">from</span> <span class="nn">click_repl</span> <span class="kn">import</span> <span class="n">repl</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos"> 5</span> <span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="s1">&#39;--interactive&#39;</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos"> 6</span> <span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="linenos"> 7</span> <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">interactive</span><span class="p">):</span>
+<span class="linenos"> 8</span>     <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+<span class="linenos"> 9</span>         <span class="n">repl</span><span class="p">(</span>
+<span class="linenos">10</span>             <span class="n">internal_command_prefix</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
+<span class="linenos">11</span>             <span class="n">system_command_prefix</span><span class="o">=</span><span class="s1">&#39;$&#39;</span>
+<span class="linenos">12</span>         <span class="p">)</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span>
+<span class="linenos">15</span> <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>-help
+REPL<span class="w"> </span>help:
+
+External/System<span class="w"> </span>Commands:
+<span class="w">    </span>Prefix<span class="w"> </span>External/System<span class="w"> </span>commands<span class="w"> </span>with<span class="w"> </span><span class="s2">&quot;-&quot;</span>.
+
+Internal<span class="w"> </span>Commands:
+<span class="w">    </span>Prefix<span class="w"> </span>Internal<span class="w"> </span>commands<span class="w"> </span>with<span class="w"> </span><span class="s2">&quot;</span>$<span class="s2">&quot;</span>.
+<span class="w">    </span>:clear,<span class="w"> </span>:cls<span class="w">      </span>Clears<span class="w"> </span>screen.
+<span class="w">    </span>:?,<span class="w"> </span>:h,<span class="w"> </span>:help<span class="w">     </span>Displays<span class="w"> </span>general<span class="w"> </span><span class="nb">help</span><span class="w"> </span>information.
+<span class="w">    </span>:exit,<span class="w"> </span>:q,<span class="w"> </span>:quit<span class="w">  </span>Exits<span class="w"> </span>the<span class="w"> </span>REPL.
+
+&gt;<span class="w"> </span><span class="nv">$echo</span><span class="w"> </span>hi
+hi
+</pre></div>
+</div>
+</section>
+<section id="enabling-disabling-internal-and-system-commands">
+<h2>Enabling/Disabling Internal and System Commands<a class="headerlink" href="#enabling-disabling-internal-and-system-commands" title="Link to this heading">#</a></h2>
+<p>Assigning <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a> as prefix disables the appropriate internal command utility. But you need to assign it explicitly for both
+internal command and system command prefixes to remove them both. Assigning <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a> to the system command disables
+shell escape utilty.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Make sure you have a way to exit out of the REPL to avoid getting stuck in it after doing either -</p>
+<ul class="simple">
+<li><p>Disabling internal commands, or</p></li>
+<li><p>Deleting the <a class="reference external" href="click_repl.internal_commands.repl_exit">exit</a> internal command.</p></li>
+</ul>
+<p>If you’ve forgotten to so, then, well… good luck on getting out of the REPL. (<em>Just close the terminal</em>).</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">click</span>
+<span class="linenos"> 2</span><span class="kn">from</span> <span class="nn">click_repl</span> <span class="kn">import</span> <span class="n">repl</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span><span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">invoke_without_command</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos"> 5</span><span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="linenos"> 6</span><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+<span class="linenos"> 7</span>    <span class="n">repl</span><span class="p">(</span>
+<span class="linenos"> 8</span>        <span class="n">internal_command_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Disables access to internal commands.</span>
+<span class="linenos"> 9</span>        <span class="n">system_command_prefix</span><span class="o">=</span><span class="kc">None</span>  <span class="c1"># Disables shell escape from the REPL.</span>
+<span class="linenos">10</span>    <span class="p">)</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span>
+<span class="linenos">13</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>&gt;<span class="w"> </span>!echo
+main:<span class="w"> </span>No<span class="w"> </span>such<span class="w"> </span><span class="nb">command</span><span class="w"> </span><span class="s1">&#39;!echo&#39;</span>
+&gt;<span class="w"> </span>:help
+main:<span class="w"> </span>No<span class="w"> </span>such<span class="w"> </span><span class="nb">command</span><span class="w"> </span><span class="s1">&#39;:help&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="auto_completion.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Auto Completion</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="getting_started.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Getting Started</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with 
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/GhostOps77/click-repl/tree/GhostOps77-patch-1" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Internal Commands Utility</a><ul>
+<li><a class="reference internal" href="#internal-commands">Internal Commands</a><ul>
+<li><a class="reference internal" href="#internalcommandsystem">InternalCommandSystem</a></li>
+<li><a class="reference internal" href="#add-remove-internal-commands">Add/Remove Internal Commands</a></li>
+<li><a class="reference internal" href="#default-internal-commands">Default Internal Commands</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#system-commands">System Commands</a></li>
+<li><a class="reference internal" href="#assigning-custom-prefixes">Assigning Custom Prefixes</a></li>
+<li><a class="reference internal" href="#enabling-disabling-internal-and-system-commands">Enabling/Disabling Internal and System Commands</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>
