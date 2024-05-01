@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import sys
 import traceback
+import warnings
 from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Generator, Sequence
@@ -567,16 +568,30 @@ def repl(
 
     Notes
     -----
-    You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
-    :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
-    ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
-    ``validator_cls`` arguments respectively.
+    * You don't have to pass the :class:`~prompt_toolkit.completion.Completer` and
+      :class:`~prompt_toolkit.validation.Validator` class, and their arguments via the
+      ``prompt_kwargs`` dictionary. Pass them separately in the ``completer_cls`` and
+      ``validator_cls`` arguments respectively.
 
-    Provide a text, a function, or a :class:`~click_repl.bottom_bar.BottomBar` object
-    to determine the content that will be displayed in the bottom toolbar via the
-    ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
-    toolbar, pass :obj:`None` as the value for this key.
+    * Provide a text, a function, or a :class:`~click_repl.bottom_bar.BottomBar` object
+      to determine the content that will be displayed in the bottom toolbar via the
+      ``bottom_toolbar`` key in the ``prompt_kwargs`` dictionary. To disable the bottom
+      toolbar, pass :obj:`None` as the value for this key.
     """
+
+    if not attrs.pop("allow_internal_commands", True):
+        warnings.warn(
+            "'allow_internal_commands=False' in repl() is deprecated. "
+            "Use 'internal_command_prefix=None' instead."
+        )
+        attrs["internal_command_prefix"] = None
+
+    if not attrs.pop("allow_system_commands", True):
+        warnings.warn(
+            "'allow_internal_commands=False' in repl() is deprecated. "
+            "Use 'internal_command_prefix=None' instead."
+        )
+        attrs["system_command_prefix"] = None
 
     cls(group_ctx, prompt_kwargs=prompt_kwargs, **attrs).loop()
 
