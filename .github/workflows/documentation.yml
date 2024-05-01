@@ -1,28 +1,48 @@
-name: documentation
+name: GitHub Pages
 
-on: [push, pull_request, workflow_dispatch]
-
-permissions:
-  contents: write
+on: [push,  pull_request]
 
 jobs:
-  docs:
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - name: Install dependencies
-        run: |
-          pip install -r requirements/requirements-docs.txt
-          pip install -e .
-      - name: Sphinx build
-        run: |
-          make html
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
         with:
-          publish_branch: gh-pages
+          python-version: '3.12'
+
+      - name: Upgrade pip
+        run: |
+          python3 -m pip install -U pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requriements/requirements-docs.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements/requirements-docs.txt
+
+      - run: make html
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        # if: github.ref == 'refs/heads/main'
+        with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_build/html
-          force_orphan: true
