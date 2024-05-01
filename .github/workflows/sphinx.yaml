@@ -20,11 +20,13 @@ jobs:
     - name: Install docs dependencies
       run: |
         python3 -m pip install -U pip
-        pip install -e .
         pip install -r requirements/requirements-docs.txt
+        pip install -e .
 
     - name: Build HTML
-      uses: ammaraskar/sphinx-action@master
+      # uses: ammaraskar/sphinx-action@master
+      run: |
+        make html
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
