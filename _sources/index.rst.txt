@@ -11,11 +11,15 @@ Welcome to click-repl's Documentation
    Source Code <https://github.com/click-contrib/click-repl>
 
 
+<hr>
+
 .. toctree::
    :hidden:
    :caption: Contents
 
    documentation/index
+
+<hr>
 
 .. toctree::
    :hidden:
@@ -26,6 +30,8 @@ Welcome to click-repl's Documentation
 
 
 .. include:: intro.rst
+
+<hr>
 
 .. include:: changelog.rst
 
