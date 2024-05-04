@@ -259,7 +259,8 @@ class ProxyGroup(ProxyCommand, Group):
         """
         super().__init__(obj)
         self.proxy_setattr(
-            "_no_args_is_help_bkp", self.no_args_is_help  # type:ignore[has-type]
+            "_no_args_is_help_bkp",
+            self.no_args_is_help,  # type:ignore[has-type]
         )
         self.no_args_is_help = False
 
@@ -319,7 +320,6 @@ class ProxyParameter(Proxy, Parameter):
     def consume_value(
         self, ctx: Context, opts: t.Mapping[str, t.Any]
     ) -> tuple[t.Any, click.core.ParameterSource] | t.Any:
-
         value = opts.get(self.name, None)  # type:ignore[arg-type]
 
         if IS_CLICK_GE_8:
