@@ -13,8 +13,9 @@ import click
 from click import Command, Context, Group, Parameter
 from typing_extensions import TypeAlias
 
-from ._compat import split_arg_string
+from ._compat import split_arg_string, split_opt
 from .click_custom.shell_completion import _resolve_context
+from .globals_ import get_current_repl_ctx
 from .utils import is_param_value_incomplete, iterate_command_params
 
 InfoDict: TypeAlias = Dict[str, Any]
@@ -363,6 +364,16 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
         opt, _, incomplete = equal_sign_match.groups()
         args.append(opt)
 
+    # This case matches short option names that has their values along with it, with
+    # no space between them. They're splitted separately and the opt is pushed
+    # back into args.
+    opt, _incomplete = split_opt(incomplete)
+    short_opt_joint_with_value = len(opt) == 1 and _incomplete[1:]
+
+    if short_opt_joint_with_value:
+        args.append(opt + _incomplete[0])
+        incomplete = _incomplete[1:]
+
     _args = tuple(args)
 
     # If the user hasn't requested anything with an incomplete text,
@@ -381,9 +392,13 @@ def _resolve_incomplete(document_text: str) -> tuple[tuple[str, ...], Incomplete
     args_splitted_by_space = document_text.split(" ")
 
     # Handles the equals sign with option name as its prefix condition.
-    if equal_sign_match:
+    if equal_sign_match or short_opt_joint_with_value:
         args_splitted_by_space.pop()
         args_splitted_by_space.extend([args[-1], incomplete])
+
+    # elif short_opt_attacehed_with_value:
+    #     args_splitted_by_space.pop()
+    #     args_splitted_by_space.extend([args[-1], incomplete])
 
     for token in reversed(args_splitted_by_space):
         _tmp = f"{token} {raw_incomplete_with_quotes}".rstrip()
@@ -438,7 +453,7 @@ def _resolve_state(
     Parameters
     ----------
     ctx
-        The current context object of the parent group.
+        The current click context object of the parent group.
 
     document_text
         The text currently in the prompt.
@@ -451,8 +466,13 @@ def _resolve_state(
             - Current REPL input state object.
             - Object that holds the incomplete text token that requires suggestions.
     """
+
     args, incomplete = _resolve_incomplete(document_text)
     parsed_ctx = _resolve_context(ctx, args)
     state = _resolve_repl_input_state(ctx, parsed_ctx, args)
+
+    repl_ctx = get_current_repl_ctx(silent=True)
+    if repl_ctx is not None:
+        repl_ctx.update_state(state)
 
     return parsed_ctx, state, incomplete

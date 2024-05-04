@@ -73,9 +73,12 @@ def test_option_completion(test_input, expected):
     assert {x.text for x in completions} == expected
 
 
-def test_extra_chars_in_short_opt_names():
-    completions = c.get_completions(Document("option-cmd -hello "))
-    assert {x.text for x in completions} == set()
+@pytest.mark.parametrize(
+    "test_input, expected", [("option-cmd -hf", {"foo"}), ("option-cmd -hb", {"bar"})]
+)
+def test_extra_chars_in_short_opt_names(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
 
 
 @root_command.command()

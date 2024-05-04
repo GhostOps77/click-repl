@@ -16,7 +16,7 @@ from prompt_toolkit.formatted_text import AnyFormattedText
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 from typing_extensions import Final
 
-from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE
+from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
 from .bottom_bar import BottomBar
 from .click_custom.parser import get_option_flags_sep, order_option_names
 from .globals_ import (
@@ -750,21 +750,21 @@ class ClickCompleter(Completer):
             ctx.command, "chain", False
         )
 
-        is_current_command_a_group_or_none = current_command is None or isinstance(
-            current_command, click.Group
+        is_current_command_a_multicommand_or_none = current_command is None or isinstance(
+            current_command, MultiCommand
         )
 
         return ctx.command != self.group_ctx.command and (
             incomplete_visible_args
-            or not (is_chained_command or is_current_command_a_group_or_none)
+            or not (is_chained_command or is_current_command_a_multicommand_or_none)
         )
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplInputState, incomplete: Incomplete
     ) -> Group | None:
         """
-        Returns the appropriate :class:`~click.Group` object that should be used
-        to generate auto-completions for suggesting subcommands of a group.
+        Returns the appropriate :class:`~click.core.MultiCommand` object that should be
+        used to generate auto-completions for suggesting subcommands of a group.
 
         Parameters
         ----------
@@ -780,10 +780,11 @@ class ClickCompleter(Completer):
 
         Returns
         -------
-        Group | None
-            A click group object, if available, which is supposed to be used for
+        MultiCommand | None
+            A click multiCommand object, if available, which is supposed to be used for
             generating auto-completion for suggesting its subcommands.
         """
+
         if state.current_param:
             return None
 
@@ -796,7 +797,7 @@ class ClickCompleter(Completer):
         if any_argument_param_incomplete:
             return None
 
-        if isinstance(ctx.command, Group):
+        if isinstance(ctx.command, MultiCommand):
             return ctx.command
 
         if state.current_group.chain:
@@ -807,7 +808,7 @@ class ClickCompleter(Completer):
     def get_visible_subcommands(
         self,
         ctx: Context,
-        group: Group,
+        multicommand: MultiCommand,
         incomplete: str,
     ) -> Generator[Command, None, None]:
         """
@@ -819,8 +820,8 @@ class ClickCompleter(Completer):
         ctx
             The current click context object.
 
-        group
-            A click group object, which is used for generating auto-completion
+        multicommand
+            A click multicommand object, which is used for generating auto-completion
             for suggesting its subcommands.
 
         incomplete
@@ -829,13 +830,13 @@ class ClickCompleter(Completer):
         Yields
         ------
         click.Command
-            Click command type sub-command objects of the ``group`` object.
+            Click command type sub-command objects of the ``multicommand`` object.
         """
-        for command_name in group.list_commands(ctx):
+        for command_name in multicommand.list_commands(ctx):
             if not (command_name and command_name.startswith(incomplete)):
                 continue
 
-            subcommand = group.get_command(ctx, command_name)
+            subcommand = multicommand.get_command(ctx, command_name)
 
             if subcommand is None or (
                 subcommand.hidden and not self.show_hidden_commands

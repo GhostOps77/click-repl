@@ -13,7 +13,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
 from typing_extensions import Final
 
-from .globals_ import CLICK_REPL_DEV_ENV, get_current_repl_ctx
+from .globals_ import CLICK_REPL_DEV_ENV
 from .internal_commands import InternalCommandSystem
 from .parser import _resolve_state
 
@@ -111,9 +111,7 @@ class ClickValidator(Validator):
             return
 
         try:
-            _, state, _ = _resolve_state(self.group_ctx, document.text_before_cursor)
-
-            get_current_repl_ctx().update_state(state)  # type: ignore[union-attr]
+            _resolve_state(self.group_ctx, document.text_before_cursor)
 
         except UsageError as ue:
             # UsageError's error messages are simple and are raised when there

@@ -8,7 +8,15 @@ import typing as t
 from typing import Any
 
 import click
-from click import Argument, Command, Context, Group, Option, Parameter
+from click import (
+    Argument,
+    Command,
+    CommandCollection,
+    Context,
+    Group,
+    Option,
+    Parameter,
+)
 from typing_extensions import Self
 
 from .click_custom.parser import ReplOptionParser
@@ -26,6 +34,12 @@ def create_proxy_command(obj: Group) -> ProxyGroup:  # type:ignore[misc]
     ...
 
 
+@t.overload
+def create_proxy_command(  # type:ignore[misc]
+    obj: CommandCollection,
+) -> ProxyCommandCollection: ...
+
+
 def create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
     """
     Wraps the given :class:`~click.Command` object within a proxy object.
@@ -37,14 +51,17 @@ def create_proxy_command(obj: Command | Group) -> ProxyCommand | ProxyGroup:
 
     Returns
     -------
-    ProxyCommand | ProxyGroup
+    ProxyCommand | ProxyGroup | ProxyCommandCollection
         Proxy wrapper for the :class:`~click.Command` objects.
     """
-    if isinstance(obj, ProxyCommand):
-        return obj
+    if isinstance(obj, CommandCollection):
+        return ProxyCommandCollection(obj)
 
     if isinstance(obj, Group):
         return ProxyGroup(obj)
+
+    if isinstance(obj, ProxyCommand):
+        return obj
 
     return ProxyCommand(obj)
 
@@ -226,7 +243,7 @@ class ProxyGroup(ProxyCommand, Group):
     Proxy class for :class:`~click.Group` objects that modifies
     their options parser.
 
-    This class overrides the :meth:`~click.Group.make_parser` method
+    This class overrides the :meth:`~click.Command.make_parser` method
     to use the custom parser implementation provided by
     :class:`~click_repl.click_custom.parser.ReplOptionParser`.
 
@@ -249,6 +266,28 @@ class ProxyGroup(ProxyCommand, Group):
     def revoke_changes(self) -> None:
         super().revoke_changes()
         self.no_args_is_help = self.proxy_getattr("_no_args_is_help_bkp")
+
+
+class ProxyCommandCollection(ProxyCommand, CommandCollection):
+    """
+    Proxy class for :class:`~click.ProxyCommandCollection` objects that modifies
+    their options parser.
+
+    This class overrides the :meth:`~click.Command.make_parser` method
+    to use the custom parser implementation provided by
+    :class:`~click_repl.click_custom.parser.ReplOptionParser`.
+
+    Parameters
+    ----------
+    obj
+        The click group object that needs to be proxied.
+    """
+
+    def __init__(self, obj: Group) -> None:
+        """
+        Initializes the `ProxyCommandCollection` class.
+        """
+        super().__init__(obj)
 
 
 class ProxyParameter(Proxy, Parameter):

@@ -133,6 +133,7 @@ def _resolve_context(ctx: Context, args: tuple[str, ...], proxy: bool = True) ->
     ---------
     :func:`~click.shell_completion._resolve_context`
     """
+
     while args:
         command = ctx.command
 
