@@ -73,7 +73,7 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
 
     try:
         return _context_stack[-1]
-    except (AttributeError, IndexError):
+    except IndexError:
         if not silent:
             raise RuntimeError("There is no active click-repl context.")
 

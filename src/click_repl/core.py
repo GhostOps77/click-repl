@@ -160,7 +160,7 @@ class ReplContext:
     @property
     def prompt(self) -> AnyFormattedText:
         """
-        The prompt text of the REPL.
+        The prompt text of the REPL field.
 
         Returns
         -------
