@@ -45,6 +45,7 @@ AUTO_COMPLETION_FUNC_ATTR = (
 # Several things are deprecated in click v8.2
 # Therefore, we're importing them based on their new name.
 if IS_CLICK_GE_8_2:
+    from click.core import _MultiCommand as MultiCommand
     from click.parser import _Argument  # type:ignore
     from click.parser import _Option  # type:ignore
     from click.parser import _normalize_opt as normalize_opt  # type:ignore
@@ -54,6 +55,7 @@ if IS_CLICK_GE_8_2:
     from click.shell_completion import split_arg_string  # type:ignore
 
 else:
+    from click.core import MultiCommand
     from click.parser import Argument as _Argument  # type:ignore
     from click.parser import Option as _Option  # type:ignore
     from click.parser import (
@@ -70,6 +72,7 @@ else:
 
 
 __all__ = [
+    "MultiCommand",
     "RANGE_TYPES",
     "RANGE_TYPES_TUPLE",
     "PARAM_TYPES_WITH_METAVAR",

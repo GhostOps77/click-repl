@@ -220,6 +220,10 @@ class ReplContext:
         state
             A ReplInputState object that keeps track of the current input state.
         """
+
+        if self.current_state == state:
+            return
+
         self.current_state = state
 
         if ISATTY and isinstance(self.bottom_bar, BottomBar):

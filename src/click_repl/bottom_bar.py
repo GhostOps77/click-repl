@@ -134,7 +134,7 @@ class BottomBar:
             current_group_name = "..."
 
         prefix: ListOfTokens = [
-            ("multicommand.type", "Group"),
+            ("multicommand.type", type(current_group).__name__),
             ("space", " "),
             ("multicommand.name", current_group_name),
         ]
