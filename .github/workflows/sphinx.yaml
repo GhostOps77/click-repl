@@ -1,6 +1,24 @@
 name: "Sphinx: Render docs"
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'requirements/requirements-docs.txt'
+
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'requirements/requirements-docs.txt'
+
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: 'Manually triggered workflow'
+        required: false
+        default: 'true'
 
 jobs:
   build:
