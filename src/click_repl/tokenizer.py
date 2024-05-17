@@ -5,12 +5,11 @@ Utilities to create and manage tokens.
 from __future__ import annotations
 
 import os
-from typing import Iterable
+from typing import Iterable, Literal
 
 import click
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Literal
 
 from .globals_ import ISATTY
 

@@ -6,12 +6,12 @@ raised during auto-completion.
 from __future__ import annotations
 
 import logging
+from typing import Final
 
 from click import Context
 from click.exceptions import ClickException, UsageError
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import ValidationError, Validator
-from typing_extensions import Final
 
 from .globals_ import CLICK_REPL_DEV_ENV
 from .internal_commands import InternalCommandSystem

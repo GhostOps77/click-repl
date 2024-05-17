@@ -3,7 +3,7 @@
 [![Tests](https://github.com/GhostOps77/click-repl/actions/workflows/workflow.yml/badge.svg?branch=GhostOps77-patch-1)](https://github.com/GhostOps77/click-repl/actions/workflows/workflow.yml)
 [![License](https://img.shields.io/pypi/l/click-repl?label=License)](https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-![Python - Version](https://img.shields.io/badge/python-3%20%7C%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
+![Python - Version](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
 [![PyPI - Version](https://img.shields.io/badge/pypi-v0.2.0-blue)](https://pypi.org/project/click-repl/)
 ![wheels](https://img.shields.io/piwheels/v/click-repl?label=wheel)
 ![PyPI - Status](https://img.shields.io/pypi/status/click)

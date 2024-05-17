@@ -20,5 +20,5 @@ __all__ = [
 ]
 
 
-version_info = (0, 2, 1, 10)
-__version__ = "0.2.1dev10"
+version_info = (0, 2, 1, 11)
+__version__ = "0.2.1dev11"

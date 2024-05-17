@@ -5,11 +5,20 @@ Core functionalities for managing context of the click_repl app.
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Final,
+    Generator,
+    TypedDict,
+    TypeVar,
+)
 
 from click import Context
 from prompt_toolkit import PromptSession
-from typing_extensions import Concatenate, Final, ParamSpec, TypeAlias, TypedDict
+from typing_extensions import Concatenate, ParamSpec, TypeAlias
 
 from ._ctx_stack import _pop_context, _push_context
 from .bottom_bar import BottomBar
