@@ -32,8 +32,8 @@ InternalCommandSystem
 ~~~~~~~~~~~~~~~~~~~~~
 
 All the internal commands are defined and accessed from :class:`~click_repl.internal_commands.InternalCommandSystem` object.
-You can get this object from the :attr:`~click_repl.core.ReplContext.internal_command_system` attribute of the current REPL
-session's :class:`~click_repl.core.ReplContext` object.
+You can get this object from the :attr:`~click_repl.context.ReplContext.internal_command_system` attribute of the current REPL
+session's :class:`~click_repl.context.ReplContext` object.
 
 .. code-block:: python
    :linenos:
@@ -57,7 +57,7 @@ other aliases.
 
 .. note::
 
-    * You can register and delete internal commands from anywhere, as long as you can access the current REPL session's :class:`~click_repl.core.ReplContext` object.
+    * You can register and delete internal commands from anywhere, as long as you can access the current REPL session's :class:`~click_repl.context.ReplContext` object.
 
     * The callback function for your custom internal command must be of type ``Callable[[], None]``. That is, it shouldn't take in any arguments, and return nothing.
 
@@ -151,6 +151,16 @@ the REPL (Default: ``!``).
 
     > !echo hi
     hi
+
+.. warning::
+
+   System commands are executed as shell commands. Any string entered after
+   :attr:`~click_repl.internal_commands.InternalCommandSystem.system_command_prefix`
+   (for example ``!ls -la``) is passed **unmodified** to
+   :func:`subprocess.run` with ``shell=True``. Anyone who can type into the
+   REPL therefore has full shell access with the permissions of the running
+   process. Do not expose a REPL with system commands enabled to untrusted
+   input, and set ``system_command_prefix=None`` to disable this feature.
 
 
 Assigning Custom Prefixes

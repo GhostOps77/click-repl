@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .core import ReplContext
+    from .context import ReplContext
 
 
 # To store the ReplContext objects generated throughout the Runtime.
@@ -17,7 +17,7 @@ def _push_context(ctx: ReplContext) -> None:
     Parameters
     ----------
     ctx
-        The :class:`~click_repl.core.ReplContext` object that should be
+        The :class:`~click_repl.context.ReplContext` object that should be
         added to the REPL context stack.
     """
     _context_stack.append(ctx)

@@ -16,7 +16,7 @@ from click import Group
 
 from ._compat import split_arg_string
 from .click_custom.shell_completion import _expand_args, _generate_next_click_ctx
-from .core import ReplContext
+from .context import ReplContext
 from .exceptions import ExitReplException, InternalCommandException, PrefixNotFound
 from .globals_ import ISATTY, get_current_repl_ctx
 from .internal_commands import InternalCommandSystem
@@ -89,17 +89,26 @@ class Repl:
     def __init__(
         self,
         ctx: Context,
-        prompt_kwargs: dict[str, Any] = {},
+        prompt_kwargs: dict[str, Any] | None = None,
         completer_cls: type[Completer] = _MISSING,  # type:ignore[assignment]
         validator_cls: type[Validator] | None = _MISSING,  # type:ignore[assignment]
-        completer_kwargs: dict[str, Any] = {},
-        validator_kwargs: dict[str, Any] = {},
+        completer_kwargs: dict[str, Any] | None = None,
+        validator_kwargs: dict[str, Any] | None = None,
         internal_command_prefix: str | None = ":",
         system_command_prefix: str | None = "!",
     ) -> None:
         """
         Initializes the `Repl` class.
         """
+
+        if prompt_kwargs is None:
+            prompt_kwargs = {}
+
+        if completer_kwargs is None:
+            completer_kwargs = {}
+
+        if validator_kwargs is None:
+            validator_kwargs = {}
 
         # Check if there's a parent command, if its there, then use it.
         if ctx.parent is not None and not isinstance(ctx.command, Group):
@@ -265,7 +274,7 @@ class Repl:
         validator_cls: type[Validator] | None,
         validator_kwargs: dict[str, Any],
         prompt_kwargs: dict[str, Any],
-        style_config_dict: dict[str, str] = {},
+        style_config_dict: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """
         Generates default keyword arguments for initializing a
@@ -308,6 +317,9 @@ class Repl:
 
         elif completer_cls == _MISSING:
             completer_cls = ClickCompleter
+
+        if style_config_dict is None:
+            style_config_dict = {}
 
         default_prompt_kwargs = {
             "history": InMemoryHistory(),

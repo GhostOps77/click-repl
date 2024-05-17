@@ -9,7 +9,6 @@ import typing as t
 import click
 from click import Group
 from click.types import ParamType
-from typing_extensions import TypedDict
 
 from ._compat import RANGE_TYPES_TUPLE
 from .click_custom.utils import _describe_click_range_param_type
@@ -30,7 +29,7 @@ __all__ = ["BottomBar"]
 
 # Dictionary type that holds the name, type and nargs info and their metavar
 # templates in it, to display them in the bottom bar.
-class ParamInfo(TypedDict):
+class ParamInfo(t.TypedDict):
     name: Token
     type_info: ListOfTokens
     nargs_info: ListOfTokens
@@ -464,10 +463,9 @@ class BottomBar:
             Tokens that describe the given ``param``, including
             appropriate metavar templates and formatting.
         """
-        param_name = param_info["name"]
-        nargs_info = param_info["nargs_info"]
+        res: ListOfTokens = [param_info["name"]]
 
-        res: ListOfTokens = [param_name]
+        nargs_info = param_info["nargs_info"]
 
         if not nargs_info:
             return res

@@ -22,7 +22,6 @@ class InternalCommandException(Exception):
     pass
 
 
-
 class ParserError(Exception):
     """
     Exception raised when parsing given input for click objects fails.
@@ -67,8 +66,7 @@ class WrongType(InternalCommandException):
 
     def __init__(self, var: Any, var_name: str, expected_type: str) -> None:
         super().__init__(
-            f"Expected {var_name!r} to be a {expected_type}, "
-            f"but got {type(var).__name__}"
+            f"Expected {var_name!r} to be a {expected_type}, but got {type(var).__name__}"
         )
 
 
@@ -99,34 +97,6 @@ class ExitReplException(InternalCommandException):
     """Exception raised to stop the REPL of the click_repl app."""
 
     pass
-
-
-
-class InvalidGroupFormat(ParserError):
-    """
-    Exception raised when a Group has non-required arguments don't have
-    value assigned to them.
-
-#     This exception indicates an invalid format in a Group context object
-#     where nonrequired arguments are missing values. It typically occurs
-#     when attempting to parse command-line input that does not conform
-#     to the expected format.
-
-#     Parameters
-#     ----------
-#     group : click.Group
-#         The group object representing the group that has the invalid format.
-
-#     param : click.Argument
-#         The argument object representing the non-required argument
-#         that is missing a value.
-#     """
-
-#     def __init__(self, group: "Group", param: "Argument") -> None:
-#         super().__init__(
-#             f'Expected some value for the optional argument "{param.name}" of '
-#             f'Group "{group.name}" to invoke the REPL, but got None'
-#         )
 
 
 class ArgumentPositionError(ParserError):

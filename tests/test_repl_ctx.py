@@ -4,7 +4,7 @@ import click
 import pytest
 
 import click_repl
-from click_repl.core import ReplContext
+from click_repl.context import ReplContext
 from click_repl.internal_commands import InternalCommandSystem
 from tests import mock_stdin
 

@@ -20,7 +20,6 @@ from click import (
 from typing_extensions import Self
 
 from .click_custom.parser import ReplOptionParser
-from .globals_ import IS_CLICK_GE_8
 
 T = t.TypeVar("T")
 
@@ -284,7 +283,7 @@ class ProxyCommandCollection(ProxyCommand, CommandCollection):
         The click group object that needs to be proxied.
     """
 
-    def __init__(self, obj: Group) -> None:
+    def __init__(self, obj: CommandCollection) -> None:
         """
         Initializes the `ProxyCommandCollection` class.
         """
@@ -312,22 +311,16 @@ class ProxyParameter(Proxy, Parameter):
         super().__init__(obj)
 
     def full_process_value(self, ctx: Context, value: Any) -> Any:
-        # click v7 has 'full_process_value' while click v8 has 'process_value'.
-        # Therefore, for backwards compatibility with click v7,
-        # 'process_value' method is called within this method.
         return self.process_value(ctx, value)
 
     def consume_value(
         self, ctx: Context, opts: t.Mapping[str, t.Any]
-    ) -> tuple[t.Any, click.core.ParameterSource] | t.Any:
+    ) -> tuple[t.Any, click.core.ParameterSource]:
         value = opts.get(self.name, None)  # type:ignore[arg-type]
 
-        if IS_CLICK_GE_8:
-            from click.core import ParameterSource
+        from click.core import ParameterSource
 
-            return value, ParameterSource.COMMANDLINE
-
-        return value
+        return value, ParameterSource.COMMANDLINE
 
     def process_value(self, ctx: Context, value: Any) -> Any:
         if value is not None:

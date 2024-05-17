@@ -5,7 +5,7 @@ click-repl uses :class:`~prompt_toolkit.completion.Completer` as its base class 
 class (:class:`~click_repl.completer.ClickCompleter`), providing suggestions to the REPL prompt.
 It uses :class:`~click_repl.completer.ClickCompleter` by default.
 
-It can yield out completions from every click component's ``shell_complete`` (or ``autocompletion`` in version 7) method.
+It can yield out completions from every click component's ``shell_complete`` method.
 It also does generate auto completion specific to each of click components.
 
 .. admonition:: References
@@ -36,7 +36,7 @@ in the prompt, from where the :attr:`~prompt_toolkit.completion.Completion.text`
 Usage
 ~~~~~
 
-click-repl retrieves its suggestions from ``shell_complete`` functions first (``autocompletion`` in click v7).
+click-repl retrieves its suggestions from ``shell_complete`` functions first.
 It prioritizes and yields the suggestions from these functions, other than generating them by their types.
 
 You can use :class:`~click_repl.completer.ReplCompletion` in your custom ``shell_complete`` function.

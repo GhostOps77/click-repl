@@ -6,7 +6,7 @@ inside your click app in just some simple steps.
 from __future__ import annotations
 
 from ._repl import Repl, ReplGroup, register_repl, repl
-from .core import ReplContext, pass_context
+from .context import ReplContext, pass_context
 from .internal_commands import repl_exit
 
 __all__ = [
@@ -20,5 +20,5 @@ __all__ = [
 ]
 
 
-version_info = (0, 2, 1, 10)
-__version__ = "0.2.1dev10"
+version_info = (0, 2, 1, 11)
+__version__ = "0.2.1dev11"

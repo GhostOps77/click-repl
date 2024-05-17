@@ -4,24 +4,17 @@ Configuration and Utilities for auto-completion in the REPL.
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, Generator
 
 import click
-from click import Group
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
-from prompt_toolkit.document import Document
-from prompt_toolkit.formatted_text import AnyFormattedText
-from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
-from typing_extensions import Final
 
-from ._compat import AUTO_COMPLETION_FUNC_ATTR, PATH_TYPES_TUPLE, MultiCommand
+from ._compat import PATH_TYPES_TUPLE, MultiCommand
 from .bottom_bar import BottomBar
 from .click_custom.parser import get_option_flags_sep, order_option_names
 from .globals_ import (
     CLICK_REPL_DEV_ENV,
-    IS_CLICK_GE_8,
     IS_CLICK_GE_8_2,
     IS_WINDOWS,
     ISATTY,
@@ -39,8 +32,11 @@ from .utils import _is_help_option, is_param_value_incomplete
 if TYPE_CHECKING:
     from click import Command, Context, Parameter
     from click.types import ParamType
+    from prompt_toolkit.document import Document
+    from prompt_toolkit.formatted_text import AnyFormattedText
+    from prompt_toolkit.formatted_text import StyleAndTextTuples as ListOfTokens
 
-    from .core import ReplContext
+    from .context import ReplContext
 
 
 __all__ = ["ClickCompleter", "ReplCompletion"]
@@ -148,8 +144,7 @@ class ClickCompleter(Completer):
     ) -> Generator[Completion, None, None]:
         """
         Generates auto-completions based on the output from the command's
-        :meth:`~click.Command.shell_complete` or ``autocompletion`` function
-        of the ``param``.
+        :meth:`~click.Command.shell_complete` function of the ``param``.
 
         Parameters
         ----------
@@ -178,19 +173,11 @@ class ClickCompleter(Completer):
         # function, and its called "autocompletion". So, for backwards
         # compatibility, we're calling them based on the click's version.
 
-        if IS_CLICK_GE_8:
-            autocompletions = param.shell_complete(ctx, incomplete.parsed_str)
-
-        else:
-            autocompletions = param.autocompletion(  # type: ignore[attr-defined]
-                ctx, state.args, incomplete.parsed_str
-            )
+        autocompletions = param.shell_complete(ctx, incomplete.parsed_str)
 
         for autocomplete in autocompletions:
-            if (
-                IS_CLICK_GE_8
-                and not IS_CLICK_GE_8_2
-                and isinstance(autocomplete, click.shell_completion.CompletionItem)
+            if not IS_CLICK_GE_8_2 and isinstance(
+                autocomplete, click.shell_completion.CompletionItem
             ):
                 yield ReplCompletion(autocomplete.value, incomplete)
 
@@ -199,48 +186,6 @@ class ClickCompleter(Completer):
 
             else:
                 yield ReplCompletion(str(autocomplete), incomplete)
-
-    def get_completion_from_choices_type(
-        self, param: Parameter, param_type: click.Choice, incomplete: Incomplete
-    ) -> Generator[Completion, None, None]:
-        """
-        Generates auto-completions based on data from the given
-        :class:`~click.Choice` parameter type of a ``param``.
-
-        This method is used for backwards compatibility with click v7 as
-        :class:`~click.Choice` class didn't have a :meth:`~click.Choice.shell_complete`
-        method until click v8.
-
-        Parameters
-        ----------
-        param
-            The parameter for which auto-completions are generated.
-
-        param_type
-            The Choice ParamType object of ``param``, to which the
-            auto-completions are generated.
-
-        incomplete
-            Object that contains the incomplete string in the REPL prompt.
-
-        Yields
-        ------
-        prompt_toolkit.completion.Completion
-            Completion objects for auto-completions for the choices type.
-        """
-
-        case_insensitive = not param_type.case_sensitive
-
-        _incomplete = incomplete.expand_envvars()
-
-        if case_insensitive:
-            _incomplete = _incomplete.lower()
-
-        for choice in param_type.choices:
-            _choice = choice.lower() if case_insensitive else choice
-
-            if _choice.startswith(_incomplete):
-                yield ReplCompletion(choice, incomplete)
 
     def get_completion_for_path_types(
         self,
@@ -390,13 +335,6 @@ class ClickCompleter(Completer):
                 ctx, param, param_type.types[index_of_none], state, incomplete
             )
 
-        # shell_complete method for click.Choice class is introduced in click v8.
-        # So, we're implementing shell_complete for Choice, separately.
-        elif isinstance(param_type, click.Choice) and not IS_CLICK_GE_8:
-            yield from self.get_completion_from_choices_type(
-                param, param_type, incomplete
-            )
-
         elif isinstance(param_type, click.types.BoolParamType):
             yield from self.get_completion_for_boolean_type(param, incomplete)
 
@@ -405,7 +343,8 @@ class ClickCompleter(Completer):
             # to receive input as a path string.
             yield from self.get_completion_for_path_types(param, param_type, incomplete)
 
-        elif IS_CLICK_GE_8:
+        # elif IS_CLICK_GE_8:
+        else:
             yield from self.get_completion_from_autocompletion_functions(
                 ctx, param, state, incomplete, param_type
             )
@@ -443,7 +382,7 @@ class ClickCompleter(Completer):
 
         param_type = param.type
 
-        if getattr(param, AUTO_COMPLETION_FUNC_ATTR, None) is not None:
+        if param._custom_shell_complete is not None:
             yield from self.get_completion_from_autocompletion_functions(
                 ctx, param, state, incomplete
             )
@@ -761,7 +700,7 @@ class ClickCompleter(Completer):
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplInputState, incomplete: Incomplete
-    ) -> Group | None:
+    ) -> MultiCommand | None:
         """
         Returns the appropriate :class:`~click.core.MultiCommand` object that should be
         used to generate auto-completions for suggesting subcommands of a group.

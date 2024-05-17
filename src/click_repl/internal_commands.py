@@ -6,9 +6,19 @@ from __future__ import annotations
 
 import subprocess
 from collections import defaultdict
-from collections.abc import Generator, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, ItemsView, List, NoReturn, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    ItemsView,
+    Iterator,
+    List,
+    NoReturn,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 
 import click
 from typing_extensions import TypeAlias
@@ -23,14 +33,18 @@ from .exceptions import (
 from .globals_ import get_current_repl_ctx
 from .utils import print_error
 
+T = TypeVar("T")
+
 __all__ = ["repl_exit", "InternalCommandSystem"]
 
 
-InternalCommandDict: TypeAlias = Dict[str, Tuple[Callable[[], None], str]]
+InternalCommandCallback: TypeAlias = Callable[[], None]
+
+InternalCommandDict: TypeAlias = Dict[str, Tuple[InternalCommandCallback, str]]
 # Dictionary that holds all the internal command's aliases with their callback, and
 # description.
 
-InfoTable: TypeAlias = Dict[Tuple[Callable[[], None], str], List[str]]
+InfoTable: TypeAlias = Dict[Tuple[InternalCommandCallback, str], List[str]]
 # Dictionary that holds all the aliases of a command together in a key: value pair,
 # with its callback and description.
 
@@ -275,11 +289,18 @@ class InternalCommandSystem:
 
     def register_command(
         self,
-        target: Callable[[], None] | None = None,
+        target: InternalCommandCallback | None = None,
         *,
-        names: str | None | Sequence[str] = None,
+        names: str
+        | Sequence[str]
+        | Generator[str, None, None]
+        | Iterator[str]
+        | None = None,
         description: str | None = None,
-    ) -> Callable[[Callable[[], None]], Callable[[], None]] | Callable[[], None]:
+    ) -> (
+        Callable[[InternalCommandCallback], InternalCommandCallback]
+        | InternalCommandCallback
+    ):
         """
         Decorator used to register a new internal command from the given function.
 
@@ -304,7 +325,7 @@ class InternalCommandSystem:
             or a function that takes and returns the same function when called.
         """
 
-        def decorator(func: Callable[[], None]) -> Callable[[], None]:
+        def decorator(func: InternalCommandCallback) -> InternalCommandCallback:
             nonlocal target, names, description
 
             if target is None:
@@ -370,7 +391,11 @@ class InternalCommandSystem:
         """
         return list(self._group_commands_by_callback_and_desc().values())
 
-    def get_command(self, name: str, default: Any = _MISSING) -> Callable[[], None] | Any:
+    def get_command(
+        self,
+        name: str,
+        default: T = _MISSING,  # type:ignore[assignment]
+    ) -> InternalCommandCallback | T:
         """
         Retrieves the callback function of the internal command if available.
 
@@ -385,7 +410,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        Callable[[],None] | Any
+        Callable[[],None] | T
             The callback function of the internal command, if found. Otherwise,
             it returns the value specified in the ``default`` parameter.
         """
@@ -395,7 +420,7 @@ class InternalCommandSystem:
         if target_info:
             return target_info[0]
 
-        if default == _MISSING:
+        if default is _MISSING:
             raise InternalCommandNotFound(name)
 
         return default
@@ -424,12 +449,11 @@ class InternalCommandSystem:
             self._internal_commands.pop(name)
             return
 
-        else:
-            for _, mnemonics in info_table.items():
-                if name in mnemonics:
-                    for mnemonic in mnemonics:
-                        self._internal_commands.pop(mnemonic)
-                    return
+        for mnemonics in info_table.values():
+            if name in mnemonics:
+                for mnemonic in mnemonics:
+                    self._internal_commands.pop(mnemonic)
+                return
 
         raise InternalCommandNotFound(name)
 
