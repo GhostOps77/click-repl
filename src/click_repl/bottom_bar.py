@@ -23,7 +23,7 @@ if t.TYPE_CHECKING:
 
     from .parser import ReplInputState
 
-
+print("hi")
 __all__ = ["BottomBar"]
 
 
