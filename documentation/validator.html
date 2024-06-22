@@ -220,8 +220,8 @@ It uses <a class="reference internal" href="../api.html#click_repl.validator.Cli
 <p>This utility displays the errors that are raised while generating auto-completions, in the form of text in bottom bar
 with a red background. It can also verify input text from the prompt while typing.
 The prompt will not accept input if the validator reports that it’s in an invalid format.</p>
-<p>This is particularly useful for dislaying formatted messages from <a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.UsageError" title="(in Click v8.1.x)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">UsageError</span></code></a> exceptions using its
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">click.exceptions.UsageError.format_message()</span></code> method.</p>
+<p>This is particularly useful for displaying formatted messages from <a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.UsageError" title="(in Click v8.1.x)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">UsageError</span></code></a> exceptions using its
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">format_message()</span></code> method.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The validator can only catch and display exceptions that are raised while parsing the prompt. It cannot catch
@@ -303,7 +303,7 @@ of <a class="reference internal" href="../api.html#click_repl._repl.repl" title=
 </pre></div>
 </div>
 <p>This dictionary of keyword arguments will be updated with the default keyword arguments of validator, which will be supplied
-to the validator upon initializing the REPL. The default arguments for <code class="xref py py-class docutils literal notranslate"><span class="pre">ClickValidator</span></code> are:</p>
+to the validator upon initializing the REPL. The default arguments for <a class="reference internal" href="../api.html#click_repl.validator.ClickValidator" title="click_repl.validator.ClickValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClickValidator</span></code></a> are:</p>
 <ol class="arabic simple">
 <li><p><a class="reference internal" href="../api.html#click_repl.validator.ClickValidator.group_ctx" title="click_repl.validator.ClickValidator.group_ctx"><code class="xref py py-attr docutils literal notranslate"><span class="pre">group_ctx</span></code></a> - <a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Context" title="(in Click v8.1.x)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Context</span></code></a> of the invoked group.</p></li>
 <li><p><a class="reference internal" href="../api.html#click_repl.validator.ClickValidator.internal_commands_system" title="click_repl.validator.ClickValidator.internal_commands_system"><code class="xref py py-attr docutils literal notranslate"><span class="pre">internal_commands_system</span></code></a> - <a class="reference internal" href="../api.html#click_repl.internal_commands.InternalCommandSystem" title="click_repl.internal_commands.InternalCommandSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">InternalCommandSystem</span></code></a> object of the current REPL session.</p></li>
