@@ -18,7 +18,7 @@ For parameters, these are the formatting style implemented into bottom bar.
 
 * Parameters that have received all of its necessary values from the prompt are represented as strikethrough text.
 
-It also keeps track of the values that an :class:`~click.core.Argument` with ``nargs`` > 1 has received.
+It also keeps track of the values that an :class:`~click.core.Argument` with :attr:`~click.core.Parameter.nargs` > 1 has received.
 
 .. code-block:: python
    :linenos:

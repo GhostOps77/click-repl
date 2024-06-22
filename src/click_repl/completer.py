@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
 import click
-from click import Group
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import AnyFormattedText
@@ -760,7 +759,7 @@ class ClickCompleter(Completer):
 
     def get_multicommand_for_generating_subcommand_completions(
         self, ctx: Context, state: ReplInputState, incomplete: Incomplete
-    ) -> Group | None:
+    ) -> MultiCommand | None:
         """
         Returns the appropriate :class:`~click.core.MultiCommand` object that should be
         used to generate auto-completions for suggesting subcommands of a group.

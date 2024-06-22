@@ -9,8 +9,8 @@ This utility displays the errors that are raised while generating auto-completio
 with a red background. It can also verify input text from the prompt while typing.
 The prompt will not accept input if the validator reports that it's in an invalid format.
 
-This is particularly useful for dislaying formatted messages from :exc:`~click.exceptions.UsageError` exceptions using its
-:meth:`click.exceptions.UsageError.format_message` method.
+This is particularly useful for displaying formatted messages from :exc:`~click.exceptions.UsageError` exceptions using its
+:meth:`~click.exceptions.UsageError.format_message` method.
 
 .. note::
 
@@ -110,7 +110,7 @@ of :func:`~click_repl._repl.repl` function.
    main()
 
 This dictionary of keyword arguments will be updated with the default keyword arguments of validator, which will be supplied
-to the validator upon initializing the REPL. The default arguments for :class:`~click-repl.validator.ClickValidator` are:
+to the validator upon initializing the REPL. The default arguments for :class:`~click_repl.validator.ClickValidator` are:
 
 #. :attr:`~click_repl.validator.ClickValidator.group_ctx` - :class:`~click.Context` of the invoked group.
 #. :attr:`~click_repl.validator.ClickValidator.internal_commands_system` - :class:`~click_repl.internal_commands.InternalCommandSystem` object of the current REPL session.

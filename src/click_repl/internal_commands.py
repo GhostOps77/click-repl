@@ -8,7 +8,7 @@ import subprocess
 from collections import defaultdict
 from collections.abc import Generator, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, ItemsView, List, NoReturn, Tuple
+from typing import Callable, Dict, ItemsView, List, NoReturn, Tuple, TypeVar
 
 import click
 from typing_extensions import TypeAlias
@@ -22,6 +22,8 @@ from .exceptions import (
 )
 from .globals_ import get_current_repl_ctx
 from .utils import print_error
+
+T = TypeVar("T")
 
 __all__ = ["repl_exit", "InternalCommandSystem"]
 
@@ -370,7 +372,7 @@ class InternalCommandSystem:
         """
         return list(self._group_commands_by_callback_and_desc().values())
 
-    def get_command(self, name: str, default: Any = _MISSING) -> Callable[[], None] | Any:
+    def get_command(self, name: str, default: T = _MISSING) -> Callable[[], None] | T:  # type:ignore[assignment]
         """
         Retrieves the callback function of the internal command if available.
 
@@ -385,7 +387,7 @@ class InternalCommandSystem:
 
         Returns
         -------
-        Callable[[],None] | Any
+        Callable[[],None] | T
             The callback function of the internal command, if found. Otherwise,
             it returns the value specified in the ``default`` parameter.
         """
@@ -395,7 +397,7 @@ class InternalCommandSystem:
         if target_info:
             return target_info[0]
 
-        if default == _MISSING:
+        if default is _MISSING:
             raise InternalCommandNotFound(name)
 
         return default

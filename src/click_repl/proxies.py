@@ -284,7 +284,7 @@ class ProxyCommandCollection(ProxyCommand, CommandCollection):
         The click group object that needs to be proxied.
     """
 
-    def __init__(self, obj: Group) -> None:
+    def __init__(self, obj: CommandCollection) -> None:
         """
         Initializes the `ProxyCommandCollection` class.
         """
