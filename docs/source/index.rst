@@ -10,16 +10,12 @@ Welcome to click-repl's Documentation
    Issue Tracker <https://github.com/click-contrib/click-repl/issues>
    Source Code <https://github.com/click-contrib/click-repl>
 
-
-<hr>
-
 .. toctree::
    :hidden:
    :caption: Contents
 
-   documentation/index
 
-<hr>
+   documentation/index
 
 .. toctree::
    :hidden:
