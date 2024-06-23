@@ -1,5 +1,5 @@
-Welcome to click-repl's Documentation
-=====================================
+click-repl
+==========
 
 .. toctree::
    :hidden:
@@ -26,8 +26,6 @@ Welcome to click-repl's Documentation
 
 
 .. include:: intro.rst
-
-<hr>
 
 .. include:: changelog.rst
 
