@@ -4,9 +4,8 @@ Configuration and Utilities for auto-completion in the REPL.
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Generator
 
 import click
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion

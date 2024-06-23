@@ -7,17 +7,13 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING, NoReturn
+from importlib.metadata import version
+from typing import TYPE_CHECKING, NoReturn, overload
 
 from ._ctx_stack import _context_stack
 
 if TYPE_CHECKING:
     from .core import ReplContext
-
-if sys.version_info < (3, 8):
-    from importlib_metadata import version
-else:
-    from importlib.metadata import version
 
 
 CLICK_VERSION: tuple[int, int, int] = tuple(  # type:ignore[assignment]
@@ -44,6 +40,14 @@ Environmental flag for click-repl. Enable it only for debugging purposes.
 
 :meta hide-value:
 """
+
+
+@overload
+def get_current_repl_ctx() -> ReplContext | NoReturn: ...
+
+
+@overload
+def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None: ...
 
 
 def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:

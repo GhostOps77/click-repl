@@ -257,7 +257,7 @@ class ReplContext:
 
 
 def pass_context(
-    func: Callable[Concatenate[ReplContext | None, P], R],
+    func: Callable[Concatenate[ReplContext, P], R],
 ) -> Callable[P, R]:
     """
     Decorator that marks a callback function to receive the current
