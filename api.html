@@ -240,13 +240,6 @@ used in the current prompt will be displayed during auto-completion.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.completer.ClickCompleter.bottom_bar">
-<span class="sig-name descname"><span class="pre">bottom_bar</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/completer.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.completer.ClickCompleter.bottom_bar" title="Link to this definition">#</a></dt>
-<dd><p>Object that’s used to update the text displayed in the bottom bar.
-If not required, it should be explicitly set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.completer.ClickCompleter.check_for_command_arguments_request">
 <span class="sig-name descname"><span class="pre">check_for_command_arguments_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#click_repl.parser.ReplInputState" title="click_repl.parser.ReplInputState"><span class="pre">ReplInputState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">incomplete</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#click_repl.parser.Incomplete" title="click_repl.parser.Incomplete"><span class="pre">Incomplete</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/completer.py#L709-L757"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.completer.ClickCompleter.check_for_command_arguments_request" title="Link to this definition">#</a></dt>
@@ -561,12 +554,6 @@ for suggesting its subcommands.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.completer.ClickCompleter.group_ctx">
-<span class="sig-name descname"><span class="pre">group_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><span class="pre">Context</span><span class="p"><span class="pre">]</span></span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/completer.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.completer.ClickCompleter.group_ctx" title="Link to this definition">#</a></dt>
-<dd><p>The click context object of the main group.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.completer.ClickCompleter.handle_internal_commands_request">
 <span class="sig-name descname"><span class="pre">handle_internal_commands_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Generator" title="(in Python v3.12)"><span class="pre">Generator</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://python-prompt-toolkit.readthedocs.io/en/master/pages/reference.html#prompt_toolkit.completion.Completion" title="(in prompt_toolkit v3.0.43)"><span class="pre">Completion</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/completer.py#L949-L987"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.completer.ClickCompleter.handle_internal_commands_request" title="Link to this definition">#</a></dt>
@@ -584,6 +571,19 @@ for the incomplete internal command request, and clearing the bottom bar, if exi
 <dd class="field-odd"><p><a class="reference external" href="https://python-prompt-toolkit.readthedocs.io/en/master/pages/reference.html#prompt_toolkit.completion.Completion" title="(in prompt_toolkit v3.0.43)"><code class="xref py py-class docutils literal notranslate"><span class="pre">prompt_toolkit.completion.Completion</span></code></a> – Completion objects for auto-completing internal commands.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.completer.ClickCompleter.bottom_bar">
+<span class="sig-name descname"><span class="pre">bottom_bar</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/completer.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.completer.ClickCompleter.bottom_bar" title="Link to this definition">#</a></dt>
+<dd><p>Object that’s used to update the text displayed in the bottom bar.
+If not required, it should be explicitly set to <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.completer.ClickCompleter.group_ctx">
+<span class="sig-name descname"><span class="pre">group_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><span class="pre">Context</span><span class="p"><span class="pre">]</span></span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/completer.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.completer.ClickCompleter.group_ctx" title="Link to this definition">#</a></dt>
+<dd><p>The click context object of the main group.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -679,6 +679,49 @@ bottom bar based on the user’s current input state.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="click_repl.core.ReplContext.history">
+<span class="sig-name descname"><span class="pre">history</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Generator" title="(in Python v3.12)"><span class="pre">Generator</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L241-L256"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.history" title="Link to this definition">#</a></dt>
+<dd><p>Generates the history of past executed commands.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> – The executed command string from the history,
+in chronological order from most recent to oldest.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="click_repl.core.ReplContext.session_reset">
+<span class="sig-name descname"><span class="pre">session_reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L212-L220"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.session_reset" title="Link to this definition">#</a></dt>
+<dd><p>Resets values of <code class="xref py py-class docutils literal notranslate"><span class="pre">PromptSession</span></code> to
+the provided <a class="reference internal" href="#click_repl.core.ReplContext.prompt_kwargs" title="click_repl.core.ReplContext.prompt_kwargs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">prompt_kwargs</span></code></a>, discarding any changes done to the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">PromptSession</span></code> object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="click_repl.core.ReplContext.to_info_dict">
+<span class="sig-name descname"><span class="pre">to_info_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ReplContextInfoDict</span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L189-L210"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.to_info_dict" title="Link to this definition">#</a></dt>
+<dd><p>Provides a dictionary with minimal info about the current REPL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ReplContextInfoDict</span></code> – A dictionary that has the instance variables and their values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="click_repl.core.ReplContext.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#click_repl.parser.ReplInputState" title="click_repl.parser.ReplInputState"><span class="pre">ReplInputState</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L222-L239"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.update_state" title="Link to this definition">#</a></dt>
+<dd><p>Updates the current input state of the REPL in itself,
+and in <a class="reference internal" href="#click_repl.core.ReplContext.bottom_bar" title="click_repl.core.ReplContext.bottom_bar"><code class="xref py py-attr docutils literal notranslate"><span class="pre">bottom_bar</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> – A ReplInputState object that keeps track of the current input state.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="click_repl.core.ReplContext.bottom_bar">
 <span class="sig-name descname"><span class="pre">bottom_bar</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.bottom_bar" title="Link to this definition">#</a></dt>
@@ -699,18 +742,6 @@ bottom bar based on the user’s current input state.</p>
 <dt class="sig sig-object py" id="click_repl.core.ReplContext.group_ctx">
 <span class="sig-name descname"><span class="pre">group_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Final" title="(in Python v3.12)"><span class="pre">Final</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Context" title="(in Click v8.1.x)"><span class="pre">Context</span></a><span class="p"><span class="pre">]</span></span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.group_ctx" title="Link to this definition">#</a></dt>
 <dd><p>The click context object that belong to the CLI/parent Group.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="click_repl.core.ReplContext.history">
-<span class="sig-name descname"><span class="pre">history</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Generator" title="(in Python v3.12)"><span class="pre">Generator</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L241-L256"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.history" title="Link to this definition">#</a></dt>
-<dd><p>Generates the history of past executed commands.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Yields<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> – The executed command string from the history,
-in chronological order from most recent to oldest.</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py attribute">
@@ -749,37 +780,6 @@ else <a class="reference external" href="https://docs.python.org/3/library/const
 <dt class="sig sig-object py" id="click_repl.core.ReplContext.session">
 <span class="sig-name descname"><span class="pre">session</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.session" title="Link to this definition">#</a></dt>
 <dd><p>Object that’s responsible for managing and executing the REPL.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="click_repl.core.ReplContext.session_reset">
-<span class="sig-name descname"><span class="pre">session_reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L212-L220"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.session_reset" title="Link to this definition">#</a></dt>
-<dd><p>Resets values of <code class="xref py py-class docutils literal notranslate"><span class="pre">PromptSession</span></code> to
-the provided <a class="reference internal" href="#click_repl.core.ReplContext.prompt_kwargs" title="click_repl.core.ReplContext.prompt_kwargs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">prompt_kwargs</span></code></a>, discarding any changes done to the
-<code class="xref py py-class docutils literal notranslate"><span class="pre">PromptSession</span></code> object.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="click_repl.core.ReplContext.to_info_dict">
-<span class="sig-name descname"><span class="pre">to_info_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ReplContextInfoDict</span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L189-L210"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.to_info_dict" title="Link to this definition">#</a></dt>
-<dd><p>Provides a dictionary with minimal info about the current REPL.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ReplContextInfoDict</span></code> – A dictionary that has the instance variables and their values.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="click_repl.core.ReplContext.update_state">
-<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#click_repl.parser.ReplInputState" title="click_repl.parser.ReplInputState"><span class="pre">ReplInputState</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/core.py#L222-L239"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.core.ReplContext.update_state" title="Link to this definition">#</a></dt>
-<dd><p>Updates the current input state of the REPL in itself,
-and in <a class="reference internal" href="#click_repl.core.ReplContext.bottom_bar" title="click_repl.core.ReplContext.bottom_bar"><code class="xref py py-attr docutils literal notranslate"><span class="pre">bottom_bar</span></code></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>state</strong> – A ReplInputState object that keeps track of the current input state.</p>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
@@ -902,23 +902,6 @@ it returns the value specified in the <code class="docutils literal notranslate"
 </dl>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.internal_command_prefix">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">internal_command_prefix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.internal_command_prefix" title="Link to this definition">#</a></dt>
-<dd><p>Prefix to trigger internal commands.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code> – The prefix for internal commands, if available.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><a class="reference internal" href="#click_repl.exceptions.WrongType" title="click_repl.exceptions.WrongType"><strong>click_repl.exceptions.WrongType</strong></a> – If the value being assigned is not of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
-<li><p><a class="reference internal" href="#click_repl.exceptions.SamePrefix" title="click_repl.exceptions.SamePrefix"><strong>click_repl.exceptions.SamePrefix</strong></a> – If the new prefix thats being assigned is the same as the current prefix.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.list_commands">
 <span class="sig-name descname"><span class="pre">list_commands</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py#L383-L392"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.list_commands" title="Link to this definition">#</a></dt>
@@ -928,12 +911,6 @@ it returns the value specified in the <code class="docutils literal notranslate"
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">list[list[str]]</span></code> – Contains all the names and aliases of each available internal command.</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.prefix_table">
-<span class="sig-name descname"><span class="pre">prefix_table</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">PrefixTable</span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.prefix_table" title="Link to this definition">#</a></dt>
-<dd><p>Table to keep track of the prefixes.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -974,23 +951,6 @@ or a function that takes and returns the same function when called.</p>
 </dl>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.system_command_prefix">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">system_command_prefix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.system_command_prefix" title="Link to this definition">#</a></dt>
-<dd><p>Prefix to execute system commands.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code> – The prefix for system commands, if available.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><a class="reference internal" href="#click_repl.exceptions.WrongType" title="click_repl.exceptions.WrongType"><strong>click_repl.exceptions.WrongType</strong></a> – If the value being assigned is not of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
-<li><p><a class="reference internal" href="#click_repl.exceptions.SamePrefix" title="click_repl.exceptions.SamePrefix"><strong>click_repl.exceptions.SamePrefix</strong></a> – If the new prefix thats being assigned is the same as the current prefix.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.validate_prefix">
 <span class="sig-name descname"><span class="pre">validate_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py#L227-L255"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.validate_prefix" title="Link to this definition">#</a></dt>
@@ -1006,6 +966,46 @@ or a function that takes and returns the same function when called.</p>
 <dd class="field-even"><ul class="simple">
 <li><p><a class="reference internal" href="#click_repl.exceptions.WrongType" title="click_repl.exceptions.WrongType"><strong>click_repl.exceptions.WrongType</strong></a> – If the prefix is not of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>.</p></li>
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If the prefix is an empty string.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.internal_command_prefix">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">internal_command_prefix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.internal_command_prefix" title="Link to this definition">#</a></dt>
+<dd><p>Prefix to trigger internal commands.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code> – The prefix for internal commands, if available.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#click_repl.exceptions.WrongType" title="click_repl.exceptions.WrongType"><strong>click_repl.exceptions.WrongType</strong></a> – If the value being assigned is not of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="#click_repl.exceptions.SamePrefix" title="click_repl.exceptions.SamePrefix"><strong>click_repl.exceptions.SamePrefix</strong></a> – If the new prefix thats being assigned is the same as the current prefix.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.prefix_table">
+<span class="sig-name descname"><span class="pre">prefix_table</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">PrefixTable</span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.prefix_table" title="Link to this definition">#</a></dt>
+<dd><p>Table to keep track of the prefixes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="click_repl.internal_commands.InternalCommandSystem.system_command_prefix">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">system_command_prefix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/internal_commands.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.internal_commands.InternalCommandSystem.system_command_prefix" title="Link to this definition">#</a></dt>
+<dd><p>Prefix to execute system commands.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code> – The prefix for system commands, if available.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#click_repl.exceptions.WrongType" title="click_repl.exceptions.WrongType"><strong>click_repl.exceptions.WrongType</strong></a> – If the value being assigned is not of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="#click_repl.exceptions.SamePrefix" title="click_repl.exceptions.SamePrefix"><strong>click_repl.exceptions.SamePrefix</strong></a> – If the new prefix thats being assigned is the same as the current prefix.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1039,25 +1039,6 @@ traceback being redirected to a log file.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.validator.ClickValidator.display_all_errors">
-<span class="sig-name descname"><span class="pre">display_all_errors</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.display_all_errors" title="Link to this definition">#</a></dt>
-<dd><p>Determines whether to raise generic python exceptions, and not display
-them in the validator bar.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.validator.ClickValidator.group_ctx">
-<span class="sig-name descname"><span class="pre">group_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Final" title="(in Python v3.12)"><span class="pre">Final</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Context" title="(in Click v8.1.x)"><span class="pre">Context</span></a><span class="p"><span class="pre">]</span></span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.group_ctx" title="Link to this definition">#</a></dt>
-<dd><p>The click context object of the main group.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.validator.ClickValidator.internal_commands_system">
-<span class="sig-name descname"><span class="pre">internal_commands_system</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.internal_commands_system" title="Link to this definition">#</a></dt>
-<dd><p>The InternalCommandSystem object of the current REPL session.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.validator.ClickValidator.validate">
 <span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://python-prompt-toolkit.readthedocs.io/en/master/pages/reference.html#prompt_toolkit.document.Document" title="(in prompt_toolkit v3.0.43)"><span class="pre">Document</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py#L85-L137"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.validate" title="Link to this definition">#</a></dt>
@@ -1076,6 +1057,25 @@ validator bar.</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.validator.ClickValidator.display_all_errors">
+<span class="sig-name descname"><span class="pre">display_all_errors</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.display_all_errors" title="Link to this definition">#</a></dt>
+<dd><p>Determines whether to raise generic python exceptions, and not display
+them in the validator bar.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.validator.ClickValidator.group_ctx">
+<span class="sig-name descname"><span class="pre">group_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Final" title="(in Python v3.12)"><span class="pre">Final</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Context" title="(in Click v8.1.x)"><span class="pre">Context</span></a><span class="p"><span class="pre">]</span></span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.group_ctx" title="Link to this definition">#</a></dt>
+<dd><p>The click context object of the main group.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.validator.ClickValidator.internal_commands_system">
+<span class="sig-name descname"><span class="pre">internal_commands_system</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/validator.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.validator.ClickValidator.internal_commands_system" title="Link to this definition">#</a></dt>
+<dd><p>The InternalCommandSystem object of the current REPL session.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1276,16 +1276,27 @@ about the current REPL input state.</p>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.bottom_bar.BottomBar.parent_token_class_name">
-<span class="sig-name descname"><span class="pre">parent_token_class_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/bottom_bar.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.bottom_bar.BottomBar.parent_token_class_name" title="Link to this definition">#</a></dt>
-<dd><p>Parent class name for tokens that are related to <a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">BottomBar</span></code></a>.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.bottom_bar.BottomBar.reset_state">
 <span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/bottom_bar.py#L92-L97"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.bottom_bar.BottomBar.reset_state" title="Link to this definition">#</a></dt>
 <dd><p>Resets the current input state object and clears the content in the bottom bar.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="click_repl.bottom_bar.BottomBar.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#click_repl.parser.ReplInputState" title="click_repl.parser.ReplInputState"><span class="pre">ReplInputState</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/bottom_bar.py#L99-L112"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.bottom_bar.BottomBar.update_state" title="Link to this definition">#</a></dt>
+<dd><p>Updates the current input state object in the <a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">BottomBar</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> – Current input state of the prompt.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.bottom_bar.BottomBar.parent_token_class_name">
+<span class="sig-name descname"><span class="pre">parent_token_class_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/bottom_bar.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.bottom_bar.BottomBar.parent_token_class_name" title="Link to this definition">#</a></dt>
+<dd><p>Parent class name for tokens that are related to <a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">BottomBar</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1298,17 +1309,6 @@ about the current REPL input state.</p>
 <dt class="sig sig-object py" id="click_repl.bottom_bar.BottomBar.state">
 <span class="sig-name descname"><span class="pre">state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#click_repl.parser.ReplInputState" title="click_repl.parser.ReplInputState"><span class="pre">ReplInputState</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/bottom_bar.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.bottom_bar.BottomBar.state" title="Link to this definition">#</a></dt>
 <dd><p>Current REPL input state object.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="click_repl.bottom_bar.BottomBar.update_state">
-<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#click_repl.parser.ReplInputState" title="click_repl.parser.ReplInputState"><span class="pre">ReplInputState</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/bottom_bar.py#L99-L112"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.bottom_bar.BottomBar.update_state" title="Link to this definition">#</a></dt>
-<dd><p>Updates the current input state object in the <a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">BottomBar</span></code></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>state</strong> – Current input state of the prompt.</p>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
@@ -1343,16 +1343,6 @@ during input validation.
 <a class="reference external" href="https://python-prompt-toolkit.readthedocs.io/en/master/pages/reference.html#prompt_toolkit.validation.Validator" title="(in prompt_toolkit v3.0.43)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Validator</span></code></a> objects via <code class="docutils literal notranslate"><span class="pre">prompt_kwargs</span></code>.
 But if its still done, then the REPL uses the completer and validator from it.</p>
 </div>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl._repl.Repl.bottom_bar">
-<span class="sig-name descname"><span class="pre">bottom_bar</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">AnyFormattedText</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><span class="pre">BottomBar</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.bottom_bar" title="Link to this definition">#</a></dt>
-<dd><p>Text or callable returning text, that should be displayed in the
-bottom toolbar of the <a class="reference external" href="https://python-prompt-toolkit.readthedocs.io/en/master/pages/reference.html#prompt_toolkit.shortcuts.PromptSession" title="(in prompt_toolkit v3.0.43)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PromptSession</span></code></a> object.</p>
-<p>Alternatively, it can be a <a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">BottomBar</span></code></a> object
-to dynamically adjust the command description displayed in the
-bottom bar based on the user’s current input state.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl._repl.Repl.execute_click_command">
 <span class="sig-name descname"><span class="pre">execute_click_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Sequence" title="(in Python v3.12)"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py#L383-L398"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.execute_click_command" title="Link to this definition">#</a></dt>
@@ -1450,6 +1440,22 @@ using default values or user-defined values, if available.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="click_repl._repl.Repl.loop">
+<span class="sig-name descname"><span class="pre">loop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py#L400-L457"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.loop" title="Link to this definition">#</a></dt>
+<dd><p>Starts the REPL.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl._repl.Repl.bottom_bar">
+<span class="sig-name descname"><span class="pre">bottom_bar</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">AnyFormattedText</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><span class="pre">BottomBar</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.bottom_bar" title="Link to this definition">#</a></dt>
+<dd><p>Text or callable returning text, that should be displayed in the
+bottom toolbar of the <a class="reference external" href="https://python-prompt-toolkit.readthedocs.io/en/master/pages/reference.html#prompt_toolkit.shortcuts.PromptSession" title="(in prompt_toolkit v3.0.43)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PromptSession</span></code></a> object.</p>
+<p>Alternatively, it can be a <a class="reference internal" href="#click_repl.bottom_bar.BottomBar" title="click_repl.bottom_bar.BottomBar"><code class="xref py py-class docutils literal notranslate"><span class="pre">BottomBar</span></code></a> object
+to dynamically adjust the command description displayed in the
+bottom bar based on the user’s current input state.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="click_repl._repl.Repl.group_ctx">
 <span class="sig-name descname"><span class="pre">group_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Context</span></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.group_ctx" title="Link to this definition">#</a></dt>
@@ -1460,12 +1466,6 @@ using default values or user-defined values, if available.</p>
 <dt class="sig sig-object py" id="click_repl._repl.Repl.internal_commands_system">
 <span class="sig-name descname"><span class="pre">internal_commands_system</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem" title="click_repl.internal_commands.InternalCommandSystem"><span class="pre">InternalCommandSystem</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.internal_commands_system" title="Link to this definition">#</a></dt>
 <dd><p>Handles and executes internal commands that are invoked in repl.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="click_repl._repl.Repl.loop">
-<span class="sig-name descname"><span class="pre">loop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py#L400-L457"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.Repl.loop" title="Link to this definition">#</a></dt>
-<dd><p>Starts the REPL.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1495,17 +1495,17 @@ without any sub-command.</p>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl._repl.ReplGroup.cleanup">
-<span class="sig-name descname"><span class="pre">cleanup</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.ReplGroup.cleanup" title="Link to this definition">#</a></dt>
-<dd><p>The callback function that gets invoked after exiting the REPL.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl._repl.ReplGroup.invoke">
 <span class="sig-name descname"><span class="pre">invoke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Context</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py#L528-L535"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.ReplGroup.invoke" title="Link to this definition">#</a></dt>
 <dd><p>Given a context, this invokes the attached callback (if it exists)
 in the right way.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl._repl.ReplGroup.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/_repl.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl._repl.ReplGroup.cleanup" title="Link to this definition">#</a></dt>
+<dd><p>The callback function that gets invoked after exiting the REPL.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -1737,12 +1737,6 @@ but has custom slicing method, based on its display text.</p>
 </dl>
 </dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.tokenizer.TokenizedFormattedText.parent_token_class">
-<span class="sig-name descname"><span class="pre">parent_token_class</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/tokenizer.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.tokenizer.TokenizedFormattedText.parent_token_class" title="Link to this definition">#</a></dt>
-<dd><p>Parent class name for the tokens in the given <code class="docutils literal notranslate"><span class="pre">tokens_list</span></code>.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.tokenizer.TokenizedFormattedText.slice_by_textual_content">
 <span class="sig-name descname"><span class="pre">slice_by_textual_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText" title="click_repl.tokenizer.TokenizedFormattedText"><span class="pre">TokenizedFormattedText</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/tokenizer.py#L200-L237"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.tokenizer.TokenizedFormattedText.slice_by_textual_content" title="Link to this definition">#</a></dt>
@@ -1758,6 +1752,12 @@ but has custom slicing method, based on its display text.</p>
 <dd class="field-even"><p><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText" title="click_repl.tokenizer.TokenizedFormattedText"><code class="xref py py-class docutils literal notranslate"><span class="pre">TokenizedFormattedText</span></code></a> – A new slice that contains the text content within that slice range.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.tokenizer.TokenizedFormattedText.parent_token_class">
+<span class="sig-name descname"><span class="pre">parent_token_class</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/tokenizer.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.tokenizer.TokenizedFormattedText.parent_token_class" title="Link to this definition">#</a></dt>
+<dd><p>Parent class name for the tokens in the given <code class="docutils literal notranslate"><span class="pre">tokens_list</span></code>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1824,49 +1824,6 @@ the user is requesting autocompletions for.</p>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.args">
-<span class="sig-name descname"><span class="pre">args</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.args" title="Link to this definition">#</a></dt>
-<dd><p>List of text that’s entered into the prompt.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.cli_ctx">
-<span class="sig-name descname"><span class="pre">cli_ctx</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.cli_ctx" title="Link to this definition">#</a></dt>
-<dd><p>The click context object of the main group.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_command">
-<span class="sig-name descname"><span class="pre">current_command</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_command" title="Link to this definition">#</a></dt>
-<dd><p>The current click command the user is in.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_ctx">
-<span class="sig-name descname"><span class="pre">current_ctx</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_ctx" title="Link to this definition">#</a></dt>
-<dd><p>The most recently created click context object,
-after parsing <a class="reference internal" href="#click_repl.parser.ReplInputState.args" title="click_repl.parser.ReplInputState.args"><code class="xref py py-attr docutils literal notranslate"><span class="pre">args</span></code></a></p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_group">
-<span class="sig-name descname"><span class="pre">current_group</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_group" title="Link to this definition">#</a></dt>
-<dd><p>The current click group the user is in.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_param">
-<span class="sig-name descname"><span class="pre">current_param</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_param" title="Link to this definition">#</a></dt>
-<dd><p>The current click parameter the user is on.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.double_dash_found">
-<span class="sig-name descname"><span class="pre">double_dash_found</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.double_dash_found" title="Link to this definition">#</a></dt>
-<dd><p>Determines whether there’s a <code class="docutils literal notranslate"><span class="pre">'--'</span></code> in <a class="reference internal" href="#click_repl.parser.ReplInputState.args" title="click_repl.parser.ReplInputState.args"><code class="xref py py-attr docutils literal notranslate"><span class="pre">args</span></code></a>.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="click_repl.parser.ReplInputState.get_current_arg">
 <span class="sig-name descname"><span class="pre">get_current_arg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_command</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Command" title="(in Click v8.1.x)"><span class="pre">Command</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://click.palletsprojects.com/en/8.1.x/api/#click.Argument" title="(in Click v8.1.x)"><span class="pre">Argument</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py#L303-L325"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.get_current_arg" title="Link to this definition">#</a></dt>
@@ -1934,6 +1891,49 @@ and paramter that’s been requested in the prompt.</p>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple[Group,Command</span> <span class="pre">|</span> <span class="pre">None,Parameter</span> <span class="pre">|</span> <span class="pre">None]</span></code> – The current click group, command and parameter, if requested, in the prompt.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.args" title="Link to this definition">#</a></dt>
+<dd><p>List of text that’s entered into the prompt.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.cli_ctx">
+<span class="sig-name descname"><span class="pre">cli_ctx</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.cli_ctx" title="Link to this definition">#</a></dt>
+<dd><p>The click context object of the main group.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_command">
+<span class="sig-name descname"><span class="pre">current_command</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_command" title="Link to this definition">#</a></dt>
+<dd><p>The current click command the user is in.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_ctx">
+<span class="sig-name descname"><span class="pre">current_ctx</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_ctx" title="Link to this definition">#</a></dt>
+<dd><p>The most recently created click context object,
+after parsing <a class="reference internal" href="#click_repl.parser.ReplInputState.args" title="click_repl.parser.ReplInputState.args"><code class="xref py py-attr docutils literal notranslate"><span class="pre">args</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_group">
+<span class="sig-name descname"><span class="pre">current_group</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_group" title="Link to this definition">#</a></dt>
+<dd><p>The current click group the user is in.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.current_param">
+<span class="sig-name descname"><span class="pre">current_param</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.current_param" title="Link to this definition">#</a></dt>
+<dd><p>The current click parameter the user is on.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="click_repl.parser.ReplInputState.double_dash_found">
+<span class="sig-name descname"><span class="pre">double_dash_found</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/parser.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.parser.ReplInputState.double_dash_found" title="Link to this definition">#</a></dt>
+<dd><p>Determines whether there’s a <code class="docutils literal notranslate"><span class="pre">'--'</span></code> in <a class="reference internal" href="#click_repl.parser.ReplInputState.args" title="click_repl.parser.ReplInputState.args"><code class="xref py py-attr docutils literal notranslate"><span class="pre">args</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -2258,14 +2258,6 @@ that is returned from the parser.</p>
 <span id="global-values"></span><h3>Global Values<a class="headerlink" href="#module-click_repl.globals_" title="Link to this heading">#</a></h3>
 <p>Global variables, values, and functions that are accessed across
 all the files in this module.</p>
-<dl class="py data">
-<dt class="sig sig-object py" id="click_repl.globals_.CLICK_REPL_DEV_ENV">
-<span class="sig-prename descclassname"><span class="pre">click_repl.globals_.</span></span><span class="sig-name descname"><span class="pre">CLICK_REPL_DEV_ENV</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/globals_.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.globals_.CLICK_REPL_DEV_ENV" title="Link to this definition">#</a></dt>
-<dd><p>Environmental flag for click-repl. Enable it only for debugging purposes.</p>
-<dl class="field-list simple">
-</dl>
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="click_repl.globals_.get_current_repl_ctx">
 <span class="sig-prename descclassname"><span class="pre">click_repl.globals_.</span></span><span class="sig-name descname"><span class="pre">get_current_repl_ctx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#click_repl.core.ReplContext" title="click_repl.core.ReplContext"><span class="pre">ReplContext</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NoReturn</span></span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/globals_.py#L53-L84"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.globals_.get_current_repl_ctx" title="Link to this definition">#</a></dt>
@@ -2286,6 +2278,14 @@ is available. The default behavior is to raise a <a class="reference external" h
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.12)"><strong>RuntimeError</strong></a> – If there’s no context object in the stack and <code class="docutils literal notranslate"><span class="pre">silent</span></code> is <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">False</span></code></a>.</p>
 </dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="click_repl.globals_.CLICK_REPL_DEV_ENV">
+<span class="sig-prename descclassname"><span class="pre">click_repl.globals_.</span></span><span class="sig-name descname"><span class="pre">CLICK_REPL_DEV_ENV</span></span><a class="reference external" href="https://github.com/GhostOps77/click-repl/blob/GhostOps77-patch-1/src/click_repl/globals_.py"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#click_repl.globals_.CLICK_REPL_DEV_ENV" title="Link to this definition">#</a></dt>
+<dd><p>Environmental flag for click-repl. Enable it only for debugging purposes.</p>
+<dl class="field-list simple">
 </dl>
 </dd></dl>
 
@@ -2623,7 +2623,6 @@ return missing values as they are, even if they are incomplete or not provided.<
 <li><a class="reference internal" href="#">API Reference</a><ul>
 <li><a class="reference internal" href="#module-click_repl.completer">Auto-Completion</a><ul>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter"><code class="docutils literal notranslate"><span class="pre">ClickCompleter</span></code></a><ul>
-<li><a class="reference internal" href="#click_repl.completer.ClickCompleter.bottom_bar"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.bottom_bar</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.check_for_command_arguments_request"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.check_for_command_arguments_request()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.get_completion_for_boolean_type"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.get_completion_for_boolean_type()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.get_completion_for_command_arguments"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.get_completion_for_command_arguments()</span></code></a></li>
@@ -2639,8 +2638,9 @@ return missing values as they are, even if they are incomplete or not provided.<
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.get_completions_for_subcommands"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.get_completions_for_subcommands()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.get_multicommand_for_generating_subcommand_completions"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.get_multicommand_for_generating_subcommand_completions()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.get_visible_subcommands"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.get_visible_subcommands()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.completer.ClickCompleter.group_ctx"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.group_ctx</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.handle_internal_commands_request"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.handle_internal_commands_request()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.completer.ClickCompleter.bottom_bar"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.bottom_bar</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.completer.ClickCompleter.group_ctx"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.group_ctx</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.internal_commands_system"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.internal_commands_system</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.parent_token_class_name"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.parent_token_class_name</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.completer.ClickCompleter.shortest_option_names_only"><code class="docutils literal notranslate"><span class="pre">ClickCompleter.shortest_option_names_only</span></code></a></li>
@@ -2654,18 +2654,18 @@ return missing values as they are, even if they are incomplete or not provided.<
 </li>
 <li><a class="reference internal" href="#module-click_repl.core">Context</a><ul>
 <li><a class="reference internal" href="#click_repl.core.ReplContext"><code class="docutils literal notranslate"><span class="pre">ReplContext</span></code></a><ul>
+<li><a class="reference internal" href="#click_repl.core.ReplContext.history"><code class="docutils literal notranslate"><span class="pre">ReplContext.history()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.core.ReplContext.session_reset"><code class="docutils literal notranslate"><span class="pre">ReplContext.session_reset()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.core.ReplContext.to_info_dict"><code class="docutils literal notranslate"><span class="pre">ReplContext.to_info_dict()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.core.ReplContext.update_state"><code class="docutils literal notranslate"><span class="pre">ReplContext.update_state()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.bottom_bar"><code class="docutils literal notranslate"><span class="pre">ReplContext.bottom_bar</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.current_state"><code class="docutils literal notranslate"><span class="pre">ReplContext.current_state</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.group_ctx"><code class="docutils literal notranslate"><span class="pre">ReplContext.group_ctx</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.core.ReplContext.history"><code class="docutils literal notranslate"><span class="pre">ReplContext.history()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.internal_command_system"><code class="docutils literal notranslate"><span class="pre">ReplContext.internal_command_system</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.parent"><code class="docutils literal notranslate"><span class="pre">ReplContext.parent</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.prompt"><code class="docutils literal notranslate"><span class="pre">ReplContext.prompt</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.prompt_kwargs"><code class="docutils literal notranslate"><span class="pre">ReplContext.prompt_kwargs</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.core.ReplContext.session"><code class="docutils literal notranslate"><span class="pre">ReplContext.session</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.core.ReplContext.session_reset"><code class="docutils literal notranslate"><span class="pre">ReplContext.session_reset()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.core.ReplContext.to_info_dict"><code class="docutils literal notranslate"><span class="pre">ReplContext.to_info_dict()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.core.ReplContext.update_state"><code class="docutils literal notranslate"><span class="pre">ReplContext.update_state()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#click_repl.core.pass_context"><code class="docutils literal notranslate"><span class="pre">pass_context()</span></code></a></li>
@@ -2678,13 +2678,13 @@ return missing values as they are, even if they are incomplete or not provided.<
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.get_command"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.get_command()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.get_prefix"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.get_prefix()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.handle_internal_commands"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.handle_internal_commands()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.internal_command_prefix"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.internal_command_prefix</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.list_commands"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.list_commands()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.prefix_table"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.prefix_table</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.register_command"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.register_command()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.remove_command"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.remove_command()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.system_command_prefix"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.system_command_prefix</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.validate_prefix"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.validate_prefix()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.internal_command_prefix"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.internal_command_prefix</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.prefix_table"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.prefix_table</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.internal_commands.InternalCommandSystem.system_command_prefix"><code class="docutils literal notranslate"><span class="pre">InternalCommandSystem.system_command_prefix</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#click_repl.internal_commands.repl_exit"><code class="docutils literal notranslate"><span class="pre">repl_exit()</span></code></a></li>
@@ -2692,10 +2692,10 @@ return missing values as they are, even if they are incomplete or not provided.<
 </li>
 <li><a class="reference internal" href="#module-click_repl.validator">Validation</a><ul>
 <li><a class="reference internal" href="#click_repl.validator.ClickValidator"><code class="docutils literal notranslate"><span class="pre">ClickValidator</span></code></a><ul>
+<li><a class="reference internal" href="#click_repl.validator.ClickValidator.validate"><code class="docutils literal notranslate"><span class="pre">ClickValidator.validate()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.validator.ClickValidator.display_all_errors"><code class="docutils literal notranslate"><span class="pre">ClickValidator.display_all_errors</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.validator.ClickValidator.group_ctx"><code class="docutils literal notranslate"><span class="pre">ClickValidator.group_ctx</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.validator.ClickValidator.internal_commands_system"><code class="docutils literal notranslate"><span class="pre">ClickValidator.internal_commands_system</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.validator.ClickValidator.validate"><code class="docutils literal notranslate"><span class="pre">ClickValidator.validate()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2714,33 +2714,33 @@ return missing values as they are, even if they are incomplete or not provided.<
 <li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.get_param_type_info_tokens"><code class="docutils literal notranslate"><span class="pre">BottomBar.get_param_type_info_tokens()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.get_param_usage_state_token"><code class="docutils literal notranslate"><span class="pre">BottomBar.get_param_usage_state_token()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.make_formatted_text"><code class="docutils literal notranslate"><span class="pre">BottomBar.make_formatted_text()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.parent_token_class_name"><code class="docutils literal notranslate"><span class="pre">BottomBar.parent_token_class_name</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.reset_state"><code class="docutils literal notranslate"><span class="pre">BottomBar.reset_state()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.update_state"><code class="docutils literal notranslate"><span class="pre">BottomBar.update_state()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.parent_token_class_name"><code class="docutils literal notranslate"><span class="pre">BottomBar.parent_token_class_name</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.show_hidden_params"><code class="docutils literal notranslate"><span class="pre">BottomBar.show_hidden_params</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.state"><code class="docutils literal notranslate"><span class="pre">BottomBar.state</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.bottom_bar.BottomBar.update_state"><code class="docutils literal notranslate"><span class="pre">BottomBar.update_state()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-click_repl._repl">Repl</a><ul>
 <li><a class="reference internal" href="#click_repl._repl.Repl"><code class="docutils literal notranslate"><span class="pre">Repl</span></code></a><ul>
-<li><a class="reference internal" href="#click_repl._repl.Repl.bottom_bar"><code class="docutils literal notranslate"><span class="pre">Repl.bottom_bar</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.execute_click_command"><code class="docutils literal notranslate"><span class="pre">Repl.execute_click_command()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.execute_command"><code class="docutils literal notranslate"><span class="pre">Repl.execute_command()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.get_command"><code class="docutils literal notranslate"><span class="pre">Repl.get_command()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.get_default_completer_kwargs"><code class="docutils literal notranslate"><span class="pre">Repl.get_default_completer_kwargs()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.get_default_prompt_kwargs"><code class="docutils literal notranslate"><span class="pre">Repl.get_default_prompt_kwargs()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.get_default_validator_kwargs"><code class="docutils literal notranslate"><span class="pre">Repl.get_default_validator_kwargs()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl._repl.Repl.loop"><code class="docutils literal notranslate"><span class="pre">Repl.loop()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl._repl.Repl.bottom_bar"><code class="docutils literal notranslate"><span class="pre">Repl.bottom_bar</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.group_ctx"><code class="docutils literal notranslate"><span class="pre">Repl.group_ctx</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.internal_commands_system"><code class="docutils literal notranslate"><span class="pre">Repl.internal_commands_system</span></code></a></li>
-<li><a class="reference internal" href="#click_repl._repl.Repl.loop"><code class="docutils literal notranslate"><span class="pre">Repl.loop()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.Repl.repl_ctx"><code class="docutils literal notranslate"><span class="pre">Repl.repl_ctx</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#click_repl._repl.ReplGroup"><code class="docutils literal notranslate"><span class="pre">ReplGroup</span></code></a><ul>
-<li><a class="reference internal" href="#click_repl._repl.ReplGroup.cleanup"><code class="docutils literal notranslate"><span class="pre">ReplGroup.cleanup</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.ReplGroup.invoke"><code class="docutils literal notranslate"><span class="pre">ReplGroup.invoke()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl._repl.ReplGroup.cleanup"><code class="docutils literal notranslate"><span class="pre">ReplGroup.cleanup</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.ReplGroup.prompt"><code class="docutils literal notranslate"><span class="pre">ReplGroup.prompt</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.ReplGroup.repl_kwargs"><code class="docutils literal notranslate"><span class="pre">ReplGroup.repl_kwargs</span></code></a></li>
 <li><a class="reference internal" href="#click_repl._repl.ReplGroup.startup"><code class="docutils literal notranslate"><span class="pre">ReplGroup.startup</span></code></a></li>
@@ -2768,8 +2768,8 @@ return missing values as they are, even if they are incomplete or not provided.<
 <li><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText"><code class="docutils literal notranslate"><span class="pre">TokenizedFormattedText</span></code></a><ul>
 <li><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText.content_length"><code class="docutils literal notranslate"><span class="pre">TokenizedFormattedText.content_length()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText.get_text"><code class="docutils literal notranslate"><span class="pre">TokenizedFormattedText.get_text()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText.parent_token_class"><code class="docutils literal notranslate"><span class="pre">TokenizedFormattedText.parent_token_class</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText.slice_by_textual_content"><code class="docutils literal notranslate"><span class="pre">TokenizedFormattedText.slice_by_textual_content()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.tokenizer.TokenizedFormattedText.parent_token_class"><code class="docutils literal notranslate"><span class="pre">TokenizedFormattedText.parent_token_class</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -2782,6 +2782,11 @@ return missing values as they are, even if they are incomplete or not provided.<
 </ul>
 </li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState"><code class="docutils literal notranslate"><span class="pre">ReplInputState</span></code></a><ul>
+<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_arg"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_arg()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_group_and_command"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_group_and_command()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_opt"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_opt()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_param"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_param()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.parser.ReplInputState.parse"><code class="docutils literal notranslate"><span class="pre">ReplInputState.parse()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.args"><code class="docutils literal notranslate"><span class="pre">ReplInputState.args</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.cli_ctx"><code class="docutils literal notranslate"><span class="pre">ReplInputState.cli_ctx</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.current_command"><code class="docutils literal notranslate"><span class="pre">ReplInputState.current_command</span></code></a></li>
@@ -2789,11 +2794,6 @@ return missing values as they are, even if they are incomplete or not provided.<
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.current_group"><code class="docutils literal notranslate"><span class="pre">ReplInputState.current_group</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.current_param"><code class="docutils literal notranslate"><span class="pre">ReplInputState.current_param</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.double_dash_found"><code class="docutils literal notranslate"><span class="pre">ReplInputState.double_dash_found</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_arg"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_arg()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_group_and_command"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_group_and_command()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_opt"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_opt()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.parser.ReplInputState.get_current_param"><code class="docutils literal notranslate"><span class="pre">ReplInputState.get_current_param()</span></code></a></li>
-<li><a class="reference internal" href="#click_repl.parser.ReplInputState.parse"><code class="docutils literal notranslate"><span class="pre">ReplInputState.parse()</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.parser.ReplInputState.remaining_params"><code class="docutils literal notranslate"><span class="pre">ReplInputState.remaining_params</span></code></a></li>
 </ul>
 </li>
@@ -2836,8 +2836,8 @@ return missing values as they are, even if they are incomplete or not provided.<
 </li>
 <li><a class="reference internal" href="#others">Others</a><ul>
 <li><a class="reference internal" href="#module-click_repl.globals_">Global Values</a><ul>
-<li><a class="reference internal" href="#click_repl.globals_.CLICK_REPL_DEV_ENV"><code class="docutils literal notranslate"><span class="pre">CLICK_REPL_DEV_ENV</span></code></a></li>
 <li><a class="reference internal" href="#click_repl.globals_.get_current_repl_ctx"><code class="docutils literal notranslate"><span class="pre">get_current_repl_ctx()</span></code></a></li>
+<li><a class="reference internal" href="#click_repl.globals_.CLICK_REPL_DEV_ENV"><code class="docutils literal notranslate"><span class="pre">CLICK_REPL_DEV_ENV</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-click_repl.styles">Style Config</a><ul>
