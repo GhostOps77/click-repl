@@ -72,12 +72,13 @@ html_theme_options = {
 pygments_style = "friendly"
 
 intersphinx_disabled_domains = ["std"]
-exclude_patterns = ["build", "_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 autoapi_dirs = ["../../src/click_repl/"]
 autoapi_python_use_implicit_namespaces = True
 
 autodoc_typehints_format = "short"
+autodoc_member_order = "groupwise"
 autodoc_default_options = {
     "special-members": False,
 }
