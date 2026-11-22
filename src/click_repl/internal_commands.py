@@ -449,12 +449,11 @@ class InternalCommandSystem:
             self._internal_commands.pop(name)
             return
 
-        else:
-            for _, mnemonics in info_table.items():
-                if name in mnemonics:
-                    for mnemonic in mnemonics:
-                        self._internal_commands.pop(mnemonic)
-                    return
+        for mnemonics in info_table.values():
+            if name in mnemonics:
+                for mnemonic in mnemonics:
+                    self._internal_commands.pop(mnemonic)
+                return
 
         raise InternalCommandNotFound(name)
 

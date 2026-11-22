@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import click
 import pytest
+from click.shell_completion import CompletionItem
 from prompt_toolkit.document import Document
 
 from click_repl.completer import ClickCompleter
@@ -159,3 +160,38 @@ def test_double_dash_arg(test_input, expected):
 def test_equal_sign_for_opt_and_explicit_value(test_input):
     completions = c.get_completions(Document(test_input))
     assert {i.text for i in completions} == {"foo", "bar"}
+
+
+def test_shell_complete_option_v8_class_type():
+    class MyVar(click.ParamType):
+        name = "myvar"
+
+        def shell_complete(self, ctx, param, incomplete):
+            return [
+                CompletionItem(name)
+                for name in ("foo", "bar")
+                if name.startswith(incomplete)
+            ]
+
+    @root_command.command()
+    @click.option("--handler", "-h", type=MyVar())
+    def autocompletion_opt_cmd(handler):
+        pass
+
+    completions = c.get_completions(Document("autocompletion-opt-cmd "))
+    assert {x.text for x in completions} == {"--handler", "bar"}
+
+
+def test_shell_complete_arg_v8_func_type():
+    def shell_complete_func(ctx, param, incomplete):
+        return [
+            CompletionItem(name) for name in ("foo", "bar") if name.startswith(incomplete)
+        ]
+
+    @root_command.command()
+    @click.option("--handler", "-h", shell_complete=shell_complete_func)
+    def autocompletion_cmd2(handler):
+        pass
+
+    completions = c.get_completions(Document("autocompletion-cmd2 --handler "))
+    assert {x.text for x in completions} == {"foo", "bar"}

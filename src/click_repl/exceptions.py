@@ -66,8 +66,7 @@ class WrongType(InternalCommandException):
 
     def __init__(self, var: Any, var_name: str, expected_type: str) -> None:
         super().__init__(
-            f"Expected {var_name!r} to be a {expected_type}, "
-            f"but got {type(var).__name__}"
+            f"Expected {var_name!r} to be a {expected_type}, but got {type(var).__name__}"
         )
 
 

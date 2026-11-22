@@ -13,15 +13,12 @@ from typing import TYPE_CHECKING, NoReturn, overload
 from ._ctx_stack import _context_stack
 
 if TYPE_CHECKING:
-    from .core import ReplContext
+    from .context import ReplContext
 
 
 CLICK_VERSION: tuple[int, int, int] = tuple(  # type:ignore[assignment]
     int(i) for i in version("click").split(".")
 )
-
-IS_CLICK_GE_8 = CLICK_VERSION[0] >= 8
-# The shell complete method is implemented for almost every classes in click.
 
 IS_CLICK_GE_8_2 = CLICK_VERSION >= (8, 2)
 # click deprecated many things in this version.
@@ -66,7 +63,7 @@ def get_current_repl_ctx(silent: bool = False) -> ReplContext | NoReturn | None:
 
     Returns
     -------
-    :class:`~click_repl.core.ReplContext` | None
+    :class:`~click_repl.context.ReplContext` | None
         REPL context object if available, or :obj:`None` if ``silent`` is :obj:`True`.
 
     Raises

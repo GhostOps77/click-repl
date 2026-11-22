@@ -463,10 +463,9 @@ class BottomBar:
             Tokens that describe the given ``param``, including
             appropriate metavar templates and formatting.
         """
-        param_name = param_info["name"]
-        nargs_info = param_info["nargs_info"]
+        res: ListOfTokens = [param_info["name"]]
 
-        res: ListOfTokens = [param_name]
+        nargs_info = param_info["nargs_info"]
 
         if not nargs_info:
             return res

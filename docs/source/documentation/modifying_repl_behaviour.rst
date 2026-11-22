@@ -186,7 +186,7 @@ By default, click-repl uses ``>`` as its prompt. You can customize the prompt by
 
       main()
 
-#. Accessing and modifying the prompt during runtime using the :attr:`~click_repl.core.ReplContext.prompt` property.
+#. Accessing and modifying the prompt during runtime using the :attr:`~click_repl.context.ReplContext.prompt` property.
 
    .. code-block:: python
       :linenos:
@@ -292,18 +292,18 @@ parameter of :func:`~click_repl._repl.repl` function.
 ReplContext
 -----------
 
-Unlike :class:`~click.Context`, the :class:`~click_repl.core.ReplContext` class is instantiated for every new REPL session.
+Unlike :class:`~click.Context`, the :class:`~click_repl.context.ReplContext` class is instantiated for every new REPL session.
 This object tracks the current REPL's state, while parsing arguments from the prompt while typing.
 
 From this context object, you can obtain many objects responsible for the REPL's functionality,
 allowing extreme flexibility in customizing your REPL session during runtime.
 
-You can access it using the click_repl's :func:`~click_repl.core.pass_context` decorator, which is similar to click's
+You can access it using the click_repl's :func:`~click_repl.context.pass_context` decorator, which is similar to click's
 :func:`~click.pass_context`. Ensure not to accidentally switch them.
 
 .. note::
 
-   A :class:`~click_repl.core.ReplContext` is instantiated only when the REPL is invoked. Therefore, you won't be able to use it inside the group.
+   A :class:`~click_repl.context.ReplContext` is instantiated only when the REPL is invoked. Therefore, you won't be able to use it inside the group.
 
 .. code-block:: python
    :linenos:
@@ -328,7 +328,7 @@ PromptSession object
 ~~~~~~~~~~~~~~~~~~~~
 
 click-repl utilzes the :class:`~prompt_toolkit.shortcuts.PromptSession` object, resopnsible for the REPL's functionality.
-This object can be accessed via the :attr:`~click_repl.core.ReplContext.session` attribute of the :attr:`~click_repl.core.ReplContext`
+This object can be accessed via the :attr:`~click_repl.context.ReplContext.session` attribute of the :attr:`~click_repl.context.ReplContext`
 object. You can leverage this to extend the functionality of the REPL. Refer to
 `python-prompt-toolkit <https://python-prompt-toolkit.readthedocs.io/en/master/>`_'s
 `PromptSession <https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#the-promptsession-object>`_ docs.

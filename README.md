@@ -35,14 +35,17 @@ on your click app's main group. Invoke it from command line to start the REPL.
 import click
 from click_repl import register_repl
 
+
 @register_repl
 @click.group()
 def cli():
     pass
 
+
 @cli.command()
 def hello():
     click.echo("Hello world!")
+
 
 cli()
 ```

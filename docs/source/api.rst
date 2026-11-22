@@ -12,7 +12,7 @@ Auto-Completion
 Context
 -------
 
-.. automodule:: click_repl.core
+.. automodule:: click_repl.context
     :members:
 
 

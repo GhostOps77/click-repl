@@ -3,7 +3,7 @@ from __future__ import annotations
 import click
 import pytest
 
-from click_repl.core import ReplContext
+from click_repl.context import ReplContext
 from click_repl.exceptions import ExitReplException, PrefixNotFound
 from click_repl.internal_commands import InternalCommandSystem
 

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from gettext import gettext as _
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
-from click import Argument as CoreArgument
-from click import Context
 from click.exceptions import BadOptionUsage, NoSuchOption
 
 from .._compat import (
@@ -15,7 +13,11 @@ from .._compat import (
     normalize_opt,
     split_opt,
 )
-from ..globals_ import IS_CLICK_GE_8
+
+if TYPE_CHECKING:
+    from click import Argument as CoreArgument
+    from click import Context
+
 
 _flag_needs_value = object()
 
@@ -219,7 +221,7 @@ class ReplOptionParser(OptionParser):
         rargs_len = len(state.rargs)
 
         if rargs_len < nargs:
-            if IS_CLICK_GE_8 and option.obj._flag_needs_value:
+            if option.obj._flag_needs_value:
                 # Option allows omitting the value.
                 value = _flag_needs_value
             else:
@@ -234,8 +236,7 @@ class ReplOptionParser(OptionParser):
             next_rarg = state.rargs[0]
 
             if (
-                IS_CLICK_GE_8
-                and option.obj._flag_needs_value
+                option.obj._flag_needs_value
                 and isinstance(next_rarg, str)
                 and next_rarg[:1] in self._opt_prefixes
                 and len(next_rarg) > 1

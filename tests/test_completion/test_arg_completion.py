@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import click
 import pytest
+from click.shell_completion import CompletionItem
+from prompt_toolkit.completion import Completion
 from prompt_toolkit.document import Document
 
 from click_repl.completer import ClickCompleter
@@ -71,5 +73,74 @@ def test_arg_choices(test_input, expected):
     ],
 )
 def test_arg_choices_case_insensitive(test_input, expected):
+    completions = c.get_completions(Document(test_input))
+    assert {x.text for x in completions} == expected
+
+
+def test_shell_complete_arg_class_type():
+    class MyVar(click.ParamType):
+        name = "myvar"
+
+        def shell_complete(self, ctx, param, incomplete):
+            return [
+                CompletionItem(name)
+                for name in ("foo", "bar")
+                if name.startswith(incomplete)
+            ]
+
+    @root_command.command()
+    @click.argument("handler", type=MyVar())
+    def autocompletion_cmd(handler):
+        pass
+
+    completions = c.get_completions(Document("autocompletion-cmd "))
+    assert {x.text for x in completions} == {"foo", "bar"}
+
+
+def test_shell_complete_arg_func_completionitem_return_type():
+    def shell_complete_func(ctx, param, incomplete):
+        return [
+            CompletionItem(name) for name in ("foo", "bar") if name.startswith(incomplete)
+        ]
+
+    @root_command.command()
+    @click.argument("handler", shell_complete=shell_complete_func)
+    def autocompletion_cmd2(handler):
+        pass
+
+    completions = c.get_completions(Document("autocompletion-cmd2 "))
+    assert {x.text for x in completions} == {"foo", "bar"}
+
+
+def test_shell_complete_arg_func_completion_return_type():
+    def shell_complete_func(ctx, param, incomplete):
+        return [
+            Completion(name) for name in ("foo", "bar") if name.startswith(incomplete)
+        ]
+
+    @root_command.command()
+    @click.argument("handler", shell_complete=shell_complete_func)
+    def autocompletion_cmd2(handler):
+        pass
+
+    completions = c.get_completions(Document("autocompletion-cmd2 "))
+    assert {x.text for x in completions} == {"foo", "bar"}
+
+
+@root_command.command()
+@click.argument("choice", type=click.Choice(("FOO", "Bar"), case_sensitive=False))
+def case_insensitive_choices(choice):
+    pass
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ("case-insensitive-choices ", {"FOO", "Bar"}),
+        ("case-insensitive-choices f", {"FOO"}),
+        ("case-insensitive-choices bA", {"Bar"}),
+    ],
+)
+def test_case_insensitive_choice_type(test_input, expected):
     completions = c.get_completions(Document(test_input))
     assert {x.text for x in completions} == expected
